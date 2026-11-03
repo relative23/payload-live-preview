@@ -269,7 +269,7 @@ export const CI: WorkflowSpec = {
     'astro-fragment-versions': archiveJob(
       'playwright.astro-resources.config.ts',
       25,
-      { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4'] },
+      { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.5'] },
       { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
     ),
     // Next.js, SvelteKit 2 and 3, Nuxt 3 and 4, plain HTML, Vue and React production hosts on the

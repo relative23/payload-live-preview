@@ -8,7 +8,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 export function astroResourceVersion(
-  version = '7.3.2',
+  version = '7.4.5',
   renderer?: string,
 ): {
   version: string;
@@ -30,7 +30,7 @@ export function astroResourceVersion(
     renderer === 'react-islands' ||
     renderer === 'react-owned'
   ) {
-    if (version !== '7.3.2') throw new Error('Unreviewed Astro React version: ' + version);
+    if (version !== '7.4.5') throw new Error('Unreviewed Astro React version: ' + version);
     return {
       version,
       dependencyRoot: 'tests/fixtures/astro-react-deps',
@@ -42,14 +42,14 @@ export function astroResourceVersion(
             : 'test-results/hardening/h05-astro-react/native',
     };
   }
-  if (version === '7.3.2') {
+  if (version === '7.4.5') {
     return {
       version,
       dependencyRoot: 'tests/fixtures/astro-resource-deps',
       artifactRoot: 'test-results/hardening/h05-astro-resources',
     };
   }
-  if (!['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.4'].includes(version)) {
+  if (!['4.9.0', '4.16.19', '5.18.2', '6.4.8'].includes(version)) {
     throw new Error('Unreviewed Astro resource version: ' + version);
   }
   return {

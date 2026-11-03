@@ -10,7 +10,7 @@ import { astroResourceRenderer } from './tests/e2e/helpers/astro-resource-versio
 // application renderer the verified-context case exercises does not exist.
 const packageDefault =
   astroResourceRenderer(
-    process.env['PLP_ASTRO_RESOURCE_VERSION'] ?? '7.3.2',
+    process.env['PLP_ASTRO_RESOURCE_VERSION'] ?? '7.4.5',
     process.env['PLP_ASTRO_RESOURCE_RENDERER'],
   ) === 'package-default';
 

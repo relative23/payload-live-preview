@@ -245,14 +245,14 @@ describe('workflow contracts', () => {
       label: 'an island floor that does not tell the spec which Astro it installs',
       file: 'ci.yml',
       original: '          PLP_ASTRO_RESOURCE_VERSION: ${{ matrix.astro }}\n',
-      replacement: '          PLP_ASTRO_RESOURCE_VERSION: 7.3.2\n',
+      replacement: '          PLP_ASTRO_RESOURCE_VERSION: 7.4.5\n',
       violation: 'env.PLP_ASTRO_RESOURCE_VERSION is not "${{ matrix.astro }}"',
     },
     {
       label: 'a fragment ladder that drops its floor',
       file: 'ci.yml',
-      original: "astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4']",
-      replacement: "astro: ['4.16.19', '5.18.2', '6.4.8', '7.3.2', '7.4.4']",
+      original: "astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.5']",
+      replacement: "astro: ['4.16.19', '5.18.2', '6.4.8', '7.4.5']",
       violation: 'ci.yml job astro-fragment-versions does not run the reviewed matrix',
     },
     {
@@ -261,7 +261,7 @@ describe('workflow contracts', () => {
       original:
         '          PLP_ASTRO_RESOURCE_VERSION: ${{ matrix.astro }}\n        run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts',
       replacement:
-        '          PLP_ASTRO_RESOURCE_VERSION: 7.3.2\n        run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts',
+        '          PLP_ASTRO_RESOURCE_VERSION: 7.4.5\n        run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts',
       violation: 'env.PLP_ASTRO_RESOURCE_VERSION is not "${{ matrix.astro }}"',
     },
     {
@@ -584,8 +584,7 @@ describe('workflow contracts', () => {
       '4.16.19',
       '5.18.2',
       '6.4.8',
-      '7.3.2',
-      '7.4.4',
+      '7.4.5',
     ]);
     expect(matrixValues(ci, 'lint', 'node')).toEqual([]);
   });

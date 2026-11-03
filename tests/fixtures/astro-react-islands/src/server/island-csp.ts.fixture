@@ -27,7 +27,7 @@ export function islandCsp() {
         scripts[0]!.includes('astro:load') &&
         scripts[0]!.includes('astro-island') &&
         scripts[0]!.indexOf('astro:load') < scripts[0]!.indexOf('astro-island')
-      : version === '7.3.2' &&
+      : version === '7.4.5' &&
         scripts.length === 2 &&
         scripts[0]!.includes('astro:load') &&
         scripts[1]!.includes('astro-island');

@@ -16,7 +16,7 @@ describe('Astro resource consumer configuration', () => {
       devDependencies: Record<string, string>;
     };
     expect(manifest.scripts['build']).toBe('npm run typecheck && astro build');
-    expect(manifest.devDependencies['@astrojs/check']).toBe('0.9.10');
+    expect(manifest.devDependencies['@astrojs/check']).toBe('0.9.12');
     expect(source('type-contracts/Negative.astro')).toContain('title.toFixed(2)');
     expect(read('tests/e2e/helpers/astro-resources.ts')).toContain(
       'negative Astro template control',

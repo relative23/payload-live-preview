@@ -19,7 +19,7 @@ const island = 'customElements.get("astro-island")';
 const style = 'astro-island,astro-slot,astro-static-slot{display:contents}';
 const html = `<script>${load}</script><script>${island}</script><style>${style}</style>`;
 
-function policy(output: string, mode?: string, version = '7.3.2') {
+function policy(output: string, mode?: string, version = '7.4.5') {
   const read = vi.fn((path: string, encoding: string) => {
     expect(encoding).toBe('utf8');
     if (path === resolve('node_modules/astro/package.json')) return JSON.stringify({ version });
@@ -70,11 +70,11 @@ describe('fixed build island CSP', () => {
       },
     ],
     [
-      '7.3.2',
-      'tests/unit/quality/fixtures/astro-island-csp-7.3.2.html.fixture',
+      '7.4.5',
+      'tests/unit/quality/fixtures/astro-island-csp-7.4.5.html.fixture',
       {
         scripts:
-          "'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='",
+          "'sha256-1BvDVWLr3QCC20uHhUDi27eDFVJpk1uMQJGIWKUks2I=' 'sha256-UIrFqcaitjA3OKa9mHKajg3N+0Y7tW9+y0o3QmMFeZQ='",
         styles: "'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='",
       },
     ],
@@ -83,10 +83,10 @@ describe('fixed build island CSP', () => {
     expect(policy(output, 'build-hashes', version).get()).toEqual(expected);
   });
   it.each([
-    ['4.16.19', '7.3.2'],
-    ['7.3.2', '4.16.19'],
+    ['4.16.19', '7.4.5'],
+    ['7.4.5', '4.16.19'],
     ['5.18.2', '4.16.19'],
-    ['6.4.8', '7.3.2'],
+    ['6.4.8', '7.4.5'],
   ])('refuses an unreviewed version/shape pair %s/%s', (version, fixtureVersion) => {
     const output = readFileSync(
       `tests/unit/quality/fixtures/astro-island-csp-${fixtureVersion}.html.fixture`,

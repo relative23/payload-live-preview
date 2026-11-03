@@ -69,10 +69,10 @@ export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
     fixtures: ['tests/fixtures/payload-acl'],
     select: {
       env: 'PLP_ASTRO_RESOURCE_VERSION',
-      default: '7.3.2',
+      default: '7.4.5',
       fixtures: {
         '4.16.19': 'tests/fixtures/astro-react-versions/4.16.19',
-        '7.3.2': 'tests/fixtures/astro-react-deps',
+        '7.4.5': 'tests/fixtures/astro-react-deps',
       },
     },
   },
@@ -81,14 +81,13 @@ export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
     fixtures: ['tests/fixtures/payload-acl'],
     select: {
       env: 'PLP_ASTRO_RESOURCE_VERSION',
-      default: '7.3.2',
+      default: '7.4.5',
       fixtures: {
         '4.9.0': 'tests/fixtures/astro-resource-versions/4.9.0',
         '4.16.19': 'tests/fixtures/astro-resource-versions/4.16.19',
         '5.18.2': 'tests/fixtures/astro-resource-versions/5.18.2',
         '6.4.8': 'tests/fixtures/astro-resource-versions/6.4.8',
-        '7.3.2': 'tests/fixtures/astro-resource-deps',
-        '7.4.4': 'tests/fixtures/astro-resource-versions/7.4.4',
+        '7.4.5': 'tests/fixtures/astro-resource-deps',
       },
     },
   },
