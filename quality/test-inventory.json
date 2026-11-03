@@ -22,7 +22,7 @@
   "totals": {
     "files": 544,
     "suites": 1051,
-    "tests": 4754,
+    "tests": 4755,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 446,
       "suites": 940,
-      "tests": 4343,
+      "tests": 4344,
       "benchmarks": 0
     }
   },
@@ -3420,7 +3420,7 @@
       "path": "tests/unit/quality/playwright-runtime-policy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
