@@ -113,7 +113,7 @@ describe('what compat:check refuses', () => {
   });
 });
 
-describe('the sentence in the README', () => {
+describe('the sentence on the compatibility page', () => {
   it('is built from the record, not written beside it', () => {
     const line = renderViteLine(facts(), '2026-09-06');
 
@@ -122,10 +122,13 @@ describe('the sentence in the README', () => {
     expect(line).toContain('measured 2026-09-06');
   });
 
-  it('is the line the README actually carries', () => {
-    const readme = readFileSync(resolve(import.meta.dirname, '../../../README.md'), 'utf8');
+  it('is the line the compatibility page actually carries', () => {
+    const page = readFileSync(
+      resolve(import.meta.dirname, '../../../docs/compatibility.md'),
+      'utf8',
+    );
 
-    expect(readme).toContain('Vite 5 through 8');
+    expect(page).toContain('Vite 5 through 8');
   });
 });
 

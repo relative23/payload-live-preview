@@ -1,7 +1,8 @@
 /**
- * The README compatibility table, rendered from `quality/compat-matrix.json`
- * and held against the fixture lockfiles and the CI matrices.
- * `--write` updates the README block; `--check` fails on any drift.
+ * The compatibility record, rendered from `quality/compat-matrix.json` and held
+ * against the fixture lockfiles and the CI matrices. The README carries the
+ * framework table; `docs/compatibility.md` carries the evidence behind it.
+ * `--write` updates both blocks; `--check` fails on any drift.
  */
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -30,9 +31,12 @@ import {
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MATRIX = resolve(ROOT, 'quality/compat-matrix.json');
 const README = resolve(ROOT, 'README.md');
+const EVIDENCE = resolve(ROOT, 'docs/compatibility.md');
 const WORKFLOW = resolve(ROOT, '.github/workflows/ci.yml');
 const START = '<!-- compat-matrix:start -->';
 const END = '<!-- compat-matrix:end -->';
+const EVIDENCE_START = '<!-- compat-evidence:start -->';
+const EVIDENCE_END = '<!-- compat-evidence:end -->';
 const TOOLING_ENTRIES = ['./annotate', './codegen', './codegen/astro', './doctor', './migrate'];
 
 interface Tested {
@@ -79,11 +83,14 @@ interface Matrix {
     readonly tested: readonly number[];
     readonly job: string;
   };
-  readonly payload: readonly {
-    readonly version: string;
-    readonly how: string;
-    readonly source?: 'tests' | 'corpus' | 'watch';
-  }[];
+  /** By source: `tests` and `corpus` run on every push, `watch` every day, none outside CI. */
+  readonly payload: readonly PayloadEntry[];
+}
+interface PayloadEntry {
+  readonly version: string;
+  /** What runs against the version; a corpus has none of its own, every capture is replayed alike. */
+  readonly how?: string;
+  readonly source?: 'tests' | 'corpus' | 'watch';
 }
 
 function label(entry: Tested): string {
@@ -105,12 +112,12 @@ export function evidenceLine(cells: readonly CompatEvidenceCell[]): string {
   return `Of the ${String(cells.length)} feature rows of \`quality/compat-matrix.json\`, ${String(passed.length)} passed in the CI run the last Version PR recorded (commit \`${result.commit.slice(0, 7)}\`, ${result.executedAt.slice(0, 10)}, \`quality/compat-results.json\`); the other ${String(others)} have no recorded result.`;
 }
 
-export function render(matrix: Matrix, viteLine = ''): string {
+/** The README block: one row per framework, then the Node line. */
+export function render(matrix: Matrix): string {
   const rows = matrix.frameworks.map(
     (framework) =>
       `| ${framework.name} | ${framework.supported} | ${framework.tested.map(label).join('; ')} |`,
   );
-  const payload = matrix.payload.map((entry) => `- Payload ${entry.version}: ${entry.how}.`);
   return [
     START,
     '',
@@ -118,16 +125,49 @@ export function render(matrix: Matrix, viteLine = ''): string {
     '| --- | --- | --- |',
     ...rows,
     '',
-    `Node ${matrix.node.engines}; the unit and integration suites run on Node ${matrix.node.tested.join(', ')}. Every version in the table is what the fixture lockfile or the matrix job installs, checked by \`npm run compat:check\`.`,
+    `Node ${matrix.node.engines}; the unit and integration suites run on Node ${matrix.node.tested.join(', ')}.`,
+    '',
+    END,
+  ].join('\n');
+}
+
+/**
+ * The block in `docs/compatibility.md`: what runs against each Payload version, grouped by when,
+ * then the record behind the README table. Lists and paragraphs only, so the Version PR, which
+ * formats nothing but the README, writes it in the form Prettier keeps.
+ */
+export function renderEvidence(matrix: Matrix, viteLine = ''): string {
+  const items = (source: PayloadEntry['source']): string[] =>
+    matrix.payload
+      .filter((entry) => entry.source === source)
+      .map((entry) => `- Payload ${entry.version}: ${String(entry.how)}.`);
+  const corpora = matrix.payload
+    .filter((entry) => entry.source === 'corpus')
+    .map((entry) => entry.version);
+  return [
+    EVIDENCE_START,
+    '',
+    'On every push:',
+    '',
+    ...items('tests'),
+    `- Payload ${corpora.join(', ')}: the messages a real admin of each version sent, captured once and replayed in \`tests/integration/wire-corpus.test.ts\`.`,
+    '',
+    'Every day:',
+    '',
+    ...items('watch'),
+    '',
+    'Outside CI:',
+    '',
+    ...items(undefined),
+    '',
+    `Every version in the README's framework table is what the fixture lockfile or the matrix job installs, checked by \`npm run compat:check\`.`,
     '',
     evidenceLine(matrix.featureEvidence),
     '',
     ...(viteLine === '' ? [] : [viteLine, '']),
     `The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the \`hook-matrix\` job runs after installing the floors over the lockfile (${matrix.hooks.map((hook) => `${hook.name} ${hook.floor}`).join(', ')}), and at what the lockfile installs (${matrix.hooks.map((hook) => `${hook.name} ${hook.current}`).join(', ')}), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by \`svelte/compiler\` and rendered by the real \`svelte/server\`.`,
     '',
-    ...payload,
-    '',
-    END,
+    EVIDENCE_END,
   ].join('\n');
 }
 
@@ -364,6 +404,13 @@ async function validate(matrix: Matrix): Promise<readonly string[]> {
       matrixValues(workflow, job, key).map(String),
     ),
   );
+  for (const entry of matrix.payload) {
+    if ((entry.source === 'corpus') !== (entry.how === undefined)) {
+      problems.push(
+        `Payload ${entry.version}: ${entry.source === 'corpus' ? 'a corpus entry takes no `how`' : 'the entry says no `how`'}`,
+      );
+    }
+  }
   const corpusVersions = (await readdir(resolve(ROOT, 'tests/fixtures/wire-corpus')))
     .filter((file) => file.endsWith('.json'))
     .map((file) => file.replace(/^payload-/u, '').replace(/\.json$/u, ''))
@@ -453,13 +500,21 @@ function normalize(text: string): string {
     .join('\n');
 }
 
-function replaceBlock(readme: string, block: string): string {
-  const start = readme.indexOf(START);
-  const end = readme.indexOf(END);
+interface Block {
+  readonly path: string;
+  readonly name: string;
+  readonly start: string;
+  readonly end: string;
+  readonly text: string;
+}
+
+function replaceBlock(current: string, block: Block): string {
+  const start = current.indexOf(block.start);
+  const end = current.indexOf(block.end);
   if (start === -1 || end === -1 || end < start) {
-    throw new Error(`README.md lacks the ${START} … ${END} markers`);
+    throw new Error(`${block.name} lacks the ${block.start} … ${block.end} markers`);
   }
-  return readme.slice(0, start) + block + readme.slice(end + END.length);
+  return current.slice(0, start) + block.text + current.slice(end + block.end.length);
 }
 
 async function main(): Promise<void> {
@@ -474,25 +529,39 @@ async function main(): Promise<void> {
     console.log('compat-table: quality/compat-matrix.json refreshed; read the diff');
   }
   const problems = [...(await validate(matrix))];
-  const readme = await readFile(README, 'utf8');
-  const block = render(
-    matrix,
-    matrix.vite === undefined ? '' : renderViteLine(await viteFacts(matrix), matrix.vite.measured),
-  );
-  const next = replaceBlock(readme, block);
-  const same = normalize(next) === normalize(readme);
-  if (mode === '--write' || mode === '--refresh') {
-    if (!same) await writeFile(README, next, 'utf8');
-    console.log(`compat-table: README ${same ? 'unchanged' : 'updated (run npm run format)'}`);
-  } else if (!same) {
-    problems.push(
-      'README compatibility block differs from quality/compat-matrix.json; run npm run compat:write',
-    );
+  const viteLine =
+    matrix.vite === undefined ? '' : renderViteLine(await viteFacts(matrix), matrix.vite.measured);
+  const blocks: readonly Block[] = [
+    { path: README, name: 'README.md', start: START, end: END, text: render(matrix) },
+    {
+      path: EVIDENCE,
+      name: 'docs/compatibility.md',
+      start: EVIDENCE_START,
+      end: EVIDENCE_END,
+      text: renderEvidence(matrix, viteLine),
+    },
+  ];
+  for (const block of blocks) {
+    const current = await readFile(block.path, 'utf8');
+    const next = replaceBlock(current, block);
+    const same = normalize(next) === normalize(current);
+    if (mode === '--write' || mode === '--refresh') {
+      if (!same) await writeFile(block.path, next, 'utf8');
+      console.log(
+        `compat-table: ${block.name} ${same ? 'unchanged' : 'updated (run npm run format)'}`,
+      );
+    } else if (!same) {
+      problems.push(
+        `${block.name} compatibility block differs from quality/compat-matrix.json; run npm run compat:write`,
+      );
+    }
   }
   for (const problem of problems) console.error(`FAIL ${problem}`);
   if (problems.length > 0) throw new Error(`compat-table: ${String(problems.length)} problem(s)`);
   if (mode === '--check') {
-    console.log('compat-table: README block and CI matrix agree with quality/compat-matrix.json');
+    console.log(
+      'compat-table: README.md, docs/compatibility.md and the CI matrix agree with quality/compat-matrix.json',
+    );
   }
 }
 

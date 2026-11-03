@@ -455,7 +455,7 @@ integration tests and `fieldSchemaJSON` typing;
 real-admin E2E on every push; 4.0.0-beta.4 and beta.6 by corpora captured from
 a real Payload 4 admin (the fixture stays on 3.x), by one measurement of the config
 plugin against a real admin and, for beta.6, by one run of the field-findings suite in
-three engines, all outside CI ([compatibility list](../README.md#compatibility)); `latest`
+three engines, all outside CI ([compatibility page](compatibility.md#what-runs-against-each-version)); `latest`
 and the 4.0 pre-releases by the daily watch — wire format, sender source and
 a real admin — the latter as early warning only. The
 four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all
