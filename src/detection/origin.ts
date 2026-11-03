@@ -6,6 +6,7 @@
  */
 
 import { isDevMode, isInIframe } from './environment';
+import { noticeOnce } from './notice';
 
 const LOCALHOST_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i;
 const VALID_ORIGIN_PATTERN = /^https?:\/\/[^/?#\s]+$/i;
@@ -79,6 +80,22 @@ export class OriginDetector {
           // opaque referrer
         }
       }
+    }
+    // Only a detector built without the option, with a referrer and no origins
+    // of its own, trusts the referrer by default; 3.0 stops (ADR 0007, row 22).
+    // The package's own callers pass the option, so the inline runtime leaves
+    // the notice out.
+    if (
+      !(typeof __INLINE_BUILD__ !== 'undefined' && __INLINE_BUILD__) &&
+      options.enableReferrerDetection === undefined &&
+      referrerOrigin !== undefined &&
+      explicit.size === 0
+    ) {
+      noticeOnce(
+        'origin-referrer',
+        '`new OriginDetector()` trusts the referrer unless `enableReferrerDetection` says so; ' +
+          '3.0 does not (ADR 0007, row 22).',
+      );
     }
     const allowLocalhost =
       (options.enableLocalhostMatching ?? true) && (options.forceDevMode ?? isDevMode());

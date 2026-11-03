@@ -11,6 +11,7 @@ import { hookImportLines, refuseOutsideReference } from '@adapters/shared/hook-r
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
 import type { LivePreviewAstroOptions } from './types';
 import { ASTRO_PAGE } from './page-facts';
+import { isDevelopmentProcess, warnOnce } from '@/types/dev-warning';
 import { islandModuleTable, writeIslandTable } from './island-table';
 
 // Local shims keep `astro` a runtime-optional peer.
@@ -185,13 +186,38 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
           setupLoaderMode(ctx, options);
           return;
         }
-        ctx.injectScript(
-          'head-inline',
-          generateInlineScript(inlineScriptConfig(options, ASTRO_PAGE)),
-        );
+        const script = generateInlineScript(inlineScriptConfig(options, ASTRO_PAGE));
+        if (options.mode === undefined && isDevelopmentProcess()) {
+          warnInlineDefault(ctx, options, script);
+        }
+        ctx.injectScript('head-inline', script);
       },
     },
   };
+}
+
+/**
+ * The default 3.0 changes (ADR 0007, row 33), with the two sizes measured on
+ * this project's own options rather than quoted, so the numbers never go stale.
+ */
+function warnInlineDefault(
+  ctx: AstroConfigSetupContext,
+  options: LivePreviewAstroOptions,
+  inline: string,
+): void {
+  const asset = loaderAsset(ctx.config?.base ?? '/', options.runtime);
+  const loader = generateLoaderScript(inlineScriptConfig(options, ASTRO_PAGE), {
+    runtimeSrc: asset.urlPath,
+    integrity: asset.integrity,
+  });
+  const size = (text: string): string => String(new TextEncoder().encode(text).length);
+  warnOnce(
+    'astro-inline-default',
+    `\`livePreview()\` without \`mode\` delivers inline: ${size(inline)} bytes of runtime in ` +
+      `every page, against a ${size(loader)}-byte bootstrap with \`mode: 'loader'\`. 3.0 makes ` +
+      "`loader` the default; set `mode: 'inline'` to keep this, or `mode: 'loader'` now " +
+      '(ADR 0007, row 33).',
+  );
 }
 
 /**

@@ -11,7 +11,7 @@ import {
   runtimeDefaultsFor,
   V2_RUNTIME_DEFAULTS,
 } from '@/types/defaults-profile';
-import { warnDeprecatedOptions } from '@/types/dev-warning';
+import { warnChangingDefaults, warnDeprecatedOptions } from '@/types/dev-warning';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import type { InlineScriptConfig } from '@/types/inline-config';
 import type { PreviewSignal } from './preview-request';
@@ -34,6 +34,7 @@ export interface ResolvedPolicyOptions {
 export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPolicyOptions {
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- read to warn about it
   warnDeprecatedOptions({ defaults: options.defaults, onUnboundChange: options.onUnboundChange });
+  warnChangingDefaults(options);
   const adapter = adapterDefaultsFor(options.defaults);
   const runtime = runtimeDefaultsFor(options.defaults);
   // The inline runtime already defaults to the v2 rows, so only a differing

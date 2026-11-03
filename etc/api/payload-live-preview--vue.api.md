@@ -5,9 +5,9 @@
 ```ts
 
 import { ComputedRef } from 'vue';
-import { D as DocumentSessionOptions } from '../../document-session-BuYuO3ae.js';
-import { a as DocumentSnapshot } from '../../document-session-BuYuO3ae.js';
-import { b as DocumentStatus } from '../../document-session-BuYuO3ae.js';
+import { D as DocumentSessionOptions } from '../../document-session-oK92QjES.js';
+import { a as DocumentSnapshot } from '../../document-session-oK92QjES.js';
+import { b as DocumentStatus } from '../../document-session-oK92QjES.js';
 
 export { DocumentSessionOptions }
 

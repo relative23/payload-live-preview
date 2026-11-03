@@ -69,6 +69,12 @@ export interface LivePreviewScriptProps {
 }
 
 // @public
+export function livePreviewScriptProps(options: LivePreviewNextOptions & {
+    readonly delivery: 'asset';
+    readonly nonce?: string;
+}): LivePreviewScriptProps;
+
+// @public @deprecated
 export function livePreviewScriptProps(options?: LivePreviewNextOptions & {
     readonly nonce?: string;
 }): LivePreviewScriptProps;

@@ -63,8 +63,8 @@
 import { createPreviewPolicy } from '@adapters/shared/policy';
 import { bindDecisionHooks } from '@adapters/shared/response';
 import { lazyPeer } from '@adapters/shared/optional-peer';
-import { livePreviewScriptProps, type LivePreviewNextOptions } from './adapter';
-import type { LivePreviewScriptProps } from './adapter';
+import type { LivePreviewNextOptions } from './adapter';
+import { scriptElementProps, type LivePreviewScriptProps } from './script-element';
 
 /** What the component takes: every adapter option, plus the request it decides for. */
 export interface LivePreviewScriptComponentProps extends LivePreviewNextOptions {
@@ -121,6 +121,6 @@ export async function LivePreviewScript(
   const createElement = await loadCreateElement();
   return createElement(
     'script',
-    livePreviewScriptProps(nonce === undefined ? options : { ...options, nonce }),
+    scriptElementProps(nonce === undefined ? options : { ...options, nonce }),
   );
 }

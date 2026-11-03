@@ -65,6 +65,9 @@ function open(
     serverURL: SERVER,
     allowedOrigins: [ADMIN],
     eventSourcePolicy: 'any',
+    // Explicitly no deadline: this file counts the identity warnings, and a
+    // hook without `timeoutMs` adds the 3.0 one (document-session-notices.test.ts).
+    timeoutMs: 0,
     fetchFn,
     ...extra,
   });
@@ -227,13 +230,16 @@ describe('DocumentSession with a document', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('without a document, still follows every message (the 2.x default)', async () => {
+  it('without a document, still follows every message (the 2.x default) and says 3.0 will not', async () => {
     const { urls, fetchFn } = server();
     const session = open({ id: '2', title: 'Two' }, fetchFn);
     update('pages', '1', 'Typed into one');
     await settle();
     expect(urls).toEqual([`${SERVER}/api/pages/1`]);
     expect(session.getSnapshot().status).toBe('live');
-    expect(warn).not.toHaveBeenCalled();
+    // The default 3.0 changes for this hook, once, and nothing else.
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
+      expect.stringContaining('A hook without `document`'),
+    ]);
   });
 });

@@ -78,6 +78,7 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
     enableReferrerDetection,
     enableLocalhostMatching,
     document,
+    requireLocale,
     fetchFn,
     target,
   } = options;
@@ -95,6 +96,7 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
       : 'global' in document
         ? `global ${document.global} ${document.locale ?? ''}`
         : `collection ${document.collection} ${String(document.id)} ${document.locale ?? ''}`,
+    String(requireLocale ?? ''),
     // A separator no origin, route prefix or policy name can contain.
   ].join(' | ');
   const held = useRef<{
@@ -116,6 +118,7 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
         ...(enableReferrerDetection !== undefined ? { enableReferrerDetection } : {}),
         ...(enableLocalhostMatching !== undefined ? { enableLocalhostMatching } : {}),
         ...(document !== undefined ? { document } : {}),
+        ...(requireLocale !== undefined ? { requireLocale } : {}),
         ...(fetchFn !== undefined ? { fetchFn } : {}),
         ...(target !== undefined ? { target } : {}),
       }),

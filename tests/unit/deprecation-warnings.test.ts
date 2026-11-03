@@ -46,8 +46,12 @@ describe('what 3.0 removes warns once in development (ADR 0026)', () => {
     resetDevWarnings();
   });
 
+  // The merge deadline 3.0 adds is a changed default, not a removal; its own
+  // file holds it (three-zero-defaults.test.ts).
   function warnings(): string[] {
-    return warn.mock.calls.map(([message]) => String(message));
+    return warn.mock.calls
+      .map(([message]) => String(message))
+      .filter((message) => !message.includes('`mergeTimeoutMs` is not set'));
   }
 
   it('isPreviewRequest() answers as hasPreviewIntent() and names it, once', () => {
@@ -178,10 +182,11 @@ describe('what 3.0 removes warns once in development (ADR 0026)', () => {
       'admin-origins',
       'defaults-v1',
       'is-preview-request',
+      'merge-deadline',
       'on-unbound-change',
       'replay-is-used',
       'set-sanitizer-document',
     ]);
-    expect(warnings()).toHaveLength(6);
+    expect(warn).toHaveBeenCalledTimes(7);
   });
 });

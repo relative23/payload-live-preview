@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is held on purpose until 3.0 */
 /**
  * ADR 0007's 2.0 gate, "migration verified in two materially different apps" —
  * app two: the Next.js fixture as it stood at v1.8.1.

@@ -136,3 +136,47 @@ cannot be read. A staging preview on another host hears nothing.
 
 The lean inline profile leaves the warning out, as it leaves out other
 features, and Payload 2 behaves there as before. Nothing else on Payload 2 changes.
+
+## Addendum (2026-11-03): the defaults 3.0 changes warn too, in 2.4
+
+Up to 2.3 four rows that change a default said nothing at run time: the
+referrer trust of `new OriginDetector()` (row 22), a hook without `document`
+(row 26), a merge without a deadline (row 27) and an update without a locale
+merged by a hook with one (row 31). Since 2.4 each says so once in
+development, and only where 3.0 would behave differently. Two new rows join
+them and warn from the start: inline delivery through `livePreviewScriptProps()`
+(row 32) and the Astro integration's inline default, which 3.0 replaces with
+`loader` (row 33).
+
+| Row | Warns when                                                                                        | Where                                     | Silenced by                                         |
+| --- | ------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------- |
+| 22  | a detector built without `enableReferrerDetection`, with no origins of its own, read a referrer   | the browser, once per page                | passing the option either way                       |
+| 26  | a hook or `createDocumentSession()` starts listening without `document`                           | the browser, once per page                | `document`                                          |
+| 27  | a hook starts listening without `timeoutMs`; an adapter or the generator gets no `mergeTimeoutMs` | the browser; the server, once per process | any value, `0` for none                             |
+| 31  | a hook with `document.locale` merged an update that names no locale                               | the browser, once per page                | `requireLocale: true`, which is 3.0's behaviour     |
+| 32  | `livePreviewScriptProps()` renders the whole runtime                                              | the server, once per process              | `await LivePreviewScript(…)` or `delivery: 'asset'` |
+| 33  | `livePreview()` runs without `mode`                                                               | the server, once per process              | `mode: 'inline'` or `mode: 'loader'`                |
+
+The browser rows use `isDevMode()`, as the Payload 2 notice does, through a
+per-page counterpart of `warnOnce` whose keys live on `globalThis`. The inline
+runtime leaves row 22 out: the package's own callers always pass the option.
+Rows 32 and 33 measure their bytes from what they generated, so the warning
+names the project's own sizes.
+
+**Row 27's default, measured.** On 2026-11-03 the merge request, the runtime's
+`POST /api/<collection>/<id>` with `X-Payload-HTTP-Method-Override: GET`, was
+timed against Payload 3.92.1 under `next dev` (Next.js 16.4.3, PostgreSQL 18
+with PostGIS, TLS through Traefik) on 16 documents of a site with layout
+blocks, at depth 0, 1 and 2:
+
+| Case                                | Requests | p50      | p99       | Slowest  |
+| ----------------------------------- | -------- | -------- | --------- | -------- |
+| one editor, one merge after another | 300      | 8–11 ms  | 32–36 ms  | 42 ms    |
+| eight editors at once               | 960      | 37–49 ms | 93–112 ms | 130 ms   |
+| the first API request after a start | 3        | —        | —         | 1 463 ms |
+
+The first merge after that first request took 20 to 23 ms. A default of
+10 000 ms leaves about seven times the slowest request measured. Not measured:
+a CMS across a network, a serverless cold start, and Payload 2, whose merge
+is a series of requests that one deadline covers together. The value is set
+before 3.0; 2.x keeps no default.

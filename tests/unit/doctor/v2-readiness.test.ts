@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is held on purpose until 3.0 */
 import { describe, expect, it } from 'vitest';
 import { analyzeV2Readiness, readInlineConfig } from '@doctor/readiness';
 import { generateInlineScript } from '@inline/generator';

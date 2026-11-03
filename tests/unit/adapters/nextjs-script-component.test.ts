@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is held on purpose until 3.0 */
 import { describe, expect, it } from 'vitest';
 import { LivePreviewScript } from '@adapters/nextjs/index';
 import { livePreviewScriptProps } from '@adapters/nextjs/adapter';
