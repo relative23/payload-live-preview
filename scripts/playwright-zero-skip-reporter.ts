@@ -1,6 +1,15 @@
 /** Runtime enforcement for Playwright's zero-skip and zero-flake policy. */
 
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import type { FullResult, Reporter, TestCase, TestResult } from '@playwright/test/reporter';
+
+/**
+ * Where a run writes the steps it started again, empty list included. CI uploads the file from
+ * every real-admin job, and `scripts/count-repeated-attempts.ts` holds their sum to a budget
+ * for the whole run.
+ */
+export const REPEATED_ATTEMPTS_FILE = 'test-results/repeated-attempts.json';
 
 type PlaywrightStatus = 'failed' | 'interrupted' | 'passed' | 'skipped' | 'timedOut';
 
@@ -71,6 +80,12 @@ export function findPlaywrightRuntimePolicyViolations(
  */
 export default class PlaywrightZeroSkipReporter implements Reporter {
   readonly #tests: PlaywrightRuntimePolicyInput[] = [];
+  readonly #attemptsFile: string;
+
+  /** Playwright passes the options a config gives the reporter; the default suits every config. */
+  constructor(options: { readonly attemptsFile?: string } = {}) {
+    this.#attemptsFile = options.attemptsFile ?? REPEATED_ATTEMPTS_FILE;
+  }
 
   onTestEnd(test: TestCase, result: TestResult): void {
     this.#tests.push({
@@ -89,6 +104,8 @@ export default class PlaywrightZeroSkipReporter implements Reporter {
 
   onEnd(_result: FullResult): Promise<{ status: FullResult['status'] } | undefined> {
     const repeated = listRepeatedAttempts(this.#tests);
+    mkdirSync(dirname(this.#attemptsFile), { recursive: true });
+    writeFileSync(this.#attemptsFile, `${JSON.stringify({ attempts: repeated }, undefined, 2)}\n`);
     if (repeated.length > 0) {
       console.log(
         `Steps a test started again (${String(repeated.length)}, allowed):\n${repeated
