@@ -20,6 +20,7 @@ table.
 | the `@internal` names the public entries still export at runtime are removed | `etc/api/*.api.md` lists every `@internal` name                                                                        | stop importing them; a name you need gets a public or `@beta` class first                                                                                                       |
 | Payload 2.x is no longer supported                                           | 2.x releases keep supporting it; Payload 3.x and 4.x are what 3.0 supports                                             | upgrade the CMS to Payload 3 with Payload's own migration guide; the frontend options stay as they are                                                                          |
 | a hook has to name its document                                              | `document: { collection, id }` or `{ global }` on `useLivePreviewDocument()`                                           | without it a hook takes the update for any document; with it, a second hook on the page stops showing the first one's document                                                  |
+| a hook with a `locale` leaves alone an update that names no locale           | nothing to switch on; Payload 3 and 4 name the admin's locale in every update when the config has localization         | where the admin sends updates without a locale, leave `locale` out of `document`                                                                                                |
 | a merge has a default deadline                                               | `mergeTimeoutMs` in the runtime, `timeoutMs` on a hook                                                                 | a stalled Payload API shows up as a reported failure, not as an update that never arrives; set a higher value where the server answers slowly                                   |
 | Node 22 or newer                                                             | run the build and the server on Node 22                                                                                | Node 20 reached end of life on 2026-04-30; 2.x runs on both                                                                                                                     |
 | the `payload` peer range drops `^2`                                          | nothing, beyond the Payload 2 row above                                                                                | 3.0 takes Payload 3 and 4, and Payload 5 arrives in a 3.x minor. No framework major leaves with 3.0                                                                             |
@@ -27,9 +28,10 @@ table.
 Each form 3.0 removes warns once per process while it runs in development,
 never in production, and names what replaces it, so the server log lists what
 is left. The rows that change a default or a surface instead of removing a form
-(referrer trust, the route refresh, the `@internal` names, a hook's `document`,
-the merge deadline, the Node and Payload ranges) say nothing at run time, except
-that `LP0810` names a refresh that returns no promise, under `debug`. `LP0204`
+(referrer trust, the route refresh, the `@internal` names, a hook's `document`
+and `locale`, the merge deadline, the Node and Payload ranges) say nothing at
+run time, except that `LP0810` names a refresh that returns no promise, under
+`debug`. `LP0204`
 says once in development that a page relies on the sub-field coverage default. The end of Payload 2 support warns once in the browser when
 the first update with `fieldSchemaJSON` arrives, from the runtime and from a hook:
 where `NODE_ENV` is readable, unless it is `production`, and elsewhere, such as an
