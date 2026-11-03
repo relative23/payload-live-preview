@@ -69,7 +69,7 @@ function partitionExportSpecifiers(
 }
 
 /** The Astro integration reads a virtual options module that only a bundler provides. */
-async function writeVirtualModuleLoader(consumer: string): Promise<string> {
+export async function writeVirtualModuleLoader(consumer: string): Promise<string> {
   const loader = resolve(consumer, 'virtual-module-loader.mjs');
   await writeFile(
     loader,

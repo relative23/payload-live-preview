@@ -30,7 +30,7 @@ import {
   probeLocalDependency,
   probeUnavailableDependencies,
 } from './package-smoke-consumer';
-import { checkPackedImportSmokes } from './package-smoke-imports';
+import { checkPackedImportSmokes, writeVirtualModuleLoader } from './package-smoke-imports';
 import {
   CODEGEN_EXPORT_NAMES,
   PEER_REQUIRED_EXPORT_NAMES,
@@ -54,6 +54,7 @@ import {
   checkPackedPayloadPluginTypeContracts,
   checkPackedTypeContracts,
 } from './package-smoke-types';
+import { checkDeclaredValuesExist } from './package-smoke-values';
 import { findForbiddenPackageLifecycleScripts } from './release-contracts';
 
 const PAYLOAD_PLUGIN_TYPE_VERSIONS = ['2.32.3', '3.89.0'] as const;
@@ -304,15 +305,16 @@ async function main(): Promise<void> {
     }
 
     const codegenPackageRoot = resolve(codegenConsumer, 'node_modules/payload-live-preview');
-    // Each entry's declarations are extracted where its peers resolve: the
-    // codegen consumer has `ts-morph`, the peer consumer has the frameworks the
-    // hooks type against, and everything else needs neither.
-    const peerPackageRoot = resolve(peerConsumer, 'node_modules/payload-live-preview');
-    const packageRootForEntry = (entry: TypedApiEntry): string => {
-      if (CODEGEN_EXPORT_NAMES.has(entry.exportName)) return codegenPackageRoot;
-      if (PEER_REQUIRED_EXPORT_NAMES.has(entry.exportName)) return peerPackageRoot;
-      return packageRoot;
+    // Each entry's declarations are extracted, and its values loaded, where its
+    // peers resolve: the codegen consumer has `ts-morph`, the peer consumer has
+    // the frameworks the hooks type against, and everything else needs neither.
+    const consumerForEntry = (entry: TypedApiEntry): string => {
+      if (CODEGEN_EXPORT_NAMES.has(entry.exportName)) return codegenConsumer;
+      if (PEER_REQUIRED_EXPORT_NAMES.has(entry.exportName)) return peerConsumer;
+      return consumer;
     };
+    const packageRootForEntry = (entry: TypedApiEntry): string =>
+      resolve(consumerForEntry(entry), 'node_modules/payload-live-preview');
 
     const apiReportFailures = await checkApiReports({
       apiConfigPath: API_EXTRACTOR_CONFIG,
@@ -332,6 +334,14 @@ async function main(): Promise<void> {
     );
     for (const failure of declarationParityFailures) {
       failures.push(`declaration parity: ${failure}`);
+    }
+    const declaredValueFailures = await checkDeclaredValuesExist({
+      targets: typedApiEntries.map((entry) => ({ entry, consumer: consumerForEntry(entry) })),
+      packageName,
+      loader: await writeVirtualModuleLoader(consumer),
+    });
+    for (const failure of declaredValueFailures) {
+      failures.push(`declared values: ${failure}`);
     }
 
     failures.push(...(await findPackedTargetFailures(manifestValue, packageRoot, packedFiles)));
@@ -367,7 +377,7 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      `[package] PASS ${String(evidence.files.length)} packed files; publint, ATTW, ${String(typedApiEntries.length)} API reports, isolated script-free strict installs, peer-free and explicit-peer ESM/CJS, exact Payload 2.32.3/3.89.0 plugin types, DOM-less Lexical sanitizer contexts, CLI, and positive/negative strict NodeNext types verified`,
+      `[package] PASS ${String(evidence.files.length)} packed files; publint, ATTW, ${String(typedApiEntries.length)} API reports, isolated script-free strict installs, peer-free and explicit-peer ESM/CJS, every declared value present at runtime, exact Payload 2.32.3/3.89.0 plugin types, DOM-less Lexical sanitizer contexts, CLI, and positive/negative strict NodeNext types verified`,
     );
 
     await finalizePackageArtifact({

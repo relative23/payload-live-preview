@@ -4,7 +4,7 @@
  * from the document session; they do not claim a native Payload 2 locale wire.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DocumentSession } from '@adapters/shared/document-session';
+import { createDocumentSession } from '@adapters/shared/document-session';
 import { post, startRuntime, TRUSTED, type RuntimeHarness } from '../../helpers/runtime';
 
 const schema = [
@@ -87,7 +87,7 @@ describe('v2 schema population across explicit SDK locales', () => {
 
   it('the document session repopulates the same relationship for the explicit en → fr envelope', async () => {
     const fetchFn = localizedFetch();
-    const held = new DocumentSession<Record<string, unknown>>(
+    const held = createDocumentSession<Record<string, unknown>>(
       { author: { id: 'Initial', name: 'Initial' } },
       {
         serverURL: TRUSTED,

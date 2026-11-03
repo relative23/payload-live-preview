@@ -69,7 +69,9 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // 3.0 ends Payload 2 support, from the protocol tracker and from document-session.ts. No request path changes.
 // 2026-10-31: 1 585 → 1 591, the factory and its header that make the session public.
 // 2026-11-02: +3 in data-merger.ts, the flag that reports a merge deadline as one.
-export const REVIEWED_SCOPE_LINES = 1594;
+// 2026-11-03: +5 in document-session.ts (227 → 232), the `DocumentSession` interface the factory
+// returns, so no entry's declarations offer the class as a value. No request path changes.
+export const REVIEWED_SCOPE_LINES = 1599;
 
 interface OurFile {
   readonly file: string;

@@ -88,7 +88,8 @@ export interface ApiReportCheckOptions {
  * the surface is the same, named once instead of copied into two entries.
  */
 // 2026-10-31: +1, the session's `Listener`, a plain `() => void` that `createDocumentSession()` reaches from `/core`.
-export const FORGOTTEN_EXPORT_BASELINE = 51;
+// 2026-11-03: -1, the same `Listener`: `DocumentSession` is an interface whose `subscribe` spells it `() => void`.
+export const FORGOTTEN_EXPORT_BASELINE = 50;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

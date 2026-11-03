@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
-import { DocumentSession } from '@adapters/shared/document-session';
+import { createDocumentSession } from '@adapters/shared/document-session';
 import { ProtocolTracker } from '@/core/protocol-tracker';
 import { PAYLOAD_2_HINT } from '@/core/protocol-version';
 
@@ -54,7 +54,7 @@ describe('the Payload 2 hint from a hook', () => {
   });
 
   function open(document?: { collection: string; id: string }): void {
-    const session = new DocumentSession<{ title: string }>(
+    const session = createDocumentSession<{ title: string }>(
       { title: 'One' },
       {
         serverURL: 'https://cms.example.com',

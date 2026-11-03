@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DocumentSession } from '@adapters/shared/document-session';
+import { createDocumentSession, type DocumentSession } from '@adapters/shared/document-session';
 
 /**
  * The five failure cases measured against `@payloadcms/live-preview` in the
@@ -66,7 +66,7 @@ function open(options: Partial<Parameters<typeof createSession>[0]> = {}): Docum
 function createSession(
   options: Partial<{ serverURL: string; fetchFn: typeof fetch; depth: number; initial: Doc }> = {},
 ): DocumentSession<Doc> {
-  return new DocumentSession<Doc>(options.initial ?? INITIAL, {
+  return createDocumentSession<Doc>(options.initial ?? INITIAL, {
     serverURL: options.serverURL ?? SERVER,
     allowedOrigins: [ADMIN],
     eventSourcePolicy: 'any',

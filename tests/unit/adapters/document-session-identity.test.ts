@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
-import { DocumentSession, type DocumentSessionOptions } from '@adapters/shared/document-session';
+import {
+  createDocumentSession,
+  type DocumentSession,
+  type DocumentSessionOptions,
+} from '@adapters/shared/document-session';
 
 /**
  * The `document` option: a session that names the document it previews merges
@@ -57,7 +61,7 @@ function open(
   fetchFn: typeof fetch,
   extra: Partial<DocumentSessionOptions> = {},
 ): DocumentSession<Doc> {
-  const session = new DocumentSession<Doc>(initial, {
+  const session = createDocumentSession<Doc>(initial, {
     serverURL: SERVER,
     allowedOrigins: [ADMIN],
     eventSourcePolicy: 'any',
