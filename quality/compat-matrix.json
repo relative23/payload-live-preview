@@ -28,9 +28,9 @@
         "sources": ["tests/e2e/specs/live-preview.spec.ts", "playwright.config.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -65,9 +65,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -124,9 +124,9 @@
         "sources": ["tests/e2e/specs/hybrid-fragment.spec.ts", "src/adapters/astro/fragments.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -163,9 +163,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -202,9 +202,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -235,9 +235,9 @@
         "sources": ["tests/real-payload/homepage-live-preview.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -268,9 +268,9 @@
         "sources": ["tests/e2e/specs/nextjs-live-preview.spec.ts", "playwright.config.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -301,9 +301,9 @@
         "sources": ["tests/e2e/specs/nextjs-fragment.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -400,9 +400,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -439,9 +439,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -472,9 +472,9 @@
         "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -505,9 +505,9 @@
         "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -538,9 +538,9 @@
         "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -571,9 +571,9 @@
         "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -609,9 +609,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -648,9 +648,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -687,9 +687,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -720,9 +720,9 @@
         "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -753,9 +753,9 @@
         "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -786,9 +786,9 @@
         "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -819,9 +819,9 @@
         "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -857,9 +857,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -896,9 +896,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -935,9 +935,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -948,7 +948,7 @@
       "feature": "prebuilt inline runtime",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -967,9 +967,9 @@
         "sources": ["examples/pure-html/package.json", "tests/e2e/specs/lean-profile.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -980,7 +980,7 @@
       "feature": "bundled client entry",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -999,9 +999,9 @@
         "sources": ["examples/vanilla-client/package.json", "tests/e2e/specs/reveal.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1012,7 +1012,7 @@
       "feature": "immutable-tarball build, nonce and hash CSP, and the origin rules",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1035,9 +1035,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1048,7 +1048,7 @@
       "feature": "authorized renderer service path",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1072,9 +1072,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1107,9 +1107,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1146,9 +1146,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1178,9 +1178,9 @@
         "sources": ["tests/unit/adapters/vue-composable.test.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1217,9 +1217,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1255,9 +1255,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1293,9 +1293,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1329,9 +1329,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1366,9 +1366,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1404,9 +1404,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1440,9 +1440,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1477,9 +1477,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1514,9 +1514,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1551,9 +1551,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1588,9 +1588,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1625,9 +1625,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1662,9 +1662,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1675,7 +1675,7 @@
       "feature": "live preview against the real Payload admin, runtime baked in, origin rule as the gate",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1697,9 +1697,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1710,7 +1710,7 @@
       "feature": "the field findings from Payload's own messages: a moved row, an option's value, a changed block no renderer draws, closed details, a picture's sources, an internal link, the coverage warning, a route that waits for the save",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1733,9 +1733,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1766,9 +1766,9 @@
         "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1799,9 +1799,9 @@
         "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1812,7 +1812,7 @@
       "feature": "every export-map entry in isolated package consumers",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1860,9 +1860,9 @@
         "sources": ["scripts/check-package.ts", "scripts/package-smoke-imports.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1873,7 +1873,7 @@
       "feature": "code generation, annotation, doctor, migration and executable entrypoints",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1894,9 +1894,9 @@
         "sources": ["scripts/check-package.ts", "scripts/package-smoke-imports.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1931,9 +1931,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -1968,9 +1968,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -2005,9 +2005,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -2042,9 +2042,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -2079,9 +2079,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -2116,9 +2116,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -2129,7 +2129,7 @@
       "feature": "manual navigation commit and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -2152,9 +2152,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
@@ -2165,7 +2165,7 @@
       "feature": "client navigation method and inline soft-navigation configuration",
       "version": {
         "kind": "exact",
-        "value": "2.3.1",
+        "value": "2.3.2",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -2188,9 +2188,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "feaff5b2e939a4e9361e1661394798b07328d790e8976bb0155ac576d9bd8b22",
-          "commit": "01129c7bcc87a93ca324637b03c801d6907e4dfd",
-          "executedAt": "2026-11-02T07:02:34Z",
+          "sha256": "07486b89d7e55ed42e02d9a7fe1591635f8782bec39a96e7d465d27761638b55",
+          "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+          "executedAt": "2026-11-03T06:55:37Z",
           "conclusion": "success"
         }
       }
