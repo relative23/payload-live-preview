@@ -244,7 +244,10 @@ describe('the Nuxt module', () => {
     livePreviewModule({ defaults: 'v1', allowedOrigins: [ADMIN] }, nuxt);
     run();
     expect(nitro.handlers).toBeUndefined();
-    expect(templates.map((template) => template.filename)).toEqual([PLUGIN_FILENAME]);
+    expect(templates.map((template) => template.filename)).toEqual([
+      PLUGIN_FILENAME,
+      'payload-live-preview-navigation.client.mjs',
+    ]);
   });
 
   it('hands Nuxt its config key the way @nuxt/kit reads it, so nuxt.config types `livePreview`', async () => {

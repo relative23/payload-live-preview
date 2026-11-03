@@ -23,8 +23,11 @@
     "src/adapters/astro/index.ts",
     "src/adapters/astro/middleware-entry.ts",
     "src/adapters/nextjs/index.ts",
+    "src/adapters/nextjs/client.ts",
     "src/adapters/nuxt/index.ts",
+    "src/adapters/nuxt/client.ts",
     "src/adapters/sveltekit/index.ts",
+    "src/adapters/sveltekit/client.ts",
     "src/adapters/react/index.ts",
     "src/adapters/vue/index.ts",
     "src/adapters/nuxt/module.ts",
@@ -80,7 +83,10 @@
   // Its knip plugin is off: this repository has no `.svelte` source of its own,
   // only the fixtures under examples/, which knip does not walk.
   "svelte": false,
-  "ignoreDependencies": ["@arethetypeswrong/cli", "publint"],
+  // `next` is the optional peer `./nextjs/client` alone imports. It is not
+  // installed here: the unit test mocks its three hooks, and the Next examples
+  // run the component against the real one.
+  "ignoreDependencies": ["@arethetypeswrong/cli", "publint", "next"],
   // Internal registry constants and helpers intentionally export for tests and
   // source-barrel compatibility. Public/package exports remain entry points and
   // therefore are not globally ignored.

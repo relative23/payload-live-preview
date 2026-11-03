@@ -16,8 +16,10 @@
  * A Nuxt module is a plain function of `(inlineOptions, nuxt)`; `defineNuxtModule`
  * from `@nuxt/kit` is sugar around exactly that. Writing the function keeps
  * `@nuxt/kit` out of the dependency list — this package adapts Nuxt, it does not
- * build with it — and keeps the module readable as the two things it does:
- * take the options, and register a Nitro plugin written from them.
+ * build with it — and keeps the module readable as the things it does: take the
+ * options, register a Nitro plugin written from them, and register the client
+ * plugin that tells the runtime about client navigations (since 2.4; before,
+ * docs/nuxt.md had the project copy it).
  *
  * The plugin is generated rather than shipped. The module runs at build time and
  * the plugin runs per request in Nitro's own bundle, so the options cannot travel
@@ -43,6 +45,7 @@ import { isAbsolute, join, relative, resolve } from 'node:path';
 import { hookImportLines, refuseOutsideReference } from '@adapters/shared/hook-reference';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PreviewRequestLike } from '@adapters/shared/preview-request';
+import { warnOnce } from '@/types/dev-warning';
 
 /** What the module accepts, from `livePreview` in `nuxt.config.ts` or from `modules: [[..., options]]`. */
 export type LivePreviewModuleOptions = Omit<
@@ -57,6 +60,13 @@ export type LivePreviewModuleOptions = Omit<
    * specifier is passed to Nitro unchanged.
    */
   readonly authorizePreviewModule?: string;
+  /**
+   * Whether the module registers its client plugin for client navigations and
+   * route refreshes (`payload-live-preview/nuxt/client`). On by default; a
+   * project that still has the plugin docs/nuxt.md had it copy before 2.4
+   * keeps its own, and the module registers nothing beside it.
+   */
+  readonly navigation?: boolean;
 };
 
 /** The Nitro config slice this module writes into. */
@@ -64,6 +74,14 @@ export interface NitroConfigLike {
   plugins?: string[];
   /** Server handlers; the module adds its own as middleware when a hook is referenced. */
   handlers?: { readonly middleware?: boolean; readonly handler: string }[];
+}
+
+/** A Nuxt plugin entry as `nuxt.options.plugins` holds it. */
+export interface NuxtPluginLike {
+  /** The plugin file; the module's own is written into `buildDir`. */
+  readonly src: string;
+  /** Where the plugin runs; the module's own runs only in the browser. */
+  readonly mode?: 'client' | 'server' | 'all';
 }
 
 /** The one build template shape this module adds; Nuxt writes it to `buildDir/filename`. */
@@ -82,8 +100,12 @@ export interface NuxtLike {
   readonly options: {
     /** Required when authorizePreviewModule names a server hook. */
     readonly rootDir?: string;
+    /** Where the app's `plugins/` directory is; `app/` under Nuxt 4. */
+    readonly srcDir?: string;
     readonly buildDir: string;
     readonly build: { templates: NuxtTemplateLike[] };
+    /** The app plugins; the module adds its client plugin here. */
+    plugins?: (NuxtPluginLike | string)[];
     /** Nuxt's aliases (`~`, `~~`, `@`, …) to their directories. */
     readonly alias?: Readonly<Record<string, string>>;
     livePreview?: LivePreviewModuleOptions;
@@ -95,6 +117,11 @@ export interface NuxtLike {
 export const PLUGIN_FILENAME = 'payload-live-preview-nitro-plugin.mjs';
 /** The generated server handler's name, written beside the plugin when a hook is referenced. @internal */
 export const HANDLER_FILENAME = 'payload-live-preview-server-handler.mjs';
+/** The generated client plugin's name in `.nuxt/`. */
+const NAVIGATION_PLUGIN_FILENAME = 'payload-live-preview-navigation.client.mjs';
+
+/** The file docs/nuxt.md had a project create before 2.4, under `srcDir/plugins/`. */
+const RECIPE_PLUGIN = 'payload-live-preview-navigation.client';
 
 const EXTENSIONS = ['.ts', '.mts', '.js', '.mjs', '.cts', '.cjs'] as const;
 
@@ -168,7 +195,8 @@ function generatedParts(
   rootDir: string | undefined,
   alias: Readonly<Record<string, string>>,
 ): { readonly hook: string[]; readonly argument: string } {
-  const { authorizePreviewModule: reference, ...serializable } = options;
+  // `navigation` is the module's own switch; the Nitro adapter does not take it.
+  const { authorizePreviewModule: reference, navigation: _navigation, ...serializable } = options;
   const json = JSON.stringify(serializable);
   if (reference === undefined) return { hook: [], argument: json };
   refuseOutsideReference(reference);
@@ -221,6 +249,63 @@ function handlerSource(
 }
 
 /**
+ * The generated client plugin. Nuxt's composables come from `#app`, which
+ * only a Nuxt build resolves, so the plugin imports them and hands them to the
+ * package; the cleanup also goes to hot replacement, which reloads it.
+ */
+function navigationPluginSource(): string {
+  return [
+    "import { defineNuxtPlugin, refreshNuxtData } from '#app';",
+    "import { bindNuxtNavigation } from 'payload-live-preview/nuxt/client';",
+    '',
+    'export default defineNuxtPlugin({',
+    "  name: 'payload-live-preview:navigation',",
+    '  setup(nuxtApp) {',
+    '    const cleanup = bindNuxtNavigation(nuxtApp, refreshNuxtData);',
+    '    import.meta.hot?.dispose(cleanup);',
+    '  },',
+    '});',
+    '',
+  ].join('\n');
+}
+
+/** The recipe plugin a project still carries, if any: registering a second would dispatch twice. */
+function recipePlugin(srcDir: string | undefined): string | undefined {
+  if (srcDir === undefined) return undefined;
+  for (const extension of EXTENSIONS) {
+    const path = join(srcDir, 'plugins', RECIPE_PLUGIN + extension);
+    if (isFile(path)) return path;
+  }
+  return undefined;
+}
+
+/** Register the client plugin unless the options switch it off or the project has its own. */
+function registerNavigationPlugin(nuxt: NuxtLike, options: LivePreviewModuleOptions): void {
+  if (options.navigation === false) return;
+  const own = recipePlugin(nuxt.options.srcDir);
+  if (own !== undefined) {
+    warnOnce(
+      'nuxt-navigation-recipe',
+      `${relative(nuxt.options.rootDir ?? process.cwd(), own)} does what the module's own client ` +
+        'plugin does since 2.4, so the module leaves it in charge. Delete the file to use the ' +
+        'packaged one, or set `livePreview: { navigation: false }` to keep yours and silence this.',
+    );
+    return;
+  }
+  nuxt.options.build.templates.push({
+    filename: NAVIGATION_PLUGIN_FILENAME,
+    write: true,
+    getContents: navigationPluginSource,
+  });
+  const src = join(nuxt.options.buildDir, NAVIGATION_PLUGIN_FILENAME);
+  const plugins = (nuxt.options.plugins ??= []);
+  // A config reload runs the module again.
+  if (!plugins.some((entry) => (typeof entry === 'string' ? entry : entry.src) === src)) {
+    plugins.push({ src, mode: 'client' });
+  }
+}
+
+/**
  * The module itself. Options come from `livePreview` in the Nuxt config, from
  * the module's own inline options, or from both — the inline ones win, because
  * they are the more specific place to write them.
@@ -256,6 +341,7 @@ export default function livePreviewModule(
     });
   }
   const handler = join(nuxt.options.buildDir, HANDLER_FILENAME);
+  registerNavigationPlugin(nuxt, options);
   nuxt.hook('nitro:config', (config) => {
     const plugins = (config.plugins ??= []);
     // Nuxt re-runs modules on a config reload; registering twice would inject

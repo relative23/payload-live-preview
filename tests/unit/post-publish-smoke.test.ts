@@ -17,6 +17,8 @@ describe('published subpath classification', () => {
     expect(classified.map(([entry]) => entry)).toEqual(PUBLISHED);
     const skipped = classified.filter(([, kind]) => kind === 'not-node-importable').map(([e]) => e);
     expect(skipped).toEqual([
+      // It imports the App Router hooks, which only a Next build resolves for it.
+      './nextjs/client',
       './astro/RichText.astro',
       './astro/PreviewBoundary.astro',
       './astro/middleware-entry',
@@ -27,8 +29,11 @@ describe('published subpath classification', () => {
       './codegen',
       './codegen/astro',
     ]);
-    // A hook imports its framework at module scope, so the smoke installs it.
+    // A hook imports its framework at module scope, so the smoke installs it;
+    // so does the SvelteKit or Nuxt navigation entry.
     expect(classified.filter(([, kind]) => kind === 'needs-peer').map(([e]) => e)).toEqual([
+      './sveltekit/client',
+      './nuxt/client',
       './react',
       './vue',
     ]);

@@ -46,16 +46,34 @@
         "default": "./dist/adapters/nextjs/index.js"
       }
     },
+    "./nextjs/client": {
+      "import": {
+        "types": "./dist/adapters/nextjs/client.d.ts",
+        "default": "./dist/adapters/nextjs/client.js"
+      }
+    },
     "./sveltekit": {
       "import": {
         "types": "./dist/adapters/sveltekit/index.d.ts",
         "default": "./dist/adapters/sveltekit/index.js"
       }
     },
+    "./sveltekit/client": {
+      "import": {
+        "types": "./dist/adapters/sveltekit/client.d.ts",
+        "default": "./dist/adapters/sveltekit/client.js"
+      }
+    },
     "./nuxt": {
       "import": {
         "types": "./dist/adapters/nuxt/index.d.ts",
         "default": "./dist/adapters/nuxt/index.js"
+      }
+    },
+    "./nuxt/client": {
+      "import": {
+        "types": "./dist/adapters/nuxt/client.d.ts",
+        "default": "./dist/adapters/nuxt/client.js"
       }
     },
     "./nuxt-module": {
@@ -372,6 +390,7 @@
   ],
   "peerDependencies": {
     "astro": ">=4.0.0 <8.0.0",
+    "next": ">=15.5.0",
     "payload": "^2.0.0 || ^3.0.0 || ^4.0.0-0",
     "react": ">=18",
     "react-dom": ">=18",
@@ -382,6 +401,9 @@
   },
   "peerDependenciesMeta": {
     "astro": {
+      "optional": true
+    },
+    "next": {
       "optional": true
     },
     "payload": {

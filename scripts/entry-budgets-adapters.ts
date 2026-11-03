@@ -278,7 +278,15 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-04 (2.1.0: Nuxt no-reference compatibility and absolute-root reference guard):
   // Paired Node24.19/npm12.0.2, epoch1791096072; +263/+97/+82 B raw/gzip/Brotli; reserves 11/7/120 B.
   // Raw/gzip reserves unchanged; Brotli reserve 6 -> 120 B meets the recorded minimum.
-  'adapters/nuxt/module.js': { raw: 3_362, gzip: 1_443, brotli: 1_374 },
+  // 2026-11-03 (2.4: the module registers its client plugin for client navigations): paired Node24.22.1/npm12.0.2; +1531/+571/+521 B; reserves 11/7/120 B kept.
+  'adapters/nuxt/module.js': { raw: 4_893, gzip: 2_014, brotli: 1_895 },
+  //
+  // 2026-11-03 (2.4, the navigation entries): three new rows, each the first
+  // build plus the 16/12/120 B reserves of the hook rows above.
+  // Measured 1034/578/498, 506/353/285 and 695/430/358 B.
+  'adapters/nextjs/client.js': { raw: 1_050, gzip: 590, brotli: 618 },
+  'adapters/sveltekit/client.js': { raw: 522, gzip: 365, brotli: 405 },
+  'adapters/nuxt/client.js': { raw: 711, gzip: 442, brotli: 478 },
   // 2026-09-12 (C1): sveltekit brotli 42 479 → 42 620, the only metric the drawer-edit fix crossed (measured 42 500 + the ~120 B cushion).
   // 2026-09-14 (2.0.1): brotli 42 955 → 43 092. Its cushion was 4 B (measured 42 951), which
   // brotli's run-to-run swing crosses with no code change; the fix's build measured 42 972 and

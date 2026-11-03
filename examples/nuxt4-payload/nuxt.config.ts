@@ -5,7 +5,9 @@ import { livePreviewOptions } from './lib/live-preview';
 
 export default defineNuxtConfig({
   // The whole setup: the module registers the Nitro plugin and hands it these
-  // options. `server/plugins/live-preview.ts` used to do the same by hand.
+  // options. `server/plugins/live-preview.ts` used to do the same by hand, as
+  // `plugins/payload-live-preview-navigation.client.ts` did the client plugin
+  // the module has registered itself since 2.4.
   // The asset route in `server/routes/` reads the same object.
   modules: ['payload-live-preview/nuxt-module'],
   livePreview: livePreviewOptions,

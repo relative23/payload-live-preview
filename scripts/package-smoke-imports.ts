@@ -76,8 +76,12 @@ export async function writeVirtualModuleLoader(consumer: string): Promise<string
     [
       'const VIRTUAL_OPTIONS = "virtual:payload-live-preview/options";',
       'const VIRTUAL_URL = "data:text/javascript,export default {defaults:\\"v1\\"};";',
+      // `./nextjs/client` imports the App Router hooks, which only a Next build
+      // resolves for it; the smoke loads the entry, not Next.
+      'const NEXT_NAVIGATION_URL = "data:text/javascript,export const useRouter=()=>({refresh(){}});export const usePathname=()=>null;export const useSearchParams=()=>null;";',
       'export function resolve(specifier, context, nextResolve) {',
       '  if (specifier === VIRTUAL_OPTIONS) return { url: VIRTUAL_URL, shortCircuit: true };',
+      '  if (specifier === "next/navigation") return { url: NEXT_NAVIGATION_URL, shortCircuit: true };',
       '  return nextResolve(specifier, context);',
       '}',
       '',
@@ -473,12 +477,18 @@ export async function checkPackedImportSmokes(inputs: {
   const peerEsm = run(
     process.execPath,
     [
+      '--no-warnings',
+      '--experimental-loader',
+      loader,
       '--input-type=module',
       '--eval',
       esmProbeSource(
         {
           [packageSpecifier(inputs.packageName, './react')]: ['useLivePreviewDocument'],
           [packageSpecifier(inputs.packageName, './vue')]: ['useLivePreviewDocument'],
+          [packageSpecifier(inputs.packageName, './nextjs/client')]: ['LivePreviewNavigation'],
+          [packageSpecifier(inputs.packageName, './sveltekit/client')]: ['livePreviewNavigation'],
+          [packageSpecifier(inputs.packageName, './nuxt/client')]: ['bindNuxtNavigation'],
         },
         specifiers.peerEsm,
       ),

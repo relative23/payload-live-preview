@@ -259,11 +259,15 @@ async function main(): Promise<void> {
     }
     // The `./react` and `./vue` entries import their framework at module scope —
     // a hook cannot load one lazily — so they are imported here rather than in
-    // the peer-free consumer, where they would rightly fail.
+    // the peer-free consumer, where they would rightly fail. The three
+    // navigation entries add `svelte`; `next/navigation` comes from the loader.
     const peerConsumer = resolve(temporaryRoot, 'peer-consumer');
     await initializeConsumer(peerConsumer, {
       react: await readReviewedPeerVersion('react'),
       vue: await readReviewedPeerVersion('vue'),
+      svelte: await readReviewedPeerVersion('svelte'),
+      // `./nextjs/client` types its component with React's `ReactNode`.
+      '@types/react': await readReviewedPeerVersion('@types/react'),
     });
     const hookPeerInstall = bootstrapDeclaredPeersStrictly(peerConsumer);
     if (hookPeerInstall.status !== 0) {

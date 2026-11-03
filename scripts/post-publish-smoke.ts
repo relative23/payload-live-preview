@@ -49,6 +49,10 @@ export const ENTRY_REACHABILITY = {
   './annotate': 'import',
   './react': 'needs-peer',
   './vue': 'needs-peer',
+  './sveltekit/client': 'needs-peer',
+  './nuxt/client': 'needs-peer',
+  // It imports the App Router hooks, which only a Next build resolves for it.
+  './nextjs/client': 'not-node-importable',
   // The manifest exporting itself, so tooling can read the installed version.
   './package.json': 'not-node-importable',
   './astro/RichText.astro': 'not-node-importable',
@@ -130,8 +134,9 @@ async function main(): Promise<void> {
 
     const classified = classifyPublishedEntries(Object.keys(manifest.exports));
     // The optional peers are installed so the entries that need one are
-    // genuinely exercised rather than skipped: codegen needs `ts-morph`, and the
-    // two hooks import `react` and `vue` at module scope, as a hook must.
+    // genuinely exercised rather than skipped: codegen needs `ts-morph`, the
+    // two hooks import `react` and `vue` at module scope, as a hook must, and
+    // the SvelteKit navigation entry imports `svelte` the same way.
     run(
       'npm',
       [
@@ -139,6 +144,7 @@ async function main(): Promise<void> {
         'ts-morph@^28.0.0',
         'react@^19.0.0',
         'vue@^3.5.0',
+        'svelte@^5.0.0',
         '--ignore-scripts',
         '--no-audit',
         '--no-fund',

@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 546,
-    "suites": 1054,
-    "tests": 4769,
+    "files": 549,
+    "suites": 1058,
+    "tests": 4787,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 448,
-      "suites": 943,
-      "tests": 4358,
+      "files": 451,
+      "suites": 947,
+      "tests": 4376,
       "benchmarks": 0
     }
   },
@@ -939,6 +939,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/nextjs-navigation.test.tsx",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/nextjs-script-component.test.ts",
       "group": "unit",
       "suites": 1,
@@ -985,6 +992,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/nuxt-navigation.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -1059,6 +1073,13 @@
     },
     {
       "path": "tests/unit/adapters/sveltekit-fragments.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/adapters/sveltekit-navigation.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 5,

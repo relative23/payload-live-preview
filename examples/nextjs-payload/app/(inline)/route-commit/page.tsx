@@ -14,7 +14,7 @@
 import { randomUUID } from 'node:crypto';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
-import { PreviewRouteRefresh } from './PreviewRouteRefresh';
+import { LivePreviewNavigation } from 'payload-live-preview/nextjs/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,7 +40,7 @@ export default async function RouteCommitPage(): Promise<ReactNode> {
     (stored === undefined ? undefined : SAVED_BODIES[stored]) ?? SAVED_BODIES['first'] ?? [];
   return (
     <article className="grid">
-      <PreviewRouteRefresh />
+      <LivePreviewNavigation />
       <p data-testid="server-generation">{randomUUID()}</p>
       <h1 data-payload-field="title">Server title before unsaved edits</h1>
       <div

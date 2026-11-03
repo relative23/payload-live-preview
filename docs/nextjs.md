@@ -420,54 +420,45 @@ route strategy fetches that render and morphs it into the living page, which on
 a Next page means writing into DOM React's reconciler owns. Give it the
 router's own refresh instead and there is no morph and no second HTML request.
 
-The adapter also arms the preview script for a package-owned navigation event,
-but it cannot import or subscribe to the App Router for the application. Add
-this client component to a layout that stays mounted across the preview routes:
+Since 2.4 the package ships the component for both jobs. Render it once in a
+layout that stays mounted across the preview routes:
 
 ```tsx
-// app/live-preview-navigation.tsx
-'use client';
+// app/layout.tsx
+import type { ReactNode } from 'react';
+import { LivePreviewNavigation } from 'payload-live-preview/nextjs/client';
 
-import { useEffect, useRef } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { LivePreviewRouteRefresh } from 'payload-live-preview/react';
-
-const NAVIGATION_COMMIT_EVENT = 'payload-live-preview:navigation';
-
-export function LivePreviewNavigation() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const search = useSearchParams();
-  const key = pathname === null || search === null ? null : `${pathname}?${search.toString()}`;
-  const committed = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (key === null) return;
-    const previous = committed.current;
-    committed.current = key;
-    if (previous === null || previous === key) return;
-    document.dispatchEvent(new Event(NAVIGATION_COMMIT_EVENT));
-  }, [key]);
-
-  return <LivePreviewRouteRefresh refresh={router.refresh} />;
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <LivePreviewNavigation />
+        {children}
+      </body>
+    </html>
+  );
 }
 ```
 
-`useSearchParams()` needs a Suspense boundary when the surrounding route is
-prerendered; render the component as
-`<Suspense fallback={null}><LivePreviewNavigation /></Suspense>`. The ref deliberately skips the initial effect and React
-StrictMode's repeated mount: startup already applies the editor document, and
-only a changed, committed URL is a navigation. A cancelled transition never
-changes `key`, so it dispatches nothing.
+It does two things. It lends the route strategy `router.refresh` through
+`LivePreviewRouteRefresh`, so a route update is a React transition and the
+runtime reapplies the unsaved document after it has committed. And when the
+committed pathname or query changes, it tells the runtime, which then rebuilds
+its binding cache and reapplies the last accepted editor document locally; the
+editor does not have to answer another `ready` for the unsaved state to survive
+the navigation. The page the runtime started on, React StrictMode's repeated
+mount and a cancelled transition dispatch nothing.
 
-This bridge is application code, not an export installed by the package. The
-package does not depend on Next: `LivePreviewRouteRefresh` takes
-`router.refresh` as a prop, and the adapter-generated script only listens for
-the event above. After that event it rebuilds the binding cache and locally
-reapplies the last accepted editor document; the editor does not have to answer
-another `ready` for the unsaved state to survive the commit.
+The component brings its own Suspense boundary, because `useSearchParams()`
+suspends a prerendered route. `payload-live-preview/nextjs/client` is the one
+entry that imports `next` (an optional peer, `>=15.5.0`); a project that only
+wants the refresh can still render `LivePreviewRouteRefresh` from
+`payload-live-preview/react` with `refresh={useRouter().refresh}`.
 
-When it is not there, the strategy fetches and morphs as before.
+Before 2.4 this guide had the project copy a 20-line client component for the
+same job. It keeps working; replace it with the import above.
+
+When neither is there, the strategy fetches and morphs as before.
 
 ### Rich text React renders itself
 

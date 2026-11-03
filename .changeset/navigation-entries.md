@@ -1,0 +1,5 @@
+---
+'payload-live-preview': minor
+---
+
+The package now ships the client navigation code that the Next.js, SvelteKit and Nuxt guides had a project copy. In Next.js, `<LivePreviewNavigation />` from `payload-live-preview/nextjs/client` goes into a layout that stays mounted. It reports committed App Router navigations to the runtime and lends the route strategy `router.refresh`. It brings its own Suspense boundary. In SvelteKit, call `livePreviewNavigation({ afterNavigate, invalidateAll })` from `payload-live-preview/sveltekit/client` in a layout. It skips SvelteKit 3's shallow `goto`. The Nuxt module registers the client plugin itself, so a Nuxt project writes nothing; `livePreview: { navigation: false }` turns it off. A project that still has the guide's `plugins/payload-live-preview-navigation.client.ts` keeps that file in charge and is told once in development that it can delete it. The copied code (20 lines for Next.js, 16 for SvelteKit, 29 for Nuxt) keeps working. `next` is a new optional peer, `>=15.5.0`.
