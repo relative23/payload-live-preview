@@ -255,11 +255,6 @@ const previewServer: WebServer =
             reuseExistingServer: !isCI,
             timeout: 120_000,
           };
-/**
- * The preview server with its own output in the job's log. Playwright passes on only its stderr by default, and a
- * frame whose first load never completed (run 41629530551, nuxt in WebKit) left no word from the server it waited on.
- */
-const loggedPreviewServer: WebServer = { ...previewServer, stdout: 'pipe' };
 const adminServer: WebServer = {
   // `e2e:serve` regenerates the admin import map before booting so a
   // fresh checkout (where importMap.js is gitignored) still works.
@@ -373,8 +368,8 @@ const config: PlaywrightTestConfig = {
   ].filter((project) => browsers.includes(project.name)),
   webServer:
     production === undefined
-      ? [loggedPreviewServer, adminServer]
-      : [adminServer, adminFront, loggedPreviewServer],
+      ? [previewServer, adminServer]
+      : [adminServer, adminFront, previewServer],
 };
 
 export default defineConfig(config);
