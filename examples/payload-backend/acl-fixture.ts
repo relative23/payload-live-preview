@@ -8,11 +8,9 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
-import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { buildConfig, getPayload, handleEndpoints, type Access, type Field } from 'payload';
 import { sqliteAdapter } from '@payloadcms/db-sqlite';
+import { serveFixtureRequest } from './fixture-http.js';
 
 export async function startACLFixture(options: { versionedRelated?: boolean } = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'plp-payload-acl-'));
@@ -317,43 +315,14 @@ export async function startACLFixture(options: { versionedRelated?: boolean } = 
     sealed = true;
 
     const listener = createServer((incoming, outgoing) => {
-      void (async () => {
-        // No client-supplied Host can change the fixture's API origin.
-        const url = new URL(incoming.url ?? '/', 'http://127.0.0.1');
-        const headers = new Headers();
-        for (const [name, value] of Object.entries(incoming.headers)) {
-          if (value !== undefined)
-            headers.set(name, Array.isArray(value) ? value.join(', ') : value);
-        }
-        const method = incoming.method ?? 'GET';
-        const chunks: Buffer[] = [];
-        let length = 0;
-        for await (const chunk of incoming) {
-          length += Buffer.byteLength(chunk);
-          if (length > 8192) throw new Error('Fixture request exceeds setup limit');
-          chunks.push(Buffer.from(chunk));
-        }
-        const response = await handleEndpoints({
-          config,
-          payloadInstanceCacheKey: key,
-          request: new Request(url, {
-            method,
-            headers,
-            ...(chunks.length ? { body: Buffer.concat(chunks) } : {}),
-          }),
+      void serveFixtureRequest(incoming, outgoing, async (request, url) => {
+        const response = await handleEndpoints({ config, payloadInstanceCacheKey: key, request });
+        requests.push({
+          path: `${url.pathname}${url.search}`,
+          method: request.method,
+          status: response.status,
         });
-        requests.push({ path: `${url.pathname}${url.search}`, method, status: response.status });
-        outgoing.writeHead(response.status, Object.fromEntries(response.headers));
-        // Node and DOM declare the same native stream with distinct TS types.
-        if (response.body) {
-          await pipeline(
-            Readable.fromWeb(response.body as unknown as NodeReadableStream),
-            outgoing,
-          );
-        } else outgoing.end();
-      })().catch(() => {
-        outgoing.writeHead(500);
-        outgoing.end();
+        return response;
       });
     });
     server = listener;

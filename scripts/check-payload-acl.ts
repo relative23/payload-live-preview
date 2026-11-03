@@ -66,10 +66,9 @@ try {
   for (const name of ['package.json', 'package-lock.json', '.npmrc']) {
     await copyFile(resolve(fixture, name), resolve(directory, name));
   }
-  await copyFile(
-    resolve(repository, 'examples/payload-backend/acl-fixture.ts'),
-    resolve(directory, 'acl-fixture.ts'),
-  );
+  for (const name of ['acl-fixture.ts', 'fixture-http.ts']) {
+    await copyFile(resolve(repository, 'examples/payload-backend', name), resolve(directory, name));
+  }
   // SQLite's platform binary is an optional dependency, so this consumer must
   // retain optional packages. Install-script and peer policies stay intact.
   const install = PACKAGE_SMOKE_INSTALL_ARGS.filter(
