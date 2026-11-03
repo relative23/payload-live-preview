@@ -363,9 +363,7 @@ const config: PlaywrightTestConfig = {
   use: {
     baseURL: ADMIN,
     ignoreHTTPSErrors: production !== undefined,
-    // The failed attempt of a flaky test is the one to read: `on-first-retry` kept only the passing retry of a frame
-    // load that never completed (run 41629530551). Every attempt records; a trace stays where an attempt failed.
-    trace: 'retain-on-failure',
+    trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
   projects: [
