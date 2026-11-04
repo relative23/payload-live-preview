@@ -1,5 +1,12 @@
 # payload-live-preview
 
+## 2.4.0
+
+### Minor Changes
+
+- bc7f606: The package now ships the client navigation code that the Next.js, SvelteKit and Nuxt guides had a project copy. In Next.js, `<LivePreviewNavigation />` from `payload-live-preview/nextjs/client` goes into a layout that stays mounted. It reports committed App Router navigations to the runtime and lends the route strategy `router.refresh`. It brings its own Suspense boundary. In SvelteKit, call `livePreviewNavigation({ afterNavigate, invalidateAll })` from `payload-live-preview/sveltekit/client` in a layout. It skips SvelteKit 3's shallow `goto`. The Nuxt module registers the client plugin itself, so a Nuxt project writes nothing; `livePreview: { navigation: false }` turns it off. A project that still has the guide's `plugins/payload-live-preview-navigation.client.ts` keeps that file in charge and is told once in development that it can delete it. The copied code (20 lines for Next.js, 16 for SvelteKit, 29 for Nuxt) keeps working. `next` is a new optional peer with the range `*`. npm's peer check leaves a canary such as `16.5.0-canary.39` outside a range like `>=15.5.0`, and `npm install next@canary` beside the package would end in ERESOLVE. Supported are Next.js 15.5 and 16.
+- a121563: What 3.0 changes now says so once in development, never in production, and only where a project would notice the difference. The browser notices read `process.env.NODE_ENV`, which the bundler replaces, so a production build carries neither their code nor their text. A hook or `createDocumentSession()` without `document`, or without `timeoutMs`, says so in the browser. So does a hook with a `locale` that merged an update naming none, and a `new OriginDetector()` that trusts the referrer by default. An adapter or `generateInlineScript()` without `mergeTimeoutMs` says so on the server. `livePreviewScriptProps()` without `delivery: 'asset'` names the bytes of runtime it put into the page, because 3.0 removes inline delivery from it; `await LivePreviewScript()` and `delivery: 'asset'` stay. It is marked deprecated for that use. The Astro integration without `mode` names the inline and loader sizes for the project's own options, because 3.0 makes `loader` the default. The new hook option `requireLocale: true` leaves an update without a locale alone, which is what 3.0 does for every hook with a `locale`. For the merge deadline 3.0 adds, a measurement against Payload 3.92.1 proposes 10 000 ms. Until then any value, or `0` for none, turns the notice off.
+
 ## 2.3.2
 
 ### Patch Changes

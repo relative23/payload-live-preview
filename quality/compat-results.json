@@ -1,11 +1,11 @@
 {
   "workflow": "ci.yml",
-  "id": 41576878354,
-  "url": "https://github.com/relative23/payload-live-preview/actions/runs/41576878354",
-  "commit": "d9e3d190a6b6988e6bf225686f91fbb97de0669d",
+  "id": 41774516545,
+  "url": "https://github.com/relative23/payload-live-preview/actions/runs/41774516545",
+  "commit": "dcf37ea80420af3282aa90a9535d81bdba230678",
   "event": "push",
   "conclusion": "success",
-  "executedAt": "2026-11-03T06:55:37Z",
+  "executedAt": "2026-11-04T07:36:07Z",
   "jobs": [
     {
       "conclusion": "success",
@@ -33,11 +33,7 @@
     },
     {
       "conclusion": "success",
-      "name": "Astro fragment rendering (Astro 7.3.2)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Astro fragment rendering (Astro 7.4.4)"
+      "name": "Astro fragment rendering (Astro 7.4.5)"
     },
     {
       "conclusion": "success",
@@ -121,11 +117,19 @@
     },
     {
       "conclusion": "success",
+      "name": "Production lifecycle (nuxt4)"
+    },
+    {
+      "conclusion": "success",
       "name": "Production lifecycle (react)"
     },
     {
       "conclusion": "success",
       "name": "Production lifecycle (sveltekit)"
+    },
+    {
+      "conclusion": "success",
+      "name": "Production lifecycle (sveltekit3)"
     },
     {
       "conclusion": "success",
@@ -422,6 +426,10 @@
     {
       "conclusion": "success",
       "name": "Release Gates / Trusted Core Mutation"
+    },
+    {
+      "conclusion": "success",
+      "name": "Steps the real-admin suites started again"
     },
     {
       "conclusion": "success",
