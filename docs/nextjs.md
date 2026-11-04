@@ -14,6 +14,14 @@ Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin 
 npm install payload-live-preview
 ```
 
+### In a pnpm workspace
+
+Since 2.4 `next` is an optional peer of the package, for `payload-live-preview/nextjs/client`, and pnpm links an optional peer into every project of a workspace once any project there installs it. A project that does not use Next.js then gets `next` as well, for instance an Astro site beside the Payload project, whose admin is a Next.js app. Nothing in that project loads it.
+
+If its `react` and `react-dom` versions differ from those of the Next.js project, pnpm adds a second copy of `next` for it: 192 MB for next 16.4.3. pnpm links the copy from its store, so nothing is downloaded again, but it counts wherever `node_modules` is copied. The same versions in every project avoid it. A deployment of that project alone carries `next` either way: `pnpm deploy --prod` of a project with React and payload-live-preview but no Next.js came to 23 MB with 2.3.2 and 339 MB with 2.4.0.
+
+Measured on 2026-11-04 with pnpm 12.6.0 and 12.15.0. The settings `dedupePeerDependents`, `autoInstallPeers`, `resolvePeersFromWorkspaceRoot` and `peerDependencyRules.ignoreMissing` do not change it.
+
 ## Which of the three ways to deliver it
 
 Next.js middleware cannot inject into the HTML body — `NextResponse.next()`
