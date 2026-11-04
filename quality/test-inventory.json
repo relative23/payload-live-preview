@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 551,
-    "suites": 1064,
-    "tests": 4806,
+    "files": 552,
+    "suites": 1066,
+    "tests": 4809,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 453,
-      "suites": 953,
-      "tests": 4395,
+      "files": 454,
+      "suites": 955,
+      "tests": 4398,
       "benchmarks": 0
     }
   },
@@ -827,6 +827,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/adapters/dev-notices-production-build.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/adapters/document-session-boundary-contracts.test.ts",
       "group": "unit",
       "suites": 1,
@@ -843,8 +850,8 @@
     {
       "path": "tests/unit/adapters/document-session-notices.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 11,
+      "suites": 4,
+      "tests": 12,
       "benchmarks": 0
     },
     {

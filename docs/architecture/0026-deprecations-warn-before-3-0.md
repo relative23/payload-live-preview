@@ -157,11 +157,35 @@ them and warn from the start: inline delivery through `livePreviewScriptProps()`
 | 32  | `livePreviewScriptProps()` renders the whole runtime                                              | the server, once per process              | `await LivePreviewScript(…)` or `delivery: 'asset'` |
 | 33  | `livePreview()` runs without `mode`                                                               | the server, once per process              | `mode: 'inline'` or `mode: 'loader'`                |
 
-The browser rows use `isDevMode()`, as the Payload 2 notice does, through a
-per-page counterpart of `warnOnce` whose keys live on `globalThis`. The inline
-runtime leaves row 22 out: the package's own callers always pass the option.
-Rows 32 and 33 measure their bytes from what they generated, so the warning
-names the project's own sizes.
+The browser rows go through a per-page counterpart of `warnOnce` whose keys
+live on `globalThis`. Each reads `process.env.NODE_ENV` in place and with a
+dot, the expression a bundler replaces: a development build speaks, and a
+production build drops the notice together with its text. Where nothing
+replaced the expression and there is no `process`, as on a page that loads the
+module without a bundler, the read throws inside the guard and nothing is
+said. Every runtime artefact is built with `NODE_ENV` set to `production`, so
+the inline runtime carries none of these rows. Rows 32 and 33 measure their
+bytes from what they generated, so the warning names the project's own sizes.
+
+**What the browser rows cost a visitor, measured.** Until 2026-11-04 these rows
+asked `isDevMode()` at run time, as the Payload 2 notice does, so their text
+reached every visitor. Since then they read `NODE_ENV` in place. A consumer's
+Vite production build of one import from `dist` (Node 24.22.1), before and
+after:
+
+| Import                           | gzip before | gzip after | Notice text after |
+| -------------------------------- | ----------- | ---------- | ----------------- |
+| `useLivePreviewDocument`, React  | 8 693 B     | 8 357 B    | none              |
+| `useLivePreviewDocument`, Vue    | 8 601 B     | 8 264 B    | none              |
+| `createDocumentSession`, `/core` | 8 368 B     | 8 025 B    | none              |
+| `initLivePreview`, `/client`     | 53 943 B    | 53 808 B   | none              |
+
+The same sources with every notice block deleted bundle to the same raw size
+under esbuild, Vite's minifier (gzip within 5 B, from renamed identifiers), and
+to the same raw and gzip size under the SWC minifier of Next.js 16.4.3: the
+guards leave nothing behind. The tree-shaking gate now defines `NODE_ENV` as a
+production build does, and `tests/unit/adapters/dev-notices-production-build.test.ts`
+holds both modes.
 
 **Row 27's default, measured.** On 2026-11-03 the merge request, the runtime's
 `POST /api/<collection>/<id>` with `X-Payload-HTTP-Method-Override: GET`, was

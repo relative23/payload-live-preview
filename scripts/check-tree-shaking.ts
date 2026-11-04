@@ -25,6 +25,10 @@ async function bundle(consumer: string, fixture: Fixture): Promise<string> {
     root: consumer,
     configFile: false,
     logLevel: 'silent',
+    // What a visitor downloads comes from the consumer's production build, which
+    // defines NODE_ENV; library mode leaves `process.env` alone, so the gate sets
+    // it. The development notices (ADR 0026) are left out by it.
+    define: { 'process.env.NODE_ENV': '"production"' },
     build: {
       write: false,
       minify: 'esbuild',
