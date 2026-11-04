@@ -58,7 +58,7 @@ Outside CI:
 
 Every version in the README's framework table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-Of the 61 feature rows of `quality/compat-matrix.json`, 58 passed in the CI run the last Version PR recorded (commit `dcf37ea`, 2026-11-04, `quality/compat-results.json`); the other 3 have no recorded result.
+Of the 61 feature rows of `quality/compat-matrix.json`, 58 passed in the CI run the last Version PR recorded (commit `df05517`, 2026-11-04, `quality/compat-results.json`); the other 3 have no recorded result.
 
 Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 3 → 8, SvelteKit 2 → 5/6/7/8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-11-03. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
