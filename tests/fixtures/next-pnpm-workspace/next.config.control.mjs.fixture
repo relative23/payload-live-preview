@@ -1,0 +1,14 @@
+// The control build: the package's `next/navigation` import is handed the copy of `next` Node
+// finds from the package, the workspace root's. The page must then fail the check the other
+// builds pass, or a pass could come from a layout with only one copy to find.
+import { realpathSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
+const fromPackage = createRequire(realpathSync('node_modules/payload-live-preview/package.json'));
+
+export default {
+  webpack(config) {
+    config.resolve.alias['next/navigation$'] = fromPackage.resolve('next/navigation');
+    return config;
+  },
+};

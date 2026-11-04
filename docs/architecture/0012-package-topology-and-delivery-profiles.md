@@ -102,6 +102,8 @@ would tax every consumer for a feature most never use, so it is not done.
 `peerDependenciesMeta`: `astro`, `react`, `react-dom`, `svelte`, `ts-morph`,
 `vite` and `vue`. 2026-11-03: `next`, for `payload-live-preview/nextjs/client`
 alone, with the range `*` so that a Next.js canary installs beside it (ADR 0032).
+2026-11-04 (2.4.1): `next` is no peer again; Next.js resolves the entry's import
+of it to the app's own installation (ADR 0032, addendum).
 
 ## Consequences
 

@@ -1,0 +1,12 @@
+import { LivePreviewNavigation } from 'payload-live-preview/nextjs/client';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <LivePreviewNavigation />
+        {children}
+      </body>
+    </html>
+  );
+}

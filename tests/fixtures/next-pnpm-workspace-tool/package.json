@@ -1,0 +1,8 @@
+{
+  "name": "payload-live-preview-next-pnpm-workspace-tool",
+  "version": "0.0.0",
+  "private": true,
+  "devDependencies": {
+    "pnpm": "12.15.0"
+  }
+}

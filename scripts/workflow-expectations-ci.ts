@@ -12,6 +12,7 @@ import {
   NPM_CI,
   NPM_VERSION,
   MATRIX_SETUP,
+  PAYLOAD_2_ADVISORIES,
   PINNED_SETUP,
   SETUP_NODE,
   READ_ONLY,
@@ -25,24 +26,6 @@ import {
   sourceDate,
   twinFixtureJob,
 } from './workflow-expectations-shared';
-
-/**
- * Advisories of the Payload 2 lane (examples/payload-version-lanes/v2 pins payload 2.32.3 and
- * @payloadcms/db-mongodb 1.7.5, the last Payload 2 releases). Their fixes exist only in Payload 3
- * and 4, so Dependency Review may not fail the pull request on them; any other advisory still does.
- */
-const PAYLOAD_2_ADVISORIES = [
-  'GHSA-hp5w-3hxx-vmwf',
-  'GHSA-f7hx-52q9-hcrf',
-  'GHSA-97rh-rhh2-7vjv',
-  'GHSA-2pwp-2369-8fg3',
-  'GHSA-p223-2wr2-j562',
-  'GHSA-7xxh-373w-35vg',
-  'GHSA-6r7f-q7f5-wpx8',
-  'GHSA-9qpg-3cf8-w33x',
-  'GHSA-fx49-4h83-wjv9',
-  'GHSA-4ww4-68q3-h7g5',
-];
 
 export const CI: WorkflowSpec = {
   name: 'CI',
@@ -255,9 +238,11 @@ export const CI: WorkflowSpec = {
         { run: 'npm run test:e2e:next-base-path -- --project=chromium' },
       ],
     },
-    // The Astro floors the matrix above cannot reach. Each consumes the archive the Build job stored,
-    // in a consumer of its own with a reviewed lock; the run line names the archive and the Playwright
-    // scope, so a job that quietly tests the checkout instead stops matching.
+    // The jobs on the archive the Build job stored, each in a consumer of its own with a reviewed lock;
+    // the run line names the archive and the Playwright scope, so a job that quietly tests the checkout
+    // instead stops matching. Next.js in a pnpm workspace where Node finds another copy of `next` from
+    // the package, which declares no `next` peer; then the Astro floors the matrix above cannot reach.
+    'next-pnpm-workspace': archiveJob('playwright.next-pnpm-workspace.config.ts', 30),
     'astro-floor-base': archiveJob('playwright.astro-floor-base.config.ts', 25),
     'astro-floor-islands': archiveJob(
       'playwright.astro-islands.config.ts',

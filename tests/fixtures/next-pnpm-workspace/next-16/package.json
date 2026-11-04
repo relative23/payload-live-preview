@@ -1,0 +1,11 @@
+{
+  "name": "next-16-site",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "next": "16.4.3",
+    "payload-live-preview": "file:../payload-live-preview.tgz",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  }
+}

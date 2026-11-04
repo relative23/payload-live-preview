@@ -16,11 +16,9 @@ npm install payload-live-preview
 
 ### In a pnpm workspace
 
-Since 2.4 `next` is an optional peer of the package, for `payload-live-preview/nextjs/client`, and pnpm links an optional peer into every project of a workspace once any project there installs it. A project that does not use Next.js then gets `next` as well, for instance an Astro site beside the Payload project, whose admin is a Next.js app. Nothing in that project loads it.
+2.4.0 declared `next` as an optional peer, for `payload-live-preview/nextjs/client`, and pnpm links an optional peer into every project of a workspace once any project there installs it. A project that does not use Next.js got `next` as well, for instance an Astro site beside the Payload project, whose admin is a Next.js app. `pnpm deploy --prod` of a project with React and payload-live-preview but no Next.js came to 339 MB with 2.4.0 and 23 MB with 2.3.2. If the project's `react` and `react-dom` versions differed from those of the Next.js project, pnpm also kept a second copy of `next` for it: 192 MB for next 16.4.3. The settings `dedupePeerDependents`, `autoInstallPeers`, `resolvePeersFromWorkspaceRoot` and `peerDependencyRules.ignoreMissing` did not change it (pnpm 12.6.0 and 12.15.0, 2026-11-04).
 
-If its `react` and `react-dom` versions differ from those of the Next.js project, pnpm adds a second copy of `next` for it: 192 MB for next 16.4.3. pnpm links the copy from its store, so nothing is downloaded again, but it counts wherever `node_modules` is copied. The same versions in every project avoid it. A deployment of that project alone carries `next` either way: `pnpm deploy --prod` of a project with React and payload-live-preview but no Next.js came to 23 MB with 2.3.2 and 339 MB with 2.4.0.
-
-Measured on 2026-11-04 with pnpm 12.6.0 and 12.15.0. The settings `dedupePeerDependents`, `autoInstallPeers`, `resolvePeersFromWorkspaceRoot` and `peerDependencyRules.ignoreMissing` do not change it.
+2.4.1 declares no `next` peer, so such a project no longer gets `next` through this package; upgrading removes the copy.
 
 ## Which of the three ways to deliver it
 
@@ -463,10 +461,14 @@ mount and a cancelled transition dispatch nothing.
 
 The component brings its own Suspense boundary, because `useSearchParams()`
 suspends a prerendered route. `payload-live-preview/nextjs/client` is the one
-entry that imports `next` (an optional peer; its range is `*`, so a Next.js
-canary installs beside it); a project that only
-wants the refresh can still render `LivePreviewRouteRefresh` from
-`payload-live-preview/react` with `refresh={useRouter().refresh}`.
+entry that imports `next`, and the package does not declare it as a peer:
+Next.js resolves `next` for every module it bundles to the app's own
+installation, with Turbopack and with webpack. The import therefore reaches the
+app's Next.js also in a pnpm workspace where Node would find another copy from
+the package; the `next-pnpm-workspace` job builds that on every push on
+Next.js 15.5 and 16 ([testing](testing.md#nextjs-without-a-next-peer)). A
+project that only wants the refresh can still render `LivePreviewRouteRefresh`
+from `payload-live-preview/react` with `refresh={useRouter().refresh}`.
 
 Before 2.4 this guide had the project copy a 20-line client component for the
 same job. It keeps working; replace it with the import above.
