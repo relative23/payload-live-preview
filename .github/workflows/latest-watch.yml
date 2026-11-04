@@ -164,6 +164,17 @@ jobs:
           PLP_SVELTEKIT_FIXTURE: ${{ matrix.sveltekit-fixture }}
           PLP_NUXT_FIXTURE: ${{ matrix.nuxt-fixture }}
         run: npx playwright test --project=chromium ${{ matrix.specs }}
+      # The package declares no `next` peer and leaves `next/navigation` to the bundler. The channel
+      # builds and develops with both bundlers in a pnpm workspace where Node finds another copy of
+      # `next` from the package, as the next-pnpm-workspace job in ci.yml does with the pinned ones.
+      - name: Pack the package for the pnpm workspace
+        if: steps.channel.outputs.tag != '' && matrix.integration == 'next'
+        run: npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"
+      - name: Build the channel in a pnpm workspace without a next peer
+        if: steps.channel.outputs.tag != '' && matrix.integration == 'next'
+        env:
+          PLP_NEXT_PNPM_CHANNEL: ${{ steps.channel.outputs.tag }}
+        run: PLP_CONTINUATION_TARBALL="$(ls "$RUNNER_TEMP"/payload-live-preview-*.tgz)" npx playwright test --config playwright.next-pnpm-workspace.config.ts --project=chromium
       - if: steps.channel.outputs.tag != ''
         run: bash scripts/ci-install-fixture.sh examples/payload-backend
       - if: steps.channel.outputs.tag != ''

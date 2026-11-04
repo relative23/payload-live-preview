@@ -560,6 +560,43 @@ the Astro 4.16.19 React lock). Only the tests install them, in a temporary direc
 repository; the base lane serves a static build and the other lanes a Node server on loopback
 behind a throw-away TLS proxy. `fixture-audit` covers `examples/`, not these locks.
 
+## Next.js without a `next` peer
+
+`payload-live-preview/nextjs/client` imports `next/navigation`, and the package declares no `next`
+peer: Next.js resolves `next` for every module it bundles to the app's own installation
+([ADR 0032](architecture/0032-navigation-entries-per-framework.md#addendum-2026-11-04-the-package-declares-no-next-peer)).
+The `next-pnpm-workspace` job holds that on every push, in Chromium, on the archive the Build job
+stored ([spec](../tests/e2e/continuation/next-pnpm-workspace.spec.ts)). Its pnpm workspace
+([lock](../tests/fixtures/next-pnpm-workspace/pnpm-lock.yaml)) hoists nothing, and its root
+depends on a copy of `next` of its own, 16.4.3 with React 19.3.0, which is the one Node finds from
+the package. The setup fails if Node finds a site's own copy instead, as it would with a `next`
+peer, and if the install moved any package of the lock other than the archive's record.
+
+Two sites install the archive and render `<LivePreviewNavigation />` in their layout. Next.js
+15.5.29 builds with webpack and develops with webpack and Turbopack; Next.js 16.4.3 builds and
+develops with both. On each, two client navigations must reach the runtime as two events, without
+a page or console error. A control build hands the package's `next/navigation` import the root's
+copy, and the page must then fail with `invariant expected app router to be mounted`, the error a
+wrong copy of `next` produces. pnpm 12.15.0 is installed from a lock of its own
+([tool lock](../tests/fixtures/next-pnpm-workspace-tool/package-lock.json)), with its Linux binary
+and no install script. The Latest Watch runs the Next.js 16 site on `next@latest` and on the
+pre-release channel, resolved without the lock.
+
+To run it, pack the package and point the config at the archive (port 4294):
+
+```sh
+npm run build
+mkdir -p /tmp/plp-archive && npm pack --pack-destination /tmp/plp-archive
+PLP_CONTINUATION_TARBALL=/tmp/plp-archive/payload-live-preview-<version>.tgz npx playwright test --config playwright.next-pnpm-workspace.config.ts --project=chromium
+```
+
+What it does not show. Nothing is previewed: the page only navigates, with no admin and no
+runtime script. It runs Chromium only, and no Next.js 15 production build with Turbopack. An
+import of the entry outside a Next.js build, as in a test runner, and Yarn Plug'n'Play are not
+measured. `pnpm audit` reports two high and two moderate advisories for the workspace lock, all
+in postcss 8.4.31, which both Next.js versions pin (2026-11-04); only the test installs it, in a
+temporary directory outside the repository.
+
 ## Production hosts
 
 The `production-lifecycle` job builds a Next.js host, a SvelteKit 2 and a SvelteKit 3 host, a

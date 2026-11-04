@@ -521,6 +521,44 @@ jobs:
             test-results/
           retention-days: 7
 
+  # The package declares no `next` peer: `./nextjs/client` imports `next/navigation`, and Next.js
+  # resolves `next` for every module it bundles to the app's own installation. The archive the
+  # Build job stored goes into a pnpm workspace with a reviewed lock, where Node finds another copy
+  # of `next` from the package; Next.js 15.5 and 16 build and develop with both bundlers there.
+  next-pnpm-workspace:
+    name: Next.js in a pnpm workspace (no next peer)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.4
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/*/package-lock.json
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - run: bash scripts/ci-install-browser.sh chromium
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-candidate-${{ github.sha }}
+          path: release-artifact
+      - run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.next-pnpm-workspace.config.ts --project=chromium
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report-next-pnpm-workspace
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   # The two Astro floors the matrix above cannot reach: `astro@^4` installs the newest 4.x, not the
   # lower bound the peer range promises. Both consume the archive the Build job stored, byte for byte
   # what the Release workflow publishes, in a consumer of their own with a reviewed lock.

@@ -1,0 +1,12 @@
+import Link from 'next/link';
+
+export default function Page() {
+  return (
+    <main>
+      <h1 id="one">One</h1>
+      <Link id="go" href="/two">
+        Two
+      </Link>
+    </main>
+  );
+}

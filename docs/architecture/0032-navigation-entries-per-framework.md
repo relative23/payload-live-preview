@@ -32,7 +32,8 @@ One small client entry per framework, each importing only what its framework res
   `semver.satisfies`, which leaves a canary such as `16.5.0-canary.39` outside `>=15.5.0`, the
   range first chosen: `npm install next@canary` beside the package then ended in ERESOLVE (Latest
   Watch, 2026-11-04). Only `*` admits every version. The supported floor stays Next.js 15.5
-  (ADR 0031), as a documented promise rather than a range npm enforces.
+  (ADR 0031), as a documented promise rather than a range npm enforces. 2.4.1 drops the peer
+  again (addendum below).
 - **`./sveltekit/client`**: `livePreviewNavigation({ afterNavigate, invalidateAll })`. SvelteKit's
   functions are passed in; `onMount` and `tick` come from `svelte`, already an optional peer.
 - **`./nuxt/client`**: `bindNuxtNavigation(nuxtApp, refreshNuxtData)`, called by a client plugin
@@ -70,3 +71,35 @@ gzip). The Nuxt module grows by 1 531 bytes; it runs at build time.
   2 and 3 and Nuxt 3 and 4 test the shipped code instead of a copy of it.
 - The event name and `registerRouteRefresh()` stay public for routers this package does not
   adapt.
+
+## Addendum (2026-11-04): the package declares no `next` peer
+
+The optional `next` peer of 2.4.0 cost projects that do not use Next.js. pnpm links an optional
+peer into every project of a workspace once any project there installs it: measured with pnpm
+12.6.0 and 12.15.0, a project with React and this package but no Next.js linked `next`, and
+`pnpm deploy --prod` of it came to 339 MB instead of 2.3.2's 23 MB. With other `react` and
+`react-dom` versions than the Next.js project's, pnpm also kept a second copy of `next` for it,
+192 MB for next 16.4.3. None of the pnpm settings tried changed that (they are listed in
+[nextjs.md](../nextjs.md#in-a-pnpm-workspace)).
+
+The import does not need the peer. Next.js resolves `next` for every module it bundles to its own
+installation: its webpack configuration has a module rule without a condition that aliases `next`
+to the directory of the `next` package running the build (`dist/build/webpack-config.js`, line
+1570 in 15.5.29 and 1612 in 16.4.3), and Turbopack resolved it the same way in every build and
+development server measured. `next/navigation` from `./nextjs/client` therefore reaches the app's
+Next.js also where Node would find another copy of `next` from the package, or none.
+
+2.4.1 declares no `next` peer. Without a peer npm checks no range, so a canary still installs beside
+the package; the supported floor stays Next.js 15.5 (ADR 0031), whose point 3 holds again.
+
+The `next-pnpm-workspace` job holds this on every push, on the archive the Build job stored, in a
+pnpm workspace with `hoistPattern: []` whose root depends on another copy of `next`, the one Node
+finds from the package. Next.js 15.5.29 builds with webpack and develops with webpack and Turbopack,
+Next.js 16.4.3 builds and develops with both, and each commits two client navigations without an
+error. A control build hands the package the root's copy and must fail with `invariant expected app
+router to be mounted`. The Latest Watch runs the Next.js 16 site on `latest` and on the pre-release
+channel. The resolution is Next.js behaviour, not a documented interface, so the job is what notices
+a release that changes it; the peer would come back then.
+
+Not measured: an import of `./nextjs/client` outside a Next.js build, as in a test runner, in a pnpm
+layout where Node cannot find the app's `next` from the package, and Yarn Plug'n'Play.

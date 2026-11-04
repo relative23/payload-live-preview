@@ -385,6 +385,7 @@ const LATEST_STATUS = 'Record what was installed and how the job ended';
 const LANES = { lane: ['latest', 'prerelease'] };
 /** Every step after the channel step: an entry with no channel above `latest` stops there. */
 const HAS_CHANNEL = "steps.channel.outputs.tag != ''";
+const NEXT_WITH_CHANNEL = `${HAS_CHANNEL} && matrix.integration == 'next'`;
 const HAS_HOOK_CHANNEL =
   "steps.react.outputs.tag != '' || steps.vue.outputs.tag != '' || steps.svelte.outputs.tag != ''";
 const channelStep = (name: string): StepSpec => ({
@@ -473,6 +474,18 @@ const LATEST_WATCH: WorkflowSpec = {
             PLP_NUXT_FIXTURE: '${{ matrix.nuxt-fixture }}',
           },
           condition: HAS_CHANNEL,
+        },
+        // No `next` peer: the channel builds in a pnpm workspace where Node finds another copy.
+        {
+          name: 'Pack the package for the pnpm workspace',
+          run: 'npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"',
+          condition: NEXT_WITH_CHANNEL,
+        },
+        {
+          name: 'Build the channel in a pnpm workspace without a next peer',
+          run: 'PLP_CONTINUATION_TARBALL="$(ls "$RUNNER_TEMP"/payload-live-preview-*.tgz)" npx playwright test --config playwright.next-pnpm-workspace.config.ts --project=chromium',
+          env: { PLP_NEXT_PNPM_CHANNEL: '${{ steps.channel.outputs.tag }}' },
+          condition: NEXT_WITH_CHANNEL,
         },
         { ...fixtureInstall('payload-backend'), condition: HAS_CHANNEL },
         {

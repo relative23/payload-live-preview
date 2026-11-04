@@ -1,0 +1,10 @@
+{
+  "name": "payload-live-preview-next-pnpm-workspace-fixture",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "next": "16.4.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}

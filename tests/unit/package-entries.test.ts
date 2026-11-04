@@ -110,13 +110,14 @@ describe('package entries', () => {
     ]);
   });
 
-  it('declares `next`, which only `./nextjs/client` imports, as an optional peer a canary satisfies', () => {
-    // npm checks a peer with `semver.satisfies`, which keeps a pre-release such as
-    // 16.5.0-canary.39 outside `>=15.5.0`; only `*` admits every version
-    // (@npmcli/arborist, lib/dep-valid.js). With `>=15.5.0`, `npm install next@canary`
-    // beside this package ended in ERESOLVE (Latest Watch run 41741273573). The
-    // supported floor, Next.js 15.5, is a documented promise (ADR 0031), not a range.
-    expect(manifest.peerDependencies['next']).toBe('*');
-    expect(manifest.peerDependenciesMeta['next']).toEqual({ optional: true });
+  it('declares no `next` peer, although `./nextjs/client` imports `next/navigation`', () => {
+    // pnpm links an optional peer into every project of a workspace once one project
+    // installs it: with 2.4.0's `next: '*'`, `pnpm deploy --prod` of a project with React
+    // and this package but no Next.js came to 339 MB instead of 23 MB (pnpm 12.15.0,
+    // 2026-11-04). Next.js resolves `next` for every module it bundles to the app's own
+    // installation, so the import needs no peer; tests/e2e/continuation/next-pnpm-workspace.spec.ts
+    // builds it where Node finds another copy of `next` from this package.
+    expect(manifest.peerDependencies).not.toHaveProperty('next');
+    expect(manifest.peerDependenciesMeta).not.toHaveProperty('next');
   });
 });

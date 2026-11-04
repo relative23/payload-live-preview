@@ -61,6 +61,24 @@ export const CI_FIXTURES = [
   'astro-middleware',
 ] as const;
 
+/**
+ * Advisories of the Payload 2 lane (examples/payload-version-lanes/v2 pins payload 2.32.3 and
+ * @payloadcms/db-mongodb 1.7.5, the last Payload 2 releases). Their fixes exist only in Payload 3
+ * and 4, so Dependency Review may not fail the pull request on them; any other advisory still does.
+ */
+export const PAYLOAD_2_ADVISORIES = [
+  'GHSA-hp5w-3hxx-vmwf',
+  'GHSA-f7hx-52q9-hcrf',
+  'GHSA-97rh-rhh2-7vjv',
+  'GHSA-2pwp-2369-8fg3',
+  'GHSA-p223-2wr2-j562',
+  'GHSA-7xxh-373w-35vg',
+  'GHSA-6r7f-q7f5-wpx8',
+  'GHSA-9qpg-3cf8-w33x',
+  'GHSA-fx49-4h83-wjv9',
+  'GHSA-4ww4-68q3-h7g5',
+];
+
 export const fixtureInstall = (fixture: string): StepSpec => ({
   run: `bash scripts/ci-install-fixture.sh examples/${fixture}`,
 });

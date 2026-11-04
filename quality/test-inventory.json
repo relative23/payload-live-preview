@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 552,
-    "suites": 1066,
-    "tests": 4809,
+    "files": 554,
+    "suites": 1067,
+    "tests": 4816,
     "benchmarks": 12
   },
   "groups": {
@@ -39,9 +39,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 58,
+      "files": 59,
       "suites": 63,
-      "tests": 256,
+      "tests": 258,
       "benchmarks": 0
     },
     "integration": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 454,
-      "suites": 955,
-      "tests": 4398,
+      "files": 455,
+      "suites": 956,
+      "tests": 4403,
       "benchmarks": 0
     }
   },
@@ -145,6 +145,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/continuation/next-pnpm-workspace.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -3421,6 +3428,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 6,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/next-pnpm-workspace-fixture.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {

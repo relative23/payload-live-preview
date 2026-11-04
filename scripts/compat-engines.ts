@@ -54,15 +54,22 @@ export interface HarnessInstall {
 }
 
 /**
- * The helpers behind these configs: `tests/e2e/helpers/astro-floor-base.ts`, and
- * `native-continuation.ts`, which installs the ACL fixture as its CMS beside a consumer: the
- * one `astro-resource-versions.ts` selects, or the example of the framework the config names.
- * A unit test holds the selections to that helper.
+ * The helpers behind these configs: `tests/e2e/helpers/astro-floor-base.ts`,
+ * `next-pnpm-workspace.ts`, and `native-continuation.ts`, which installs the ACL fixture as its
+ * CMS beside a consumer: the one `astro-resource-versions.ts` selects, or the example of the
+ * framework the config names. A unit test holds the selections to that helper.
  */
 export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
   {
     config: 'playwright.astro-floor-base.config.ts',
     fixtures: ['tests/fixtures/astro-floor-base-deps'],
+  },
+  {
+    // The npm lock pnpm itself comes from. The workspace's own lock is pnpm's, which this gate does
+    // not read; on Linux its highest Node floor is the package's own 20.19.0, and next 16.4.3 and
+    // sharp 0.35.5 ask for 20.9.0 (2026-11-04).
+    config: 'playwright.next-pnpm-workspace.config.ts',
+    fixtures: ['tests/fixtures/next-pnpm-workspace-tool'],
   },
   {
     config: 'playwright.astro-islands.config.ts',
