@@ -404,13 +404,13 @@ export interface Fixture {
  * client +251, `/lexical` +292, Next middleware +232 and lean +296 B gzip, for
  * the second parse, its cap and warning, and the reading of a scheme through
  * whitespace; every ceiling keeps its cushion.
- * 2026-10-23 (a write no longer waits for an animation frame the browser does
- * not give: the scheduler's 100 ms fallback): paired measurements of the same
- * HEAD without and with the change: root client +60, generator +66, core client
- * +61, Next middleware +59 (not red, but its cushion had shrunk to 6 B) and
- * lean +71 B gzip; every ceiling keeps its cushion.
+ * 2026-10-23 (a write no longer waits for an animation frame the browser does not give: the scheduler's 100 ms fallback): paired measurements
+ * of the same HEAD without and with the change: root client +60, generator +66, core client +61, Next middleware +59 (not red, but its cushion
+ * had shrunk to 6 B) and lean +71 B gzip; every ceiling keeps its cushion.
  * 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired, same Node, each row by its
  * gzip delta with its reserve kept — `initLivePreview` +172 (root) / +166 (core), `generateInlineScript` +99, `createLivePreviewMiddleware` +100, `useLivePreviewDocument` +404 (React) / +381 (Vue).
+ * 2026-11-04 (2.4, those notices read `process.env.NODE_ENV` in place, and the gate defines it as a consumer's production build does): paired, same
+ * Node; the four rows that carry a notice fall by their gzip — `useLivePreviewDocument` −373 (React) / −365 (Vue), `initLivePreview` −188 (root) / −182 (core); nine rows byte-identical; reserves kept.
  */
 export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
@@ -449,7 +449,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 59_360,
+    gzip: 59_172,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -497,7 +497,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 59_330,
+    gzip: 59_148,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -571,7 +571,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 9_772,
+    gzip: 9_399,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
@@ -580,7 +580,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 9_666,
+    gzip: 9_301,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {

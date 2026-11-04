@@ -194,3 +194,23 @@ describe('a detector that trusts the referrer by default (row 22)', () => {
     expect(said()).toEqual([]);
   });
 });
+
+describe('a page with no bundler and no `process`', () => {
+  it('says nothing and throws nothing, from a hook or a detector', async () => {
+    // As a browser that loads the module unbundled: nothing replaced
+    // `process.env.NODE_ENV`, and the global does not exist.
+    const saved = globalThis.process;
+    Reflect.deleteProperty(globalThis, 'process');
+    try {
+      expect(typeof globalThis.process).toBe('undefined');
+      open({ document: { collection: 'pages', id: '1', locale: 'de' } });
+      post({ data: { id: '1', title: 'No locale' } });
+      new OriginDetector({ referrer: 'https://admin.example.com/admin' });
+    } finally {
+      globalThis.process = saved;
+    }
+    await settle();
+    expect(urls).toHaveLength(1);
+    expect(said()).toEqual([]);
+  });
+});

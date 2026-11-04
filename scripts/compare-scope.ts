@@ -75,7 +75,10 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // detector that trusts the referrer by default says once that 3.0 stops; document-session.ts
 // +27 (232 → 259), the three hook notices for the defaults 3.0 changes and `requireLocale`, which
 // takes row 31's 3.0 behaviour now. No request path changes.
-export const REVIEWED_SCOPE_LINES = 1639;
+// 2026-11-04 (2.4): 1 639 → 1 654. origin.ts +3 (1 380 → 1 383 with the rest of its scope) and
+// document-session.ts +12 (259 → 271): the notices read `process.env.NODE_ENV` in place, inside a
+// `try`, so a production build drops them. No request path changes.
+export const REVIEWED_SCOPE_LINES = 1654;
 
 interface OurFile {
   readonly file: string;

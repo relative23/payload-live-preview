@@ -6,7 +6,7 @@
  */
 
 import { isDevMode, isInIframe } from './environment';
-import { noticeOnce } from './notice';
+import { noticeOnce, type BundlerEnv } from './notice';
 
 const LOCALHOST_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i;
 const VALID_ORIGIN_PATTERN = /^https?:\/\/[^/?#\s]+$/i;
@@ -83,19 +83,25 @@ export class OriginDetector {
     }
     // Only a detector built without the option, with a referrer and no origins
     // of its own, trusts the referrer by default; 3.0 stops (ADR 0007, row 22).
-    // The package's own callers pass the option, so the inline runtime leaves
-    // the notice out.
-    if (
-      !(typeof __INLINE_BUILD__ !== 'undefined' && __INLINE_BUILD__) &&
-      options.enableReferrerDetection === undefined &&
-      referrerOrigin !== undefined &&
-      explicit.size === 0
-    ) {
-      noticeOnce(
-        'origin-referrer',
-        '`new OriginDetector()` trusts the referrer unless `enableReferrerDetection` says so; ' +
-          '3.0 does not (ADR 0007, row 22).',
-      );
+    // `process.env.NODE_ENV` is read in place and with a dot, the form a bundler
+    // replaces, so a production build drops the notice and its text; every
+    // runtime artefact is built that way. With no bundler and no `process` the
+    // read throws, and nothing is said.
+    try {
+      if (
+        (process.env as BundlerEnv).NODE_ENV !== 'production' &&
+        options.enableReferrerDetection === undefined &&
+        referrerOrigin !== undefined &&
+        explicit.size === 0
+      ) {
+        noticeOnce(
+          'origin-referrer',
+          '`new OriginDetector()` trusts the referrer unless `enableReferrerDetection` says so; ' +
+            '3.0 does not (ADR 0007, row 22).',
+        );
+      }
+    } catch {
+      // No bundler replaced `process.env.NODE_ENV`, and this realm has no `process`.
     }
     const allowLocalhost =
       (options.enableLocalhostMatching ?? true) && (options.forceDevMode ?? isDevMode());

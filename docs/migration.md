@@ -36,9 +36,10 @@ hook without `timeoutMs`, a hook with a `locale` that merged an update naming
 none, an adapter or `generateInlineScript()` without `mergeTimeoutMs`,
 `livePreviewScriptProps()` delivering inline, and the Astro integration without
 `mode`. The last two name the bytes the project's own pages carry. The browser
-rows speak where `NODE_ENV` is readable, unless it is `production`, and
-elsewhere, such as an inline script, on `localhost` or `127.0.0.1`; the server
-rows once per process. The rows that change a surface or a range instead (the
+rows go by `process.env.NODE_ENV` as the project's bundler sets it: a
+development build speaks, a production build leaves them out together with
+their text, and a page that loads the module without a bundler hears none of
+them; the server rows speak once per process. The rows that change a surface or a range instead (the
 route refresh, the `@internal` names, the Node and Payload ranges) say nothing
 at run time, except that `LP0810` names a refresh that returns no promise,
 under `debug`. `LP0204`

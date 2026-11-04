@@ -19,7 +19,7 @@ import { DataMerger } from '@core/data-merger';
 import { MessageBus } from '@core/message-bus';
 import { PAYLOAD_2_HINT } from '@core/protocol-version';
 import { isDevMode } from '@detection/environment';
-import { noticeOnce } from '@detection/notice';
+import { noticeOnce, type BundlerEnv } from '@detection/notice';
 import { OriginDetector } from '@detection/origin';
 import type { PayloadFieldSchema, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 
@@ -221,18 +221,27 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     this.#attached = true;
     this.#bus.attach(this.#target ?? window);
     MessageBus.sendReady(this.#readyTargets(), this.#detector.enumerate());
-    if (this.#document === undefined) {
-      noticeOnce(
-        'hook-document',
-        'A hook without `document` merges any document; 3.0 requires it (ADR 0007, row 26).',
-      );
-    }
-    if (!this.#deadline) {
-      noticeOnce(
-        'hook-deadline',
-        'A hook without `timeoutMs` waits for a merge; 3.0 sets a default, `0` keeps none ' +
-          '(ADR 0007, row 27).',
-      );
+    // `process.env.NODE_ENV` is read in place and with a dot, the form a bundler
+    // replaces, so a production build drops the notices and their text. With no
+    // bundler and no `process` the read throws, and nothing is said.
+    try {
+      if ((process.env as BundlerEnv).NODE_ENV !== 'production') {
+        if (this.#document === undefined) {
+          noticeOnce(
+            'hook-document',
+            'A hook without `document` merges any document; 3.0 requires it (ADR 0007, row 26).',
+          );
+        }
+        if (!this.#deadline) {
+          noticeOnce(
+            'hook-deadline',
+            'A hook without `timeoutMs` waits for a merge; 3.0 sets a default, `0` keeps none ' +
+              '(ADR 0007, row 27).',
+          );
+        }
+      }
+    } catch {
+      // No bundler replaced `process.env.NODE_ENV`, and this realm has no `process`.
     }
   }
 
@@ -303,12 +312,21 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     // Before the revision moves: an update for another document must not abort this one's merge.
     if (!this.#accepts(message, data)) return;
     const target = this.#document;
-    if (target?.locale !== undefined && message.locale === undefined) {
-      noticeOnce(
-        'hook-locale',
-        `A hook for locale "${target.locale}" merged an update without one; 3.0 skips it, as ` +
-          '`requireLocale: true` does now (ADR 0007, row 31).',
-      );
+    try {
+      // In place, as in `#attach`: a production build drops the notice.
+      if (
+        (process.env as BundlerEnv).NODE_ENV !== 'production' &&
+        target?.locale !== undefined &&
+        message.locale === undefined
+      ) {
+        noticeOnce(
+          'hook-locale',
+          `A hook for locale "${target.locale}" merged an update without one; 3.0 skips it, as ` +
+            '`requireLocale: true` does now (ADR 0007, row 31).',
+        );
+      }
+    } catch {
+      // No bundler replaced `process.env.NODE_ENV`, and this realm has no `process`.
     }
     const revision = (this.#revision += 1);
     if (message.fieldSchemaJSON !== undefined) this.#schema = message.fieldSchemaJSON;

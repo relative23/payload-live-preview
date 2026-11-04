@@ -62,7 +62,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +806/+265/+224 B; prior reserves kept.
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +141/+81/+53 B; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +440/+147/+140 B; prior reserves kept.
-  'client.cjs': { raw: 170_607, gzip: 53_533, brotli: 46_221 },
+  // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; −31/+1/−35 B; the raw and Brotli ceilings stay, they fell; prior reserves kept.
+  'client.cjs': { raw: 170_607, gzip: 53_534, brotli: 46_221 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -107,7 +108,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +806/+262/+261 B; prior reserves kept.
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +141/+84/+86 B; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +440/+149/+140 B; prior raw/gzip reserves kept; the Brotli ceiling keeps its reserve.
-  'client.js': { raw: 170_526, gzip: 53_522, brotli: 46_204 },
+  // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; −31/+2/−37 B; the raw and Brotli ceilings stay, they fell; prior reserves kept.
+  'client.js': { raw: 170_526, gzip: 53_524, brotli: 46_204 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).

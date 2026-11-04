@@ -254,7 +254,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +254/+91/+69 B; prior reserves kept.
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +6/+1/-2 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +1051/+385/+340 B; prior reserves kept.
-  'adapters/react/index.js': { raw: 26_363, gzip: 8_709, brotli: 8_008 },
+  // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; +70/−22/−11 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
+  'adapters/react/index.js': { raw: 26_433, gzip: 8_709, brotli: 8_008 },
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +80/+22/+22 B; same 16/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -165/-26/-29 B; same 16/12/120 B cushions.
   // 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7766/+2534/+2343 B; cushions 16/12/120 B.
@@ -269,7 +270,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // a project on Payload 2 hears that 3.0 ends its support: paired Node24.22.1/npm12.0.2; +254/+86/+72 B; prior reserves kept.
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +6/+3/-2 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +986/+370/+313 B; prior reserves kept.
-  'adapters/vue/index.js': { raw: 25_325, gzip: 8_428, brotli: 7_743 },
+  // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; +70/−22/−7 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
+  'adapters/vue/index.js': { raw: 25_395, gzip: 8_428, brotli: 7_743 },
   //
   // 2026-09-06 (R4, zero-config setup): one new row. `adapters/nuxt/module.js`
   // is the build-time Nuxt module — a few hundred bytes, because all it does is
