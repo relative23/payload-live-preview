@@ -23,6 +23,8 @@ interface Conditions {
 }
 const manifest = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
   exports: Record<string, Conditions | string>;
+  peerDependencies: Record<string, string>;
+  peerDependenciesMeta: Record<string, { readonly optional?: boolean }>;
 };
 const DUAL: Record<string, string> = {
   ...DUAL_FORMAT_ENTRIES,
@@ -106,5 +108,15 @@ describe('package entries', () => {
       'server',
       'structural',
     ]);
+  });
+
+  it('declares `next`, which only `./nextjs/client` imports, as an optional peer a canary satisfies', () => {
+    // npm checks a peer with `semver.satisfies`, which keeps a pre-release such as
+    // 16.5.0-canary.39 outside `>=15.5.0`; only `*` admits every version
+    // (@npmcli/arborist, lib/dep-valid.js). With `>=15.5.0`, `npm install next@canary`
+    // beside this package ended in ERESOLVE (Latest Watch run 41741273573). The
+    // supported floor, Next.js 15.5, is a documented promise (ADR 0031), not a range.
+    expect(manifest.peerDependencies['next']).toBe('*');
+    expect(manifest.peerDependenciesMeta['next']).toEqual({ optional: true });
   });
 });

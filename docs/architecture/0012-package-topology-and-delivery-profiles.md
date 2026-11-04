@@ -100,8 +100,8 @@ would tax every consumer for a feature most never use, so it is not done.
 
 2026-09-14 (2.0.1): seven peers are declared now, all of them optional in
 `peerDependenciesMeta`: `astro`, `react`, `react-dom`, `svelte`, `ts-morph`,
-`vite` and `vue`. 2026-11-03: `next` (`>=15.5.0`), for
-`payload-live-preview/nextjs/client` alone (ADR 0032).
+`vite` and `vue`. 2026-11-03: `next`, for `payload-live-preview/nextjs/client`
+alone, with the range `*` so that a Next.js canary installs beside it (ADR 0032).
 
 ## Consequences
 

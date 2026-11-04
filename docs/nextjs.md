@@ -455,7 +455,8 @@ mount and a cancelled transition dispatch nothing.
 
 The component brings its own Suspense boundary, because `useSearchParams()`
 suspends a prerendered route. `payload-live-preview/nextjs/client` is the one
-entry that imports `next` (an optional peer, `>=15.5.0`); a project that only
+entry that imports `next` (an optional peer; its range is `*`, so a Next.js
+canary installs beside it); a project that only
 wants the refresh can still render `LivePreviewRouteRefresh` from
 `payload-live-preview/react` with `refresh={useRouter().refresh}`.
 

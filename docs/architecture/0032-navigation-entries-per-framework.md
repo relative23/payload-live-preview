@@ -28,8 +28,11 @@ One small client entry per framework, each importing only what its framework res
   `usePathname()`, `useSearchParams()` and `useRouter()` from `next/navigation`, dispatches the
   navigation event when the committed URL changes, renders `LivePreviewRouteRefresh` with
   `router.refresh`, and wraps itself in a Suspense boundary because `useSearchParams()` suspends a
-  prerendered route. `next` becomes an optional peer, `>=15.5.0`, the supported floor (ADR 0031).
-  npm only warns when an older Next is installed.
+  prerendered route. `next` becomes an optional peer with the range `*`. npm checks a peer with
+  `semver.satisfies`, which leaves a canary such as `16.5.0-canary.39` outside `>=15.5.0`, the
+  range first chosen: `npm install next@canary` beside the package then ended in ERESOLVE (Latest
+  Watch, 2026-11-04). Only `*` admits every version. The supported floor stays Next.js 15.5
+  (ADR 0031), as a documented promise rather than a range npm enforces.
 - **`./sveltekit/client`**: `livePreviewNavigation({ afterNavigate, invalidateAll })`. SvelteKit's
   functions are passed in; `onMount` and `tick` come from `svelte`, already an optional peer.
 - **`./nuxt/client`**: `bindNuxtNavigation(nuxtApp, refreshNuxtData)`, called by a client plugin
