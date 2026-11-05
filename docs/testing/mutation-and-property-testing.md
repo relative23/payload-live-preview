@@ -113,42 +113,51 @@ coverage percentages are not a substitute for mutation evidence.
 - Scope: `src/security/csp.ts`, `src/security/url-validator.ts`,
   `src/core/field-value.ts`
 - Current baseline (`quality/mutation-policy-pr.json`, the file that decides):
-  374 total, mutation score 93.85%, zero no-coverage, error and ignored mutants,
-  a timeout ceiling of 2 and a score drift band of 2 mutants.
+  489 total, mutation score 95.50%, zero no-coverage, error and ignored mutants,
+  a timeout ceiling of 2 and a score drift band of 2 mutants. Measured on
+  2026-11-05 (2.4.2, the CSP merge keeps a page's `'unsafe-inline'`): 467 killed
+  and 22 survived in 3 minutes 9 seconds with four workers. Stryker on that host
+  completed no test, or a few, for 12 mutants it called survived; each was
+  applied by hand and killed.
 - Initial uncached result (2026-08-13): 296 total, 278 killed, 18 survived, zero
   no-coverage, zero timeout, and zero error mutants; mutation score 93.92%.
 - Final related-test run of that baseline: 569 tests passed in 9 seconds.
   Complete uncached mutation run: 1 minute 43 seconds with four workers. A
   preceding run exposed a random-byte-dependent slash replacement survivor;
   deterministic `+` and `/` inputs made the 93.92% result repeatable.
-- Threshold: 90% break, 90% low, 95% high. Against 93.85% of 374 mutants the
-  break threshold is crossed after fifteen detected mutants are lost; the report
+- Threshold: 90% break, 90% low, 95% high. Against 95.50% of 489 mutants the
+  break threshold is crossed after twenty-seven detected mutants are lost; the report
   policy fails first, on the third, because it allows a drift of two.
 
 ### Surviving-mutant review
 
-No survivor is ignored by configuration. The review below classifies fourteen
-survivors — thirteen output-equivalent and one diagnostic-text mutant — and was
-last revised on 2026-09-11. The current baseline implies 23 survivors (374
-mutants at 93.85%, none uncovered); `quality/mutation-policy-pr.json` declares no
-`equivalent` list, so the survivors are held by the score alone and the ones not
-named here are not classified on this page. All remain visible in every report:
+No survivor is ignored by configuration. The review below classifies twenty
+of the 22 survivors the current baseline implies (489 mutants at 95.50%,
+none uncovered), all of them output-equivalent, and was last revised on
+2026-11-05. `quality/mutation-policy-pr.json` declares no `equivalent` list, so
+the survivors are held by the score alone, and the two `field-value.ts`
+mutants not named here are not classified on this page. All remain visible in
+every report:
 
 - four field-path control-flow mutants duplicate the preceding direct lookup or the
   next iteration's null/type guard;
-- seven CSP mutants alter an early-return/default/empty-token branch whose fallback
-  serializes the same policy, or change an impossible zero whitespace index after
-  leading ASCII whitespace has already been removed; and
+- fourteen CSP mutants serialize the same policy: the bounds of the whitespace
+  trim and its shortcut for an untouched value (a read past the end matches no
+  whitespace, and a slice of the whole string is the string), the `+` of the
+  whitespace split (empty tokens are skipped), the `'none'` early return and
+  the `allowNone` default of `buildFrameAncestors` (the end of the function
+  returns `'none'` for the same input), the `'union'` default of the merge mode (only a `'replace'` changes the
+  outcome), the branch for an empty
+  directive (it ends up holding the addition either way), and two
+  zero-whitespace-index comparisons that trimming has made impossible; and
 - two URL mutants (since 2026-09-11, six before): the empty check after trimming,
   which the URL parse and the relative-path pattern refuse anyway, and a regex
   repetition whose match is intentionally prefix-based. The other four — the empty
   check before trimming and the safe-URL guard the external-URL patterns imply —
   were lines the trusted-core mutation run showed no test could reach, and are gone.
 
-One surviving CSP string mutant shortens the Web-Crypto remediation text while
-retaining both the Node 18 and fail-closed security guidance. It is a diagnostic
-fidelity gap rather than a security-behavior escape and is kept visible instead of
-being excluded.
+No diagnostic-text mutant survives: `csp.test.ts` and the CSP property test
+assert each part of the Web-Crypto remediation text.
 
 Owner: package maintainers. Review these classifications whenever one of the three
 files changes, and no later than 2026-11-13. A refactor that removes equivalent

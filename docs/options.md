@@ -205,8 +205,11 @@ Notes on the rows that need one:
   adds `'strict-dynamic'`, after which CSP 3 ignores `'self'` and host
   sources, so every script on the page must carry the nonce. When the page's
   policy has no `script-src`, the merge starts from what the browser used
-  instead (`default-src`) and adds the nonce to it, so the page's own script
-  sources keep working. The Next.js
+  instead (`default-src`), so the page's own script sources keep working.
+  Where that list already lets inline scripts run with `'unsafe-inline'` and
+  holds no nonce, hash or `'strict-dynamic'`, the nonce stays out of it unless
+  `strictDynamic` asks for it: a nonce would switch `'unsafe-inline'` off for
+  the page's own scripts, and the injected one runs under `'unsafe-inline'` too. The Next.js
   middleware writes that `script-src` only into a response it injects the
   script into; on any other response, such as `NextResponse.next()`, it keeps
   `frame-ancestors` and warns once in development.
