@@ -17,12 +17,17 @@ import {
 /** A `fetch`-compatible function, injectable for tests. */
 export type FetchLike = (
   input: string,
-  init: { readonly headers: Record<string, string>; readonly signal: AbortSignal },
+  init: {
+    readonly headers: Record<string, string>;
+    readonly signal: AbortSignal;
+    /** A redirect comes back as its own 3xx answer, which refuses like any answer outside 2xx. */
+    readonly redirect: 'manual';
+  },
 ) => Promise<{ readonly ok: boolean; readonly status: number; json(): Promise<unknown> }>;
 
 export interface PayloadSessionStrategy {
   readonly type: 'payload-session';
-  /** Payload server origin, e.g. `https://cms.example.com`. */
+  /** Payload server origin, e.g. `https://cms.example.com`. `/me` is read there: a redirect is refused as `unavailable`, not followed. */
   readonly serverURL: string;
   /** Auth collection slug; `users` unless the project renamed it. */
   readonly usersSlug?: string;
@@ -162,6 +167,10 @@ export async function authorizeSession(
       const response = await fetchImpl(endpoint, {
         headers: { ...payloadHeaders, accept: 'application/json' },
         signal: controller.signal,
+        // The verdict comes from this endpoint: a followed redirect drops the cookie but
+        // reads the user wherever it points. 'manual' rather than the draft read's 'error',
+        // which workerd rejects outright; the 3xx is refused just below.
+        redirect: 'manual',
       });
       if (isAborted()) return refused('unavailable');
       if (!response.ok) return refused(response.status === 401 ? 'invalid' : 'unavailable');

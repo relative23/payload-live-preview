@@ -88,6 +88,7 @@ export function extractCookie(header: string | null, name: string, maxLength?: n
 export type FetchLike = (input: string, init: {
     readonly headers: Record<string, string>;
     readonly signal: AbortSignal;
+    readonly redirect: 'manual';
 }) => Promise<{
     readonly ok: boolean;
     readonly status: number;

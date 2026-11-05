@@ -88,7 +88,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+86/+22 B; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +818/+311/+320 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +289/+141/+113 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 222_007, gzip: 69_723, brotli: 59_248 },
+  // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/+48 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 222_025, gzip: 69_736, brotli: 59_296 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -232,7 +233,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+91/+75 B; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +789/+323/+327 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +289/+152/+63 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 215_940, gzip: 67_957, brotli: 57_702 },
+  // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/-17 B; the Brotli ceiling stays, it fell; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 215_958, gzip: 67_970, brotli: 57_702 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -361,7 +363,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+88/-25 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +249/+103/+130 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +289/+141/+126 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 215_670, gzip: 67_840, brotli: 57_599 },
+  // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/+84 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 215_688, gzip: 67_853, brotli: 57_683 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -419,5 +422,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+93/+105 B; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +252/+99/+157 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +290/+141/+139 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 214_753, gzip: 67_546, brotli: 57_416 },
+  // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/-34 B; the Brotli ceiling stays, it fell; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 214_771, gzip: 67_559, brotli: 57_416 },
 };

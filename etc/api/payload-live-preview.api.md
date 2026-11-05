@@ -333,6 +333,7 @@ export type EventSourcePolicy = 'any' | 'parent-or-opener';
 export type FetchLike = (input: string, init: {
     readonly headers: Record<string, string>;
     readonly signal: AbortSignal;
+    readonly redirect: 'manual';
 }) => Promise<{
     readonly ok: boolean;
     readonly status: number;

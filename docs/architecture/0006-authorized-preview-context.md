@@ -376,3 +376,20 @@ when that finds the user. Until then, sessions on that CMS are refused for up
 to a minute. A CMS that accepts the cookie alone is not remembered: a later
 upgrade to Payload 3 needs no restart, and a token such a CMS refuses still
 costs two requests. An explicit `origin` makes it one.
+
+## Addendum (2026-11-05): `/me` is read where `serverURL` points
+
+The strategy fetched `/me` with the platform default, `redirect: 'follow'`. On
+a redirect to another origin, fetch drops the cookie but still reads the answer
+there, and a user in that answer authorized the request: on Node 24.22.1 a `/me`
+that answered 302 to a second local server authorized that server's user, and a
+301 within the same origin did the same. The verdict has to come from the
+endpoint `serverURL` names, so the strategy now refuses a redirect as
+`unavailable`, as it refuses every answer outside 2xx, and a deployment points
+`serverURL` at the origin Payload answers on.
+
+It asks for `redirect: 'manual'`, which hands the 3xx answer back, rather than
+the `'error'` the draft reads use: Cloudflare's workerd rejects `'error'` with a
+TypeError (`src/workerd/api/http.c++`), so a session check asking for it would
+fail there on every request. `FetchLike` carries the mode in its `init`, so a
+custom `fetch` sees it; one that follows redirects anyway undoes the check.
