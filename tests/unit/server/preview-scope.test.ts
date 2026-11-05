@@ -157,7 +157,7 @@ describe('scoped Payload reads', () => {
       `${SCOPE_CMS}/api/posts/post-a?depth=1&draft=true&locale=de`,
       expect.objectContaining({
         cache: 'no-store',
-        redirect: 'error',
+        redirect: 'manual',
         headers: { accept: 'application/json', cookie: 'payload-token=scoped-test-user' },
       }),
     );

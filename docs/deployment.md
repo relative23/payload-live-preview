@@ -232,6 +232,14 @@ Two things behave differently where `process` does not exist:
 - **`strict` treats the runtime as production.** Its `https:` requirement for
   `allowedOrigins` applies, and an `http:` origin fails at startup.
 
+On Cloudflare Workers the draft read of `definePreview()` sends
+`cache: 'no-store'`, which workerd accepts from compatibility date 2024-11-11,
+or earlier with the `cache_option_enabled` flag
+(`src/workerd/io/compatibility-date.capnp`); with an older date every read
+fails as `network`. The read and the `payload-session` check ask for
+`redirect: 'manual'`, the mode workerd supports besides `'follow'`, and
+refuse the 3xx answer.
+
 `pll doctor`, `pll migrate` and `pll-codegen` are Node command-line tools and
 are not part of the deployed application.
 

@@ -6,14 +6,14 @@
 // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired at the same HEAD (Node24.22.1/npm12.0.2): index +291/+142|127/+181|99 B (cjs|js); reserves kept.
 // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired at the same HEAD (Node24.22.1/npm12.0.2): index +18/+14|13 B (cjs|js), its Brotli fell (-61|-49) and the ceilings stay; server +18/+8/+7|3 B (cjs|js); reserves kept.
 // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired at the same HEAD (Node24.22.1/npm12.0.2): index +91/+19|26/+90|49 B (cjs|js); reserves kept.
+// 2026-11-05 (2.4.2, the draft read of definePreview() asks for redirect: 'manual'): paired at the same HEAD (Node24.22.1/npm12.0.2): server +1/-5|-3/-3|-4 B (cjs|js); raw moves, the gzip and Brotli ceilings stay, they fell; reserves kept.
 // 2026-10-17 (media URLs resolve against `serverURL`): paired builds at the same HEAD epoch1792233083 (Node24.19/npm12.0.2); every row that embeds the runtime moves by its exact measured delta (raw +331 adapters/lean/inline, +340 core/client, +671 index barrels; gzip +64 to +173) and keeps its reserves; a Brotli budget rises only where Brotli rose.
 // 2026-10-16 (the json-only population body refuses an interruption, ADR 0010 addendum): paired builds at the same HEAD epoch1791096072 (Node24.19/npm12.0.2); every row that embeds the runtime moves by its exact measured delta (raw +12 each, +11 react/vue, +24 index barrels; gzip +2 to +11) and keeps its reserves; a Brotli budget rises only where Brotli rose.
 // 2026-10-10 (PR 125, `data-payload-morph`, ADR 0008 §10): paired builds at the same HEAD epoch1791096072 (Node24.19/npm12.0.2); every row that embeds the runtime moves by its exact measured delta (raw +60 core/client/structural, +39 fragment, +21 lean/lexical, +156 adapters, +216 index barrels) and keeps its reserves.
 // 2026-10-05 (ADR 0004): accepted data snapshots and owned merge outcomes; paired 2.1.0 measurements at epoch1791096072 (Node24.19/npm12.0.2) retain each row's reserves.
 // 2026-10-05 (ADR 0004): trailing merge timers own their requests and handles.
 // Measured against the prior 2.1.0 archive with Node24.19/npm12.0.2, epoch1791096072; changed rows move by their exact measured deltas and retain their previous reserves.
-// 2026-10-04 (2.1.0): stop superseded merges after diagnostics and simplify legacy
-// relation planning. Paired Node24.19/npm12.0.2 measurements at epoch1791096072 move
+// 2026-10-04 (2.1.0): stop superseded merges after diagnostics and simplify legacy relation planning. Paired Node24.19/npm12.0.2 measurements at epoch1791096072 move
 // changed rows by their measured deltas and preserve existing raw/gzip/Brotli reserves.
 
 import type { BundleBudget } from './bundle-measure';
@@ -591,10 +591,10 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +298/+92/+73 B; same 6/12/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +662/+308/+279 B; same 6/12/120 B cushions.
   // 2026-10-02 (PHD-25, a bounded session-origin retry preserves Payload 2 cookies, ADR 0006): measured +206/+108/+101 B; same 6/12/120 B cushions.
-  'server.cjs': { raw: 17_867, gzip: 6_489, brotli: 5_928 },
+  'server.cjs': { raw: 17_868, gzip: 6_489, brotli: 5_928 },
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +298/+95/+85 B; same 4/12/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +662/+301/+280 B; same 4/12/120 B cushions.
   // 2026-10-02 (PHD-25, a bounded session-origin retry preserves Payload 2 cookies, ADR 0006): measured +206/+120/+95 B; same 4/12/120 B cushions.
-  'server.js': { raw: 17_737, gzip: 6_488, brotli: 5_943 },
+  'server.js': { raw: 17_738, gzip: 6_488, brotli: 5_943 },
   ...CLIENT_ENTRY_BUDGETS,
 };

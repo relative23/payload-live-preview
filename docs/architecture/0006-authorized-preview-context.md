@@ -389,7 +389,8 @@ endpoint `serverURL` names, so the strategy now refuses a redirect as
 `serverURL` at the origin Payload answers on.
 
 It asks for `redirect: 'manual'`, which hands the 3xx answer back, rather than
-the `'error'` the draft reads use: Cloudflare's workerd rejects `'error'` with a
-TypeError (`src/workerd/api/http.c++`), so a session check asking for it would
-fail there on every request. `FetchLike` carries the mode in its `init`, so a
+`'error'`: Cloudflare's workerd rejects `'error'` with a TypeError
+(`src/workerd/api/http.c++`), so a session check asking for it would fail
+there on every request. The draft reads moved to `'manual'` the same day
+(ADR 0019). `FetchLike` carries the mode in its `init`, so a
 custom `fetch` sees it; one that follows redirects anyway undoes the check.

@@ -285,7 +285,7 @@ export type PreviewFetchFunction = (input: string, init: {
     readonly headers: Record<string, string>;
     readonly signal: AbortSignal;
     readonly cache: 'no-store';
-    readonly redirect: 'error';
+    readonly redirect: 'manual';
 }) => Promise<{
     readonly ok: boolean;
     readonly status: number;

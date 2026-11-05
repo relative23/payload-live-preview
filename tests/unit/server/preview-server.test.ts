@@ -122,7 +122,7 @@ describe('definePreview — reads', () => {
     expect(calls).toHaveLength(2);
     for (const call of calls) {
       expect(call.init.cache).toBe('no-store');
-      expect(call.init.redirect).toBe('error');
+      expect(call.init.redirect).toBe('manual');
     }
   });
 });

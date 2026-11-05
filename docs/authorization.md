@@ -252,7 +252,8 @@ export default defineEventHandler(async (event) => {
 
 `fetchDocument` and `fetchGlobal` return `{ ok, data, draft, status }` or
 `{ ok: false, reason, status, draft, cause }` (`reason`: `http`, `network`,
-`timeout`, `aborted`, `invalid-json`, `no-fetch`, `scope`); `errorMode: 'throw'`
+`timeout`, `aborted`, `invalid-json`, `no-fetch`, `scope`); a redirect is not
+followed and comes back as `http` with its 3xx status. `errorMode: 'throw'`
 throws `PreviewFetchError`. Per-read options: `authorization`, `locale`,
 `headers` (the context's win on conflict), `signal`, `errorMode`. `depth`
 serves the read and the runtime merge alike: where the browser reaches Payload
