@@ -209,7 +209,9 @@ Notes on the rows that need one:
   Where that list already lets inline scripts run with `'unsafe-inline'` and
   holds no nonce, hash or `'strict-dynamic'`, the nonce stays out of it unless
   `strictDynamic` asks for it: a nonce would switch `'unsafe-inline'` off for
-  the page's own scripts, and the injected one runs under `'unsafe-inline'` too. The Next.js
+  the page's own scripts, and the injected one runs under `'unsafe-inline'` too. A `script-src-elem` the page
+  sets gets the same sources by the same rule, since browsers ask it for
+  script elements. The Next.js
   middleware writes that `script-src` only into a response it injects the
   script into; on any other response, such as `NextResponse.next()`, it keeps
   `frame-ancestors` and warns once in development.

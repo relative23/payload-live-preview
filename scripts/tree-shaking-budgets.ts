@@ -524,8 +524,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 58_570 → 58_755, +185 B gzip; retain the 57 B it had.
     // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
     // without the change: +139 B gzip; retain the reserve it had.
-    // 2026-10-26 (the adapters forward the visibility gate): Node24.22.1, the same HEAD with and
-    // without the change: +29 B gzip; retain the reserve it had.
+    // 2026-10-26 (the adapters forward the visibility gate): Node24.22.1, the same HEAD with and without the change: +29 B gzip; retain the reserve it had.
     // 2026-10-26 (LP0808 names the missing boundary): Node24.22.1, the same HEAD with and
     // without the change: +76 B gzip; retain the reserve it had.
     // 2026-10-26 (the merge decision reads rich text by its shape): Node24.22.1, the same HEAD with and
@@ -537,10 +536,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +244 B gzip; reserve kept.
     // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and without the change: +266 B gzip; retain the reserve it had.
     // 2026-11-05 (2.4.2, a full-mode merge keeps the page's 'unsafe-inline'): paired, same epoch: 62_529 → 62_695, +166 B gzip; reserve kept.
+    // 2026-11-05 (2.4.2, the union also reaches the page's own script-src-elem): paired, same epoch: 62_695 → 62_725, +30 B gzip; reserve kept.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 62_771,
+    gzip: 62_801,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

@@ -113,26 +113,27 @@ coverage percentages are not a substitute for mutation evidence.
 - Scope: `src/security/csp.ts`, `src/security/url-validator.ts`,
   `src/core/field-value.ts`
 - Current baseline (`quality/mutation-policy-pr.json`, the file that decides):
-  489 total, mutation score 95.50%, zero no-coverage, error and ignored mutants,
+  502 total, mutation score 95.82%, zero no-coverage, error and ignored mutants,
   a timeout ceiling of 2 and a score drift band of 2 mutants. Measured on
-  2026-11-05 (2.4.2, the CSP merge keeps a page's `'unsafe-inline'`): 467 killed
-  and 22 survived in 3 minutes 9 seconds with four workers. Stryker on that host
-  completed no test, or a few, for 12 mutants it called survived; each was
-  applied by hand and killed.
+  2026-11-05 (2.4.2, the CSP merge also reaches a page's own `script-src-elem`):
+  481 killed and 21 survived in 3 minutes 14 seconds with four workers. Stryker
+  on that host completed no test, or a few, for 13 mutants it called survived;
+  applied by hand, 12 were killed, and the one left is the empty-directive
+  mutant classified below.
 - Initial uncached result (2026-08-13): 296 total, 278 killed, 18 survived, zero
   no-coverage, zero timeout, and zero error mutants; mutation score 93.92%.
 - Final related-test run of that baseline: 569 tests passed in 9 seconds.
   Complete uncached mutation run: 1 minute 43 seconds with four workers. A
   preceding run exposed a random-byte-dependent slash replacement survivor;
   deterministic `+` and `/` inputs made the 93.92% result repeatable.
-- Threshold: 90% break, 90% low, 95% high. Against 95.50% of 489 mutants the
-  break threshold is crossed after twenty-seven detected mutants are lost; the report
+- Threshold: 90% break, 90% low, 95% high. Against 95.82% of 502 mutants the
+  break threshold is crossed after thirty detected mutants are lost; the report
   policy fails first, on the third, because it allows a drift of two.
 
 ### Surviving-mutant review
 
-No survivor is ignored by configuration. The review below classifies twenty
-of the 22 survivors the current baseline implies (489 mutants at 95.50%,
+No survivor is ignored by configuration. The review below classifies nineteen
+of the 21 survivors the current baseline implies (502 mutants at 95.82%,
 none uncovered), all of them output-equivalent, and was last revised on
 2026-11-05. `quality/mutation-policy-pr.json` declares no `equivalent` list, so
 the survivors are held by the score alone, and the two `field-value.ts`
@@ -141,13 +142,12 @@ every report:
 
 - four field-path control-flow mutants duplicate the preceding direct lookup or the
   next iteration's null/type guard;
-- fourteen CSP mutants serialize the same policy: the bounds of the whitespace
+- thirteen CSP mutants serialize the same policy: the bounds of the whitespace
   trim and its shortcut for an untouched value (a read past the end matches no
   whitespace, and a slice of the whole string is the string), the `+` of the
   whitespace split (empty tokens are skipped), the `'none'` early return and
   the `allowNone` default of `buildFrameAncestors` (the end of the function
-  returns `'none'` for the same input), the `'union'` default of the merge mode (only a `'replace'` changes the
-  outcome), the branch for an empty
+  returns `'none'` for the same input), the branch for an empty
   directive (it ends up holding the addition either way), and two
   zero-whitespace-index comparisons that trimming has made impossible; and
 - two URL mutants (since 2026-09-11, six before): the empty check after trimming,

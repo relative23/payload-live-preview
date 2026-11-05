@@ -40,6 +40,10 @@ const PAGE_POLICIES: readonly PagePolicy[] = [
   // 'unsafe-inline' on script-src, then through the default-src fallback.
   { policy: "script-src 'self' 'unsafe-inline'", pageRuns: true },
   { policy: "default-src 'self' 'unsafe-inline'", pageRuns: true },
+  // A script-src-elem of the page's own decides for script elements: the nonce has to reach it,
+  // and where it allows inline scripts itself, the page's script keeps running there.
+  { policy: "script-src-elem 'self'; script-src 'self'", pageRuns: false },
+  { policy: "script-src-elem 'self' 'unsafe-inline'; script-src 'self'", pageRuns: true },
 ];
 
 let server: Server | undefined;
