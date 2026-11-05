@@ -18,7 +18,8 @@ import {
 
 /**
  * A `fetch`-compatible function. The read forwards a session cookie, so it is
- * `cache: 'no-store'` (never a framework data cache) and `redirect: 'error'`.
+ * `cache: 'no-store'` (never a framework data cache) and `redirect: 'manual'`:
+ * a redirect comes back as its own 3xx answer and fails the read as `'http'`.
  */
 export type PreviewFetchFunction = (
   input: string,
@@ -26,7 +27,7 @@ export type PreviewFetchFunction = (
     readonly headers: Record<string, string>;
     readonly signal: AbortSignal;
     readonly cache: 'no-store';
-    readonly redirect: 'error';
+    readonly redirect: 'manual';
   },
 ) => Promise<{
   readonly ok: boolean;
@@ -338,7 +339,9 @@ async function read<T>(
       headers: Object.fromEntries(headers),
       signal,
       cache: 'no-store',
-      redirect: 'error',
+      // 'manual' as the session check asks: workerd rejects 'error' before sending,
+      // and the 3xx that comes back instead fails the read just below.
+      redirect: 'manual',
     });
   } catch (cause) {
     return settle(attempt, {

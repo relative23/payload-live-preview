@@ -141,7 +141,8 @@ route's data representation. Only one `preview=true` and the mapped locale
 are accepted. Other query keys, document selectors and depth overrides are
 refused before fetching. Browser headers never become Payload credentials.
 
-The upstream request retains `cache: 'no-store'` and `redirect: 'error'`.
+The upstream request retains `cache: 'no-store'` and refuses a redirect
+(`redirect: 'manual'` since 2026-11-05; see the addendum at the end).
 JSON requires the JSON media type and valid UTF-8. The reference counts actual
 body bytes, with a 65,536-byte default cap, not the declared content length.
 That cap bounds this read fixture, not the package's general document capacity.
@@ -724,3 +725,15 @@ not a package-only budget. No production API/default/version changes.
   late settlement and concurrent requests preserve the same refusal contract.
 - The existing token/session/verifier tests stay intact. Local fixtures,
   production package behavior and native browser evidence remain separate.
+
+## Addendum (2026-11-05): the upstream request asks for `redirect: 'manual'`
+
+The read that `definePreview()` makes, and with it the upstream request of
+every continuation, asked for `redirect: 'error'`. Cloudflare's workerd
+rejects that mode with a TypeError before it sends anything
+(`src/workerd/api/http.c++`), so under workerd every draft read failed as
+`network`. It now asks for `redirect: 'manual'`, as the `payload-session`
+check does (ADR 0006, addendum of the same date): a redirect comes back as its
+own 3xx answer and fails the read as `http` with that status, so it is still
+never followed and its target is never asked. `cache: 'no-store'` stays; workerd
+accepts it from compatibility date 2024-11-11.

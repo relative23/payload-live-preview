@@ -84,7 +84,7 @@ describe('schema-bound related draft composition', () => {
       expect(parsed.searchParams.get('locale')).toBe('de');
       expect(init?.method ?? 'GET').toBe('GET');
       expect(init?.cache).toBe('no-store');
-      expect(init?.redirect).toBe('error');
+      expect(init?.redirect).toBe('manual');
       expect(new Headers(init?.headers).get('authorization')).toBeNull();
       expect(
         new Headers(init?.headers).get('cookie') === s.h.principal.payloadHeaders['cookie'],

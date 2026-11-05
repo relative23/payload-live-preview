@@ -72,7 +72,7 @@ describe('continuation data reference', () => {
     expect(url).toBe('https://cms.example.test/cms/rest/posts/post-a?depth=1&draft=true&locale=de');
     expect(init?.headers).toEqual({ accept: 'application/json', ...s.h.principal.payloadHeaders });
     expect(init?.cache).toBe('no-store');
-    expect(init?.redirect).toBe('error');
+    expect(init?.redirect).toBe('manual');
     expect(init?.signal).toBeInstanceOf(AbortSignal);
     expect(s.fetch).toHaveBeenCalledTimes(1);
   });

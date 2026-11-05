@@ -108,7 +108,7 @@ describe('bound unsaved population reference', () => {
     expect(new Headers(post?.headers).get('cookie')).toBe(s.h.principal.payloadHeaders['cookie']);
     for (const init of [get, post]) {
       expect(init?.cache).toBe('no-store');
-      expect(init?.redirect).toBe('error');
+      expect(init?.redirect).toBe('manual');
       expect(init?.signal).toBeInstanceOf(AbortSignal);
     }
     // definePreview combines the shared lifetime with a per-read timeout.
