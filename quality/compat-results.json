@@ -1,11 +1,11 @@
 {
   "workflow": "ci.yml",
-  "id": 41774516545,
-  "url": "https://github.com/relative23/payload-live-preview/actions/runs/41774516545",
-  "commit": "dcf37ea80420af3282aa90a9535d81bdba230678",
+  "id": 41906747339,
+  "url": "https://github.com/relative23/payload-live-preview/actions/runs/41906747339",
+  "commit": "df05517f8d2e5d11bce41c36d37ec9ed901b437c",
   "event": "push",
   "conclusion": "success",
-  "executedAt": "2026-11-04T07:36:07Z",
+  "executedAt": "2026-11-04T22:49:42Z",
   "jobs": [
     {
       "conclusion": "success",
@@ -82,6 +82,10 @@
     {
       "conclusion": "success",
       "name": "Lint & Typecheck"
+    },
+    {
+      "conclusion": "success",
+      "name": "Next.js in a pnpm workspace (no next peer)"
     },
     {
       "conclusion": "success",
