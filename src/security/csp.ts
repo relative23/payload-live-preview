@@ -208,7 +208,9 @@ function fallbackValue(name: string, directives: ReadonlyMap<string, string>): s
  * Merge directives into an existing `Content-Security-Policy` header value.
  * Commas separate policies (that is how `Headers.get()` joins repeated
  * headers); each is merged, because a browser enforces every policy and
- * widening only the last would leave the others blocking.
+ * widening only the last would leave the others blocking. A union into
+ * `script-src` also reaches the `script-src-elem` a policy sets, the
+ * directive a browser asks for script elements.
  */
 export function mergeCspHeader(
   existing: string,
@@ -217,6 +219,37 @@ export function mergeCspHeader(
   const policies = existing.split(',').filter((policy) => policy.trim().length > 0);
   if (policies.length === 0) return mergeCspPolicy('', additions);
   return policies.map((policy) => mergeCspPolicy(policy, additions)).join(', ');
+}
+
+/** One addition into one directive, in place: a union with what applies there today, or a replace. */
+function mergeDirective(
+  directives: Map<string, string>,
+  name: string,
+  addition: CspDirectiveMerge,
+): void {
+  const current = directives.get(name) ?? fallbackValue(name, directives);
+  if (addition.mode === 'replace' || current === undefined || current.length === 0) {
+    directives.set(name, addition.value);
+    return;
+  }
+  const existingTokens = current.split(CSP_ASCII_WHITESPACE);
+  let addedTokens = addition.value.split(CSP_ASCII_WHITESPACE);
+  // A nonce or hash here would block the page's inline code, and the inline code it was
+  // meant for runs under 'unsafe-inline' anyway. An addition carrying 'strict-dynamic'
+  // asks to trust the nonce alone, so it keeps both.
+  if (allowsAllInline(existingTokens) && !addedTokens.some(isStrictDynamic)) {
+    addedTokens = addedTokens.filter((token) => !isNonceOrHash(token));
+  }
+  const seen = new Set<string>();
+  const merged: string[] = [];
+  for (const token of [...existingTokens, ...addedTokens]) {
+    if (token.length === 0 || seen.has(token)) continue;
+    seen.add(token);
+    merged.push(token);
+  }
+  // `'none'` cannot coexist with other sources.
+  const withoutNone = merged.filter((token) => token !== "'none'");
+  directives.set(name, (withoutNone.length > 0 ? withoutNone : merged).join(' '));
 }
 
 function mergeCspPolicy(
@@ -240,30 +273,12 @@ function mergeCspPolicy(
     const name = asciiLowercase(rawName);
     const addition: CspDirectiveMerge =
       typeof rawAddition === 'string' ? { value: rawAddition } : rawAddition;
-    const mode = addition.mode ?? 'union';
-    const current = directives.get(name) ?? fallbackValue(name, directives);
-    if (mode === 'replace' || current === undefined || current.length === 0) {
-      directives.set(name, addition.value);
-      continue;
+    mergeDirective(directives, name, addition);
+    // A browser asks the policy's own script-src-elem, not script-src, for every script
+    // element, so a union into script-src alone would never reach them. A replace stays put.
+    if (name === 'script-src' && addition.mode !== 'replace' && directives.has('script-src-elem')) {
+      mergeDirective(directives, 'script-src-elem', addition);
     }
-    const existingTokens = current.split(CSP_ASCII_WHITESPACE);
-    let addedTokens = addition.value.split(CSP_ASCII_WHITESPACE);
-    // A nonce or hash here would block the page's inline code, and the inline code it was
-    // meant for runs under 'unsafe-inline' anyway. An addition carrying 'strict-dynamic'
-    // asks to trust the nonce alone, so it keeps both.
-    if (allowsAllInline(existingTokens) && !addedTokens.some(isStrictDynamic)) {
-      addedTokens = addedTokens.filter((token) => !isNonceOrHash(token));
-    }
-    const seen = new Set<string>();
-    const merged: string[] = [];
-    for (const token of [...existingTokens, ...addedTokens]) {
-      if (token.length === 0 || seen.has(token)) continue;
-      seen.add(token);
-      merged.push(token);
-    }
-    // `'none'` cannot coexist with other sources.
-    const withoutNone = merged.filter((token) => token !== "'none'");
-    directives.set(name, (withoutNone.length > 0 ? withoutNone : merged).join(' '));
   }
 
   const out: string[] = [];

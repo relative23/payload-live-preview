@@ -186,6 +186,16 @@ export function adapterConformance(harness: ConformanceHarness): void {
         `script-src 'self' 'unsafe-inline' 'nonce-${String(tagNonce(strict.body))}' 'strict-dynamic'`,
       );
     });
+    it("in 'full' mode, the nonce also reaches a script-src-elem the page sets", async () => {
+      // A browser asks script-src-elem, not script-src, for the tag; without the
+      // nonce there the injected script is blocked and the preview never starts.
+      const page = { 'content-security-policy': "script-src-elem 'self'; script-src 'self'" };
+      const out = await run({ manageCsp: 'full' }, { url: INTENT, responseHeaders: page });
+      const nonce = `'nonce-${String(tagNonce(out.body))}'`;
+      expect(csp(out)).toBe(
+        `script-src-elem 'self' ${nonce}; script-src 'self' ${nonce}; frame-ancestors 'self' ${ADMIN}`,
+      );
+    });
   });
 
   describe(`${harness.name} — conformance: cache headers on a changed response`, () => {
