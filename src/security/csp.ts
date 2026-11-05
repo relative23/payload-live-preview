@@ -135,7 +135,12 @@ export function buildScriptSrcWithNonce(
   return parts.join(' ');
 }
 
-/** `union` (default) adds sources to an existing directive; `replace` overwrites it. */
+/**
+ * `union` (default) adds sources to an existing directive without taking away what it
+ * allowed: where it lets every inline script or style run under `'unsafe-inline'`, a nonce
+ * or hash is left out, because CSP 2 and later ignore `'unsafe-inline'` beside one.
+ * `replace` overwrites the directive.
+ */
 export interface CspDirectiveMerge {
   readonly value: string;
   readonly mode?: 'union' | 'replace';
@@ -163,6 +168,31 @@ const FETCH_FALLBACKS: ReadonlyMap<string, readonly string[]> = new Map([
   ['style-src-attr', ['style-src', 'default-src']],
   ['worker-src', ['child-src', 'script-src', 'default-src']],
 ]);
+
+/**
+ * The nonce-source and hash-source grammar (CSP3 §2.3.1), matched after ASCII lowercasing.
+ * A browser drops a malformed source, so only the well-formed shape counts.
+ */
+const NONCE_OR_HASH_SOURCE = /^'(?:nonce|sha256|sha384|sha512)-[a-z0-9+/_-]+={0,2}'$/;
+
+function isNonceOrHash(token: string): boolean {
+  return NONCE_OR_HASH_SOURCE.test(asciiLowercase(token));
+}
+
+function isStrictDynamic(token: string): boolean {
+  return asciiLowercase(token) === "'strict-dynamic'";
+}
+
+/**
+ * Whether a source list lets every inline script or style run (CSP3, "Does a source list
+ * allow all inline behavior for type?"): it holds `'unsafe-inline'` and no nonce or hash,
+ * nor the `'strict-dynamic'` that switches it off for scripts. In a style list that keyword
+ * means nothing, so counting it there only keeps a nonce the policy then needs anyway.
+ */
+function allowsAllInline(tokens: readonly string[]): boolean {
+  if (tokens.some((token) => isNonceOrHash(token) || isStrictDynamic(token))) return false;
+  return tokens.some((token) => asciiLowercase(token) === "'unsafe-inline'");
+}
 
 function fallbackValue(name: string, directives: ReadonlyMap<string, string>): string | undefined {
   const chain = FETCH_FALLBACKS.get(name);
@@ -216,12 +246,17 @@ function mergeCspPolicy(
       directives.set(name, addition.value);
       continue;
     }
+    const existingTokens = current.split(CSP_ASCII_WHITESPACE);
+    let addedTokens = addition.value.split(CSP_ASCII_WHITESPACE);
+    // A nonce or hash here would block the page's inline code, and the inline code it was
+    // meant for runs under 'unsafe-inline' anyway. An addition carrying 'strict-dynamic'
+    // asks to trust the nonce alone, so it keeps both.
+    if (allowsAllInline(existingTokens) && !addedTokens.some(isStrictDynamic)) {
+      addedTokens = addedTokens.filter((token) => !isNonceOrHash(token));
+    }
     const seen = new Set<string>();
     const merged: string[] = [];
-    for (const token of [
-      ...current.split(CSP_ASCII_WHITESPACE),
-      ...addition.value.split(CSP_ASCII_WHITESPACE),
-    ]) {
+    for (const token of [...existingTokens, ...addedTokens]) {
       if (token.length === 0 || seen.has(token)) continue;
       seen.add(token);
       merged.push(token);

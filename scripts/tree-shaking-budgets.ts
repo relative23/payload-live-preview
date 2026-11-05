@@ -535,12 +535,12 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (format and locale reach the binding): paired, same epoch: +21 B gzip; reserve kept.
     // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +412 B gzip; reserve kept.
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +244 B gzip; reserve kept.
-    // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
-    // without the change: +266 B gzip; retain the reserve it had.
+    // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and without the change: +266 B gzip; retain the reserve it had.
+    // 2026-11-05 (2.4.2, a full-mode merge keeps the page's 'unsafe-inline'): paired, same epoch: 62_529 → 62_695, +166 B gzip; reserve kept.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 62_605,
+    gzip: 62_771,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {

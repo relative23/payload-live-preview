@@ -446,6 +446,92 @@ describe('mergeCspHeader — several policies in one header value', () => {
   });
 });
 
+describe("mergeCspHeader — a directive that allows inline code with 'unsafe-inline'", () => {
+  // CSP 2 and later ignore 'unsafe-inline' once a nonce or a hash is in the
+  // same list, so a nonce merged in blocks every inline script of the page.
+  // The inline script the nonce was meant for runs under 'unsafe-inline' anyway.
+  it('leaves the nonce out and still adds the other sources', () => {
+    expect(
+      mergeCspHeader("script-src 'self' 'unsafe-inline'", {
+        'script-src': "'self' 'nonce-abc' https://cdn.example.com",
+      }),
+    ).toBe("script-src 'self' 'unsafe-inline' https://cdn.example.com");
+  });
+
+  it('decides on the default-src a missing script-src falls back to', () => {
+    expect(
+      mergeCspHeader("default-src 'self' 'unsafe-inline'", { 'script-src': "'self' 'nonce-abc'" }),
+    ).toBe("default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'");
+  });
+
+  it('leaves a hash out as well', () => {
+    expect(
+      mergeCspHeader("script-src 'unsafe-inline'", { 'script-src': "'sha256-AbC+/_-0=' 'self'" }),
+    ).toBe("script-src 'unsafe-inline' 'self'");
+  });
+
+  it.each([
+    ['a nonce of its own', "'nonce-page'"],
+    ['a hash', "'sha384-AbC+/_-0=='"],
+    ["'strict-dynamic'", "'strict-dynamic'"],
+  ])("adds the nonce where %s already switched 'unsafe-inline' off", (_name, source) => {
+    expect(
+      mergeCspHeader(`script-src 'unsafe-inline' ${source}`, { 'script-src': "'nonce-abc'" }),
+    ).toBe(`script-src 'unsafe-inline' ${source} 'nonce-abc'`);
+  });
+
+  it("keeps the nonce when the addition asks for 'strict-dynamic'", () => {
+    // strictDynamic is the documented opt-in to trusting the nonce alone.
+    expect(
+      mergeCspHeader("script-src 'self' 'unsafe-inline'", {
+        'script-src': "'self' 'nonce-abc' 'strict-dynamic'",
+      }),
+    ).toBe("script-src 'self' 'unsafe-inline' 'nonce-abc' 'strict-dynamic'");
+  });
+
+  it('reads the keywords ASCII case-insensitively, as a browser does', () => {
+    expect(mergeCspHeader("script-src 'Unsafe-Inline'", { 'script-src': "'nonce-abc'" })).toBe(
+      "script-src 'Unsafe-Inline'",
+    );
+    expect(
+      mergeCspHeader("script-src 'unsafe-inline' 'NONCE-page'", { 'script-src': "'nonce-abc'" }),
+    ).toBe("script-src 'unsafe-inline' 'NONCE-page' 'nonce-abc'");
+    expect(
+      mergeCspHeader("script-src 'unsafe-inline' 'Strict-Dynamic'", { 'script-src': "'nonce-a'" }),
+    ).toBe("script-src 'unsafe-inline' 'Strict-Dynamic' 'nonce-a'");
+  });
+
+  it('counts only a well-formed nonce or hash as switching it off', () => {
+    // A browser drops a source it cannot parse, so 'unsafe-inline' stays in force there.
+    const malformed = "'nonce-' 'sha1-abc' 'nonce-a=b' x'nonce-abc' 'nonce-abc'x 'sha256-a==='";
+    expect(
+      mergeCspHeader(`script-src 'unsafe-inline' ${malformed}`, { 'script-src': "'nonce-abc'" }),
+    ).toBe(`script-src 'unsafe-inline' ${malformed}`);
+  });
+
+  it('treats a style directive the same way', () => {
+    expect(mergeCspHeader("style-src 'self' 'unsafe-inline'", { 'style-src': "'nonce-abc'" })).toBe(
+      "style-src 'self' 'unsafe-inline'",
+    );
+  });
+
+  it('decides for each policy on its own', () => {
+    expect(
+      mergeCspHeader("script-src 'unsafe-inline', script-src 'nonce-page'", {
+        'script-src': "'nonce-abc'",
+      }),
+    ).toBe("script-src 'unsafe-inline', script-src 'nonce-page' 'nonce-abc'");
+  });
+
+  it('still replaces the directive as given under mode replace', () => {
+    expect(
+      mergeCspHeader("script-src 'unsafe-inline'", {
+        'script-src': { value: "'nonce-abc'", mode: 'replace' },
+      }),
+    ).toBe("script-src 'nonce-abc'");
+  });
+});
+
 describe('CSP whitespace handling stays linear', () => {
   it('trims a pathological run in milliseconds, not minutes', () => {
     // The obvious `/^\s+|\s+$/` is superlinear by construction: for a long run

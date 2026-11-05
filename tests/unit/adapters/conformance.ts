@@ -170,6 +170,22 @@ export function adapterConformance(harness: ConformanceHarness): void {
       const plain = await run({ manageCsp: 'full' }, { url: INTENT });
       expect(csp(plain)).not.toContain("'strict-dynamic'");
     });
+    it("in 'full' mode, keeps the page's 'unsafe-inline' working: no nonce joins its script-src", async () => {
+      const page = { 'content-security-policy': "script-src 'self' 'unsafe-inline'" };
+      const out = await run({ manageCsp: 'full' }, { url: INTENT, responseHeaders: page });
+      // A nonce in the list would switch 'unsafe-inline' off and block the page's inline scripts;
+      // the tag keeps its nonce and runs under 'unsafe-inline' like them.
+      expect(csp(out)).toBe(`script-src 'self' 'unsafe-inline'; frame-ancestors 'self' ${ADMIN}`);
+      expect(tagNonce(out.body)).toBeTruthy();
+      // strictDynamic asks for the nonce to be the only trust, so it is added then.
+      const strict = await run(
+        { manageCsp: 'full', strictDynamic: true },
+        { url: INTENT, responseHeaders: page },
+      );
+      expect(csp(strict)).toContain(
+        `script-src 'self' 'unsafe-inline' 'nonce-${String(tagNonce(strict.body))}' 'strict-dynamic'`,
+      );
+    });
   });
 
   describe(`${harness.name} — conformance: cache headers on a changed response`, () => {
