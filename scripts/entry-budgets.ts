@@ -4,9 +4,9 @@
 // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired at the same HEAD (Node24.22.1/npm12.0.2): core +1003/+350|342/+256|280 B (cjs|js), index +680/+236|241/+148|248 B; reserves kept, the index Brotli ceilings keep theirs.
 // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired at the same HEAD (Node24.22.1/npm12.0.2): core +70/+39|48/+19|59 B (cjs|js), index gzip +8|5 (raw −31, Brotli fell); reserves kept.
 // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired at the same HEAD (Node24.22.1/npm12.0.2): index +291/+142|127/+181|99 B (cjs|js); reserves kept.
+// 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired at the same HEAD (Node24.22.1/npm12.0.2): index +18/+14|13 B (cjs|js), its Brotli fell (-61|-49) and the ceilings stay; server +18/+8/+7|3 B (cjs|js); reserves kept.
 // 2026-10-17 (media URLs resolve against `serverURL`): paired builds at the same HEAD epoch1792233083 (Node24.19/npm12.0.2); every row that embeds the runtime moves by its exact measured delta (raw +331 adapters/lean/inline, +340 core/client, +671 index barrels; gzip +64 to +173) and keeps its reserves; a Brotli budget rises only where Brotli rose.
-// 2026-10-16 (the json-only population body refuses an interruption, ADR 0010 addendum): paired builds at the same HEAD epoch1791096072 (Node24.19/npm12.0.2); every row that embeds
-// the runtime moves by its exact measured delta (raw +12 each, +11 react/vue, +24 index barrels; gzip +2 to +11) and keeps its reserves; a Brotli budget rises only where Brotli rose.
+// 2026-10-16 (the json-only population body refuses an interruption, ADR 0010 addendum): paired builds at the same HEAD epoch1791096072 (Node24.19/npm12.0.2); every row that embeds the runtime moves by its exact measured delta (raw +12 each, +11 react/vue, +24 index barrels; gzip +2 to +11) and keeps its reserves; a Brotli budget rises only where Brotli rose.
 // 2026-10-10 (PR 125, `data-payload-morph`, ADR 0008 §10): paired builds at the same HEAD epoch1791096072 (Node24.19/npm12.0.2); every row that embeds the runtime moves by its exact
 // measured delta (raw +60 core/client/structural, +39 fragment, +21 lean/lexical, +156 adapters, +216 index barrels) and keeps its reserves.
 // 2026-10-05 (ADR 0004): accepted data snapshots and owned merge outcomes; paired 2.1.0 measurements at epoch1791096072 (Node24.19/npm12.0.2) retain each row's reserves.
@@ -551,7 +551,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // retain the prior 22/15/237 B reserves.
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +747/+265/-161 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +420/+147/+153 B; prior reserves kept.
-  'index.cjs': { raw: 375_579, gzip: 117_245, brotli: 76_961 },
+  'index.cjs': { raw: 375_597, gzip: 117_259, brotli: 76_961 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 282 113 → 282 177 (+64 B, measured 282 092 → 282 156); gzip 88 558 → 88 583 (+25 B, measured 88 555 → 88 580).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 282 177 → 282 275 (+98 B, measured 282 156 → 282 254); gzip 88 583 → 88 610 (+27 B, measured 88 580 → 88 607).
   // 2026-09-16 (2.0.1 Version PR): gzip 88 610 → 88 619. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 88 607 against a cushion of 3 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -582,7 +582,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // retain the prior 21/13/290 B reserves.
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +747/+248/-131 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +420/+151/+33 B; prior reserves kept.
-  'index.js': { raw: 374_967, gzip: 117_196, brotli: 76_244 },
+  'index.js': { raw: 374_985, gzip: 117_209, brotli: 76_244 },
   ...PAYLOAD_ENTRY_BUDGETS,
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
   // 2026-09-06 (R8): +~110 B raw for `previewBindingsFromLocals`, the one-line
@@ -591,10 +591,10 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +298/+92/+73 B; same 6/12/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +662/+308/+279 B; same 6/12/120 B cushions.
   // 2026-10-02 (PHD-25, a bounded session-origin retry preserves Payload 2 cookies, ADR 0006): measured +206/+108/+101 B; same 6/12/120 B cushions.
-  'server.cjs': { raw: 17_849, gzip: 6_481, brotli: 5_921 },
+  'server.cjs': { raw: 17_867, gzip: 6_489, brotli: 5_928 },
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +298/+95/+85 B; same 4/12/120 B cushions.
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +662/+301/+280 B; same 4/12/120 B cushions.
   // 2026-10-02 (PHD-25, a bounded session-origin retry preserves Payload 2 cookies, ADR 0006): measured +206/+120/+95 B; same 4/12/120 B cushions.
-  'server.js': { raw: 17_719, gzip: 6_480, brotli: 5_940 },
+  'server.js': { raw: 17_737, gzip: 6_488, brotli: 5_943 },
   ...CLIENT_ENTRY_BUDGETS,
 };

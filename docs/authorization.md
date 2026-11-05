@@ -36,6 +36,10 @@ drafts: the strategy checks no role. A draft read through `definePreview()`
 sends that cookie to Payload's REST API, so the collection's `read` access
 decides what comes back; a page that reads drafts another way, such as the
 Local API, applies the same access itself.
+The check reads `/me` at `serverURL` and refuses a redirect as `unavailable`
+instead of following it, because a followed redirect takes the user from
+wherever it points. The draft reads refuse one too, so `serverURL` is the
+origin Payload answers on, scheme included.
 Payload side: the ordinary preview URL from `livePreview()` in
 `payload-live-preview/plugin`, or from the lower-level `buildLivePreviewUrl()`
 in `payload-live-preview/payload`; the cookie travels with the iframe request

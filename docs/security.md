@@ -24,11 +24,11 @@ malformed cookie name, a relative `serverURL`), which the adapters re-throw
 rather than report as `unavailable`, so a misconfigured deployment fails on
 the first preview request instead of serving public pages quietly:
 
-| Strategy          | What it verifies                                                                                                                 | What it forwards to Payload                                                                   |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `payload-session` | Exactly one named cookie (default `payload-token`) against `GET /api/<users>/me?depth=0`, bounded timeout, auth-collection check | That one cookie, and the `origin` header when the check sent one, as `context.payloadHeaders` |
-| `signed-token`    | An HMAC-SHA256 token from `issuePreviewToken()` bound to audience, path, locale, purpose, expiry; optional replay store          | Nothing                                                                                       |
-| `verifier`        | Your own async function (SSO, custom cookie, edge auth) returning claims or `null`                                               | Whatever the verifier chose                                                                   |
+| Strategy          | What it verifies                                                                                                                                       | What it forwards to Payload                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `payload-session` | Exactly one named cookie (default `payload-token`) against `GET /api/<users>/me?depth=0`, bounded timeout, no redirect followed, auth-collection check | That one cookie, and the `origin` header when the check sent one, as `context.payloadHeaders` |
+| `signed-token`    | An HMAC-SHA256 token from `issuePreviewToken()` bound to audience, path, locale, purpose, expiry; optional replay store                                | Nothing                                                                                       |
+| `verifier`        | Your own async function (SSO, custom cookie, edge auth) returning claims or `null`                                                                     | Whatever the verifier chose                                                                   |
 
 Every adapter that decides per request accepts that verification as
 `authorizePreview`. It runs only on requests with intent, and a refusal blocks
