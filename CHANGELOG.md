@@ -1,5 +1,14 @@
 # payload-live-preview
 
+## 2.4.2
+
+### Patch Changes
+
+- cf39755: `manageCsp: 'full'` no longer blocks a page's own inline scripts. The merge added the preview nonce to a `script-src` that allowed inline scripts with `'unsafe-inline'` (directly or through `default-src`), and CSP 2 and later ignore `'unsafe-inline'` once a nonce is in the list: Chromium, Firefox and WebKit blocked every inline script of the page on the preview response. Where the page's directive holds `'unsafe-inline'` and no nonce, hash or `'strict-dynamic'`, `mergeCspHeader` now leaves nonces and hashes out of a union, and the injected tag runs under `'unsafe-inline'` like the page's scripts. With `strictDynamic: true` the nonce is still added.
+- c89ae76: `manageCsp: 'full'` now reaches a page's own `script-src-elem`. The merge added the preview nonce to `script-src` only, and a browser asks `script-src-elem`, where a policy sets it, for every script element: on a page with `script-src-elem 'self'` Chromium, Firefox and WebKit blocked the injected script and the preview never started. A union into `script-src` through `mergeCspHeader` now also reaches an existing `script-src-elem`, by the same `'unsafe-inline'` rule as `script-src`; a `replace` stays with the directive it names.
+- b537a7d: The draft read of `definePreview()` now asks for `redirect: 'manual'` instead of `redirect: 'error'`, as the `payload-session` check does since this release. Cloudflare's workerd rejects `'error'` with a TypeError before sending, so every draft read there failed as `network`. A redirect is still never followed: it comes back as its own 3xx answer and fails the read as `http` with that status, where it used to fail as `network`. `PreviewFetchFunction` passes `redirect: 'manual'` in its `init`, so a custom `fetch` sees the mode. `cache: 'no-store'` stays; workerd accepts it from compatibility date 2024-11-11.
+- 8b779de: The `payload-session` strategy no longer follows a redirect from `/me`. Fetch followed it by default: on a hop to another origin it dropped the cookie but read the answer there, and a user in that answer was authorized as the editor. The check now asks for `redirect: 'manual'` and refuses a 3xx answer as `unavailable`, a redirect within the same origin included, as the draft reads already do; `serverURL` has to be the origin Payload answers on. `'manual'` rather than `'error'`, because Cloudflare's workerd rejects `'error'`. A custom `fetch` receives `redirect: 'manual'` in its init.
+
 ## 2.4.1
 
 ### Patch Changes
