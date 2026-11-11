@@ -15,7 +15,7 @@
 Please report vulnerabilities privately — do not open a public issue.
 
 - Preferred: [GitHub private vulnerability reporting](https://github.com/relative23/payload-live-preview/security/advisories/new) on this repository.
-- Alternatively: email relativesharp@gmail.com.
+- Alternatively: email dev@relative23.com.
 
 Include the affected version, a proof of concept or reproduction steps, and the impact as you understand it.
 
