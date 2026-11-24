@@ -29,7 +29,7 @@ export function loadTsMorph(): TsMorph {
     try {
       tsMorph = createRequire(import.meta.url)('ts-morph') as TsMorph;
     } catch (error) {
-      throw new Error('pll migrate needs ts-morph: npm install --save-dev ts-morph', {
+      throw new Error('reading source needs ts-morph: npm install --save-dev ts-morph', {
         cause: error,
       });
     }
@@ -37,8 +37,11 @@ export function loadTsMorph(): TsMorph {
   return tsMorph;
 }
 
-/** Parse one script into a throwaway in-memory project; the previous script is discarded. */
-export function parseScript(text: string, kind: ScriptKind): SourceFile {
+/**
+ * Parse one script into a throwaway in-memory project; the previous script of
+ * the same `name` is discarded, so a reader of two files at once names the second.
+ */
+export function parseScript(text: string, kind: ScriptKind, name = 'script'): SourceFile {
   const morph = loadTsMorph();
   project ??= new morph.Project({
     useInMemoryFileSystem: true,
@@ -46,7 +49,7 @@ export function parseScript(text: string, kind: ScriptKind): SourceFile {
     skipFileDependencyResolution: true,
     compilerOptions: { allowJs: true, noLib: true },
   });
-  return project.createSourceFile(`/script.${kind}`, text, { overwrite: true });
+  return project.createSourceFile(`/${name}.${kind}`, text, { overwrite: true });
 }
 
 export function isPackageSpecifier(specifier: string): boolean {

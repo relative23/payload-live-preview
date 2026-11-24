@@ -64,7 +64,8 @@ function isSourceFile(name: string): boolean {
   return SOURCE_EXTENSIONS.has(extname(name)) && !DECLARATION_FILE.test(name);
 }
 
-async function collectFiles(root: string): Promise<string[]> {
+/** Every source file under `root`, or `root` itself when it is one; build output and dependencies are skipped. */
+export async function collectFiles(root: string): Promise<string[]> {
   const found: string[] = [];
   async function walk(directory: string): Promise<void> {
     for (const entry of await readdir(directory, { withFileTypes: true })) {

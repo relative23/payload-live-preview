@@ -55,6 +55,58 @@ spreads; module options in `nuxt.config` are not among them, so write the rows
 out there by hand. A client built in the browser (`LivePreviewClient`,
 `initLivePreview()`) does not warn; the codemods cover its options.
 
+### List the places first: `pll doctor --v3`
+
+The notices speak when a page runs in development. `pll doctor --v3` reads the
+source instead and lists every call of the package that 3.0 changes, by ledger
+row, with file and line:
+
+```sh
+npx pll doctor --v3 ./src
+```
+
+```text
+Row 26: A hook without `document` merges every update an allowed admin sends; 3.0 requires `document`
+  app/hook/HookPreview.tsx:16
+  Name the document the page rendered: `document: { collection, id }` or `{ global }`.
+
+Row 27: A merge without a deadline gets a default one
+  app/hook/HookPreview.tsx:16
+  app/layout.tsx:68
+  Set `mergeTimeoutMs` (`timeoutMs` on a hook) to the deadline you want, or to `0` to keep none.
+
+3 place(s) in 2 row(s); 10 file(s) use the package.
+```
+
+It knows the rows a call can show:
+
+- `setSanitizerDocument()` (row 16) and `lexicalToHtml()` without a document
+  (row 18).
+- `defaults: 'v1'` (row 21), which `pll migrate` then writes out.
+- `new OriginDetector()` without `enableReferrerDetection` (row 22).
+- A hook or `createDocumentSession()` without `document` (row 26), and one with
+  a `locale` in its document and no `requireLocale: true` (row 31).
+- A merge without a deadline (row 27): a hook without `timeoutMs`, and an
+  adapter, `generateInlineScript()` or `initLivePreview()` that sets
+  `serverURL` and no `mergeTimeoutMs`.
+- `livePreviewScriptProps()` without `delivery: 'asset'` (row 32) and the Astro
+  integration without `mode` (row 33).
+- `strict: false`, which the ledger has no row for.
+
+It reads options that are written at the call, in a `const` of the same file,
+or in a `const` that a relative import names, and it reads both sides of a
+condition such as `...(cms ? { serverURL: cms } : {})`. A call whose options
+come from anywhere else (another package, an alias path, a function call) is
+listed under "Not read", so an empty list never says more than it read. It
+follows a name the file imports by name (`import { … }` or a destructured
+`require()`), so it does not read a namespace import, JSX elements, component
+templates or the `livePreview` key of `nuxt.config`; the notices above cover
+those at run time.
+
+The exit code is 3 when it lists a place and 0 when it lists none; `--json`
+prints the same report as data. It changes no file, and it needs `ts-morph`,
+as `pll migrate` does.
+
 ## Upgrading to 2.1
 
 2.1 asks for one change: Astro's `livePreview()` now throws at startup when

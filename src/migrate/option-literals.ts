@@ -107,7 +107,8 @@ function constLiteral(node: Node): ObjectLiteralExpression | undefined {
   return undefined;
 }
 
-function unwrap(node: Node): Node {
+/** The expression inside parentheses, `as`, `satisfies` and a type assertion. */
+export function unwrap(node: Node): Node {
   const { Node } = loadTsMorph();
   let current = node;
   while (

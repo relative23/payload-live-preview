@@ -1,18 +1,22 @@
 #!/usr/bin/env node
 /**
- * The `pll` binary: `pll doctor <url>` here, `pll migrate <path>` in
- * migrate/cli. Doctor exit codes: 0 no error-level findings, 1 usage error or
- * the URL could not be fetched, 2 at least one error-level finding.
+ * The `pll` binary: `pll doctor <url>` and `pll doctor --v3 <path>` here,
+ * `pll migrate <path>` in migrate/cli. Doctor exit codes: 0 no error-level
+ * findings, 1 usage error or the URL or path could not be read, 2 at least one
+ * error-level finding, 3 a call in the source that 3.0 changes.
  */
 import { runMigrateCommand } from '../migrate/cli';
 import { formatReport } from './format';
 import { describeFailure, redactToken, runDoctor, type DoctorFetch } from './probe';
+import { formatV3Readiness, runV3Readiness } from './v3-readiness';
 
 interface ParsedArgs {
   url: string | undefined;
   adminOrigin: string | undefined;
   json: boolean;
   v2: boolean;
+  /** The source path from `--v3`; with it the command reads source and probes nothing. */
+  v3: string | undefined;
   showHelp: boolean;
   unknown: string[];
   /** Headers for the preview probe, from every `--header`/`-H` and `--header-env`. */
@@ -100,12 +104,21 @@ function setTokenParam(parsed: ParsedArgs, name: string | undefined): void {
   parsed.tokenParam = name;
 }
 
+function setSourcePath(parsed: ParsedArgs, path: string | undefined): void {
+  if (path === undefined || path === '' || path.startsWith('-')) {
+    parsed.usageError ??= 'pll doctor: --v3 takes the path to read, such as --v3 ./src';
+    return;
+  }
+  parsed.v3 = path;
+}
+
 function parseArgs(argv: readonly string[]): ParsedArgs {
   const parsed: ParsedArgs = {
     url: undefined,
     adminOrigin: undefined,
     json: false,
     v2: false,
+    v3: undefined,
     showHelp: false,
     unknown: [],
     headers: {},
@@ -119,6 +132,10 @@ function parseArgs(argv: readonly string[]): ParsedArgs {
     if (token === '-h' || token === '--help') parsed.showHelp = true;
     else if (token === '--json') parsed.json = true;
     else if (token === '--v2') parsed.v2 = true;
+    else if (token === '--v3') {
+      setSourcePath(parsed, argv[i + 1]);
+      i += 1;
+    } else if (token.startsWith('--v3=')) setSourcePath(parsed, token.slice('--v3='.length));
     else if (token === '--admin' || token === '-a') {
       parsed.adminOrigin = argv[i + 1];
       i += 1;
@@ -153,6 +170,7 @@ pll migrate — rewrite 1.x APIs to their 2.0 names and homes
 Usage:
   pll doctor <url> [--admin <origin>] [--header <name: value>]... [--header-env <var>]...
              [--param <name>]... [--token-param <name>] [--json] [--v2]
+  pll doctor --v3 <path> [--json]
   pll migrate <path> [--write] [--only <id,id>]
 
 The URL is fetched twice: once as an ordinary visitor, without any intent
@@ -191,12 +209,19 @@ Options of pll doctor:
                         request, counted as the credential, never printed.
       --json            Emit the report as JSON instead of text
       --v2              Also check the page against the 2.0 readiness table
+      --v3 <path>       Read the source under <path> instead of a URL and list,
+                        by row of the 3.0 ledger (ADR 0007), the calls of the
+                        package that 3.0 changes, with file and line. It reads
+                        options written as a literal, as a const of the same
+                        file or of a relatively imported one, and names the
+                        calls it could not read. Requires ts-morph.
   -h, --help            Show this help
 
 Exit codes of pll doctor:
-  0  no error-level findings
-  1  usage error, or the URL could not be fetched
+  0  no error-level findings; with --v3, no call it could read changes
+  1  usage error, or the URL or path could not be read
   2  at least one error-level finding
+  3  with --v3, at least one call that 3.0 changes
 
 pll migrate has its own options and exit codes: pll migrate --help
 
@@ -207,6 +232,7 @@ Examples:
   pll doctor https://example.com/ --header "Cookie: payload-token=$PAYLOAD_TOKEN"
   PLP_DOCTOR_HEADER="Cookie: payload-token=$PAYLOAD_TOKEN" \\
     pll doctor https://example.com/ --header-env PLP_DOCTOR_HEADER
+  pll doctor --v3 ./src
 `;
 
 function isAbsoluteUrl(value: string): boolean {
@@ -215,6 +241,27 @@ function isAbsoluteUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** `--v3`: the source under `path`, and nothing of a deployment. */
+async function runSourceCheck(path: string, args: ParsedArgs): Promise<number> {
+  if (args.url !== undefined) {
+    process.stderr.write(
+      'pll doctor: --v3 reads source and probes no URL; run the two checks one after the other\n',
+    );
+    return 1;
+  }
+  let report;
+  try {
+    report = await runV3Readiness(path);
+  } catch (error) {
+    process.stderr.write(`pll doctor: could not read ${path}: ${describeFailure(error)}\n`);
+    return 1;
+  }
+  process.stdout.write(
+    args.json ? `${JSON.stringify(report, undefined, 2)}\n` : formatV3Readiness(report),
+  );
+  return report.rows.length > 0 ? 3 : 0;
 }
 
 /** @param fetchImpl Seam for tests; the bin shim never passes it. */
@@ -238,12 +285,13 @@ export async function run(argv: readonly string[], fetchImpl?: DoctorFetch): Pro
     process.stderr.write(`pll doctor: unknown option ${args.unknown.join(', ')}\n`);
     return 1;
   }
-  if (args.url === undefined) {
-    process.stderr.write('pll doctor: a URL is required. Try `pll doctor --help`.\n');
-    return 1;
-  }
   if (args.usageError !== undefined) {
     process.stderr.write(`${args.usageError}\n`);
+    return 1;
+  }
+  if (args.v3 !== undefined) return runSourceCheck(args.v3, args);
+  if (args.url === undefined) {
+    process.stderr.write('pll doctor: a URL is required. Try `pll doctor --help`.\n');
     return 1;
   }
   if (args.adminOrigin !== undefined && !isAbsoluteUrl(args.adminOrigin)) {
