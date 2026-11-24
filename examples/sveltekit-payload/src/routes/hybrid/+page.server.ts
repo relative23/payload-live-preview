@@ -4,7 +4,7 @@
  * visitor never learns the registry id or which fields it depends on.
  */
 import { createPreviewBindings } from 'payload-live-preview';
-import { heroProps } from '$lib/hero';
+import { heroProps } from '#lib/hero.js';
 import type { PageServerLoad } from './$types';
 
 /**

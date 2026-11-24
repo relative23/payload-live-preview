@@ -99,15 +99,6 @@ export const MAINTAINER_INSTALL_POLICIES = [
     },
   },
   {
-    label: 'SvelteKit 3 fixture',
-    directory: 'examples/sveltekit3-payload',
-    npmrc: 'strict-allow-scripts=true\ninstall-links=true\n',
-    packageManager: REVIEWED_PACKAGE_MANAGER,
-    allowScripts: {
-      'fsevents@2.3.3': false,
-    },
-  },
-  {
     label: 'Nuxt fixture',
     directory: 'examples/nuxt-payload',
     npmrc: 'strict-allow-scripts=true\ninstall-links=true\n',
@@ -203,7 +194,6 @@ export const COPY_INSTALLED_LOCAL_FILE_PACKAGE_FIXTURES = [
   { label: 'Astro fixture', directory: 'examples/astro-payload', mode: 'copy' },
   { label: 'Next.js fixture', directory: 'examples/nextjs-payload', mode: 'copy' },
   { label: 'SvelteKit fixture', directory: 'examples/sveltekit-payload', mode: 'copy' },
-  { label: 'SvelteKit 3 fixture', directory: 'examples/sveltekit3-payload', mode: 'copy' },
   { label: 'Nuxt fixture', directory: 'examples/nuxt-payload', mode: 'copy' },
   { label: 'Nuxt 4 fixture', directory: 'examples/nuxt4-payload', mode: 'copy' },
   { label: 'real Payload fixture', directory: 'examples/payload-backend', mode: 'copy' },

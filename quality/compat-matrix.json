@@ -452,7 +452,7 @@
       "feature": "server handle, base live preview and asset delivery",
       "version": {
         "kind": "exact",
-        "value": "2.70.3",
+        "value": "3.1.1",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -464,52 +464,12 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
-      "id": "sveltekit3-base-current",
-      "surface": "SvelteKit",
-      "feature": "server handle, base live preview and asset delivery",
-      "version": {
-        "kind": "exact",
-        "value": "3.1.1",
-        "package": "@sveltejs/kit",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/sveltekit3-payload"
-        }
-      },
-      "mode": "development",
-      "packageForm": "copied-local-package",
-      "backend": "mock admin",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
-        "status": "passed",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "sveltekit3"
-        },
-        "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"]
       }
     },
     {
@@ -518,7 +478,7 @@
       "feature": "native fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "2.70.3",
+        "value": "3.1.1",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -530,52 +490,12 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
-      "id": "sveltekit3-fragment-current",
-      "surface": "SvelteKit",
-      "feature": "native fragment rendering",
-      "version": {
-        "kind": "exact",
-        "value": "3.1.1",
-        "package": "@sveltejs/kit",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/sveltekit3-payload"
-        }
-      },
-      "mode": "development",
-      "packageForm": "copied-local-package",
-      "backend": "mock admin and signed fragment endpoint",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
-        "status": "passed",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "sveltekit3"
-        },
-        "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"]
       }
     },
     {
@@ -584,7 +504,7 @@
       "feature": "production build/start, native navigation and reload, unsaved related drafts under a real Payload login",
       "version": {
         "kind": "exact",
-        "value": "2.70.3",
+        "value": "3.1.1",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -596,7 +516,7 @@
       "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -605,15 +525,8 @@
           "tests/e2e/continuation/next-host.spec.ts",
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.sveltekit-continuation.config.ts",
-          "tests/fixtures/sveltekit-continuation/svelte.config.js.fixture"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
+          "tests/fixtures/sveltekit-continuation/vite.config.ts.fixture"
+        ]
       }
     },
     {
@@ -622,7 +535,7 @@
       "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
       "version": {
         "kind": "exact",
-        "value": "2.70.3",
+        "value": "3.1.1",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -634,7 +547,7 @@
       "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -645,53 +558,7 @@
           "scripts/sveltekit-production-fixture.mjs",
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
-      "id": "sveltekit3-production-admin",
-      "surface": "SvelteKit",
-      "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
-      "version": {
-        "kind": "exact",
-        "value": "3.1.1",
-        "package": "@sveltejs/kit",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/sveltekit3-payload"
-        }
-      },
-      "mode": "production",
-      "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
-        "status": "passed",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "real-payload-surfaces"
-        },
-        "sources": [
-          "playwright.real-payload.config.ts",
-          "scripts/admin-tls-front.mjs",
-          "scripts/sveltekit-production-fixture.mjs",
-          "tests/real-payload/surface-smoke.spec.ts",
-          "tests/real-payload/surface-session.spec.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1490,7 +1357,7 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
       "version": {
         "kind": "exact",
-        "value": "2.70.3",
+        "value": "3.1.1",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -1502,7 +1369,7 @@
       "backend": "Payload 3.92.1 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1511,51 +1378,7 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
-      "id": "sveltekit3-real-admin-session-current",
-      "surface": "SvelteKit",
-      "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
-      "version": {
-        "kind": "exact",
-        "value": "3.1.1",
-        "package": "@sveltejs/kit",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/sveltekit3-payload"
-        }
-      },
-      "mode": "development",
-      "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
-        "status": "passed",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "real-payload-surfaces"
-        },
-        "sources": [
-          "tests/real-payload/surface-smoke.spec.ts",
-          "tests/real-payload/surface-session.spec.ts",
-          "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1985,7 +1808,7 @@
       "feature": "afterNavigate commit, invalidation and streamed binding replay",
       "version": {
         "kind": "exact",
-        "value": "2.70.3",
+        "value": "3.1.1",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -1997,7 +1820,7 @@
       "backend": "mock admin and hydrated SvelteKit route",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
@@ -2007,52 +1830,7 @@
           "src/adapters/sveltekit/client.ts",
           "tests/e2e/specs/sveltekit-live-preview.spec.ts",
           "playwright.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
-      "id": "sveltekit3-navigation-replay-current",
-      "surface": "SvelteKit",
-      "feature": "afterNavigate commit, invalidation and streamed binding replay",
-      "version": {
-        "kind": "exact",
-        "value": "3.1.1",
-        "package": "@sveltejs/kit",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/sveltekit3-payload"
-        }
-      },
-      "mode": "development",
-      "packageForm": "copied-local-package",
-      "backend": "mock admin and hydrated SvelteKit route",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
-        "status": "passed",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "sveltekit3"
-        },
-        "sources": [
-          "examples/sveltekit3-payload/src/routes/navigation/NavigationBridge.svelte",
-          "src/adapters/sveltekit/client.ts",
-          "tests/e2e/specs/sveltekit-live-preview.spec.ts",
-          "playwright.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "bd53174979c6912361fe94f3955a96c1fe6f9656603c3ab1b5556d5adef96093",
-          "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
-          "executedAt": "2026-11-06T00:44:56Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -2268,23 +2046,15 @@
     {
       "name": "SvelteKit",
       "package": "@sveltejs/kit",
-      "supported": "2.x and 3.x",
+      "supported": "3.x",
       "fixture": "examples/sveltekit-payload",
       "tested": [
         {
           "version": "3.1.1",
           "source": "lockfile",
-          "fixture": "examples/sveltekit3-payload",
-          "browsers": ["chromium", "firefox", "webkit"],
-          "job": "sveltekit3",
-          "vite": "^8.0.12"
-        },
-        {
-          "version": "2.70.3",
-          "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E",
-          "vite": "^5.0.3 || ^6.0.0 || ^7.0.0-beta.0 || ^8.0.0"
+          "vite": "^8.0.12"
         }
       ],
       "vite": {

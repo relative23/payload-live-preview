@@ -45,7 +45,6 @@ describe('real-admin targets built for production', () => {
     ['nextjs-production', 'next', 'PLP_NEXT', '4474'],
     ['sveltekit-production', 'sveltekit', 'PLP_SVELTE', '4475'],
     ['nuxt-production', 'nuxt', 'PLP_NUXT', '4476'],
-    ['sveltekit3-production', 'sveltekit', 'PLP_SVELTE', '4475', 'sveltekit3-payload'],
     ['nuxt4-production', 'nuxt', 'PLP_NUXT', '4476', 'nuxt4-payload'],
   ])(
     '%s: the admin, its HTTPS front, then the launcher pointed at both',

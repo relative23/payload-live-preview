@@ -10,9 +10,8 @@ const isCI = process.env['CI'] === 'true';
  * the editor's real session, the plain HTML example (`html`), the Next.js example
  * framed from an admin that keeps its autoLogin (`nextjs-autologin`), or the SvelteKit
  * example's collection pages framed from an admin with three more collections (`create`).
- * `sveltekit3` and `sveltekit3-create` are those two SvelteKit targets on the SvelteKit 3 fixture,
- * `nuxt4` and `nuxt4-composable` the two Nuxt targets on the Nuxt 4 fixture.
- * `nextjs-production`, `sveltekit-production`, `sveltekit3-production`, `nuxt-production` and
+ * `nuxt4` and `nuxt4-composable` are the two Nuxt targets on the Nuxt 4 fixture.
+ * `nextjs-production`, `sveltekit-production`, `nuxt-production` and
  * `nuxt4-production` are the session targets
  * built for production and served behind TLS, with the admin behind an HTTPS front too.
  */
@@ -51,11 +50,6 @@ interface Surface {
 const SESSION_SURFACES: Record<string, Surface> = {
   nextjs: { port: '4474', directory: 'nextjs-payload', command: 'npx next dev --port 4474' },
   sveltekit: { port: '4475', directory: 'sveltekit-payload', command: 'npx vite dev --port 4475' },
-  sveltekit3: {
-    port: '4475',
-    directory: 'sveltekit3-payload',
-    command: 'npx vite dev --port 4475',
-  },
   nuxt: { port: '4476', directory: 'nuxt-payload', command: 'npx nuxt dev --port 4476' },
   nuxt4: { port: '4476', directory: 'nuxt4-payload', command: 'npx nuxt dev --port 4476' },
   // The Astro integration's middleware delivery under the strict default: the hook is
@@ -104,12 +98,6 @@ const SESSION_SURFACES: Record<string, Surface> = {
     command: 'npx vite dev --port 4475',
     spec: 'create',
   },
-  'sveltekit3-create': {
-    port: '4475',
-    directory: 'sveltekit3-payload',
-    command: 'npx vite dev --port 4475',
-    spec: 'create',
-  },
   // Strict mode accepts only https admin origins in production, so these run against the admin's
   // HTTPS front; the launchers build and start the example and put their own TLS front before it.
   'nextjs-production': {
@@ -129,12 +117,6 @@ const SESSION_SURFACES: Record<string, Surface> = {
     directory: 'nuxt-payload',
     command: 'node ../../scripts/nuxt-production-fixture.mjs',
     production: { prefix: 'PLP_NUXT' },
-  },
-  'sveltekit3-production': {
-    port: '4475',
-    directory: 'sveltekit3-payload',
-    command: 'node ../../scripts/sveltekit-production-fixture.mjs',
-    production: { prefix: 'PLP_SVELTE', twin: true },
   },
   'nuxt4-production': {
     port: '4476',

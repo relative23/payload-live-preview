@@ -470,7 +470,6 @@ const LATEST_WATCH: WorkflowSpec = {
           run: 'npx playwright test --project=chromium ${{ matrix.specs }}',
           env: {
             PLP_E2E_SERVERS: '${{ matrix.servers }}',
-            PLP_SVELTEKIT_FIXTURE: '${{ matrix.sveltekit-fixture }}',
             PLP_NUXT_FIXTURE: '${{ matrix.nuxt-fixture }}',
           },
           condition: HAS_CHANNEL,

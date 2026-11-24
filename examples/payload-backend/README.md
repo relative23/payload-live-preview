@@ -32,11 +32,11 @@ off and the Playwright suite signs in through the login form. The suite starts
 the backend and the surface named by `PLP_REAL_PAYLOAD_TARGET` with
 `FRONTEND_URL` pointing at it. The targets are listed in
 `playwright.real-payload.config.ts`: `astro` (the default) and `hybrid`; the
-framework pages `nextjs`, `sveltekit`, `sveltekit3`, `nuxt`, `nuxt4` and `html`;
+framework pages `nextjs`, `sveltekit`, `nuxt`, `nuxt4` and `html`;
 the hook and composable pages `nextjs-hook`, `nuxt-composable` and
-`nuxt4-composable`; `astro-session` and `nextjs-autologin`; the create screens
-`create` and `sveltekit3-create`; the production builds `nextjs-production`,
-`sveltekit-production`, `sveltekit3-production`, `nuxt-production` and
+`nuxt4-composable`; `astro-session` and `nextjs-autologin`; the create screen
+`create`; the production builds `nextjs-production`,
+`sveltekit-production`, `nuxt-production` and
 `nuxt4-production`; and `findings`. A schema change needs a fresh `e2e.db`
 (and, for the media, a fresh `media/`): the dev push does not repeat itself.
 

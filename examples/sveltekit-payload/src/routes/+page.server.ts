@@ -8,7 +8,7 @@
  * through `load` and spread into the template unchanged.
  */
 import { createPreviewBindings } from 'payload-live-preview';
-import { PAYLOAD_SERVER_URL } from '$lib/preview.server';
+import { PAYLOAD_SERVER_URL } from '#lib/preview.server.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals }) => {

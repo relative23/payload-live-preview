@@ -125,9 +125,7 @@ export const CI: WorkflowSpec = {
         CHECKOUT,
         SETUP_NODE,
         NPM_VERSION,
-        ...[...CI_FIXTURES, 'sveltekit3-payload', 'nuxt4-payload', 'payload-backend'].map(
-          fixtureAudit,
-        ),
+        ...[...CI_FIXTURES, 'nuxt4-payload', 'payload-backend'].map(fixtureAudit),
       ],
     },
     build: callBuild,
@@ -142,32 +140,8 @@ export const CI: WorkflowSpec = {
         { run: 'npx playwright test --project=${{ matrix.browser }}' },
       ],
     },
-    // The SvelteKit 3 twin of the SvelteKit example: the SvelteKit-only files whole, the shared
-    // files' SvelteKit cases and the byte-for-byte public response, which is the SvelteKit fixture's.
-    // The public-response rows need the runtime the Astro fixture serves, which the job does not start.
-    sveltekit3: twinFixtureJob(
-      'sveltekit3-payload',
-      { PLP_E2E_SERVERS: 'sveltekit', PLP_SVELTEKIT_FIXTURE: 'sveltekit3-payload' },
-      [
-        'owner-scoping',
-        'sveltekit-asset-delivery',
-        'sveltekit-fragment',
-        'sveltekit-live-preview',
-        'sveltekit-owner-fragments',
-      ],
-      {
-        grep: '-g "[Ss]velte[Kk]it|byte for byte" --grep-invert "public response carries"',
-        files: [
-          'auto-bind-hit-rate',
-          'fragment-request-bounds',
-          'navigation-lifecycle-per-framework',
-          'public-response',
-          'reveal',
-        ],
-      },
-    ),
     // The Nuxt 4 twin of the Nuxt example: the Nuxt-only files whole, the shared files' Nuxt cases.
-    // The Nuxt public-response row needs the runtime the Astro fixture serves, like SvelteKit 3's.
+    // The Nuxt public-response row needs the runtime the Astro fixture serves, which the job does not start.
     nuxt4: twinFixtureJob(
       'nuxt4-payload',
       { PLP_E2E_SERVERS: 'nuxt', PLP_NUXT_FIXTURE: 'nuxt4-payload' },
@@ -257,14 +231,14 @@ export const CI: WorkflowSpec = {
       { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.5'] },
       { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
     ),
-    // Next.js, SvelteKit 2 and 3, Nuxt 3 and 4, plain HTML, Vue and React production hosts on the
+    // Next.js, SvelteKit, Nuxt 3 and 4, plain HTML, Vue and React production hosts on the
     // stored archive, against a real Payload 3 login and access control
     // (tests/e2e/continuation/next-host.spec.ts).
     'production-lifecycle': archiveJob(
       'playwright.${{ matrix.framework }}-continuation.config.ts',
       30,
       {
-        framework: ['next', 'sveltekit', 'sveltekit3', 'nuxt', 'nuxt4', 'html', 'vue', 'react'],
+        framework: ['next', 'sveltekit', 'nuxt', 'nuxt4', 'html', 'vue', 'react'],
       },
     ),
     'real-payload-e2e': {
@@ -317,14 +291,11 @@ export const CI: WorkflowSpec = {
           'astro-session',
           'nextjs-autologin',
           'create',
-          'sveltekit3',
-          'sveltekit3-create',
           'nuxt4',
           'nuxt4-composable',
           'nextjs-production',
           'sveltekit-production',
           'nuxt-production',
-          'sveltekit3-production',
           'nuxt4-production',
           'findings',
         ],
@@ -338,7 +309,7 @@ export const CI: WorkflowSpec = {
           run: 'bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"',
           env: {
             EXAMPLE:
-              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","sveltekit3":"sveltekit3-payload","sveltekit3-create":"sveltekit3-payload","nuxt4":"nuxt4-payload","nuxt4-composable":"nuxt4-payload","nextjs-production":"nextjs-payload","sveltekit-production":"sveltekit-payload","nuxt-production":"nuxt-payload","sveltekit3-production":"sveltekit3-payload","nuxt4-production":"nuxt4-payload","findings":"pure-html"}\')[matrix.target] }}',
+              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","nuxt4":"nuxt4-payload","nuxt4-composable":"nuxt4-payload","nextjs-production":"nextjs-payload","sveltekit-production":"sveltekit-payload","nuxt-production":"nuxt-payload","nuxt4-production":"nuxt4-payload","findings":"pure-html"}\')[matrix.target] }}',
           },
         },
         fixtureInstall('payload-backend'),

@@ -381,10 +381,9 @@ What is proven about the Payload wire protocol, from the outside in:
    fixed string URL, and frames the SvelteKit example's pages for them: on the
    create screen neither has a preview toggle or frame, and after the first
    save the frame takes the editor's unsaved edits while REST reads show that
-   the collection kept only the save. The `sveltekit3` and `sveltekit3-create`
-   targets are the SvelteKit and `create` targets on the SvelteKit 3 example,
-   `nuxt4` and `nuxt4-composable` the two Nuxt targets on the Nuxt 4 example.
-   `nextjs-production`, `sveltekit-production`, `sveltekit3-production`, `nuxt-production` and `nuxt4-production` are the
+   the collection kept only the save. `nuxt4` and `nuxt4-composable` are the
+   two Nuxt targets on the Nuxt 4 example.
+   `nextjs-production`, `sveltekit-production`, `nuxt-production` and `nuxt4-production` are the
    Next.js, SvelteKit and Nuxt session targets built for production and served
    behind TLS. Strict mode accepts only https admin origins there, so the admin
    is reached through an HTTPS front too, and the preview's server asks it who
@@ -435,7 +434,7 @@ What is proven about the Payload wire protocol, from the outside in:
    that row is soft-fail like its wire-format twin.
 5. **Latest watch** (`.github/workflows/latest-watch.yml`), daily and on every
    push to `main`, does the same for the frameworks. CI installs exact lockfiles, so this job installs Astro,
-   Next.js, SvelteKit 3 and Nuxt 4 at their `latest` dist-tag, with the peers
+   Next.js, SvelteKit and Nuxt 4 at their `latest` dist-tag, with the peers
    each release asks for, over the matching example without its lockfile. It
    then runs that framework's browser specs in Chromium and a real-admin smoke.
    A separate job runs the React, Vue and Svelte hook suites against `latest`.
@@ -470,17 +469,15 @@ plugin against a real admin and, for beta.6, by one run of the field-findings su
 three engines, all outside CI ([compatibility page](compatibility.md#what-runs-against-each-version)); `latest`
 and the 4.0 pre-releases by the daily watch — wire format, sender source and
 a real admin — the latter as early warning only. The
-four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 2 and Nuxt 3 in all
+four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 3 and Nuxt 3 in all
 three engines; the Astro
 4–7 peer range is wider than the single-major browser fixture and is backed
 by the `astro-matrix` job, and Next.js 15.5 by the `next-matrix` job, which
 installs it over the Next.js fixture and runs the development, webpack
-production and base-path suites in Chromium. SvelteKit 3 has a fixture of its
-own, `examples/sveltekit3-payload`, the SvelteKit example migrated with
-`npx sv migrate sveltekit-3`; the `sveltekit3` job runs its SvelteKit specs
-in all three engines. Nuxt 4 has one too, `examples/nuxt4-payload`, the Nuxt
-example in Nuxt 4's `app/` layout, and the `nuxt4` job runs its Nuxt specs in
-all three engines.
+production and base-path suites in Chromium. Nuxt 4 has a fixture of its own,
+`examples/nuxt4-payload`, the Nuxt example in Nuxt 4's `app/` layout, and the
+`nuxt4` job runs its Nuxt specs in all three engines. SvelteKit 2 has no
+fixture any more ([sveltekit.md](sveltekit.md)).
 
 ## Local release checks
 
@@ -599,11 +596,10 @@ temporary directory outside the repository.
 
 ## Production hosts
 
-The `production-lifecycle` job builds a Next.js host, a SvelteKit 2 and a SvelteKit 3 host, a
+The `production-lifecycle` job builds a Next.js host, a SvelteKit host, a
 Nuxt 3 and a Nuxt 4 host, a plain HTML, a standalone Vue and a standalone React host for
 production, one matrix entry each, in Chromium
-([spec](../tests/e2e/continuation/next-host.spec.ts)). The SvelteKit 3 host is the SvelteKit
-one as `npx sv migrate sveltekit-3` changed the example, and the Nuxt 4 host the Nuxt one in
+([spec](../tests/e2e/continuation/next-host.spec.ts)). The Nuxt 4 host is the Nuxt one in
 Nuxt 4's `app/` layout. Each host is an application of its own
 ([Next.js](../tests/fixtures/next-continuation/), and the same for the others) on the
 dependencies a reviewed lock pins: the matching example's, and for Vue and React
@@ -641,7 +637,6 @@ To run them yourself, build and pack as above, then:
 npx playwright test --config playwright.next-continuation.config.ts --project=chromium       # port 4284
 npx playwright test --config playwright.sveltekit-continuation.config.ts --project=chromium  # port 4285
 npx playwright test --config playwright.nuxt-continuation.config.ts --project=chromium       # port 4286
-npx playwright test --config playwright.sveltekit3-continuation.config.ts --project=chromium # port 4292
 npx playwright test --config playwright.nuxt4-continuation.config.ts --project=chromium      # port 4293
 npx playwright test --config playwright.html-continuation.config.ts --project=chromium       # port 4288
 npx playwright test --config playwright.vue-continuation.config.ts --project=chromium        # port 4289
@@ -651,7 +646,7 @@ npx playwright test --config playwright.react-continuation.config.ts --project=c
 What they do not show. The test posts the editor's messages itself, so Payload's admin UI
 is not part of it; the `real-payload-surfaces` targets drive the admin UI, against the
 development servers and, for the five `-production` targets, against production builds.
-The locked versions are those of the SvelteKit 2 and 3 and the Nuxt 3 and 4 examples,
+The locked versions are those of the SvelteKit and the Nuxt 3 and 4 examples,
 and the Vue and React hosts run the versions their locks pin, 3.5.41 and 19.3.1, not the peer
 floors 3.3 and 18. The job runs Chromium only.
 
