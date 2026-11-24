@@ -43,7 +43,7 @@ One runtime serves every framework. The Astro, Next.js, SvelteKit and Nuxt adapt
 | --------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Astro     | >=4.0.0 <8.0.0                                                                    | 7.4.5 (chromium, firefox, webkit); 6.x (chromium); 5.x (chromium); 4.x (chromium) |
 | Next.js   | App Router, 15.5 and 16                                                           | 16.4.3 (chromium, firefox, webkit); 15.x (chromium)                               |
-| SvelteKit | 2.x and 3.x                                                                       | 3.1.1 (chromium, firefox, webkit); 2.70.3 (chromium, firefox, webkit)             |
+| SvelteKit | 3.x                                                                               | 3.1.1 (chromium, firefox, webkit)                                                 |
 | Nuxt      | 4.x; 3.x (end of life since 31 July 2026: kept working, not officially supported) | 4.6.3 (chromium, firefox, webkit); 3.21.11 (chromium, firefox, webkit)            |
 
 Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26.

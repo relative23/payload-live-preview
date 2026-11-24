@@ -5,11 +5,11 @@
  */
 import { createFragmentEndpoint } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest, createPreviewBindings } from 'payload-live-preview';
-import Hero from '$lib/Hero.svelte';
-import OwnedPanel from '$lib/OwnedPanel.svelte';
-import Notice from '$lib/Notice.svelte';
-import { heroProps } from '$lib/hero';
-import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview.server';
+import Hero from '#lib/Hero.svelte';
+import OwnedPanel from '#lib/OwnedPanel.svelte';
+import Notice from '#lib/Notice.svelte';
+import { heroProps } from '#lib/hero.js';
+import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '#lib/preview.server.js';
 import type { RequestHandler } from './$types';
 
 const endpoint = createFragmentEndpoint({

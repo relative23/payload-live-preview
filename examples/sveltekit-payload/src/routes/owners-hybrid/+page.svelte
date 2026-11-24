@@ -3,7 +3,7 @@
    * Two documents, one server-rendered panel and one island each. See
    * `+page.server.ts`.
    */
-  import OwnedPanel from '$lib/OwnedPanel.svelte';
+  import OwnedPanel from '#lib/OwnedPanel.svelte';
 
   export let data;
 </script>

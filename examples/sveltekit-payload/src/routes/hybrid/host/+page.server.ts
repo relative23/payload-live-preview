@@ -5,7 +5,7 @@
  * nothing competes with the test's own messages.
  */
 import { issuePreviewToken } from 'payload-live-preview';
-import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '$lib/preview.server';
+import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '#lib/preview.server.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
