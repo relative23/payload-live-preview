@@ -40,6 +40,31 @@ describe('LivePreviewClient — end-to-end', () => {
     }
   });
 
+  it('says in debug mode that no admin origin is configured, and only then', async () => {
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => undefined);
+    const namesTheOption = (): boolean =>
+      debug.mock.calls.some((call) => call.join(' ').includes('allowedOrigins'));
+    // No allowedOrigins, no localhost matching, and jsdom names no referrer: nothing can be trusted.
+    const unconfigured = new LivePreviewClient({
+      debug: true,
+      disableLocalhostMatching: true,
+      autoStart: false,
+    });
+    try {
+      expect(namesTheOption()).toBe(true);
+
+      debug.mockClear();
+      const configured = new LivePreviewClient(
+        v1Config({ debug: true, disableLocalhostMatching: true, autoStart: false }),
+      );
+      await configured.destroy();
+      expect(namesTheOption()).toBe(false);
+    } finally {
+      debug.mockRestore();
+      await unconfigured.destroy();
+    }
+  });
+
   it('renders Lexical rich text into a richText field', async () => {
     document.body.innerHTML = '<div data-payload-field="body" data-payload-richtext></div>';
     const client = new LivePreviewClient(v1Config());

@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 559,
-    "suites": 1071,
-    "tests": 4841,
+    "files": 560,
+    "suites": 1074,
+    "tests": 4857,
     "benchmarks": 12
   },
   "groups": {
@@ -46,8 +46,8 @@
     },
     "integration": {
       "files": 26,
-      "suites": 29,
-      "tests": 112,
+      "suites": 31,
+      "tests": 120,
       "benchmarks": 0
     },
     "real-payload": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 459,
-      "suites": 960,
-      "tests": 4427,
+      "files": 460,
+      "suites": 961,
+      "tests": 4435,
       "benchmarks": 0
     }
   },
@@ -521,15 +521,15 @@
     {
       "path": "tests/integration/client-lifecycle.test.ts",
       "group": "integration",
-      "suites": 1,
-      "tests": 9,
+      "suites": 2,
+      "tests": 14,
       "benchmarks": 0
     },
     {
       "path": "tests/integration/client-plugins.test.ts",
       "group": "integration",
-      "suites": 2,
-      "tests": 8,
+      "suites": 3,
+      "tests": 10,
       "benchmarks": 0
     },
     {
@@ -564,7 +564,7 @@
       "path": "tests/integration/client.test.ts",
       "group": "integration",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -1075,7 +1075,7 @@
       "path": "tests/unit/adapters/react-hook.test.tsx",
       "group": "unit",
       "suites": 1,
-      "tests": 11,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -2710,6 +2710,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/fragment/strategy.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 3,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/github-release.test.ts",
       "group": "unit",
       "suites": 3,
@@ -2937,7 +2944,7 @@
       "path": "tests/unit/payload/build-live-preview-url.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 21,
+      "tests": 24,
       "benchmarks": 0
     },
     {
