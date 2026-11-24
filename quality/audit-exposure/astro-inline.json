@@ -8,8 +8,8 @@
     "examples/astro-inline/src/pages/reveal.astro": "806cdfbd5b4f4049cd6853d78fb65c11e0cf45e82d375ce2a9d394a852975437",
     "examples/astro-inline/src/pages/soft-navigation/one.astro": "4e0a92aa62f4f727ee04550cae877df6fcd92f132f8919904aba00a53af2f432",
     "examples/astro-inline/src/pages/soft-navigation/two.astro": "3864ac3da121631850c3a5b2014ab1ba46ed8a26a7a6cee440f529891a4d395c",
-    "playwright.config.ts": "b482f7758414803fcaeefbe67ca8119260104d9722a345102f4fabcced7afd89",
-    "playwright.real-payload.config.ts": "6bc206f010250c6c80bfc31ebab0e7c337de2527fee92c1ff3897fc0ba67410f"
+    "playwright.config.ts": "c4a981693ff5aa6754a40b6c2eba28b41285f9d32107465946819f2922193301",
+    "playwright.real-payload.config.ts": "3e46cf2c503cb7e372e248d24868f7b009956bf930982a461183536b7d72a140"
   },
   "directories": ["examples/astro-inline"],
   "absentFiles": [],

@@ -18,7 +18,7 @@
  * `src/routes/payload-live-preview/[file]` — so one dev server shows both
  * deliveries, and the split is per route because a handle sees the request.
  */
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 import {
   livePreviewHandle,
   type LivePreviewSvelteKitOptions,
@@ -29,7 +29,7 @@ import {
   PREVIEW_ADMIN_ORIGIN,
   PREVIEW_AUDIENCE,
   PREVIEW_TOKEN_SECRET,
-} from '$lib/preview.server';
+} from '#lib/preview.server.js';
 
 const options = {
   allowedOrigins: [PREVIEW_ADMIN_ORIGIN],

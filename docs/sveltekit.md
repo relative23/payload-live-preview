@@ -1,10 +1,23 @@
 # SvelteKit
 
-SvelteKit 2 and 3 with server-side rendering. The `handle` hook decides before the page renders, publishes its decision on `event.locals`, injects the runtime into the `<head>` of authorized preview responses and merges the CSP.
+SvelteKit 3 with server-side rendering. The `handle` hook decides before the page renders, publishes its decision on `event.locals`, injects the runtime into the `<head>` of authorized preview responses and merges the CSP.
 
-CI runs the example on SvelteKit 2.70.3 and, migrated with `npx sv migrate sveltekit-3`, on SvelteKit 3.1.1 (`examples/sveltekit3-payload`) on every push, against the mock admin and from the real admin in Chromium, Firefox and WebKit; the package needed no change for SvelteKit 3. CI also drives the SvelteKit 3 production build from the real admin. The `production-lifecycle` job builds the SvelteKit 2 example. The snippets below are written for SvelteKit 2. Under SvelteKit 3, `Handle` comes from `@sveltejs/kit/hooks`, `$lib` becomes `#lib`, `$app/environment` becomes `$app/env`, `$app/env/private` and `$app/env/public` replace the `$env/...` modules, and the adapter moves from `svelte.config.js` into `sveltekit()` in `vite.config.ts` ([migration guide](https://svelte.dev/docs/kit/migrating-to-sveltekit-3)).
+CI runs the example on SvelteKit 3.1.1 on every push, against the mock admin and from the real admin in Chromium, Firefox and WebKit. It also drives the example's production build from the real admin, and the `production-lifecycle` job builds a SvelteKit host from the stored package archive.
 
-Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to. SvelteKit exposes `PUBLIC_`-prefixed variables through `$env/dynamic/public` and the rest through `$env/dynamic/private`; `process.env` does not type-check in a fresh project without `@types/node`.
+SvelteKit 2 is no longer tested. Its release line carries a high-severity advisory that is patched only in SvelteKit 3.1.1 ([GHSA-3r8g-jcqq-3p5j](https://github.com/advisories/GHSA-3r8g-jcqq-3p5j)), so no job installs it any more. The adapter did not change with that, and a SvelteKit 2 project keeps the code it has; nothing proves it on a push. The snippets below are written for SvelteKit 3. A SvelteKit 2 project writes `$lib` for `#lib`, `$app/environment` for `$app/env` and the `$env/...` modules for `$app/env/private`, imports `Handle` from `@sveltejs/kit`, and sets the adapter in `svelte.config.js` instead of `sveltekit()` in `vite.config.ts` ([migration guide](https://svelte.dev/docs/kit/migrating-to-sveltekit-3)).
+
+Environment names used below: `PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to. Server code reads both from `$app/env/private` once `src/env.ts` declares them; `process.env` does not type-check in a fresh project without `@types/node`.
+
+```ts
+// src/env.ts
+import { defineEnvVars } from '@sveltejs/kit/env';
+
+export const variables = defineEnvVars({
+  // A missing variable arrives as the empty string.
+  PAYLOAD_ADMIN_ORIGIN: { schema: (input) => input ?? '' },
+  PAYLOAD_URL: { schema: (input) => input ?? '' },
+});
+```
 
 ## Install
 
@@ -18,22 +31,19 @@ There is no separate setup step. SvelteKit already has one place where a request
 
 ```ts
 // src/hooks.server.ts
-import { env } from '$env/dynamic/private';
-import { env as publicEnv } from '$env/dynamic/public';
+import { PAYLOAD_ADMIN_ORIGIN, PAYLOAD_URL } from '$app/env/private';
 import { livePreviewHandle } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest } from 'payload-live-preview/server';
 
-const adminOrigin = publicEnv.PUBLIC_PAYLOAD_ADMIN_ORIGIN ?? '';
-
 export const handle = livePreviewHandle({
-  allowedOrigins: [adminOrigin],
+  allowedOrigins: [PAYLOAD_ADMIN_ORIGIN],
   // Payload 3.x: re-fetch the populated document; mergeDepth is required with serverURL.
-  serverURL: adminOrigin,
+  serverURL: PAYLOAD_ADMIN_ORIGIN,
   mergeDepth: 1,
   // Required under the strict default: without the hook the handle refuses to
   // start, and every route fails, not only the preview.
   authorizePreview: (request) =>
-    authorizePreviewRequest(request, { type: 'payload-session', serverURL: env.PAYLOAD_URL ?? '' }),
+    authorizePreviewRequest(request, { type: 'payload-session', serverURL: PAYLOAD_URL }),
 });
 ```
 
@@ -46,7 +56,7 @@ The handle inlines the runtime by default. `delivery: 'asset'` puts a bootstrap 
 ```ts
 // src/routes/payload-live-preview/[file]/+server.ts
 import { createRuntimeAssetRoute } from 'payload-live-preview/sveltekit';
-import { livePreviewOptions } from '$lib/live-preview';
+import { livePreviewOptions } from '#lib/live-preview.js';
 
 export const { GET } = createRuntimeAssetRoute(livePreviewOptions);
 ```
@@ -79,12 +89,12 @@ Three optional keys: `livePreviewAuthorization` (the verified context, only when
 ```ts
 // src/routes/[slug]/+page.server.ts
 import { error } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import { PAYLOAD_URL } from '$app/env/private';
 import { createPreviewBindings, definePreview } from 'payload-live-preview/server';
 import type { PageServerLoad } from './$types';
 
 // depth is written once for the initial read and the runtime merge.
-const preview = definePreview({ serverURL: env.PAYLOAD_URL ?? '', depth: 1 });
+const preview = definePreview({ serverURL: PAYLOAD_URL, depth: 1 });
 
 export const load: PageServerLoad = async ({ locals, params, request }) => {
   const authorization = locals.livePreviewAuthorization ?? null;
@@ -120,7 +130,7 @@ export const load: PageServerLoad = async ({ locals, params, request }) => {
 
 ### Rich text on the server
 
-`lexicalToHtml()` sanitizes with a DOM, and `load` runs where there is none. Hand it a document for each render, from jsdom (your own dependency), in a module under `$lib/server` so it never reaches the browser bundle. With `requireDocument: true` a render without one throws instead of returning a custom node's markup unsanitized:
+`lexicalToHtml()` sanitizes with a DOM, and `load` runs where there is none. Hand it a document for each render, from jsdom (your own dependency), in a module under `src/lib/server` so it never reaches the browser bundle. With `requireDocument: true` a render without one throws instead of returning a custom node's markup unsanitized:
 
 ```ts
 // src/lib/server/rich-text.ts
@@ -194,9 +204,9 @@ render it from the unsaved form state:
 ```ts
 // src/routes/payload/fragment/+server.ts
 import { createFragmentEndpoint } from 'payload-live-preview/sveltekit';
-import Hero from '$lib/Hero.svelte';
-import { heroProps } from '$lib/hero';
-import { authorizePreview } from '$lib/authorize-preview';
+import Hero from '#lib/Hero.svelte';
+import { heroProps } from '#lib/hero.js';
+import { authorizePreview } from '#lib/authorize-preview.js';
 
 export const POST = createFragmentEndpoint({
   authorizePreview,
@@ -294,7 +304,7 @@ The callback appends `?preview=true`, a preview intent that authorizes nothing. 
 
 ## Example
 
-[`examples/sveltekit-payload`](../examples/sveltekit-payload) — `livePreviewHandle()` with the `signed-token` strategy and owner-scoped bindings on SvelteKit 2, and `/hybrid` with its endpoint at `src/routes/payload/fragment/+server.ts`. Run in Chromium, Firefox and WebKit.
+[`examples/sveltekit-payload`](../examples/sveltekit-payload) — `livePreviewHandle()` with the `signed-token` strategy and owner-scoped bindings on SvelteKit 3, and `/hybrid` with its endpoint at `src/routes/payload/fragment/+server.ts`. Run in Chromium, Firefox and WebKit.
 
 ## When something does not update
 

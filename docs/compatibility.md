@@ -58,23 +58,30 @@ Outside CI:
 
 Every version in the README's framework table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-Of the 61 feature rows of `quality/compat-matrix.json`, 58 passed in the CI run the last Version PR recorded (commit `b537a7d`, 2026-11-06, `quality/compat-results.json`); the other 3 have no recorded result.
+Of the 56 feature rows of `quality/compat-matrix.json`, 47 passed in the CI run the last Version PR recorded (commit `b537a7d`, 2026-11-06, `quality/compat-results.json`); the other 9 have no recorded result.
 
-Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 3 → 8, SvelteKit 2 → 5/6/7/8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-11-03. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
+Vite 5 through 8: that is what the supported framework majors install (Astro 7 → 8, Astro 6 → 7, Astro 5 → 6, Astro 4 → 5, SvelteKit 3 → 8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-11-03. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
 The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the `hook-matrix` job runs after installing the floors over the lockfile (React 18.0.0, Vue 3.3.0, Svelte 5.0.0), and at what the lockfile installs (React 19.3.1, Vue 3.5.44, Svelte 5.57.3), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by `svelte/compiler` and rendered by the real `svelte/server`.
 
 <!-- compat-evidence:end -->
 
-## SvelteKit 3 and Nuxt 4
+## Nuxt 4
 
-The `sveltekit3` job runs the SvelteKit example migrated to SvelteKit 3.1.1 with
-`npx sv migrate sveltekit-3`, and the `nuxt4` job runs the Nuxt example in Nuxt
-4.6.3's `app/` layout. Both run on the development server against the mock
-admin in Chromium, Firefox and WebKit, and `real-payload-surfaces` drives both
-from the real admin in the same three engines. `real-payload-surfaces` also
-drives both production builds, and the `production-lifecycle` job builds a
-SvelteKit 3 and a Nuxt 4 host from the stored package archive, beside the
-SvelteKit 2 and Nuxt 3 ones ([testing.md](testing.md#production-hosts)). The
-SvelteKit example needed the migration's changes ([sveltekit.md](sveltekit.md));
-the package needed no change for either.
+The `nuxt4` job runs the Nuxt example in Nuxt 4.6.3's `app/` layout, on the
+development server against the mock admin in Chromium, Firefox and WebKit, and
+`real-payload-surfaces` drives it from the real admin in the same three
+engines. `real-payload-surfaces` also drives its production build, and the
+`production-lifecycle` job builds a Nuxt 4 host from the stored package
+archive, beside the Nuxt 3 one ([testing.md](testing.md#production-hosts)).
+The package needed no change for it.
+
+## SvelteKit 2
+
+SvelteKit 2 is no longer tested. Its release line carries a high-severity
+advisory that is patched only in SvelteKit 3.1.1
+([GHSA-3r8g-jcqq-3p5j](https://github.com/advisories/GHSA-3r8g-jcqq-3p5j)), so
+the SvelteKit example and every job that installs it run SvelteKit 3. The
+adapter's code is the same for both majors and did not change; a SvelteKit 2
+project keeps working as far as that code goes, without a job that proves it
+([sveltekit.md](sveltekit.md)).

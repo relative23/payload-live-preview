@@ -8,14 +8,18 @@
  * `/preview-token` instead; the strategy the hook verifies with is the real
  * one, and so is everything the tests assert.
  */
-import { dev } from '$app/environment';
-import { env } from '$env/dynamic/private';
+import { dev } from '$app/env';
+import {
+  PAYLOAD_ADMIN_ORIGIN,
+  PREVIEW_TOKEN_SECRET as CONFIGURED_TOKEN_SECRET,
+  PLP_PAYLOAD_SERVER_URL,
+} from '$app/env/private';
 
 const DEVELOPMENT_ADMIN_ORIGIN = 'http://localhost:4175';
 const PRODUCTION_ADMIN_ORIGIN = 'https://admin.example.test';
 
 function resolveAdminOrigin(): string {
-  const configured = env.PAYLOAD_ADMIN_ORIGIN?.trim();
+  const configured = PAYLOAD_ADMIN_ORIGIN?.trim();
   const url = new URL(
     configured && configured.length > 0
       ? configured
@@ -31,11 +35,11 @@ function resolveAdminOrigin(): string {
 
 export const PREVIEW_ADMIN_ORIGIN = resolveAdminOrigin();
 export const PREVIEW_AUDIENCE = PREVIEW_ADMIN_ORIGIN;
-const configuredSecret = env.PREVIEW_TOKEN_SECRET?.trim();
+const configuredSecret = CONFIGURED_TOKEN_SECRET?.trim();
 export const PREVIEW_TOKEN_SECRET =
   configuredSecret && configuredSecret.length > 0
     ? configuredSecret
     : 'sveltekit-example-secret-at-least-32-bytes-long';
 
 /** Set when a real Payload admin frames this site: its session authorizes the preview. */
-export const PAYLOAD_SERVER_URL = env.PLP_PAYLOAD_SERVER_URL?.trim() || undefined;
+export const PAYLOAD_SERVER_URL = PLP_PAYLOAD_SERVER_URL?.trim() || undefined;

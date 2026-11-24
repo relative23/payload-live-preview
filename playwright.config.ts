@@ -8,15 +8,10 @@ const isCI = process.env['CI'] === 'true';
 // sets it.
 const astroPort = process.env['PLP_E2E_PORT'] ?? '4173';
 /**
- * Which SvelteKit example serves port 4175: the SvelteKit 2 fixture, or with
- * `PLP_SVELTEKIT_FIXTURE=sveltekit3-payload` its SvelteKit 3 twin. Any other
- * value is refused before a server starts from an unreviewed directory.
+ * Which Nuxt example serves port 4176: the Nuxt 3 fixture, or with
+ * `PLP_NUXT_FIXTURE=nuxt4-payload` its Nuxt 4 twin. Any other value is refused
+ * before a server starts from an unreviewed directory.
  */
-const svelteKitFixture = process.env['PLP_SVELTEKIT_FIXTURE'] ?? 'sveltekit-payload';
-if (svelteKitFixture !== 'sveltekit-payload' && svelteKitFixture !== 'sveltekit3-payload') {
-  throw new Error(`Unreviewed SvelteKit fixture: ${svelteKitFixture}`);
-}
-/** The same choice for port 4176: the Nuxt 3 fixture, or `nuxt4-payload`, its Nuxt 4 twin. */
 const nuxtFixture = process.env['PLP_NUXT_FIXTURE'] ?? 'nuxt-payload';
 if (nuxtFixture !== 'nuxt-payload' && nuxtFixture !== 'nuxt4-payload') {
   throw new Error(`Unreviewed Nuxt fixture: ${nuxtFixture}`);
@@ -99,7 +94,7 @@ const config: PlaywrightTestConfig = {
     },
     {
       name: 'sveltekit',
-      command: `npm --prefix examples/${svelteKitFixture} run dev`,
+      command: 'npm --prefix examples/sveltekit-payload run dev',
       url: 'http://localhost:4175/admin.html',
       reuseExistingServer: !isCI,
       timeout: 60_000,

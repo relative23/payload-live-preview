@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 560,
-    "suites": 1075,
-    "tests": 4862,
+    "suites": 1074,
+    "tests": 4857,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 460,
-      "suites": 962,
-      "tests": 4440,
+      "suites": 961,
+      "tests": 4435,
       "benchmarks": 0
     }
   },
@@ -3580,8 +3580,8 @@
     {
       "path": "tests/unit/quality/sveltekit-fixture-preview-config.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 10,
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {

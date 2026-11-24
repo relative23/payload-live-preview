@@ -1,14 +1,14 @@
 /** Server-only host state keeps request decisions in locals, never in this map. An explicit local-test switch prevents accidental deployment. */
-import { env } from '$env/dynamic/private';
+import { PLP_SVELTE_HOST_CONFIG, PLP_SVELTE_HOST_ENABLED } from '$app/env/private';
 import { readFileSync } from 'node:fs';
 import type { RequestEvent } from '@sveltejs/kit';
 import { createNextHostReference as createHostReference } from '../../../reference.mjs';
 
 let current: { host: ReturnType<typeof createHostReference>; origin: string } | undefined;
 export function fixture() {
-  if (env.PLP_SVELTE_HOST_ENABLED !== 'local-test-only' || !env.PLP_SVELTE_HOST_CONFIG) return null;
+  if (PLP_SVELTE_HOST_ENABLED !== 'local-test-only' || !PLP_SVELTE_HOST_CONFIG) return null;
   if (!current) {
-    const options = JSON.parse(readFileSync(env.PLP_SVELTE_HOST_CONFIG, 'utf8'));
+    const options = JSON.parse(readFileSync(PLP_SVELTE_HOST_CONFIG, 'utf8'));
     current = { host: createHostReference({ ...options, enabled: true, fetch }), origin: options.audience };
   }
   return current;

@@ -53,10 +53,10 @@ type StartACLFixture = (options: { versionedRelated: boolean }) => Promise<Nativ
 const checksum = (value: Uint8Array | string): string =>
   createHash('sha256').update(value).digest('hex');
 type ContinuationFramework =
-  'next' | 'sveltekit' | 'sveltekit3' | 'nuxt' | 'nuxt4' | 'astro' | 'html' | 'vue' | 'react';
+  'next' | 'sveltekit' | 'nuxt' | 'nuxt4' | 'astro' | 'html' | 'vue' | 'react';
 /**
- * Each host's public port. SvelteKit 3 and Nuxt 4 are hosts of their own, built from their
- * example and template, but the host contract treats them as their family.
+ * Each host's public port. Nuxt 4 is a host of its own, built from its example and template,
+ * but the host contract treats it as its family.
  */
 const PORTS: Readonly<Record<ContinuationFramework, string>> = {
   next: '4284',
@@ -66,7 +66,6 @@ const PORTS: Readonly<Record<ContinuationFramework, string>> = {
   html: '4288',
   vue: '4289',
   react: '4291',
-  sveltekit3: '4292',
   nuxt4: '4293',
 };
 /** The hosts a continuation config may name; Next.js has its own starter (next-continuation.ts). */
@@ -79,8 +78,7 @@ export async function startNativeContinuation(
   baseline = false,
   profile: 'continuation' | 'astro-resources' = 'continuation',
 ) {
-  const family =
-    framework === 'sveltekit3' ? 'sveltekit' : framework === 'nuxt4' ? 'nuxt' : framework;
+  const family = framework === 'nuxt4' ? 'nuxt' : framework;
   const isNext = framework === 'next';
   const isNuxt = family === 'nuxt';
   const isAstro = framework === 'astro';
@@ -524,7 +522,7 @@ export async function startNativeContinuation(
     );
     return {
       origin,
-      // What the host contract branches on: SvelteKit 3 and Nuxt 4 answer as their family.
+      // What the host contract branches on: Nuxt 4 answers as its family.
       framework: family,
       backend,
       close,
