@@ -3,9 +3,11 @@
   "weights": {
     "src/adapters/shared/authorize-hook.ts": 1946,
     "src/adapters/shared/document-session.ts": 467488,
-    "src/adapters/shared/fragment-endpoint.ts": 284815,
+    "src/adapters/shared/fragment-endpoint.ts": 170153,
     "src/adapters/shared/fragment-limits.ts": 27803,
     "src/adapters/shared/fragment-node-request.ts": 5511,
+    "src/adapters/shared/fragment-request-body.ts": 75469,
+    "src/adapters/shared/fragment-request-scope.ts": 39193,
     "src/adapters/shared/html-inject.ts": 1281,
     "src/adapters/shared/policy-options.ts": 16669,
     "src/adapters/shared/policy.ts": 12338,
