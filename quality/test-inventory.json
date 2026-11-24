@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 558,
-    "suites": 1071,
-    "tests": 4841,
+    "files": 559,
+    "suites": 1072,
+    "tests": 4846,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 458,
-      "suites": 960,
-      "tests": 4427,
+      "files": 459,
+      "suites": 961,
+      "tests": 4432,
       "benchmarks": 0
     }
   },
@@ -3253,6 +3253,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/quality/barrel-rules.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
       "benchmarks": 0
     },
     {

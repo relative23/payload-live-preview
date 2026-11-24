@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readArchitectureModules } from './architecture-graph';
 import { findArchitectureViolations, findCapabilityViolations } from './architecture-rules';
+import { findBarrelViolations, isBarrel } from './barrel-rules';
 import { findSinkViolations, SINK_INVENTORY } from './sink-rules';
 import { readTrustedCorePolicy } from './trusted-core-policy';
 
@@ -15,12 +16,13 @@ async function main(): Promise<void> {
   const repositoryRoot = resolve(import.meta.dirname, '..');
   const modules = await readArchitectureModules(repositoryRoot);
   const policy = await readTrustedCorePolicy(repositoryRoot);
+  const sourceOf = (path: string): string => readFileSync(resolve(repositoryRoot, path), 'utf8');
+  const paths = modules.map(({ path }) => path);
   const violations = [
     ...findArchitectureViolations(modules),
     ...findCapabilityViolations(modules, policy),
-    ...findSinkViolations(modules, SINK_INVENTORY, (path) =>
-      readFileSync(resolve(repositoryRoot, path), 'utf8'),
-    ),
+    ...findSinkViolations(modules, SINK_INVENTORY, sourceOf),
+    ...findBarrelViolations(paths, sourceOf),
   ];
   if (violations.length > 0) {
     throw new Error(
@@ -36,7 +38,8 @@ async function main(): Promise<void> {
   console.log(
     `Architecture policy passed: ${String(modules.length)} modules, ${String(runtimeEdges)} runtime edges, ` +
       `no layer violations or cycles; ${String(capabilityHolders)} modules hold a capability, every one reviewed; ` +
-      `${String(SINK_INVENTORY.html.size)} HTML and ${String(SINK_INVENTORY.attribute.size)} attribute sinks justified.`,
+      `${String(SINK_INVENTORY.html.size)} HTML and ${String(SINK_INVENTORY.attribute.size)} attribute sinks justified; ` +
+      `${String(paths.filter(isBarrel).length)} barrels only re-export.`,
   );
 }
 

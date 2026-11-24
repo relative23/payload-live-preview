@@ -3,7 +3,7 @@
  * any of them. It owns URL selection and root preview metadata, while
  * authentication remains an explicit server-side integration.
  */
-import { buildLivePreviewUrl, type LivePreviewUrlArgs } from './index';
+import { buildLivePreviewUrl, type LivePreviewUrlArgs } from './live-preview-url';
 
 export interface LivePreviewBreakpoint {
   readonly name: string;

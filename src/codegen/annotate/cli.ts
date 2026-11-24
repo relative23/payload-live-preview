@@ -8,8 +8,12 @@
 
 import { readdir, stat } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
-import { generateTypes } from '../index';
-import { ANNOTATABLE_EXTENSIONS, annotateTemplates, formatAnnotateReport } from './index';
+import { generateTypes } from '../generate-types';
+import {
+  ANNOTATABLE_EXTENSIONS,
+  annotateTemplates,
+  formatAnnotateReport,
+} from './annotate-templates';
 
 const SKIP_DIRECTORIES = new Set([
   'node_modules',

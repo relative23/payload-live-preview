@@ -15,4 +15,4 @@ export {
   type AnnotateVitePlugin,
 } from './vite-plugin';
 export type { AnnotationCandidate, AnnotationRefusal } from './scan';
-export type { AnnotatableSchema } from './index';
+export type { AnnotatableSchema } from './annotate-templates';

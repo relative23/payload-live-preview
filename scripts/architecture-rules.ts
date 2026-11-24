@@ -15,6 +15,7 @@ import {
 import { TRUSTED_CORE_POLICY_FILE, type TrustedCorePolicy } from './trusted-core-policy';
 
 export type ArchitectureViolationKind =
+  | 'barrel-logic'
   | 'browser-node-builtin'
   | 'capability'
   | 'layer-boundary'
