@@ -142,8 +142,7 @@ export interface Fixture {
  * in the four rows that carry the full runtime — `initLivePreview` from the
  * barrel 42 402 -> 42 775 (measured 42 725), from `./core` 42 352 -> 42 721
  * (42 671), the generator 40 034 -> 40 336 (40 281) and the Next.js middleware
- * 44 879 -> 45 179 (45 124). `LEAN_RUNTIME` holds at 27 747 (27 728): the
- * lean profile has no route strategy. See bundle-budgets.ts.
+ * 44 879 -> 45 179 (45 124). `LEAN_RUNTIME` holds at 27 747 (27 728): the lean profile has no route strategy. See bundle-budgets.ts.
  *
  * 2026-09-11 (Z28): ten rows fall with the runtime and the helpers it shares,
  * each to its measurement plus the cushion it carried — `escapeHtml` from `payload-live-preview` 224 → 214 (210); `lexicalToHtml` from `payload-live-preview` 5_145 → 5_080 (5_078); `initLivePreview` from `payload-live-preview` 42_775 → 42_577 (42_527); `generateInlineScript` from `payload-live-preview` 40_336 → 40_202 (40_147); `initLivePreview` from `payload-live-preview/core` 42_721 → 42_537 (42_487); `lexicalToHtml` from `payload-live-preview/lexical` 5_275 → 5_203 (5_200); `createLivePreviewMiddleware` from `payload-live-preview/nextjs` 45_179 → 45_046 (44_991); `LEAN_RUNTIME` from `payload-live-preview/lean` 27_747 → 27_587 (27_568); `useLivePreviewDocument` from `payload-live-preview/react` 5_322 → 5_180 (5_100); `useLivePreviewDocument` from `payload-live-preview/vue` 5_311 → 5_176 (5_096).
@@ -537,10 +536,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and without the change: +266 B gzip; retain the reserve it had.
     // 2026-11-05 (2.4.2, a full-mode merge keeps the page's 'unsafe-inline'): paired, same epoch: 62_529 → 62_695, +166 B gzip; reserve kept.
     // 2026-11-05 (2.4.2, the union also reaches the page's own script-src-elem): paired, same epoch: 62_695 → 62_725, +30 B gzip; reserve kept.
+    // 2026-11-24 (each strict refusal names its remedy): paired Node22.23.2: 62_734 → 62_849, +115 B gzip; reserve kept.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 62_801,
+    gzip: 62_916,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
