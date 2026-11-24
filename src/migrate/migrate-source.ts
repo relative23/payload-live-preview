@@ -61,7 +61,8 @@ export interface MigrateSourceResult {
   readonly conflicts: readonly CodemodConflict[];
 }
 
-function lineNumberAt(source: string, offset: number): number {
+/** The 1-based line of an offset in the source. @internal */
+export function lineNumberAt(source: string, offset: number): number {
   let line = 1;
   for (let index = 0; index < offset; index += 1) if (source[index] === '\n') line += 1;
   return line;

@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 560,
-    "suites": 1074,
-    "tests": 4862,
+    "files": 562,
+    "suites": 1081,
+    "tests": 4890,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 460,
-      "suites": 961,
-      "tests": 4440,
+      "files": 462,
+      "suites": 968,
+      "tests": 4468,
       "benchmarks": 0
     }
   },
@@ -2518,6 +2518,20 @@
       "group": "unit",
       "suites": 3,
       "tests": 15,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/doctor/v3-cli.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 7,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/doctor/v3-readiness.test.ts",
+      "group": "unit",
+      "suites": 6,
+      "tests": 21,
       "benchmarks": 0
     },
     {

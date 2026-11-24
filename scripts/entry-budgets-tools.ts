@@ -116,7 +116,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31 (the runtime takes the merge deadline): paired Node24.22.1/npm12.0.2; +17/+5/+13 B; prior reserves kept.
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +22/+11/+38 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +793/+277/+227 B; prior reserves kept.
-  'doctor-cli.js': { raw: 54_793, gzip: 18_901, brotli: 17_000 },
+  // 2026-11-24 (pll doctor --v3, the source check for the 3.0 rows): paired Node22.23.2/zlib1.3.1; +10815/+3507/+2956 B; prior reserves kept.
+  'doctor-cli.js': { raw: 65_608, gzip: 22_408, brotli: 19_956 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
   // 2026-10-22 (the same codemod change): measured 19 958 → 20 931 / 6 964 → 7 166 / 6 240 → 6 427 (+973/+202/+187 B); same 17/12/93 B cushions.
