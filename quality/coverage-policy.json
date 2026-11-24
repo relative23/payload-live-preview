@@ -62,6 +62,11 @@
       "functions": 100,
       "branches": 91
     },
+    "src/client/live-preview-client.ts": {
+      "lines": 97,
+      "functions": 100,
+      "branches": 97
+    },
     "src/core/array-template.ts": {
       "lines": 100,
       "functions": 100,
@@ -322,7 +327,17 @@
       "functions": 100,
       "branches": 88
     },
+    "src/fragment/strategy.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
     "src/inline/generator.ts": {
+      "lines": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "src/payload/live-preview-url.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
@@ -421,5 +436,5 @@
       "src/inline/runtime.generated.ts"
     ]
   },
-  "$comment": "2026-10-03: Four added critical cells own legacy schema persistence, normalization, linear indexing and bounded population/teardown. Their 95/100/95 values are explicit acceptance targets, not a claimed complete coverage measurement. All existing floors and global/diff controls stay unchanged; full coverage of the final integrated source remains required. 2026-10-04: MergeNeed owns successful population reuse and retry eligibility for later accepted updates. Real same-locale relationship-change failures exposed an untested cache-validity gap; add its 100/100/100 acceptance target without changing existing global, diff or file floors. This scope addition does not claim measured coverage. 2026-10-24: these acceptance targets are enforced: vitest.config.ts spreads every criticalFiles entry into the coverage thresholds, so the Coverage job fails below them on every push. 2026-10-26 (2.2 review): src/inline/generator.ts and src/doctor/readiness.ts become critical files, and with that part of the nightly mutation scope. The generator writes the configuration every adapter page runs on, and a silent mistake there (a gate threshold of Infinity serialized as null) reached every such page; readiness.ts reads the configuration a served page carries and decides LP0705 and LP0709. Measured: generator.ts 100/100/100, readiness.ts 100 % of lines and functions and 95.56 % of branches (86 of 90; two are the unreachable `?? ''` fallbacks of the tuple reader). The floors are those values, rounded down."
+  "$comment": "2026-10-03: Four added critical cells own legacy schema persistence, normalization, linear indexing and bounded population/teardown. Their 95/100/95 values are explicit acceptance targets, not a claimed complete coverage measurement. All existing floors and global/diff controls stay unchanged; full coverage of the final integrated source remains required. 2026-10-04: MergeNeed owns successful population reuse and retry eligibility for later accepted updates. Real same-locale relationship-change failures exposed an untested cache-validity gap; add its 100/100/100 acceptance target without changing existing global, diff or file floors. This scope addition does not claim measured coverage. 2026-10-24: these acceptance targets are enforced: vitest.config.ts spreads every criticalFiles entry into the coverage thresholds, so the Coverage job fails below them on every push. 2026-10-26 (2.2 review): src/inline/generator.ts and src/doctor/readiness.ts become critical files, and with that part of the nightly mutation scope. The generator writes the configuration every adapter page runs on, and a silent mistake there (a gate threshold of Infinity serialized as null) reached every such page; readiness.ts reads the configuration a served page carries and decides LP0705 and LP0709. Measured: generator.ts 100/100/100, readiness.ts 100 % of lines and functions and 95.56 % of branches (86 of 90; two are the unreachable `?? ''` fallbacks of the tuple reader). The floors are those values, rounded down. 2026-11-24: three modules that were logic inside a barrel until that day become critical files, and with that part of the nightly mutation scope: `src/client/live-preview-client.ts` (the programmatic client), `src/payload/live-preview-url.ts` (the URL the admin frames) and `src/fragment/strategy.ts` (beside the five fragment modules already here). Coverage never measured them while they were `index.ts`. Measured with 6,379 tests: the client 69 of 71 lines (97.18 %), 29 of 29 functions, 41 of 42 branches (97.62 %); the two lines are the catch of `destroy()`. The other two 100 % of lines, functions and branches. The floors are those values, rounded down."
 }

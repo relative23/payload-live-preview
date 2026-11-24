@@ -13,6 +13,60 @@ import {
 beforeEach(preparePreviewPage);
 afterEach(restorePreviewPage);
 
+describe('LivePreviewClient — what a plugin is given', () => {
+  it('hands a plugin the configuration the client was built with, frozen', async () => {
+    const client = new LivePreviewClient(v1Config({ intersectionRootMargin: '64px' }));
+    let seen: Readonly<Record<string, unknown>> | undefined;
+
+    try {
+      await client.use({
+        name: 'reads-config',
+        init: (context) => {
+          seen = context.getConfig();
+        },
+      });
+
+      expect(seen).toMatchObject({ intersectionRootMargin: '64px', debounceMs: 0 });
+      expect(Object.isFrozen(seen)).toBe(true);
+    } finally {
+      await client.destroy();
+    }
+  });
+
+  it('reports a transform that throws as LP0602 and writes the value as it came', async () => {
+    document.body.innerHTML = '<p data-payload-field="title">old</p>';
+    const client = new LivePreviewClient(v1Config());
+    const errors: {
+      readonly code: unknown;
+      readonly context: unknown;
+      readonly message: string;
+    }[] = [];
+    client.events.on('error', ({ error, code, context }) => {
+      errors.push({ code, context, message: error.message });
+    });
+
+    try {
+      await client.use({
+        name: 'throwing-transform',
+        init: (context) => {
+          context.registerTransform('title', () => {
+            throw new Error('transform broke');
+          });
+        },
+      });
+
+      await fireUpdate({ title: 'raw title' });
+
+      expect(errors).toEqual([
+        { code: 'LP0602', context: 'transform', message: 'transform broke' },
+      ]);
+      expect(document.querySelector('p')?.textContent).toBe('raw title');
+    } finally {
+      await client.destroy();
+    }
+  });
+});
+
 describe('LivePreviewClient — renderers from plugins', () => {
   it('ignores a custom renderer false return after a real DOM write', async () => {
     document.body.innerHTML = '<div data-payload-field="value" data-payload-type="text"></div>';

@@ -1,7 +1,7 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { StrictMode, useEffect } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useLivePreviewDocument } from '@adapters/react/index';
+import { useLivePreviewDocument, type UseLivePreviewDocumentOptions } from '@adapters/react/index';
 import type { PreviewDocument } from '@adapters/shared/document-session';
 
 /**
@@ -69,6 +69,52 @@ function Preview({
     </article>
   );
 }
+
+type Connection = Partial<Omit<UseLivePreviewDocumentOptions<Page>, 'initialData' | 'fetchFn'>>;
+
+/** The hook with any connection options on top of the ones every case here shares. */
+function Probe({
+  connection,
+  initialData,
+  fetchFn,
+}: {
+  readonly connection: Connection;
+  readonly initialData: Page;
+  readonly fetchFn: typeof fetch;
+}): React.JSX.Element {
+  const { data } = useLivePreviewDocument<Page>({
+    serverURL: SERVER,
+    allowedOrigins: [ADMIN],
+    eventSourcePolicy: 'any',
+    initialData,
+    fetchFn,
+    ...connection,
+  });
+  return <h1 data-testid="title">{data.title}</h1>;
+}
+
+/**
+ * Each row changes one connection option. A session keeps its merged document
+ * for as long as it lives, so the page showing the new initial data is what
+ * says a new session started.
+ */
+const CONNECTION_CHANGES: readonly [name: string, before: Connection, after: Connection][] = [
+  ['the route prefix', {}, { apiRoute: '/cms-api' }],
+  ['the depth', { depth: 1 }, { depth: 2 }],
+  ['requireLocale', {}, { requireLocale: true }],
+  ['referrer detection', {}, { enableReferrerDetection: true }],
+  ['localhost matching', {}, { enableLocalhostMatching: false }],
+  [
+    'the document from a collection to a global',
+    { document: { collection: 'pages', id: '1' } },
+    { document: { global: 'pages' } },
+  ],
+  [
+    'the locale of the document',
+    { document: { collection: 'pages', id: '1' } },
+    { document: { collection: 'pages', id: '1', locale: 'de' } },
+  ],
+];
 
 function respondWith(body: unknown, init: ResponseInit = {}): typeof fetch {
   return () =>
@@ -440,5 +486,58 @@ describe('useLivePreviewDocument', () => {
     await settle();
     expect(newFetch).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('title').textContent).toBe('Page B live');
+  });
+
+  it.each(CONNECTION_CHANGES)(
+    'starts a new session on a change of %s',
+    async (_name, before, after) => {
+      const fetchFn = respondWith({ id: '1', title: 'Merged' });
+      const view = render(<Probe connection={before} initialData={INITIAL} fetchFn={fetchFn} />);
+      await act(async () => {
+        window.dispatchEvent(update('Typed'));
+        await Promise.resolve();
+      });
+      await settle();
+      expect(screen.getByTestId('title').textContent).toBe('Merged');
+
+      view.rerender(
+        <Probe
+          connection={after}
+          initialData={{ id: '1', title: 'Fresh start' }}
+          fetchFn={fetchFn}
+        />,
+      );
+
+      expect(screen.getByTestId('title').textContent).toBe('Fresh start');
+    },
+  );
+
+  it('sends the merge to the route prefix and with the depth it was given', async () => {
+    const fetchFn = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) =>
+      Promise.resolve(
+        new Response(JSON.stringify({ id: '1', title: 'Merged' }), {
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    );
+    render(
+      <Probe
+        connection={{ apiRoute: '/cms-api', depth: 3 }}
+        initialData={INITIAL}
+        fetchFn={fetchFn as unknown as typeof fetch}
+      />,
+    );
+    await act(async () => {
+      window.dispatchEvent(update('Typed'));
+      await Promise.resolve();
+    });
+    await settle();
+
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchFn.mock.calls[0] ?? [];
+    expect(url).toBe('https://cms.example.com/cms-api/pages/1');
+    expect(JSON.parse(typeof init?.body === 'string' ? init.body : '{}')).toMatchObject({
+      depth: 3,
+    });
   });
 });

@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { LivePreviewClient } from '@client/index';
+import { initLivePreview, LivePreviewClient } from '@client/index';
 import {
   IO,
   TRUSTED,
   deferred,
+  fireMessage,
   fireUpdate,
   preparePreviewPage,
   restorePreviewPage,
@@ -108,6 +109,24 @@ describe('LivePreviewClient — lifecycle', () => {
       expect(document.querySelector('h1')?.textContent).toBe('new remote edit');
     } finally {
       oldUpdate.resolve(undefined);
+      await client.destroy();
+    }
+  });
+
+  it('replays the last accepted document into the markup of the next route on refreshAfterNavigation()', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">published</h1>';
+    const client = new LivePreviewClient(v1Config());
+
+    try {
+      await fireUpdate({ title: 'typed' });
+      // The router swapped the page for the server's render of the saved document.
+      document.body.innerHTML = '<h1 data-payload-field="title">published</h1>';
+
+      client.refreshAfterNavigation();
+      await vi.advanceTimersByTimeAsync(50);
+
+      expect(document.querySelector('h1')?.textContent).toBe('typed');
+    } finally {
       await client.destroy();
     }
   });
@@ -228,5 +247,84 @@ describe('LivePreviewClient — lifecycle', () => {
     await Promise.all([first, second]);
     expect(firstSettled).toBe(true);
     expect(secondSettled).toBe(true);
+  });
+
+  it('binds markup added since the last scan as soon as refreshCache() is called', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const client = new LivePreviewClient(v1Config());
+
+    try {
+      await fireUpdate({ title: 'first', subtitle: 'first' });
+      document.body.insertAdjacentHTML('beforeend', '<p data-payload-field="subtitle">old</p>');
+
+      // The mutation observer would find the paragraph too, 100 ms later; a
+      // caller that replaced markup itself does not have to wait for it.
+      client.refreshCache();
+      await fireUpdate({ title: 'first', subtitle: 'typed' });
+
+      expect(document.querySelector('p')?.textContent).toBe('typed');
+    } finally {
+      await client.destroy();
+    }
+  });
+
+  it('releases the origin lock when the heartbeat runs out, so another allowed admin can connect', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const other = 'https://staging-admin.example.com';
+    const client = new LivePreviewClient(
+      v1Config({
+        allowedOrigins: [TRUSTED, other],
+        disableLocalhostMatching: true,
+        heartbeatMs: 1_000,
+      }),
+    );
+    const fromOther = (title: string): void => {
+      fireMessage({ type: 'payload-live-preview', data: { title } }, other);
+    };
+
+    try {
+      await fireUpdate({ title: 'from the first admin' });
+      expect(client.inspect().origins.locked).toBe(TRUSTED);
+
+      fromOther('refused while locked');
+      await vi.advanceTimersByTimeAsync(50);
+      expect(document.querySelector('h1')?.textContent).toBe('from the first admin');
+
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(client.status).toBe('disconnected');
+      expect(client.inspect().origins.locked).toBeUndefined();
+
+      fromOther('from the other admin');
+      await vi.advanceTimersByTimeAsync(50);
+      expect(document.querySelector('h1')?.textContent).toBe('from the other admin');
+      expect(client.inspect().origins.locked).toBe(other);
+    } finally {
+      await client.destroy();
+    }
+  });
+});
+
+describe('initLivePreview', () => {
+  it('returns a started client inside a preview frame', async () => {
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+    const client = initLivePreview(v1Config());
+
+    try {
+      expect(client).toBeInstanceOf(LivePreviewClient);
+      await fireUpdate({ title: 'typed' });
+      expect(document.querySelector('h1')?.textContent).toBe('typed');
+    } finally {
+      await client?.destroy();
+    }
+  });
+
+  it('returns null on a top-level visit and leaves the page alone', async () => {
+    Object.defineProperty(window, 'top', { value: window, configurable: true });
+    document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
+
+    expect(initLivePreview()).toBeNull();
+
+    await fireUpdate({ title: 'typed' });
+    expect(document.querySelector('h1')?.textContent).toBe('old');
   });
 });

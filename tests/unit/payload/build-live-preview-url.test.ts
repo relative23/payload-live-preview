@@ -36,6 +36,15 @@ describe('buildLivePreviewUrl — 1.0 behaviour', () => {
     expect(url(globalArgs('homepage'))).toBe(`${BASE}/?preview=true`);
   });
 
+  it('strips every trailing slash of the base, not only the last', () => {
+    const doubled = buildLivePreviewUrl({ baseUrl: `${BASE}//`, globals: { g: '/p' } });
+    expect(doubled(globalArgs('g'))).toBe(`${BASE}/p?preview=true`);
+  });
+
+  it('falls back when Payload names no entity at all', () => {
+    expect(url({ data: {} })).toBe(`${BASE}/?preview=true`);
+  });
+
   it('resolves a collection through its function resolver', () => {
     expect(url(collectionArgs('services', { slug: 'thai-massage' }))).toBe(
       `${BASE}/services/thai-massage?preview=true`,
@@ -54,6 +63,12 @@ describe('buildLivePreviewUrl — 1.0 behaviour', () => {
       `${BASE}/de/contact?preview=true`,
     );
     expect(withLocale({ ...globalArgs('contact'), locale: '' })).toBe(
+      `${BASE}/none/contact?preview=true`,
+    );
+    expect(withLocale({ ...globalArgs('contact'), locale: { code: '' } })).toBe(
+      `${BASE}/none/contact?preview=true`,
+    );
+    expect(withLocale({ ...globalArgs('contact'), locale: { code: null } })).toBe(
       `${BASE}/none/contact?preview=true`,
     );
   });
@@ -211,5 +226,9 @@ describe('buildLivePreviewUrl — the preview parameter', () => {
   it('copes with an empty or dangling query', () => {
     expect(resolve('/p?')).toBe(`${BASE}/p?preview=true`);
     expect(resolve('/p?a=1&')).toBe(`${BASE}/p?a=1&preview=true`);
+  });
+
+  it('finds a query that starts right behind the leading slash', () => {
+    expect(resolve('/?a=1')).toBe(`${BASE}/?a=1&preview=true`);
   });
 });
