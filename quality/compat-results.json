@@ -1,11 +1,11 @@
 {
   "workflow": "ci.yml",
-  "id": 42121129091,
-  "url": "https://github.com/relative23/payload-live-preview/actions/runs/42121129091",
-  "commit": "b537a7d64408284c8b41bc179a53779e30eddd36",
+  "id": 45405412178,
+  "url": "https://github.com/relative23/payload-live-preview/actions/runs/45405412178",
+  "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
   "event": "push",
   "conclusion": "success",
-  "executedAt": "2026-11-06T00:44:56Z",
+  "executedAt": "2026-11-24T16:41:55Z",
   "jobs": [
     {
       "conclusion": "success",
@@ -130,10 +130,6 @@
     {
       "conclusion": "success",
       "name": "Production lifecycle (sveltekit)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Production lifecycle (sveltekit3)"
     },
     {
       "conclusion": "success",
@@ -357,42 +353,6 @@
     },
     {
       "conclusion": "success",
-      "name": "Real Payload E2E (sveltekit3, chromium)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Real Payload E2E (sveltekit3, firefox)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Real Payload E2E (sveltekit3, webkit)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Real Payload E2E (sveltekit3-create, chromium)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Real Payload E2E (sveltekit3-create, firefox)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Real Payload E2E (sveltekit3-create, webkit)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Real Payload E2E (sveltekit3-production, chromium)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Real Payload E2E (sveltekit3-production, firefox)"
-    },
-    {
-      "conclusion": "success",
-      "name": "Real Payload E2E (sveltekit3-production, webkit)"
-    },
-    {
-      "conclusion": "success",
       "name": "Release Gates / Release Chromium Update & Heap Soak"
     },
     {
@@ -434,18 +394,6 @@
     {
       "conclusion": "success",
       "name": "Steps the real-admin suites started again"
-    },
-    {
-      "conclusion": "success",
-      "name": "SvelteKit 3 E2E (chromium)"
-    },
-    {
-      "conclusion": "success",
-      "name": "SvelteKit 3 E2E (firefox)"
-    },
-    {
-      "conclusion": "success",
-      "name": "SvelteKit 3 E2E (webkit)"
     },
     {
       "conclusion": "success",

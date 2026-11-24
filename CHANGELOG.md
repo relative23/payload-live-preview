@@ -1,5 +1,17 @@
 # payload-live-preview
 
+## 2.5.0
+
+### Minor Changes
+
+- 6367809: `pll doctor --v3 <path>` reads a project's source and lists, by row of the 3.0 ledger (ADR 0007), every call of the package that 3.0 changes, with file and line: a hook without `document` or `timeoutMs`, an adapter that merges without `mergeTimeoutMs`, `lexicalToHtml()` without a document, `setSanitizerDocument()`, `defaults: 'v1'`, a detector without `enableReferrerDetection`, `livePreviewScriptProps()` delivering inline, the Astro integration without `mode`, and `strict: false`. It reads options written at the call, in a `const` of the same file or in one a relative import names, and lists the calls it could not read. It changes no file, exits 3 when it lists a place, and needs `ts-morph`, as `pll migrate` does. See "Preparing for 3.0" in `docs/migration.md`.
+- 21b617e: SvelteKit 2 is no longer tested, and the compatibility table names SvelteKit 3 alone. SvelteKit 2's release line carries a high-severity advisory that is patched only in SvelteKit 3.1.1 (GHSA-3r8g-jcqq-3p5j), so the example and every CI job that installed SvelteKit 2 now run SvelteKit 3. The adapter's code did not change: a SvelteKit 2 project keeps the code it has, without a job that proves it on a push. `docs/sveltekit.md` is written for SvelteKit 3 and says what a SvelteKit 2 project writes instead.
+
+### Patch Changes
+
+- a5c56fa: A merge request that the Payload server answers with an HTTP error is now aborted. Until now the runtime reported the status and left the response's body unread and open; the request for a Payload 2 relation already aborted in that case. The outcome is unchanged: the merge is `unavailable` and the status is logged.
+- 98326bc: Each `strict` refusal at startup now says what to do about the rule it states. A missing `authorizePreview` names `authorizePreviewRequest(request, strategy)` from `payload-live-preview/server` and `docs/authorization.md`; empty `allowedOrigins` shows the option with an example origin; an `http:` admin origin in production says to name the https origin. Until now the three messages ended only with `defaults: 'v1'`, the 1.x profile that 3.0 removes, and the closing sentence now says so.
+
 ## 2.4.2
 
 ### Patch Changes
