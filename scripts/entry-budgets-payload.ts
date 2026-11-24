@@ -17,8 +17,11 @@ export const PAYLOAD_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // tolerant locale guard keeps the upstream `{ code: undefined }` value from
   // hiding Live Preview, and encoding keeps a configured parameter one key.
   // Each dimension retains the entry's five-byte cushion.
-  'payload.cjs': { raw: 1_269, gzip: 648, brotli: 569 },
-  'payload.js': { raw: 1_261, gzip: 641, brotli: 560 },
+  // 2026-11-24 (the base loses its trailing slashes in a loop, not by `/\/+$/`): paired
+  // Node22.23.2; CJS +23 / +10 / +13 to 1 287 / 653 / 577 and ESM +23 / +10 / +14 to
+  // 1 279 / 646 / 569; each dimension keeps its five bytes.
+  'payload.cjs': { raw: 1_292, gzip: 658, brotli: 582 },
+  'payload.js': { raw: 1_284, gzip: 651, brotli: 574 },
   // 2026-09-23 (`./plugin`): new Payload config entry, measured at
   // 2 263 / 1 043 / 944 CJS and 2 255 / 1 038 / 929 ESM. Like `./payload`,
   // each dimension carries five bytes rather than a percentage-sized step.
@@ -29,6 +32,9 @@ export const PAYLOAD_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // each dimension retains the entry's five-byte cushion.
   // 2026-10-31 (`order`, nullable resolvers, `slug`): paired on the same HEAD,
   // CJS +85 / +29 / +23 and ESM +85 / +27 / +26; the cushion stays five bytes.
-  'plugin.cjs': { raw: 2_417, gzip: 1_107, brotli: 994 },
-  'plugin.js': { raw: 2_409, gzip: 1_099, brotli: 984 },
+  // 2026-11-24 (the same loop, through the URL builder the plugin calls): paired Node22.23.2;
+  // CJS +23 / +11 / +10 to 2 435 / 1 113 / 999 and ESM +23 / +9 / +7 to 2 427 / 1 103 / 986;
+  // the cushion stays five bytes.
+  'plugin.cjs': { raw: 2_440, gzip: 1_118, brotli: 1_004 },
+  'plugin.js': { raw: 2_432, gzip: 1_108, brotli: 991 },
 };
