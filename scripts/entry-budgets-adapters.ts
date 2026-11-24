@@ -90,7 +90,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +289/+141/+113 B; prior reserves kept.
   // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/+48 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +90/+8/+38 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 222_115, gzip: 69_744, brotli: 59_334 },
+  // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+120/+186 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 222_453, gzip: 69_864, brotli: 59_520 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -144,7 +145,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +247/+97/+150 B; prior raw/gzip reserves kept; the Brotli ceiling keeps its reserve.
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +278/+142/+29 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +92/+26/+14 B; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 196_364, gzip: 61_661, brotli: 52_280 },
+  // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+116/+44 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 196_702, gzip: 61_777, brotli: 52_324 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -237,7 +239,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +289/+152/+63 B; prior reserves kept.
   // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/-17 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +88/+12/+36 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 216_046, gzip: 67_982, brotli: 57_738 },
+  // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+116/+99 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 216_384, gzip: 68_098, brotli: 57_837 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -368,7 +371,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +289/+141/+126 B; prior reserves kept.
   // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/+84 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +90/+27/-28 B; the Brotli ceiling stays, it fell; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 215_778, gzip: 67_880, brotli: 57_683 },
+  // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+116/+34 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 216_116, gzip: 67_996, brotli: 57_717 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -428,5 +432,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +290/+141/+139 B; prior reserves kept.
   // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/-34 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +89/+20/+106 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 214_860, gzip: 67_579, brotli: 57_522 },
+  // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+119/+150 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 215_198, gzip: 67_698, brotli: 57_672 },
 };

@@ -243,6 +243,45 @@ describe('strict', () => {
     );
   });
 
+  it('says what to do about each refusal, and that the 1.x profile ends with 3.0', () => {
+    // `defaults: 'v1'` is a staged path that 3.0 removes, so the message that
+    // stops a process names the fix for the rule it states as well.
+    const refusal = (build: () => unknown): string => {
+      try {
+        build();
+        return '';
+      } catch (error) {
+        return (error as Error).message;
+      }
+    };
+    const withoutHook = refusal(() =>
+      createPreviewPolicy({ strict: true, allowedOrigins: [ADMIN] }),
+    );
+    const withoutOrigins = refusal(() =>
+      createPreviewPolicy({ strict: true, authorizePreview: hook }),
+    );
+    process.env['NODE_ENV'] = 'production';
+    const plainOrigin = refusal(() =>
+      assertStrictConfiguration({ authorizePreview: hook, allowedOrigins: ['http://admin.local'] }),
+    );
+
+    // In full: a message is a row of literals, and one that nothing reads can go blank unnoticed.
+    const staged =
+      " New in 2.0; `defaults: 'v1'` keeps the 1.x table while you migrate, until 3.0 removes it (docs/migration.md).";
+    expect(withoutHook).toBe(
+      'payload-live-preview: strict mode requires `authorizePreview` — response changes must be gated on a verified context, not on intent (ADR 0006). Pass a hook that returns `authorizePreviewRequest(request, strategy)` from `payload-live-preview/server` (docs/authorization.md).' +
+        staged,
+    );
+    expect(withoutOrigins).toBe(
+      "payload-live-preview: strict mode requires explicit, non-empty `allowedOrigins`. Name the origin of the Payload admin, as in `allowedOrigins: ['https://cms.example.com']`." +
+        staged,
+    );
+    expect(plainOrigin).toBe(
+      'payload-live-preview: strict mode requires https admin origins in production; got "http://admin.local". Name the https origin of the admin; http passes only where `NODE_ENV` is not `production`.' +
+        staged,
+    );
+  });
+
   it('refuses non-https admin origins outside development, allows them inside', () => {
     process.env['NODE_ENV'] = 'production';
     expect(() =>
