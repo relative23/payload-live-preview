@@ -102,8 +102,7 @@ export interface Fixture {
  * row: `initLivePreview` from the barrel 40 570 -> 40 700 (measured 40 663),
  * from `./core` 40 530 -> 40 670 (40 630), the generator 38 270 -> 38 650
  * (38 598) and the Next.js middleware 43 120 -> 43 460 (43 414). `LEAN_RUNTIME`
- * holds at 27 100 (27 098): the lean profile has no route strategy, and all it
- * pays is the cancelled timer's slot in the runtime state.
+ * holds at 27 100 (27 098): the lean profile has no route strategy, and all it pays is the cancelled timer's slot in the runtime state.
  *
  * 2026-09-07 (Z7): LP0201 reaching one level into a group costs ~80 B gzip, and
  * this time all five runtime-carrying rows crossed: `initLivePreview` from the
@@ -591,10 +590,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     why: 'the plugin manager without the built-in plugins',
   },
   {
+    // 2026-11-24 (the URL builder trims its base in a loop): paired Node22.23.2: 1_263 → 1_277, +14 B gzip; the 5 B stay.
     from: 'payload-live-preview/plugin',
     symbol: 'livePreview',
     use: "export const out = livePreview({ baseUrl: 'https://site.example.com', fallback: '/' });",
-    gzip: 1_268,
+    gzip: 1_282,
     why: 'the Payload config transform and URL builder, without Payload itself',
   },
 ];

@@ -79,14 +79,14 @@ function isSafeId(value: unknown): value is string | number {
   return typeof value === 'string' && isPathSegment(value, 512);
 }
 
+/** What the deadline rejects with: no fetch, body or shim rejects with this object. */
+const TIMED_OUT = new Error();
+
 /**
  * Trailing slashes off a base URL, without a regular expression: `/\/+$/`
  * backtracks over a long run of slashes and takes quadratic time on input the
  * page supplies (CodeQL js/polynomial-redos).
  */
-/** What the deadline rejects with: no fetch, body or shim rejects with this object. */
-const TIMED_OUT = new Error();
-
 function withoutTrailingSlashes(value: string): string {
   let end = value.length;
   while (value.endsWith('/', end)) end -= 1;
@@ -298,6 +298,9 @@ export class DataMerger {
       if (superseded()) return { status: 'superseded' };
       if (!ok) {
         const status = response.status;
+        if (superseded()) return { status: 'superseded' };
+        // Nobody reads a refusal's body; the abort ends it.
+        controller.abort();
         if (superseded()) return { status: 'superseded' };
         this.log('merge HTTP', status, url);
         return superseded() ? { status: 'superseded' } : { status: 'unavailable' };

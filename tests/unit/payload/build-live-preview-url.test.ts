@@ -41,6 +41,18 @@ describe('buildLivePreviewUrl — 1.0 behaviour', () => {
     expect(doubled(globalArgs('g'))).toBe(`${BASE}/p?preview=true`);
   });
 
+  it.each([
+    ['a long run at the end', `${BASE}${'/'.repeat(50_000)}`, `${BASE}/p?preview=true`],
+    // A run that is not at the end stays: the expression this replaced tried it from every slash.
+    [
+      'a long run inside',
+      `${BASE}${'/'.repeat(50_000)}x`,
+      `${BASE}${'/'.repeat(50_000)}x/p?preview=true`,
+    ],
+  ])('reads %s of slashes in the base once', (_name, baseUrl, expected) => {
+    expect(buildLivePreviewUrl({ baseUrl, globals: { g: '/p' } })(globalArgs('g'))).toBe(expected);
+  });
+
   it('falls back when Payload names no entity at all', () => {
     expect(url({ data: {} })).toBe(`${BASE}/?preview=true`);
   });

@@ -78,7 +78,9 @@ export function buildLivePreviewUrl(
 export function buildLivePreviewUrl(
   options: BuildLivePreviewUrlNullableOptions,
 ): (args: LivePreviewUrlArgs) => string | null {
-  const base = options.baseUrl.replace(/\/+$/, '');
+  // A loop, not `/\/+$/`: the expression tries a long run of slashes from each of them when the run is not at the end.
+  let base = options.baseUrl;
+  while (base.endsWith('/')) base = base.slice(0, -1);
   // `??` would swallow an explicit `null`, which is the whole point of the nullable form.
   const fallback = options.fallback === undefined ? '/' : options.fallback;
   const previewParam = options.previewParam === undefined ? 'preview' : options.previewParam;

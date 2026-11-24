@@ -99,4 +99,72 @@ describe('v3 merge boundary ownership', () => {
       await newer;
     }
   });
+
+  it('aborts a merge request the server refuses, instead of leaving its unread body open', async () => {
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response('Access denied', { status: 403 }));
+    const log = vi.fn();
+    const merger = new DataMerger({ serverURL: SERVER, fetchFn, log });
+    try {
+      await expect(merger.merge(request())).resolves.toEqual({ status: 'unavailable' });
+      expect(fetchFn.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+      expect(log).toHaveBeenCalledExactlyOnceWith('merge HTTP', 403, `${SERVER}/api/posts/A`);
+    } finally {
+      merger.destroy();
+    }
+  });
+
+  it('keeps a newer request that the abort of a refused one accepts', async () => {
+    // The abort runs listeners, and a listener may start the next merge: the
+    // refused attempt is obsolete then and reports nothing.
+    let newer: Promise<MergeResult> | undefined;
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce((_url, init) => {
+        init?.signal?.addEventListener('abort', () => {
+          newer = merger.merge(request('C'));
+        });
+        return Promise.resolve(new Response('Access denied', { status: 403 }));
+      })
+      .mockResolvedValueOnce(jsonResponse(mergedC.doc));
+    const log = vi.fn();
+    const merger = new DataMerger({ serverURL: SERVER, fetchFn, log });
+    try {
+      await expect(merger.merge(request())).resolves.toEqual({ status: 'superseded' });
+      await expect(newer).resolves.toEqual(mergedC);
+      expect(fetchFn.mock.calls[1]?.[1]?.signal?.aborted).toBe(false);
+      expect(log).not.toHaveBeenCalled();
+    } finally {
+      merger.destroy();
+    }
+  });
+
+  it('does not abort a refused attempt again after its status getter accepted a newer merge', async () => {
+    // The newer merge aborted the obsolete controller already; a second abort
+    // from the attempt it replaced must never reach a listener.
+    const abort = vi.spyOn(AbortController.prototype, 'abort');
+    let merger: DataMerger | undefined;
+    let newer: Promise<MergeResult> | undefined;
+    try {
+      const older = {
+        ok: false,
+        get status() {
+          newer = merger?.merge(request('C'));
+          return 503;
+        },
+      } as unknown as Response;
+      const fetchFn = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(older)
+        .mockResolvedValueOnce(jsonResponse(mergedC.doc));
+      merger = new DataMerger({ serverURL: SERVER, fetchFn });
+      await expect(merger.merge(request())).resolves.toEqual({ status: 'superseded' });
+      expect(abort).toHaveBeenCalledTimes(1);
+      await expect(newer).resolves.toEqual(mergedC);
+    } finally {
+      merger?.destroy();
+      abort.mockRestore();
+    }
+  });
 });

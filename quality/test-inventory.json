@@ -22,7 +22,7 @@
   "totals": {
     "files": 560,
     "suites": 1074,
-    "tests": 4858,
+    "tests": 4862,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 460,
       "suites": 961,
-      "tests": 4436,
+      "tests": 4440,
       "benchmarks": 0
     }
   },
@@ -1439,7 +1439,7 @@
       "path": "tests/unit/core/data-merger-v3-boundaries.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 3,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -2944,7 +2944,7 @@
       "path": "tests/unit/payload/build-live-preview-url.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 24,
+      "tests": 25,
       "benchmarks": 0
     },
     {
