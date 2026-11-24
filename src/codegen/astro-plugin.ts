@@ -8,7 +8,7 @@
 import { watch, type FSWatcher } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generateTypes } from './index';
+import { generateTypes } from './generate-types';
 
 export interface AstroCodegenOptions {
   /** Path to `payload.config.ts` (absolute or relative to Astro's root). */

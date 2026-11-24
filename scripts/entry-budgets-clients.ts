@@ -268,7 +268,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // Node24.19/npm12.0.2, epoch1791096072: +133/+49/+43 B raw/gzip/Brotli;
   // retain the prior 20/3/120 B reserves.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +67/+34/+30 B; prior reserves kept.
-  'fragment.cjs': { raw: 17_064, gzip: 6_519, brotli: 5_864 },
+  // 2026-11-24 (O-53, the entry's logic in `./strategy` beside a barrel that only re-exports): paired Node22.23.2/zlib1.3.1, main 739ab51 against the change; +0/+12/+0 B. The modules stand in another order inside the bundle and nothing else moved; prior reserves kept.
+  'fragment.cjs': { raw: 17_064, gzip: 6_531, brotli: 5_864 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+429/+364 B; same 20/9/79 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+16/+17 B; same 20/9/79 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured -4/-2/-1 B; same 20/9/79 B cushions.

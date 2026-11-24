@@ -1,7 +1,7 @@
 /** The file walker behind `pll migrate`: find source files, apply the codemods, report or write. */
 import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
-import { migrateSource } from './index';
+import { migrateSource } from './migrate-source';
 import type { CodemodConflict, CodemodEdit } from './types';
 
 const SOURCE_EXTENSIONS = new Set([

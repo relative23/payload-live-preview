@@ -2154,7 +2154,7 @@
           "job": "build"
         },
         "sources": [
-          "src/client/index.ts",
+          "src/client/live-preview-client.ts",
           "tests/integration/client-lifecycle.test.ts",
           "tests/integration/runtime-preview-context.test.ts"
         ],

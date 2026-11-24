@@ -39,7 +39,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { annotatableEntities, type AnnotatableSchema } from './index';
+import { annotatableEntities, type AnnotatableSchema } from './annotate-templates';
 import {
   applyAnnotations,
   fieldAttribute,

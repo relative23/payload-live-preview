@@ -2,7 +2,7 @@
  * `pll migrate <path> [--write] [--only <id,id>]`, hosted by the `pll` binary.
  * Exit codes: 0 clean, 1 usage or I/O error, 3 when conflicts need a human.
  */
-import { CODEMODS } from './index';
+import { CODEMODS } from './migrate-source';
 import { runMigrate, type MigrateFileResult } from './runner';
 
 export const MIGRATE_HELP = `pll migrate — rewrite 1.x APIs to their 2.0 names and homes (ADR 0007)

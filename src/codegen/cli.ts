@@ -4,7 +4,7 @@
  * (warnings allowed), 1 fatal error, 2 nothing found — the output is left
  * untouched, since an empty schema almost always means a wrong config path.
  */
-import { generateTypes } from './index';
+import { generateTypes } from './generate-types';
 import { runAnnotate } from './annotate/cli';
 
 interface ParsedArgs {
