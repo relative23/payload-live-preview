@@ -52,6 +52,14 @@ page:
 STRYKER_SCOPE=nightly npm run test:mutation
 ```
 
+CI mutates that scope every night, in the Deep Quality workflow, and on a push
+to a release branch only for a commit whose `package.json` version is not on npm
+yet: the commit a release is published from
+([ADR 0013 §13](architecture/0013-release-pipeline.md)). `scripts/mutation-plan.ts`
+asks the registry and leaves the scope out for one answer alone, that it serves
+exactly this version. A change to a file in the scope is therefore measured
+before its merge: `gh workflow run deep-quality.yml --ref <branch>`.
+
 That scope is too large for one CI job — about 250 minutes on a GitHub runner —
 so the workflow runs it in six shards and grades the joined report:
 
@@ -327,7 +335,8 @@ mutation profile, and 10,000 fully awaited updates in a long-lived runtime under
 forced GC, in addition to repeated start/destroy ownership churn. The mutation
 shards, the trusted-core scope, the leak gate and the soak are one reusable
 workflow, `critical-gates.yml`, which CI also calls on every push to `main` (the
-Release Gates job, with the five-minute soak). The Node gate requires all owned
+Release Gates job, with the five-minute soak); there the mutation shards run
+only for a commit whose version is not on npm yet. The Node gate requires all owned
 observers, listeners, timers, and DOM nodes to return to zero and both
 long-session and post-destroy retained heap drift to remain below 2 MiB.
 

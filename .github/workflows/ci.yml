@@ -843,3 +843,4 @@ jobs:
     with:
       dist-artifact: dist-${{ github.sha }}
       soak-duration-ms: '300000'
+      full-mutation: unpublished-version

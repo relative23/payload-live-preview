@@ -338,7 +338,7 @@ export const CI: WorkflowSpec = {
         { run: 'node scripts/count-repeated-attempts.ts repeated-attempts' },
       ],
     },
-    'release-gates': callCriticalGates('300000', RELEASE_PUSH),
+    'release-gates': callCriticalGates('300000', 'unpublished-version', RELEASE_PUSH),
   },
 };
 
@@ -397,15 +397,38 @@ export const CRITICAL_GATES: WorkflowSpec = {
           type: 'string',
           default: '300000',
         },
+        'full-mutation': {
+          description:
+            'When the six shards of the complete mutation scope run: `always`, or ' +
+            '`unpublished-version` for a commit whose version is not on npm.',
+          required: true,
+          type: 'string',
+        },
       },
     },
   },
   permissions: READ_ONLY,
   jobs: {
+    // The shards run for the caller that asks `always` and for a commit whose
+    // version the registry does not serve. Only the plan's "false" leaves them
+    // out, so an answer lost between the two jobs costs minutes, not the gate.
+    'mutation-plan': {
+      timeoutMinutes: 10,
+      permissions: READ_ONLY,
+      steps: [
+        ...PINNED_SETUP,
+        {
+          run: 'npx tsx scripts/mutation-plan.ts',
+          env: { MUTATION_MODE: '${{ inputs.full-mutation }}' },
+        },
+      ],
+    },
     // The scope outgrew a single job. Each shard mutates a disjoint part and
     // the baseline job grades the six reports joined back into one, so the
     // verdict stays a property of the scope rather than of the split.
     'critical-mutation': {
+      if: "needs.mutation-plan.outputs.full != 'false'",
+      needs: ['mutation-plan'],
       timeoutMinutes: 180,
       permissions: READ_ONLY,
       matrix: { shard: [1, 2, 3, 4, 5, 6] },
@@ -518,6 +541,7 @@ export const DEEP_QUALITY: WorkflowSpec = {
     build: callBuild,
     'critical-gates': callCriticalGates(
       "${{ github.event.schedule == '17 2 * * 0' && '1800000' || '300000' }}",
+      'always',
     ),
     'browser-bench': {
       needs: ['build'],

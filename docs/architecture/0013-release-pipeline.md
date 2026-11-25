@@ -238,8 +238,8 @@ longer publish, because every version it could carry is below `latest` in the
 same major.
 
 CI accepts pushes and pull requests for that exact branch. A push runs the
-same release-critical gates as `main`, including the nightly mutation scope
-and the five-minute browser soak. The release gate proves ancestry against
+same release-critical gates as `main`, including the five-minute browser soak
+and, for the commit that is published, the complete mutation scope (§13). The release gate proves ancestry against
 `origin/release/2.x`; the publish job consumes that run's certified archive.
 The default branch must carry the updated release workflow before a maintenance
 run can release, because `workflow_run` reads that workflow from the default
@@ -396,6 +396,43 @@ needs `npx changeset pre exit` in a pull request of its own.
 Fixes for 2.x come from `release/2.x` in the meantime (§8). That branch can
 release only while its `release.yml` is the one on `main` (§11), so a change to
 that file on `main` is backported before the next 2.x release.
+
+### 13. The complete mutation scope runs at night and for the commit that is published (2026-11-26)
+
+Through 2.5.0 every push to `main` mutated the complete scope, six shards
+beside the trusted core. On 2026-11-25 the shards took 623 runner minutes on
+`8afde63` and 507 on the 3.0 line once Payload 2 had left it, the trusted core
+106 and 90. Three such runs and a pull request run waited on each other for
+hours that day.
+
+What the shards hold is the score of the scope a release is cut from. They now
+run
+
+- every night, in Deep Quality, on the tip of `main`;
+- on a push to a release branch when the version in `package.json` is not on
+  npm, which by §2 is the commit the gate publishes.
+
+Every other push runs the trusted core, the leak gate and the soak as before.
+
+`scripts/mutation-plan.ts` decides, in a job of its own in `critical-gates.yml`.
+It asks the registry the gate's question (`npm view <name>@<version> version`,
+read by the gate's own function) and leaves the shards out for one answer
+alone: the registry serves exactly this version. A 404, any other answer and a
+registry that cannot be asked all run them. The shard job runs unless the plan
+said `false`, so an answer lost between the two jobs runs them too, and a plan
+that failed fails the run.
+
+The gate itself needs no new rule. It accepts only a successful CI push run
+(§2), and a commit whose version is not on npm cannot get one without the
+shards and their baseline. The other publish of §2, the reconciliation of a
+version that is on npm already (§3), puts no new bytes on the registry.
+
+What this gives up: a merged change that moves the mutation numbers is found
+by the next night's run, or by the release commit at the latest, no longer by
+its own push. A change to a file in the scope is therefore measured before the
+merge, with Deep Quality run on its branch, and brings the new baseline along
+(docs/testing.md). The schedule runs on `main` alone; a maintenance branch gets
+the shards with its release commit.
 
 ## Consequences
 

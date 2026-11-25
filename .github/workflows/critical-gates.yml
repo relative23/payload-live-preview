@@ -1,8 +1,11 @@
 name: Critical Gates
 
-# The release-critical baseline: the complete mutation scope, the 10,000-cycle
-# Node leak gate and the Chromium soak. One definition, called from CI on
-# every push to main and from Deep Quality on its schedule.
+# The release-critical baseline: the complete mutation scope, the trusted core
+# on its own, the 10,000-cycle Node leak gate and the Chromium soak. One
+# definition, called from CI on every push to a release branch and from Deep
+# Quality on its schedule. The six shards of the complete scope run every
+# night, and on a push only for a commit whose version is not on npm yet: the
+# one a release is published from (ADR 0013 §13).
 on:
   workflow_call:
     inputs:
@@ -15,13 +18,48 @@ on:
         required: false
         type: string
         default: '300000'
+      full-mutation:
+        description: >-
+          When the six shards of the complete mutation scope run: `always`, or
+          `unpublished-version` for a commit whose version is not on npm.
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
+  mutation-plan:
+    name: Mutation Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      full: ${{ steps.plan.outputs.full }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.22.3
+          cache: npm
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
+      - run: npm ci
+      - name: Decide whether this run mutates the complete scope
+        id: plan
+        env:
+          MUTATION_MODE: ${{ inputs.full-mutation }}
+        run: npx tsx scripts/mutation-plan.ts
+
   critical-mutation:
     name: Release Critical Mutation Shard ${{ matrix.shard }}/6
+    needs: mutation-plan
+    # Only the plan's "false" leaves the shards out. A plan that failed fails the
+    # run, and one whose answer got lost on the way here does not skip them.
+    if: needs.mutation-plan.outputs.full != 'false'
     runs-on: ubuntu-latest
     # One sixth of a scope that runs ~250 min whole on these runners, packed by
     # measured test time. Earlier splits ran worse: three packed by file size,
