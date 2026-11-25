@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { markHydrated } from '@/index';
-import { HYDRATION_WAIT_CAP_MS } from '@core/hydration';
-import { MANUAL_HYDRATION_SLOT, whenMarkedHydrated } from '@core/hydration-manual';
+import { HYDRATION_WAIT_CAP_MS } from '@core/hydration/hydration';
+import { MANUAL_HYDRATION_SLOT, whenMarkedHydrated } from '@core/hydration/hydration-manual';
 import { RUNTIME_LEAN_SOURCE } from '@inline/runtime-lean.generated';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
@@ -58,7 +58,7 @@ describe('whenMarkedHydrated', () => {
     const settled = vi.fn();
     whenMarkedHydrated(document, settled);
     vi.resetModules();
-    const other = await import('@core/hydration-manual');
+    const other = await import('@core/hydration/hydration-manual');
     expect(other.markHydrated).not.toBe(markHydrated);
     other.markHydrated();
     expect(settled).toHaveBeenCalledWith('committed');

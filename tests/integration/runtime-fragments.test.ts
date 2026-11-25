@@ -9,7 +9,7 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
       '<section data-payload-fragment="hero"><h1 data-payload-field="title">old</h1></section>';
     const tuple = [...bakeConfig(), '/payload/fragment'];
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     expect(api?.inspect().fragments.handler).toBe(true);
     api?.destroy();
@@ -22,7 +22,7 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
       '<h1 data-payload-field="title" data-payload-strategy="route">old</h1>';
     const tuple = [...bakeConfig(), undefined, undefined, true];
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     expect(api?.inspect().route.handler).toBe(true);
     expect(api?.inspect().fragments.handler).toBe(false);
@@ -36,7 +36,7 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
     document.body.innerHTML = '';
     const tuple = [...bakeConfig(), undefined, undefined, true];
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     expect(api?.inspect().route.handler).toBe(false);
     api?.destroy();
@@ -48,7 +48,7 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
     document.body.innerHTML = '';
     const tuple = [...bakeConfig(), '/payload/fragment'];
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     expect(api?.inspect().fragments.handler).toBe(false);
     api?.destroy();

@@ -10,8 +10,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataMerger, type MergeRequest } from '@core/data-merger';
-import { MergeNeed } from '@core/merge-need';
+import { DataMerger, type MergeRequest } from '@core/merge/data-merger';
+import { MergeNeed } from '@core/merge/merge-need';
 import { EventEmitter } from '@events/emitter';
 import type { FieldRenderer } from '@core/types';
 import { fireMessage, makeRuntime, textRenderer } from './lifecycle-startup-harness';

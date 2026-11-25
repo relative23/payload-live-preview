@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ConnectionState, HeartbeatTimer } from '@core/state';
+import { ConnectionState, HeartbeatTimer } from '@core/session/state';
 
 describe('HeartbeatTimer', () => {
   beforeEach(() => {

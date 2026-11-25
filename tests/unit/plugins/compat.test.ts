@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { incompatibilityOf, satisfiesRange } from '@plugins/compat';
-import { LIBRARY_PROTOCOL_VERSION } from '@core/protocol-version';
+import { LIBRARY_PROTOCOL_VERSION } from '@core/protocol/protocol-version';
 import { VERSION } from '@/version';
 
 describe('satisfiesRange', () => {

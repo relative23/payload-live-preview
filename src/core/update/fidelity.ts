@@ -1,0 +1,224 @@
+/**
+ * What the runtime does about a patch it knows will not reach what the server
+ * would have drawn: a renderer that refused the value, a Lexical block whose
+ * markup the write had to drop. The finding is made where the write happens;
+ * the policy and the ledger live here, so the pipeline can hand the region to a
+ * strategy once the flush is over instead of leaving the page worse off.
+ *
+ * A changed field with no binding at all is the same judgement made one step
+ * earlier — there is no element to write to — and `StrategyRunner` reaches it
+ * from `unbound-fields.ts` before anything is scheduled.
+ */
+
+import type { RuntimeDeps, RuntimeState } from '../session/runtime-state';
+import type { CachedElement } from '../types';
+import { valueIdentity } from './value-identity';
+
+/**
+ * `'ignore'` keeps the degraded patch, which is what 2.0 shipped under the
+ * name `onUnboundChange: 'ignore'`. `'warn'` keeps it and says so (LP0411).
+ * `'escalate'`, the default, asks a server to draw the region instead: the
+ * fragment strategy when a boundary covers the binding, the route otherwise.
+ *
+ * Without a strategy to escalate to, every mode keeps the patch. A page that
+ * cannot ask a server for better markup is not helped by being told twice.
+ */
+export type UnfaithfulPatchMode = 'ignore' | 'warn' | 'escalate';
+
+/**
+ * Both spellings of the option; the 2.0 name stays until 3.0. Explicitly
+ * `| undefined`, because one caller reads them out of the inline script's
+ * positional tuple, where an omitted slot is exactly that.
+ */
+export interface UnfaithfulPatchOptions {
+  readonly onUnfaithfulPatch?: UnfaithfulPatchMode | undefined;
+  readonly onUnboundChange?: 'ignore' | 'route' | undefined;
+}
+
+/**
+ * The 2.0 name maps onto the new one without loss: `'route'` was this option's
+ * escalation and `'ignore'` its opt-out. Only an omitted option takes the new
+ * default — a project that wrote `'ignore'` down chose it, and keeps it.
+ */
+export function resolveUnfaithfulPatchMode(options: UnfaithfulPatchOptions): UnfaithfulPatchMode {
+  // `'ignore'` is the only thing the old name can still say that the new
+  // default does not: its `'route'` and its absence both mean escalate now.
+  return (
+    options.onUnfaithfulPatch ?? (options.onUnboundChange === 'ignore' ? 'ignore' : 'escalate')
+  );
+}
+
+/** The value an element was last reported or handed over with, and when. */
+export interface UnfaithfulReport {
+  readonly identity: string | undefined;
+  readonly at: number;
+}
+
+/** How long an element waits before a new value of it is escalated again. */
+const ESCALATE_AGAIN_MS = 1000;
+
+/**
+ * Record one binding this revision could not patch faithfully, and queue it for
+ * the escalation the flush will run.
+ *
+ * Counted, and said as LP0411, once per element: the cause is the markup or the
+ * value's shape, so the next message would report the same thing. Under
+ * `'escalate'` a later revision with a new value is handed over again, since
+ * the region the server drew still shows the old one: at most once a second
+ * per element, so typing is not a refresh per keystroke, and never with the
+ * value it was last handed over with, which the re-apply after a route render
+ * hands the renderer again. A value held back by that second is handed over by
+ * the first report after it, the re-apply included.
+ *
+ * Counted under every mode, before the mode decides anything: `inspect()` has
+ * to be able to say "three patches fell short, none was escalated" on the page
+ * whose owner chose `'ignore'` as much as on the one that has no strategy.
+ */
+export function reportUnfaithfulPatch(
+  deps: RuntimeDeps,
+  state: RuntimeState,
+  target: CachedElement,
+  reason: string,
+  value: unknown,
+): void {
+  const mode = deps.onUnfaithfulPatch;
+  const last = state.reportedUnfaithful.get(target.element);
+  const identity = valueIdentity(value);
+  const now = Date.now();
+  const repeated =
+    last !== undefined &&
+    (mode !== 'escalate' ||
+      identity === undefined ||
+      identity === last.identity ||
+      now - last.at < ESCALATE_AGAIN_MS);
+  // Kept, not queued: under 'warn' and 'ignore', and for a repeat. The
+  // revision does not show the field (ADR 0023).
+  if (repeated || mode !== 'escalate') {
+    state.display.shortfall(state.activeUpdate, { kind: 'unfaithful', field: target.fieldName });
+  }
+  if (repeated) return;
+  state.reportedUnfaithful.set(target.element, { identity, at: now });
+  if (last === undefined) {
+    state.unfaithfulCount += 1;
+    state.unfaithfulFields.add(target.fieldName);
+    if (mode === 'ignore') return;
+    if (mode === 'warn') {
+      deps.warn(`[live-preview] LP0411: "${target.fieldName}" ${reason}`);
+      return;
+    }
+  }
+  deps.log('LP0411', target.fieldName, reason);
+  state.unfaithfulPatches.push(target);
+}
+
+/**
+ * Record a changed field the page has no binding for: the same judgement one
+ * step earlier, where there is no element to write to and so nothing to queue.
+ * The whole route is the only answer to it, and `StrategyRunner` asks for that
+ * itself.
+ *
+ * Once per field name, for the reason LP0411 is once per element: the cause is
+ * the markup, so the next keystroke into the same field would report the same
+ * thing. Counted under every mode and on a page with no strategy at all —
+ * that page is the one `inspect().fidelity` was written for, and it was the one
+ * page the reading said nothing about.
+ *
+ * No message of its own: LP0203 (LP0201 when the value is empty) already names
+ * the field, once, from the same rule. The return value says whether this was the first time, so an escalation
+ * is counted against the findings it answered rather than against a keystroke.
+ */
+export function reportUnboundChange(state: RuntimeState, fieldName: string): boolean {
+  if (state.unfaithfulFields.has(fieldName)) return false;
+  state.unfaithfulFields.add(fieldName);
+  state.unfaithfulCount += 1;
+  return true;
+}
+
+/**
+ * Renderers that turn a stored value into a presentation, so the template that
+ * printed the same field had to choose one too. A `text` binding whose content
+ * differs is an edit; a `date`, `number` or `checkbox` binding whose content
+ * differs is two answers to the question the runtime cannot ask —
+ * `data-payload-format` is where the answer belongs.
+ */
+const FORMATTING_RENDERERS: ReadonlySet<string> = new Set([
+  'date',
+  'number',
+  'checkbox',
+  'select',
+  'radio',
+]);
+
+function isOptionType(type: string): boolean {
+  return type === 'select' || type === 'radio';
+}
+
+/** Cap on either reading in the message: a diagnostic is a pointer, not a dump. */
+const EXCERPT = 40;
+
+/**
+ * What the element shows, when a difference there would be worth reporting —
+ * `undefined` when it would not, so an ordinary page pays one `Set` lookup per
+ * binding and reads no DOM at all.
+ *
+ * Called before the renderer writes, and only for the first write to a
+ * binding: after that the element holds the runtime's own output, and
+ * comparing it with the runtime's next output says nothing about the template.
+ */
+export function watchServerFormatting(
+  deps: RuntimeDeps,
+  state: RuntimeState,
+  target: CachedElement,
+  type: string,
+): string | undefined {
+  if (deps.onUnfaithfulPatch === 'ignore') return undefined;
+  if (target.format !== undefined || !FORMATTING_RENDERERS.has(type)) return undefined;
+  // A form control holds the value itself; only printed text can be a label.
+  if (isOptionType(type) && target.element.matches('select,input')) return undefined;
+  if (state.checkedServerFormat.has(target.element)) return undefined;
+  state.checkedServerFormat.add(target.element);
+  const shown = shownValue(target.element);
+  // An empty anchor lost nothing, and the boundary case (LP0201) is elsewhere.
+  return shown.trim().length > 0 ? shown : undefined;
+}
+
+/**
+ * Called once the renderer has written: both readings of the same value now
+ * exist, and if they differ the page no longer matches the server.
+ *
+ * It reports and stops there. Escalating would hand the region to the route,
+ * which redraws the template's format, which the re-apply overwrites again —
+ * measured under Z3 — so the honest move is to name the two candidates and the
+ * attribute that settles either of them.
+ */
+export function reportServerFormatting(
+  deps: RuntimeDeps,
+  target: CachedElement,
+  before: string,
+  type: string,
+): void {
+  const after = shownValue(target.element);
+  if (after === before) return;
+  deps.warn(
+    `[live-preview] LP0412: "${target.fieldName}" showed ${excerpt(before)}, the patch wrote ` +
+      `${excerpt(after)} — ` +
+      (isOptionType(type)
+        ? 'Payload sends the value of an option, not its label. Render the label in a ' +
+          'data-payload-fragment boundary, or bind it with data-payload-strategy="route".'
+        : 'either an edit that arrived before the preview connected, or a template that ' +
+          'formats this value differently. Set data-payload-format to match it.'),
+  );
+}
+
+/** The channel the formatting renderers write. */
+function shownValue(element: Element): string {
+  if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+    return (element as HTMLInputElement).value;
+  }
+  return element.textContent;
+}
+
+function excerpt(value: string): string {
+  const text = value.trim();
+  return JSON.stringify(text.length > EXCERPT ? `${text.slice(0, EXCERPT)}…` : text);
+}

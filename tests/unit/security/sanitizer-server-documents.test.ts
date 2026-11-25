@@ -7,7 +7,7 @@ import {
   type SanitizeOptions,
   type SanitizerDocument,
 } from '@security/sanitizer';
-import { templateSanitizeOptions } from '@core/template-sanitize';
+import { templateSanitizeOptions } from '@core/bindings/template-sanitize';
 import { CORPUS, REGRESSIONS, type Vector } from './xss-corpus';
 import { assertNoActiveContent, type CorpusPolicy } from './sanitizer-oracle';
 

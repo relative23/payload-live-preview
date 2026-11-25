@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { bindingIdentity, bindingValue } from '@core/field-value';
+import { bindingIdentity, bindingValue } from '@core/update/field-value';
 import type { CachedElement } from '@core/types';
 
 describe('bindingValue', () => {

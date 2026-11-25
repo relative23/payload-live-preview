@@ -14,10 +14,10 @@
  * sends, whichever document it started from.
  */
 
-import { readDocumentId } from '@core/binding-owner';
-import { DataMerger } from '@core/data-merger';
-import { MessageBus } from '@core/message-bus';
-import { observeCapabilities, PAYLOAD_2_REFUSED } from '@core/protocol-version';
+import { readDocumentId } from '@core/bindings/binding-owner';
+import { DataMerger } from '@core/merge/data-merger';
+import { MessageBus } from '@core/protocol/message-bus';
+import { observeCapabilities, PAYLOAD_2_REFUSED } from '@core/protocol/protocol-version';
 import { isDevMode } from '@detection/environment';
 import { noticeOnce, type BundlerEnv } from '@detection/notice';
 import { OriginDetector } from '@detection/origin';

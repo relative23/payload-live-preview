@@ -7,9 +7,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildBuiltinRenderers } from '@field-types/index';
 import { lexicalToHtml } from '@lexical/render';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { EventEmitter } from '@events/emitter';
-import { bootstrapInlineRuntime } from '@core/runtime';
+import { bootstrapInlineRuntime } from '@core/session/runtime';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 import { LivePreviewClient } from '@/client/index';
 import { IO, TRUSTED, fireMessage } from '../core/lifecycle-startup-harness';

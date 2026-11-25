@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IDENTITY_SIZE_LIMIT, valueIdentity } from '@core/value-identity';
+import { IDENTITY_SIZE_LIMIT, valueIdentity } from '@core/update/value-identity';
 
 /**
  * The identity decides whether a binding is re-rendered. Two errors are

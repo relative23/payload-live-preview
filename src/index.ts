@@ -21,7 +21,7 @@ export {
   bindNavigationLifecycle,
   type NavigationLifecycleOptions,
   type NavigationLifecycleTarget,
-} from './core/navigation-lifecycle';
+} from './core/session/navigation-lifecycle';
 export type {
   InspectionBindings,
   InspectionOrigins,
@@ -38,7 +38,7 @@ export type {
   RevisionDisplay,
   RevisionDisplayState,
   RevisionShortfall,
-} from './core/revision-display';
+} from './core/update/revision-display';
 export type {
   FragmentContext,
   FragmentReport,
@@ -49,12 +49,12 @@ export type {
   RouteStrategy,
   StrategyHandlers,
   UpdateSource,
-} from './core/strategies';
-export { registerRouteRefresh, type RouteRefresh } from './core/route-refresh';
-export { markHydrated } from './core/hydration-manual';
+} from './core/strategies/strategies';
+export { registerRouteRefresh, type RouteRefresh } from './core/strategies/route-refresh';
+export { markHydrated } from './core/hydration/hydration-manual';
 export type { PayloadDocumentEventDetail } from './types/payload-protocol';
 export { DIAGNOSTIC_CODES, type DiagnosticCode } from './core/diagnostic-codes';
-export type { ConnectionStatus } from './core/state';
+export type { ConnectionStatus } from './core/session/state';
 
 // Inline-script generator
 export {
@@ -202,14 +202,14 @@ export {
   LIBRARY_PROTOCOL_VERSION,
   hasCapability,
   negotiateProtocol,
-} from './core/protocol-version';
-export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol-version';
-export { CAPABILITY_DECLARATIONS, PROTOCOL_CAPABILITIES } from './core/protocol-version';
-export type { CapabilityDeclaration, CapabilitySource } from './core/protocol-version';
-export { CAPABILITY_DOCUMENTATION } from './core/protocol-capability-docs';
-export type { CapabilityDocumentation } from './core/protocol-capability-docs';
-export { detectProtocolProfile } from './core/protocol-profile';
-export type { ProtocolProfile, ProtocolProfileName } from './core/protocol-profile';
+} from './core/protocol/protocol-version';
+export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol/protocol-version';
+export { CAPABILITY_DECLARATIONS, PROTOCOL_CAPABILITIES } from './core/protocol/protocol-version';
+export type { CapabilityDeclaration, CapabilitySource } from './core/protocol/protocol-version';
+export { CAPABILITY_DOCUMENTATION } from './core/protocol/protocol-capability-docs';
+export type { CapabilityDocumentation } from './core/protocol/protocol-capability-docs';
+export { detectProtocolProfile } from './core/protocol/protocol-profile';
+export type { ProtocolProfile, ProtocolProfileName } from './core/protocol/protocol-profile';
 
 // Typed binding DSL — pair with codegen-emitted schema interfaces
 export { bind, bindByPath, createPreviewBindings } from './dsl';
@@ -236,4 +236,4 @@ export type {
 } from './types/payload-protocol';
 
 // Island interoperability (docs/renderers.md)
-export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/islands';
+export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/bindings/islands';

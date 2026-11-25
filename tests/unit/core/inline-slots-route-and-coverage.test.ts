@@ -5,7 +5,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
-import { bootstrapInlineRuntime } from '@core/runtime';
+import { bootstrapInlineRuntime } from '@core/session/runtime';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 import { IO } from './lifecycle-startup-harness';
 

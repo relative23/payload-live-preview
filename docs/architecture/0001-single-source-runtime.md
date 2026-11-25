@@ -13,7 +13,7 @@ They diverged silently: `isSafeUrl('')` returned `true` in the class but `false`
 
 ## Decision
 
-Both code paths are now produced from `src/core/runtime.ts`:
+Both code paths are now produced from `src/core/session/runtime.ts`:
 
 - `scripts/build-runtime.ts` bundles and lowers that file to ES2020 with **esbuild**, then
   applies a conservative three-pass **Terser** compression to the IIFE. Keeping syntax

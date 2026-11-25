@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
-import type { FragmentStrategy, RouteContext, RouteOutcome, RouteStrategy } from '@core/strategies';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
+import type {
+  FragmentStrategy,
+  RouteContext,
+  RouteOutcome,
+  RouteStrategy,
+} from '@core/strategies/strategies';
 import type { FieldRenderer } from '@core/types';
 import { fragmentStrategyFrom, type FragmentHandler, type StrategyRequest } from '@fragment/index';
 

@@ -4,10 +4,14 @@
  * not an unhandled MutationObserver exception hidden behind runner diagnostics.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { ElementCache } from '@core/cache';
-import { ISLAND_EVENT } from '@core/islands';
-import { NavigationReplay } from '@core/navigation-replay';
-import { RuntimeState, type RuntimeDeps, type UpdateTransaction } from '@core/runtime-state';
+import { ElementCache } from '@core/bindings/cache';
+import { ISLAND_EVENT } from '@core/bindings/islands';
+import { NavigationReplay } from '@core/strategies/navigation-replay';
+import {
+  RuntimeState,
+  type RuntimeDeps,
+  type UpdateTransaction,
+} from '@core/session/runtime-state';
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 
 function transaction(fields: Record<string, unknown>): UpdateTransaction {

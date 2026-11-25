@@ -1,4 +1,4 @@
-import { LivePreviewRuntime, type RuntimeOptions } from '@core/lifecycle';
+import { LivePreviewRuntime, type RuntimeOptions } from '@core/session/lifecycle';
 import { EventEmitter } from '@events/emitter';
 import type { FieldRenderer } from '@core/types';
 

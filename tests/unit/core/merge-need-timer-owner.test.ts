@@ -6,8 +6,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataMerger, type MergeRequest } from '@core/data-merger';
-import { MergeNeed, type CoalescedMerge } from '@core/merge-need';
+import { DataMerger, type MergeRequest } from '@core/merge/data-merger';
+import { MergeNeed, type CoalescedMerge } from '@core/merge/merge-need';
 
 const WINDOW_MS = 50;
 type Timer = ReturnType<typeof setTimeout>;

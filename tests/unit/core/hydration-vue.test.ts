@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HYDRATION_WAIT_CAP_MS } from '@core/hydration';
+import { HYDRATION_WAIT_CAP_MS } from '@core/hydration/hydration';
 import {
   VUE_APP_PROPERTY,
   VUE_HYDRATION_SLOT,
   armVueMountSignal,
   whenVueMounted,
-} from '@core/hydration-vue';
+} from '@core/hydration/hydration-vue';
 
 /**
  * The seam the ADR 0015 addendum describes: Vue's own bookkeeping, read for

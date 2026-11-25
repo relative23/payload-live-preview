@@ -2,7 +2,7 @@
 
 import { expect } from 'vitest';
 import { type Command } from 'fast-check';
-import { MessageBus } from '@core/message-bus';
+import { MessageBus } from '@core/protocol/message-bus';
 
 export const TRUSTED_ORIGIN = 'https://admin.example.test';
 

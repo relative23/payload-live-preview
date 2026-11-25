@@ -2,7 +2,7 @@ import { describe, expect } from 'vitest';
 import { fc, it } from '@fast-check/vitest';
 import createDOMPurify from 'dompurify';
 import { sanitizeHtml } from '@security/sanitizer';
-import { templateSanitizeOptions } from '@core/template-sanitize';
+import { templateSanitizeOptions } from '@core/bindings/template-sanitize';
 import {
   assertNoActiveContent,
   missingFromPurify,

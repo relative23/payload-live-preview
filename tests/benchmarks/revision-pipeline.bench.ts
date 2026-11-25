@@ -6,7 +6,7 @@
  * noisy wall-clock measurements into test assertions.
  */
 import { bench, describe } from 'vitest';
-import { MessageBus } from '@core/message-bus';
+import { MessageBus } from '@core/protocol/message-bus';
 
 const TRUSTED_ORIGIN = 'https://admin.example.com';
 const BACKLOG_SIZE = 1_000;

@@ -1,6 +1,6 @@
 /** The shared structural store and list builders for the patch suites. */
 
-import { createStructuralStore, KEY_ATTRIBUTE } from '@core/structural-applier';
+import { createStructuralStore, KEY_ATTRIBUTE } from '@core/bindings/structural-applier';
 
 // One store shared across the file is safe: it's a WeakMap keyed by the
 // container element, and every test builds fresh elements, so tests can't

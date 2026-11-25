@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { RouteStrategy } from '@core/strategies';
+import type { RouteStrategy } from '@core/strategies/strategies';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
 /**

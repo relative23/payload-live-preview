@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, vi } from 'vitest';
-import { type ScheduledUpdate } from '@core/update-scheduler';
+import { type ScheduledUpdate } from '@core/update/update-scheduler';
 import type { CachedElement } from '@core/types';
 
 export function entry(element: Element, fieldName = 'f'): CachedElement {

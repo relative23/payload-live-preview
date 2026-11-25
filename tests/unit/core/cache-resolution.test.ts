@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ElementCache } from '@core/cache';
+import { ElementCache } from '@core/bindings/cache';
 
 /** What the cache resolves once at build so the update loop never walks the DOM. */
 

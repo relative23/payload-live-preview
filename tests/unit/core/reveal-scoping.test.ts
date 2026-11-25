@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
-import type { RuntimeOptions } from '@core/runtime-options';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
+import type { RuntimeOptions } from '@core/session/runtime-options';
 import type { FieldRenderer } from '@core/types';
 
 /**

@@ -10,7 +10,7 @@ import {
 import { sanitizeHtml, SANITIZER_POLICY } from '@security/sanitizer';
 import { isExternalHttpUrl, isSafeUrl } from '@security/url-validator';
 import { normaliseOrigin, OriginDetector } from '@detection/origin';
-import { resolveFieldValue } from '@core/field-value';
+import { resolveFieldValue } from '@core/update/field-value';
 import { propertyParameters } from './fast-check';
 
 const ASCII_WHITESPACE = fc.constantFrom(' ', '\t', '\n', '\f', '\r', ' \t', '\r\n');

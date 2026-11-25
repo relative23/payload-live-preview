@@ -5,8 +5,8 @@ import {
   SUBFIELD_VISIT_LIMIT,
   uncoveredChangedPaths,
   type PathCoverage,
-} from '@core/subfield-coverage';
-import { IDENTITY_SIZE_LIMIT } from '@core/value-identity';
+} from '@core/update/subfield-coverage';
+import { IDENTITY_SIZE_LIMIT } from '@core/update/value-identity';
 
 /**
  * ADR 0022's walk, case by case: each rule the property test holds in

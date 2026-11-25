@@ -4,7 +4,7 @@
  * always the visible text.
  */
 
-import { resolveFieldValue } from '@core/field-value';
+import { resolveFieldValue } from '@core/update/field-value';
 import type { FieldRenderer, RendererKey } from '@core/types';
 import { acceptUrl } from './unsafe-url';
 import { isEmptyValue, safeStringify } from './utils';

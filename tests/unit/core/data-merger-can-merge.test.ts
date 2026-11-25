@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DataMerger } from '@core/data-merger';
+import { DataMerger } from '@core/merge/data-merger';
 
 describe('DataMerger.canMerge', () => {
   const merger = new DataMerger({ serverURL: 'https://cms.example.com' });

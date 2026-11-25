@@ -3,7 +3,7 @@
  * where the `fetch` it uses comes from.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DataMerger } from '@core/data-merger';
+import { DataMerger } from '@core/merge/data-merger';
 import { jsonResponse } from './data-merger-harness';
 
 describe('the one request that carries cookies', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyStructuralPatches, KEY_ATTRIBUTE } from '@core/structural-applier';
+import { applyStructuralPatches, KEY_ATTRIBUTE } from '@core/bindings/structural-applier';
 import { diffArray } from '@schema/diff';
 import { makeList, store } from './structural-applier-harness';
 

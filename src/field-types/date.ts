@@ -5,7 +5,7 @@
  */
 
 import { detectInitialLocale } from '@detection/locale';
-import { getDateTimeFormat } from '@core/intl-cache';
+import { getDateTimeFormat } from '@core/bindings/intl-cache';
 import type { CachedElement, FieldRenderer, RenderContext } from '@core/types';
 import { isEmptyValue, safeStringify } from './utils';
 import { formatOptionsFor } from './value-format';

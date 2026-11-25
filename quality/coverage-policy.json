@@ -77,42 +77,42 @@
       "functions": 100,
       "branches": 97
     },
-    "src/core/array-template.ts": {
+    "src/core/bindings/array-template.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/attribute-binding.ts": {
+    "src/core/bindings/attribute-binding.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/binding-owner.ts": {
+    "src/core/bindings/binding-owner.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/binding-writer.ts": {
+    "src/core/bindings/binding-writer.ts": {
       "lines": 96,
       "functions": 100,
       "branches": 90
     },
-    "src/core/cache.ts": {
+    "src/core/bindings/cache.ts": {
       "lines": 96,
       "functions": 100,
       "branches": 95
     },
-    "src/core/data-merger.ts": {
+    "src/core/merge/data-merger.ts": {
       "lines": 97,
       "functions": 100,
       "branches": 87
     },
-    "src/core/dependencies.ts": {
+    "src/core/update/dependencies.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/field-changes.ts": {
+    "src/core/update/field-changes.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
@@ -122,27 +122,27 @@
       "functions": 100,
       "branches": 100
     },
-    "src/core/intl-cache.ts": {
+    "src/core/bindings/intl-cache.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 92
     },
-    "src/core/islands.ts": {
+    "src/core/bindings/islands.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/lifecycle.ts": {
+    "src/core/session/lifecycle.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 90
     },
-    "src/core/lifetime-scope.ts": {
+    "src/core/session/lifetime-scope.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/loader.ts": {
+    "src/core/session/loader.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
@@ -152,132 +152,132 @@
       "functions": 100,
       "branches": 100
     },
-    "src/core/merge-need.ts": {
+    "src/core/merge/merge-need.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/message-bus.ts": {
+    "src/core/protocol/message-bus.ts": {
       "lines": 98,
       "functions": 100,
       "branches": 92
     },
-    "src/core/message-guards.ts": {
+    "src/core/protocol/message-guards.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 95
     },
-    "src/core/morph.ts": {
+    "src/core/bindings/morph.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 97
     },
-    "src/core/navigation-lifecycle.ts": {
+    "src/core/session/navigation-lifecycle.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/navigation-replay.ts": {
+    "src/core/strategies/navigation-replay.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 88
     },
-    "src/core/observers.ts": {
+    "src/core/bindings/observers.ts": {
       "lines": 96,
       "functions": 100,
       "branches": 91
     },
-    "src/core/orphan-diagnostics.ts": {
+    "src/core/update/orphan-diagnostics.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 95
     },
-    "src/core/protocol-tracker.ts": {
+    "src/core/protocol/protocol-tracker.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 83
     },
-    "src/core/protocol-version.ts": {
+    "src/core/protocol/protocol-version.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/reveal-ledger.ts": {
+    "src/core/bindings/reveal-ledger.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/reveal.ts": {
+    "src/core/bindings/reveal.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/revision-display.ts": {
+    "src/core/update/revision-display.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/runtime-state.ts": {
+    "src/core/session/runtime-state.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 95
     },
-    "src/core/runtime.ts": {
+    "src/core/session/runtime.ts": {
       "lines": 96,
       "functions": 93,
       "branches": 90
     },
-    "src/core/state.ts": {
+    "src/core/session/state.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/strategies.ts": {
+    "src/core/strategies/strategies.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/strategy-runner.ts": {
+    "src/core/strategies/strategy-runner.ts": {
       "lines": 88,
       "functions": 90,
       "branches": 75
     },
-    "src/core/structural-applier.ts": {
+    "src/core/bindings/structural-applier.ts": {
       "lines": 99,
       "functions": 100,
       "branches": 93
     },
-    "src/core/subfield-coverage.ts": {
+    "src/core/update/subfield-coverage.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/template-sanitize.ts": {
+    "src/core/bindings/template-sanitize.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 75
     },
-    "src/core/unbound-fields.ts": {
+    "src/core/update/unbound-fields.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/update-owner.ts": {
+    "src/core/update/update-owner.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100
     },
-    "src/core/update-pipeline.ts": {
+    "src/core/update/update-pipeline.ts": {
       "lines": 98,
       "functions": 100,
       "branches": 91
     },
-    "src/core/update-scheduler.ts": {
+    "src/core/update/update-scheduler.ts": {
       "lines": 99,
       "functions": 96,
       "branches": 93
     },
-    "src/core/value-identity.ts": {
+    "src/core/update/value-identity.ts": {
       "lines": 100,
       "functions": 100,
       "branches": 100

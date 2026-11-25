@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
-import { readRouteRefresh } from '@core/route-refresh';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
+import { readRouteRefresh } from '@core/strategies/route-refresh';
 
 /**
  * `livePreviewNavigation()` replaces the SvelteKit bridge a preview copied from

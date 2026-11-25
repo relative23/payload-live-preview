@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { JSDOM } from 'jsdom';
-import { findUniqueBindings } from '../../../src/core/auto-bind';
+import { findUniqueBindings } from '../../../src/core/bindings/auto-bind';
 import { STATIC_BASELINE } from '../../fixtures/fidelity-corpus';
 import { ASTRO_ORIGIN } from '../helpers/preview';
 

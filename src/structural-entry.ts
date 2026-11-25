@@ -11,20 +11,20 @@ export {
   createStructuralStore,
   type StructuralApplyOptions,
   type StructuralStore,
-} from './core/structural-applier';
+} from './core/bindings/structural-applier';
 export {
   ISLAND_ATTRIBUTE,
   OWNED_ATTRIBUTE,
   isMorphBoundary,
   retainIslandBoundary,
-} from './core/islands';
-export { isMorphCompatible, morphElement, type MorphOptions } from './core/morph';
+} from './core/bindings/islands';
+export { isMorphCompatible, morphElement, type MorphOptions } from './core/bindings/morph';
 export {
   dependencyMapFromBinding,
   mergeDependencyMaps,
   parseDependencyList,
   type DependencyMap,
-} from './core/dependencies';
+} from './core/update/dependencies';
 export type {
   CachedElement,
   CustomRendererKey,
@@ -37,6 +37,6 @@ export type {
 export type { PayloadFieldType, PayloadLivePreviewData } from './types/payload-protocol';
 export type { ArrayPatch } from './schema/diff';
 // `CachedElement.strategyKind` is typed with it, so this entry must name it too.
-export type { UpdateSource } from './core/strategies';
+export type { UpdateSource } from './core/strategies/strategies';
 // `RenderContext.sanitizerPolicy` names it, so the entry has to as well.
 export type { SanitizerPolicyMode } from './security';

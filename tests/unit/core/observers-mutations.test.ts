@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BINDING_ATTRIBUTES } from '@core/cache';
-import { ObserverManager } from '@core/observers';
+import { BINDING_ATTRIBUTES } from '@core/bindings/cache';
+import { ObserverManager } from '@core/bindings/observers';
 import { flushMutations } from './observers-harness';
 
 // The table `it.each` iterates has to be visible in this file: the test

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type LivePreviewRuntime } from '@core/lifecycle';
-import type { FragmentStrategy, RouteStrategy } from '@core/strategies';
+import { type LivePreviewRuntime } from '@core/session/lifecycle';
+import type { FragmentStrategy, RouteStrategy } from '@core/strategies/strategies';
 import {
   TRUSTED,
   post,

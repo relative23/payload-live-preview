@@ -5,7 +5,11 @@
  * id; it never carries code, templates, import paths or file paths. See ADR 0011.
  */
 
-import type { FragmentContext, FragmentReport, FragmentStrategy } from '@core/strategies';
+import type {
+  FragmentContext,
+  FragmentReport,
+  FragmentStrategy,
+} from '@core/strategies/strategies';
 import { errorMessage } from './abort';
 import {
   collectFragmentBoundaries,

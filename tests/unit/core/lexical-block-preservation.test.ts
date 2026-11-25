@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildBuiltinRenderers } from '@field-types/index';
 import { __resetBlockWarningsForTests } from '@field-types/rich-text';
 import { __resetBlockRegistryForTests } from '@lexical/blocks/registry';
-import type { RouteStrategy } from '@core/strategies';
+import type { RouteStrategy } from '@core/strategies/strategies';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
 /** What Payload sends for a post whose body is a paragraph, a media block and a paragraph. */

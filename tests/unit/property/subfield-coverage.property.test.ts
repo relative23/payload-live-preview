@@ -6,7 +6,7 @@ import {
   SUBFIELD_VISIT_LIMIT,
   uncoveredChangedPaths,
   type PathCoverage,
-} from '@core/subfield-coverage';
+} from '@core/update/subfield-coverage';
 
 /**
  * ADR 0022's walk, against arbitrary groups and bindings: it never reports a

@@ -6,10 +6,10 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { createFragmentStrategy, createRouteStrategy } from '@fragment/index';
 import type { FragmentRequestBody } from '@/types/fragment-protocol';
-import type { RouteContext } from '@core/strategies';
+import type { RouteContext } from '@core/strategies/strategies';
 
 const ORIGIN = 'https://admin.example.com';
 class IO implements IntersectionObserver {

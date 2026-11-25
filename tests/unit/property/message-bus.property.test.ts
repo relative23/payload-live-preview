@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { MessageBus, type MessageHandlers, type MessageRevision } from '@core/message-bus';
+import { MessageBus, type MessageHandlers, type MessageRevision } from '@core/protocol/message-bus';
 import { propertyParameters } from './fast-check';
 
 const TRUSTED_ORIGIN = 'https://admin.example.test';

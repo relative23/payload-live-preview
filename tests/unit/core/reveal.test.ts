@@ -7,7 +7,7 @@ import {
   revealElement,
   type RevealElement,
   type RevealWindow,
-} from '@core/reveal';
+} from '@core/bindings/reveal';
 
 const win = (over: Partial<RevealWindow> = {}): RevealWindow => ({
   innerHeight: 800,

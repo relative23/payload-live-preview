@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LifetimeScope } from '@core/lifetime-scope';
+import { LifetimeScope } from '@core/session/lifetime-scope';
 
 /**
  * The scope's own promises: what it owns is released the last first, one

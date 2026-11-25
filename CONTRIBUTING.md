@@ -78,13 +78,13 @@ matching changeset; it is not a formatter.
 
 ## The single-source runtime
 
-The browser runtime lives in `src/core/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into six files under `src/inline/` that adapters inline into pages:
+The browser runtime lives in `src/core/session/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into six files under `src/inline/` that adapters inline into pages:
 
 - `runtime.generated.ts` and `runtime-lean.generated.ts` — the full and the lean runtime
 - `loader.generated.ts` and `loader-react.generated.ts` — the bootstrap loader, and its variant that waits for React hydration
 - `fragment.generated.ts` and `route.generated.ts` — the fragment and route preludes
 
-If you touch `src/core/runtime.ts` or anything it imports, regenerate them:
+If you touch `src/core/session/runtime.ts` or anything it imports, regenerate them:
 
 ```sh
 npm run build:runtime

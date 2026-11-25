@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { DEFAULT_VISIBILITY_THRESHOLD } from '@core/update-scheduler';
+import { DEFAULT_VISIBILITY_THRESHOLD } from '@core/update/update-scheduler';
 import {
   createDefaultFetch,
   describeFailure,

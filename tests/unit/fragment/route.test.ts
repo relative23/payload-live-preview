@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createRouteStrategy, isRouteBound, ROUTE_REFRESH_HEADER } from '@fragment/index';
-import type { RouteContext } from '@core/strategies';
+import type { RouteContext } from '@core/strategies/strategies';
 
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 const logs: string[] = [];

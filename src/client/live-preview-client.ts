@@ -5,7 +5,7 @@
  */
 
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
-import { LivePreviewRuntime, type RuntimeOptions } from '@core/lifecycle';
+import { LivePreviewRuntime, type RuntimeOptions } from '@core/session/lifecycle';
 import type { LivePreviewInspection } from '@core/inspection/types';
 import type { CachedElement, RendererKey } from '@core/types';
 import { EventEmitter } from '@events/emitter';

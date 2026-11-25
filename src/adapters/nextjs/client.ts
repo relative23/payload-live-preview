@@ -11,7 +11,7 @@
 
 import { Suspense, createElement, useEffect, useRef, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
 import { LivePreviewRouteRefresh } from '@adapters/react/route-refresh';
 
 /** The committed URL, or `null` while the router cannot name it yet. */

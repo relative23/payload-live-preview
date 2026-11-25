@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { buildBuiltinRenderers } from '@field-types/index';
 import { TRUSTED, fireMessage } from './lifecycle-harness';
 

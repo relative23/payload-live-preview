@@ -24,7 +24,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { buildBuiltinRenderers } from '@field-types/index';
 import realMessage from '../fixtures/real-payload-message.json' with { type: 'json' };
 

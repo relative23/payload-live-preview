@@ -14,8 +14,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildBuiltinRenderers } from '@field-types/index';
 import { __resetBlockRegistryForTests } from '@lexical/blocks/registry';
-import type { FragmentStrategy, RouteStrategy } from '@core/strategies';
-import type { LivePreviewRuntime } from '@core/lifecycle';
+import type { FragmentStrategy, RouteStrategy } from '@core/strategies/strategies';
+import type { LivePreviewRuntime } from '@core/session/lifecycle';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
 /** Refreshes whatever it is asked to and never claims a binding of its own. */

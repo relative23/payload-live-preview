@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ObserverManager } from '@core/observers';
+import { ObserverManager } from '@core/bindings/observers';
 // Imported for its hooks: fake timers and the IntersectionObserver stub.
 import './observers-harness';
 

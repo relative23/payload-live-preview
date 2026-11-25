@@ -4,7 +4,7 @@ import { type BakedConfigTuple, bakeConfig } from './runtime-harness';
 describe('bootstrapInlineRuntime — config defaults', () => {
   it('falls back to defaults when __LIVE_PREVIEW_CONFIG__ is undefined', async () => {
     Reflect.deleteProperty(globalThis, '__LIVE_PREVIEW_CONFIG__');
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     expect(api).toBeDefined();
     api?.destroy();
@@ -16,7 +16,7 @@ describe('bootstrapInlineRuntime — config defaults', () => {
       bakeConfig({
         debug: true,
       });
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     expect(debug).toHaveBeenCalled();
     api?.destroy();
@@ -32,7 +32,7 @@ describe('bootstrapInlineRuntime — config defaults', () => {
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig({ debug: true });
     try {
-      const { bootstrapInlineRuntime } = await import('@core/runtime');
+      const { bootstrapInlineRuntime } = await import('@core/session/runtime');
       const api = bootstrapInlineRuntime();
       await Promise.resolve();
       await Promise.resolve();

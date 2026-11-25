@@ -10,7 +10,7 @@
 
 import { describe, expect, it, beforeEach } from 'vitest';
 import { sanitizeHtml, setSanitizerPolicy } from '@security/sanitizer';
-import { TEMPLATE_CACHE_LIMIT, templateSanitizeOptions } from '@core/template-sanitize';
+import { TEMPLATE_CACHE_LIMIT, templateSanitizeOptions } from '@core/bindings/template-sanitize';
 
 const TEMPLATE = '<li>{{title}}</li>';
 

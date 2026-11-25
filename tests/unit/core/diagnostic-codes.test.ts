@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import type { FieldRenderer } from '@core/types';
 import { DIAGNOSTIC_CODES } from '@core/diagnostic-codes';
 import { RUNTIME_SOURCE } from '@inline/runtime.generated';

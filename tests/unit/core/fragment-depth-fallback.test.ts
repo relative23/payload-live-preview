@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { createFragmentEndpoint } from '@adapters/astro/fragments';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { EventEmitter } from '@events/emitter';
 import { createFragmentStrategy } from '@fragment/index';
 

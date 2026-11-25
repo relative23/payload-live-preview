@@ -6,7 +6,7 @@
 
 import type { FieldRenderer } from '@core/types';
 import type { PluginInspection } from '@core/inspection/types';
-import { LIBRARY_PROTOCOL_VERSION } from '@core/protocol-version';
+import { LIBRARY_PROTOCOL_VERSION } from '@core/protocol/protocol-version';
 import { VERSION } from '@/version';
 import { incompatibilityOf } from './compat';
 import { isolateDiagnostic } from '@core/diagnostics';

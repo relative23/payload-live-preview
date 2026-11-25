@@ -23,12 +23,12 @@
 /** `true` in the inline artifact; the client entry calls the bootstrap itself. */
 declare const __INLINE_BUILD__: boolean | undefined;
 
-/** `true` in the lean artifact (`profile: 'lean'`); see `src/core/profile.ts`. */
+/** `true` in the lean artifact (`profile: 'lean'`); see `src/core/session/profile.ts`. */
 declare const __LEAN_BUILD__: boolean | undefined;
 
 /**
  * `true` in the bootstrap built for a page that declares React hydration
  * (ADR 0015): it arms the commit signal before it fetches the runtime, which
- * may otherwise arrive after `react-dom` has evaluated. See `src/core/loader.ts`.
+ * may otherwise arrive after `react-dom` has evaluated. See `src/core/session/loader.ts`.
  */
 declare const __REACT_BOOTSTRAP__: boolean | undefined;

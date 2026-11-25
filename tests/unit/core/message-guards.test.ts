@@ -4,7 +4,7 @@ import {
   isDocumentEventMessage,
   isObjectMessage,
   isPlainObject,
-} from '@core/message-guards';
+} from '@core/protocol/message-guards';
 
 /** A typed message with extra fields, spread so the excess-property check does not apply. */
 function message(type: string, extra: Record<string, unknown>): { type: string } {

@@ -1,7 +1,7 @@
 /**
  * Build-time inliner for the live preview runtime.
  *
- * Bundles `src/core/runtime.ts` with esbuild, applies a final Terser compression,
+ * Bundles `src/core/session/runtime.ts` with esbuild, applies a final Terser compression,
  * and writes the minified IIFE as a string literal to
  * `src/inline/runtime.generated.ts`.
  *
@@ -24,10 +24,10 @@ import { serializeSource } from './serialize-source';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const ENTRY = resolve(ROOT, 'src/core/runtime.ts');
+const ENTRY = resolve(ROOT, 'src/core/session/runtime.ts');
 const OUTPUT = resolve(ROOT, 'src/inline/runtime.generated.ts');
 const LEAN_OUTPUT = resolve(ROOT, 'src/inline/runtime-lean.generated.ts');
-const LOADER_ENTRY = resolve(ROOT, 'src/core/loader.ts');
+const LOADER_ENTRY = resolve(ROOT, 'src/core/session/loader.ts');
 const LOADER_OUTPUT = resolve(ROOT, 'src/inline/loader.generated.ts');
 const FRAGMENT_ENTRY = resolve(ROOT, 'src/fragment/inline.ts');
 const FRAGMENT_OUTPUT = resolve(ROOT, 'src/inline/fragment.generated.ts');
@@ -56,7 +56,7 @@ async function exists(path: string): Promise<boolean> {
 }
 
 /**
- * `lean: true` defines `__LEAN_BUILD__`, which `src/core/profile.ts` reads into
+ * `lean: true` defines `__LEAN_BUILD__`, which `src/core/session/profile.ts` reads into
  * a constant. esbuild folds it, drops the branches behind it, and with them
  * every module only those branches reached — the strategy runner, the morph,
  * the structural applier, the array renderers and the announcer.
@@ -163,7 +163,7 @@ async function buildPrelude(entryPoint: string, globalName: string): Promise<str
 }
 
 /**
- * `armReact` defines `__REACT_BOOTSTRAP__`, which `src/core/loader.ts` reads at
+ * `armReact` defines `__REACT_BOOTSTRAP__`, which `src/core/session/loader.ts` reads at
  * its branch: `true` keeps the arming for React's first commit (ADR 0015),
  * `false` folds it and the hook module out of the plain bootstrap.
  */
@@ -207,7 +207,7 @@ async function main(): Promise<void> {
 
   if (!(await exists(ENTRY))) {
     await writeFile(OUTPUT, PLACEHOLDER, 'utf8');
-    console.warn('[build-runtime] core/runtime.ts not found — wrote placeholder');
+    console.warn('[build-runtime] core/session/runtime.ts not found — wrote placeholder');
     return;
   }
 

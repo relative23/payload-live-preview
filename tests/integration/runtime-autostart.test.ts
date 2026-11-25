@@ -17,7 +17,7 @@ describe('inline build autostart', () => {
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
     vi.stubGlobal('__INLINE_BUILD__', true);
-    const runtime = await import('@core/runtime');
+    const runtime = await import('@core/session/runtime');
     window.dispatchEvent(
       new MessageEvent('message', {
         data: { type: 'payload-live-preview', data: { title: 'started on import' } },
@@ -35,7 +35,7 @@ describe('inline build autostart', () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    await import('@core/runtime');
+    await import('@core/session/runtime');
     window.dispatchEvent(
       new MessageEvent('message', {
         data: { type: 'payload-live-preview', data: { title: 'must not render' } },

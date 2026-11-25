@@ -18,4 +18,4 @@ export type {
   DocumentStatus,
 } from '@adapters/shared/document-session';
 export { LivePreviewRouteRefresh, type LivePreviewRouteRefreshProps } from './route-refresh';
-export { registerRouteRefresh, type RouteRefresh } from '@core/route-refresh';
+export { registerRouteRefresh, type RouteRefresh } from '@core/strategies/route-refresh';

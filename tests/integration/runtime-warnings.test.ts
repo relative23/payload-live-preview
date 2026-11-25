@@ -21,7 +21,7 @@ describe('bootstrapInlineRuntime — trust warnings', () => {
       disableReferrerDetection: false,
       disableLocalhostMatching: true,
     });
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
 
     expect(warn.mock.calls.flat().join(' ')).toContain('LP0102');
@@ -36,7 +36,7 @@ describe('bootstrapInlineRuntime — trust warnings', () => {
       additionalOrigins: [TRUSTED],
       disableReferrerDetection: false,
     });
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
 
     expect(warn.mock.calls.flat().join(' ')).not.toContain('LP0102');
@@ -49,7 +49,7 @@ describe('bootstrapInlineRuntime — heartbeat', () => {
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = bakeConfig({
       heartbeatMs: 1_000,
     });
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     window.dispatchEvent(
       new MessageEvent('message', {

@@ -3,7 +3,7 @@
  * An unclassified request retains its original exception, and obsolete failures stay silent.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { DataMerger, type MergeRequest, type MergeResult } from '@core/data-merger';
+import { DataMerger, type MergeRequest, type MergeResult } from '@core/merge/data-merger';
 import { deferred, jsonResponse } from './data-merger-harness';
 
 const SERVER = 'https://cms.example.com';

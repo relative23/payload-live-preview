@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import {
   dispatchIslandUpdate,
   ISLAND_EVENT,
   isInsideIsland,
   type IslandUpdateDetail,
-} from '@core/islands';
+} from '@core/bindings/islands';
 import type { FieldRenderer } from '@core/types';
 
 /**

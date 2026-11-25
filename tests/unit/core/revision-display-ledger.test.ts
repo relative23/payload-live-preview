@@ -3,9 +3,9 @@ import {
   RevisionDisplayLedger,
   runtimeDisplayHost,
   type RevisionDisplay,
-} from '@core/revision-display';
+} from '@core/update/revision-display';
 import { EventEmitter } from '@events/emitter';
-import type { UpdateScheduler } from '@core/update-scheduler';
+import type { UpdateScheduler } from '@core/update/update-scheduler';
 
 /**
  * The ledger's own rules, without a runtime: which revision a fact belongs

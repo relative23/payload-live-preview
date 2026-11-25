@@ -3,7 +3,7 @@
  */
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { applyAttributeBinding } from '@core/attribute-binding';
+import { applyAttributeBinding } from '@core/bindings/attribute-binding';
 
 function el(tag = 'div'): Element {
   return document.createElement(tag);

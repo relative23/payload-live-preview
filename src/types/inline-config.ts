@@ -1,6 +1,6 @@
 /**
  * The inline script's configuration and its positional wire order: the
- * generator writes the tuple, `src/core/runtime.ts` destructures it, and
+ * generator writes the tuple, `src/core/session/runtime.ts` destructures it, and
  * `INLINE_CONFIG_KEYS` is where they agree. Append only, never reorder.
  */
 

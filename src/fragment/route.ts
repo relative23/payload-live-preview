@@ -11,12 +11,16 @@ import {
   OWNED_ATTRIBUTE,
   releaseDisconnectedIslands,
   retainIslandBoundary,
-} from '@core/islands';
-import { morphElement } from '@core/morph';
-import { KEY_ATTRIBUTE } from '@core/structural-applier';
-import { parseDependencyList } from '@core/dependencies';
-import { readRouteRefresh } from '@core/route-refresh';
-import { FRAGMENT_ATTRIBUTE, type RouteContext, type RouteStrategy } from '@core/strategies';
+} from '@core/bindings/islands';
+import { morphElement } from '@core/bindings/morph';
+import { KEY_ATTRIBUTE } from '@core/bindings/structural-applier';
+import { parseDependencyList } from '@core/update/dependencies';
+import { readRouteRefresh } from '@core/strategies/route-refresh';
+import {
+  FRAGMENT_ATTRIBUTE,
+  type RouteContext,
+  type RouteStrategy,
+} from '@core/strategies/strategies';
 import { errorMessage, linkedTimeout } from './abort';
 import { FRAGMENT_KEY_ATTRIBUTE } from './boundary';
 

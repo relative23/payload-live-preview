@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import createDOMPurify from 'dompurify';
 import { sanitizeHtml, type SanitizeOptions } from '@security/sanitizer';
-import { templateSanitizeOptions } from '@core/template-sanitize';
+import { templateSanitizeOptions } from '@core/bindings/template-sanitize';
 import { CORPUS, REGRESSIONS, type Vector } from './xss-corpus';
 import {
   assertNoActiveContent,

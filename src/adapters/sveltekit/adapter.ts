@@ -9,7 +9,7 @@ import { bindDecisionHooks, changesResponse, withCspHeader } from '@adapters/sha
 import { exposeDecision, type LivePreviewLocalsSink } from '@adapters/shared/locals';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PageFacts } from '@adapters/shared/policy-options';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';
 export type { LivePreviewLocals } from '@adapters/shared/locals';

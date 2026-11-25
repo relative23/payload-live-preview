@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import {
   CAPABILITY_DECLARATIONS,
   PROTOCOL_CAPABILITIES,
   negotiateProtocol,
   observeCapabilities,
-} from '@core/protocol-version';
-import { detectProtocolProfile } from '@core/protocol-profile';
-import { CAPABILITY_DOCUMENTATION } from '@core/protocol-capability-docs';
+} from '@core/protocol/protocol-version';
+import { detectProtocolProfile } from '@core/protocol/protocol-profile';
+import { CAPABILITY_DOCUMENTATION } from '@core/protocol/protocol-capability-docs';
 import type { FieldRenderer } from '@core/types';
 
 /**

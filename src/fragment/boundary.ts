@@ -1,9 +1,9 @@
 /** Fragment boundaries: how a `data-payload-fragment` element is read and which ones an update touches. */
 
 import type { DiagnosticCode } from '@core/diagnostic-codes';
-import { isInsideIsland } from '@core/islands';
-import { parseDependencyList } from '@core/dependencies';
-import { FRAGMENT_ATTRIBUTE, FRAGMENT_KEY_ATTRIBUTE } from '@core/strategies';
+import { isInsideIsland } from '@core/bindings/islands';
+import { parseDependencyList } from '@core/update/dependencies';
+import { FRAGMENT_ATTRIBUTE, FRAGMENT_KEY_ATTRIBUTE } from '@core/strategies/strategies';
 
 export { FRAGMENT_KEY_ATTRIBUTE };
 const DEPENDS_ATTRIBUTE = 'data-payload-depends';

@@ -9,7 +9,7 @@
 import { renderScriptBody } from '@adapters/shared/response';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PageFacts } from '@adapters/shared/policy-options';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
 import { assertNonce } from '@inline/generator';
 
 /**

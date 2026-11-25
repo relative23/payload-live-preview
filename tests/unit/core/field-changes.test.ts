@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FieldChangeTracker } from '@core/field-changes';
+import { FieldChangeTracker } from '@core/update/field-changes';
 
 describe('FieldChangeTracker', () => {
   it('reports every field on the first message and only differences afterwards', () => {

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
-import type { RouteStrategy } from '@core/strategies';
-import type { SubfieldCoverage } from '@core/subfield-coverage';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
+import type { RouteStrategy } from '@core/strategies/strategies';
+import type { SubfieldCoverage } from '@core/update/subfield-coverage';
 import type { FieldRenderer } from '@core/types';
 import { createRouteStrategy } from '@fragment/route';
 

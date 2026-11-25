@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { HYDRATION_SLOT } from '@core/hydration';
-import { VUE_APP_PROPERTY, VUE_HYDRATION_SLOT } from '@core/hydration-vue';
+import { HYDRATION_SLOT } from '@core/hydration/hydration';
+import { VUE_APP_PROPERTY, VUE_HYDRATION_SLOT } from '@core/hydration/hydration-vue';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
 /**

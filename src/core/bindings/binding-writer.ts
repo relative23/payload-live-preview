@@ -1,0 +1,223 @@
+/**
+ * Writes one scheduled value into its bound element: renderer resolution,
+ * the attribute or renderer write, and the `elementUpdate` event. Every
+ * consumer callback may accept a newer revision synchronously, so the
+ * transaction is re-checked after each one (ADR 0004).
+ */
+
+import { definedOnly } from '@/types/defined-only';
+import { sameRevision } from '../protocol/message-bus';
+import { applyAttributeBinding } from './attribute-binding';
+import {
+  reportServerFormatting,
+  reportUnfaithfulPatch,
+  watchServerFormatting,
+} from '../update/fidelity';
+import { rendererUsesNoWriteOutcome } from '../internal-outcome';
+import {
+  type RuntimeDeps,
+  type RuntimeState,
+  type UpdateTransaction,
+} from '../session/runtime-state';
+import type { CachedElement, FieldRenderer, RenderContext } from '../types';
+import type { ScheduledUpdate } from '../update/update-scheduler';
+
+export class BindingWriter {
+  /** The value being written, which a renderer's report of a shortfall is about. */
+  private writing: unknown;
+  /** The instance's share of every `RenderContext`, built once: a write allocates the context alone. */
+  private readonly instanceContext: Pick<
+    RenderContext,
+    'renderRichText' | 'sanitizerPolicy' | 'serverURL' | 'reportUnfaithful' | 'internalLinkPattern'
+  >;
+
+  constructor(
+    private readonly deps: RuntimeDeps,
+    private readonly state: RuntimeState,
+  ) {
+    this.instanceContext = definedOnly({
+      renderRichText: deps.renderRichText,
+      internalLinkPattern: deps.internalLinkPattern,
+      sanitizerPolicy: deps.sanitizerPolicy,
+      serverURL: deps.serverURL,
+      // A renderer already holds its target, so one closure per instance says
+      // as much as one per write and allocates nothing during an update.
+      reportUnfaithful: (target: CachedElement, reason: string): void => {
+        reportUnfaithfulPatch(deps, state, target, reason, this.writing);
+      },
+    });
+  }
+
+  /** Scheduler callback. `false` means nothing reached the DOM. */
+  apply(update: ScheduledUpdate): boolean {
+    const { deps, state } = this;
+    const transaction = state.activeUpdate;
+    if (
+      transaction === null ||
+      update.revision === undefined ||
+      !sameRevision(transaction.revision, update.revision) ||
+      !state.isCurrent(transaction)
+    ) {
+      return false;
+    }
+    const { target, value } = update;
+    let type = target.fieldType;
+    // The admin sends no field types; a Lexical root is unmistakable.
+    if (type === 'text' && target.explicitFieldType !== true && looksLikeLexicalRoot(value)) {
+      type = 'richText';
+    }
+    let renderer: FieldRenderer | undefined;
+    try {
+      renderer = deps.resolveRenderer(type, target);
+    } catch (error) {
+      return this.fail(transaction, target.fieldName, error);
+    }
+    if (!state.isCurrent(transaction)) return false;
+    const emitElementUpdate = deps.emitter.listenerCount('elementUpdate') > 0;
+    // Custom-element accessors run application code, so this is a boundary too.
+    const previous = emitElementUpdate ? readElementSnapshot(target.element) : undefined;
+    if (!state.isCurrent(transaction)) return false;
+    const context: RenderContext = {
+      allFields: update.allFields,
+      locale: target.locale ?? transaction.locale,
+      ...this.instanceContext,
+    };
+    // A boundary anchor stays out of layout and the accessibility tree while empty.
+    if (target.hidesWhenEmpty === true) {
+      target.element.toggleAttribute('hidden', isEmptyFieldValue(value));
+    }
+    try {
+      if (target.targetAttribute !== undefined) {
+        if (applyAttributeBinding(target.element, target.targetAttribute, value) === 'blocked') {
+          deps.warn(
+            `[live-preview] LP0401: refused to write "${target.fieldName}" into attribute "${target.targetAttribute}"`,
+          );
+          state.display.shortfall(transaction, {
+            kind: 'write',
+            field: target.fieldName,
+            code: 'LP0401',
+          });
+          return false;
+        }
+      } else if (renderer !== undefined) {
+        // Read before the write, because afterwards the template's own reading
+        // of this value is gone (Z20). Costs nothing unless this is the first
+        // write to a binding a formatting renderer owns.
+        const shown = watchServerFormatting(deps, state, target, type);
+        this.writing = value;
+        const outcome = invokeRenderer(renderer, target, value, context);
+        if (outcome === false && rendererUsesNoWriteOutcome(renderer)) {
+          // The renderer refused the value it was given, so the element still
+          // shows what the server put there — right until the next edit makes
+          // it stale. That is the moment to ask for better markup.
+          reportUnfaithfulPatch(
+            deps,
+            state,
+            target,
+            `is a value ${renderer.name} cannot render`,
+            value,
+          );
+          return false;
+        }
+        if (shown !== undefined) reportServerFormatting(deps, target, shown, type);
+      } else {
+        deps.log('no renderer for', type);
+        reportUnfaithfulPatch(deps, state, target, `has no renderer for "${type}"`, value);
+        return false;
+      }
+    } catch (error) {
+      return this.fail(transaction, target.fieldName, error);
+    }
+    if (!state.isCurrent(transaction)) return false;
+    if (emitElementUpdate) {
+      void deps.emitter.emitWhile(
+        'elementUpdate',
+        {
+          element: target.element,
+          fieldName: target.fieldName,
+          previousValue: previous,
+          nextValue: value,
+          revision: transaction.revision.revision,
+          receivedAt: transaction.receivedAt,
+          source: 'patch',
+        },
+        () => state.isCurrent(transaction),
+      );
+    }
+    // The first handler runs before emitWhile yields; a reentrant newer
+    // revision must not count this write as applied.
+    const applied = state.isCurrent(transaction);
+    if (applied) {
+      if (update.valueIdentity !== undefined) {
+        state.lastAppliedIdentity.set(target.element, update.valueIdentity);
+      } else {
+        state.lastAppliedIdentity.delete(target.element);
+      }
+    }
+    return applied;
+  }
+
+  private fail(transaction: UpdateTransaction, field: string, cause: unknown): false {
+    if (!this.state.isCurrent(transaction)) return false;
+    this.state.display.shortfall(transaction, { kind: 'write', field, code: 'LP0603' });
+    const error = cause instanceof Error ? cause : new Error(String(cause));
+    void this.deps.emitter.emitWhile('error', { error, context: 'renderer', code: 'LP0603' }, () =>
+      this.state.isCurrent(transaction),
+    );
+    return false;
+  }
+}
+
+/** Built-in renderers may return exact `false` for a deliberate no-write; the public type stays `void`. */
+function invokeRenderer(
+  renderer: FieldRenderer,
+  target: CachedElement,
+  value: unknown,
+  context: RenderContext,
+): unknown {
+  // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+  return renderer.render(target, value, context);
+}
+
+/**
+ * Same shape test as `isLexicalContent`, duplicated so core does not pull the
+ * Lexical renderer. The merge decision asks it too, so it reads a value the way
+ * this writer will render it.
+ */
+export function looksLikeLexicalRoot(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || !('root' in value)) return false;
+  const root = value.root;
+  return (
+    typeof root === 'object' &&
+    root !== null &&
+    Array.isArray((root as { children?: unknown }).children)
+  );
+}
+
+/**
+ * A Lexical root that shows nothing: no node, or paragraphs with no children
+ * of their own, which is what Lexical leaves in a field an editor emptied.
+ * It is as empty as `null`, for the anchor that hides and for the rich-text
+ * write.
+ */
+export function isEmptyLexicalRoot(value: unknown): boolean {
+  if (!looksLikeLexicalRoot(value)) return false;
+  return (value as { root: { children: readonly unknown[] } }).root.children.every((node) => {
+    const { type, children } = (node ?? {}) as { type?: unknown; children?: unknown };
+    return type === 'paragraph' && (!Array.isArray(children) || children.length === 0);
+  });
+}
+
+function readElementSnapshot(element: Element): unknown {
+  if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+    return (element as HTMLInputElement).value;
+  }
+  if (element.tagName === 'IMG') return (element as HTMLImageElement).src;
+  return element.textContent;
+}
+
+function isEmptyFieldValue(value: unknown): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value === 'string') return value.trim().length === 0;
+  return (Array.isArray(value) && value.length === 0) || isEmptyLexicalRoot(value);
+}

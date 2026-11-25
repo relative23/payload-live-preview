@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { EventEmitter } from '@events/emitter';
 import { buildBuiltinRenderers } from '@field-types/index';
 import { IO } from '../../integration/runtime-harness';

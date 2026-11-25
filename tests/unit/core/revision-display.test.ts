@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
-import type { RouteOutcome, RouteStrategy, StrategyHandlers } from '@core/strategies';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
+import type { RouteOutcome, RouteStrategy, StrategyHandlers } from '@core/strategies/strategies';
 import type { FieldRenderer } from '@core/types';
 import type { LivePreviewEventMap } from '@events/types';
 import { fragmentStrategyFrom, type FragmentOutcome } from '@fragment/index';
-import type { IslandUpdateDetail } from '@core/islands';
+import type { IslandUpdateDetail } from '@core/bindings/islands';
 import { deferred, fireMessage, IO, TRUSTED, textRenderer } from './lifecycle-harness';
 
 /**

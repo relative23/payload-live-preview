@@ -11,7 +11,7 @@ import {
   createStructuralStore,
   KEY_ATTRIBUTE,
   type StructuralStore,
-} from '@core/structural-applier';
+} from '@core/bindings/structural-applier';
 import { diffArray } from '@schema/diff';
 import type { FieldRenderer } from '@core/types';
 import { isEmptyValue } from './utils';

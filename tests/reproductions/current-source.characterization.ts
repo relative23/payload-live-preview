@@ -5,11 +5,11 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ElementCache } from '@core/cache';
-import { DataMerger } from '@core/data-merger';
-import { registerRouteRefresh } from '@core/route-refresh';
-import { createFieldAddressability, unboundChangedFields } from '@core/unbound-fields';
-import type { RouteContext } from '@core/strategies';
+import { ElementCache } from '@core/bindings/cache';
+import { DataMerger } from '@core/merge/data-merger';
+import { registerRouteRefresh } from '@core/strategies/route-refresh';
+import { createFieldAddressability, unboundChangedFields } from '@core/update/unbound-fields';
+import type { RouteContext } from '@core/strategies/strategies';
 import { createFragmentEndpointHandler } from '@adapters/shared/fragment-endpoint';
 import { authorizePreviewRequest, definePreview, issuePreviewToken } from '@/server/index';
 import {

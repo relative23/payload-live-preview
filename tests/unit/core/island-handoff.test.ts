@@ -10,8 +10,8 @@ import {
   islandStartBlocker,
   releaseDisconnectedIslands,
   retainIslandBoundary,
-} from '@core/islands';
-import { morphElement, type MorphOptions } from '@core/morph';
+} from '@core/bindings/islands';
+import { morphElement, type MorphOptions } from '@core/bindings/morph';
 
 interface Rendered {
   readonly root: number;

@@ -281,7 +281,7 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  *
  * 2026-09-10 (Z9): 11 702 → 11 730. The 28 bytes are in the fragment prelude,
  * not in the runtime the subtraction removes: `src/fragment/boundary.ts`
- * carries `src/core/islands.ts`, and the island-boundary test there became a
+ * carries `src/core/bindings/islands.ts`, and the island-boundary test there became a
  * function of its own so the auto-binding search and the cache filter share
  * one rule (ADR 0014 §2). Nothing in the fixture or its delivery moved.
  *

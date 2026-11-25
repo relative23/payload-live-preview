@@ -5,7 +5,7 @@ import {
   getNumberFormat,
   intlCacheSize,
   setIntlCacheLimit,
-} from '@core/intl-cache';
+} from '@core/bindings/intl-cache';
 
 afterEach(() => {
   __resetIntlCache();

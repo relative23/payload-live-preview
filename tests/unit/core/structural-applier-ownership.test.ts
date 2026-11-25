@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { applyStructuralPatches } from '@core/structural-applier';
+import { applyStructuralPatches } from '@core/bindings/structural-applier';
 import { diffArray } from '@schema/diff';
 import { store } from './structural-applier-harness';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveFieldValue } from '@core/lifecycle';
+import { resolveFieldValue } from '@core/session/lifecycle';
 
 describe('resolveFieldValue', () => {
   it('reads top-level fields', () => {

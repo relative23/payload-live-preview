@@ -2,8 +2,8 @@
 
 import { expect } from 'vitest';
 import { type Command } from 'fast-check';
-import { type MessageRevision } from '@core/message-bus';
-import { UpdateScheduler, type ScheduledUpdate } from '@core/update-scheduler';
+import { type MessageRevision } from '@core/protocol/message-bus';
+import { UpdateScheduler, type ScheduledUpdate } from '@core/update/update-scheduler';
 import type { CachedElement } from '@core/types';
 
 export interface SchedulerApplication {

@@ -62,14 +62,14 @@ export {
   LIBRARY_PROTOCOL_VERSION,
   hasCapability,
   negotiateProtocol,
-} from './core/protocol-version';
-export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol-version';
-export { CAPABILITY_DECLARATIONS, PROTOCOL_CAPABILITIES } from './core/protocol-version';
-export type { CapabilityDeclaration, CapabilitySource } from './core/protocol-version';
-export { CAPABILITY_DOCUMENTATION } from './core/protocol-capability-docs';
-export type { CapabilityDocumentation } from './core/protocol-capability-docs';
-export { detectProtocolProfile } from './core/protocol-profile';
-export type { ProtocolProfile, ProtocolProfileName } from './core/protocol-profile';
+} from './core/protocol/protocol-version';
+export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol/protocol-version';
+export { CAPABILITY_DECLARATIONS, PROTOCOL_CAPABILITIES } from './core/protocol/protocol-version';
+export type { CapabilityDeclaration, CapabilitySource } from './core/protocol/protocol-version';
+export { CAPABILITY_DOCUMENTATION } from './core/protocol/protocol-capability-docs';
+export type { CapabilityDocumentation } from './core/protocol/protocol-capability-docs';
+export { detectProtocolProfile } from './core/protocol/protocol-profile';
+export type { ProtocolProfile, ProtocolProfileName } from './core/protocol/protocol-profile';
 export type {
   InspectionBindings,
   InspectionOrigins,
@@ -86,7 +86,7 @@ export type {
   RevisionDisplay,
   RevisionDisplayState,
   RevisionShortfall,
-} from './core/revision-display';
+} from './core/update/revision-display';
 export type {
   FragmentContext,
   FragmentReport,
@@ -97,11 +97,11 @@ export type {
   RouteStrategy,
   StrategyHandlers,
   UpdateSource,
-} from './core/strategies';
-export { registerRouteRefresh, type RouteRefresh } from './core/route-refresh';
+} from './core/strategies/strategies';
+export { registerRouteRefresh, type RouteRefresh } from './core/strategies/route-refresh';
 export type { PayloadDocumentEventDetail } from './types/payload-protocol';
 export { DIAGNOSTIC_CODES, type DiagnosticCode } from './core/diagnostic-codes';
-export type { ConnectionStatus } from './core/state';
+export type { ConnectionStatus } from './core/session/state';
 
 // Typed binding DSL — small enough to live in the core slice
 export { bind, bindByPath, createPreviewBindings } from './dsl';
@@ -153,7 +153,7 @@ export type { PluginCompatibility } from './plugins';
 export type { SanitizerPolicyMode } from './security';
 
 // Island interoperability — the bridge event and the boundary test (docs/renderers.md, islands).
-export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/islands';
+export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/bindings/islands';
 
 // The framework-free session behind the React and Vue hooks, for a store of your own.
 export {

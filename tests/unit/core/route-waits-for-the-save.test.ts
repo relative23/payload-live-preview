@@ -6,8 +6,8 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { buildBuiltinRenderers } from '@field-types/index';
-import type { RouteStrategy } from '@core/strategies';
-import type { LivePreviewRuntime } from '@core/lifecycle';
+import type { RouteStrategy } from '@core/strategies/strategies';
+import type { LivePreviewRuntime } from '@core/session/lifecycle';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
 function fakeRoute(): RouteStrategy & { refreshes: number } {

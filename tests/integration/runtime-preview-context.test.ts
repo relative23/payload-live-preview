@@ -5,7 +5,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
   it('exposes window.__livePreview with the expected shape', async () => {
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     expect(api).toBeDefined();
     expect(api?.version).toMatch(/^\d+\.\d+\.\d+/);
@@ -29,7 +29,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
       '</div>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
 
     const snapshot = api?.inspect();
@@ -44,7 +44,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
 
     expect(api?.inspect().origins.locked).toBeUndefined();
@@ -64,7 +64,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
 
     const first = bootstrapInlineRuntime();
     expect(window.__livePreview).toBe(first);
@@ -102,7 +102,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
       });
 
     try {
-      const { bootstrapInlineRuntime } = await import('@core/runtime');
+      const { bootstrapInlineRuntime } = await import('@core/session/runtime');
 
       expect(() => bootstrapInlineRuntime()).toThrow(publishError);
       expect(window.__livePreview).toBeUndefined();
@@ -125,7 +125,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     window.dispatchEvent(
       new MessageEvent('message', {
@@ -141,7 +141,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
 
     const send = async (title: string): Promise<void> => {
@@ -176,7 +176,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
 
     // No `persisted` flag: a normal load. Resuming would rebuild a cache the
@@ -196,7 +196,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     api?.destroy();
 
@@ -215,7 +215,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
   it('enumerateOrigins returns the trusted origin', async () => {
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     expect(api?.enumerateOrigins()).toContain(TRUSTED);
     api?.destroy();
@@ -224,7 +224,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     const newEl = document.createElement('span');
     newEl.setAttribute('data-payload-field', 'subtitle');
@@ -243,11 +243,11 @@ describe('bootstrapInlineRuntime — preview context', () => {
   });
   it('keeps refresh cache-only and uses the additive navigation method for replay', async () => {
     document.body.innerHTML = '<p data-payload-field="title">published</p>';
-    const { MessageBus } = await import('@core/message-bus');
+    const { MessageBus } = await import('@core/protocol/message-bus');
     const sendReady = vi.spyOn(MessageBus, 'sendReady');
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig({ skipUnchanged: true });
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     window.dispatchEvent(
       new MessageEvent('message', {
@@ -275,7 +275,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
   it('replays the current unsaved state after the configured soft-navigation event', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">first route</h1>';
     const unsaved = 'unsaved in the admin';
-    const { MessageBus } = await import('@core/message-bus');
+    const { MessageBus } = await import('@core/protocol/message-bus');
     let answered = false;
     const sendReady = vi.spyOn(MessageBus, 'sendReady').mockImplementation(() => {
       if (answered) return;
@@ -289,7 +289,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     });
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig({ skipUnchanged: true, softNavigationEvents: ['astro:page-load'] });
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
 
     await vi.advanceTimersByTimeAsync(50);
@@ -323,7 +323,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">stable</h1>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     api?.destroy();
     window.dispatchEvent(
@@ -343,7 +343,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
         disableReferrerDetection: true,
         disableLocalhostMatching: true,
       });
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
     expect(warn).toHaveBeenCalled();
     expect((warn.mock.calls[0]?.[0] as string).includes('No trusted origin')).toBe(true);
@@ -361,7 +361,7 @@ describe('bootstrapInlineRuntime — preview context', () => {
         disableLocalhostMatching: true,
       });
     try {
-      const { bootstrapInlineRuntime } = await import('@core/runtime');
+      const { bootstrapInlineRuntime } = await import('@core/session/runtime');
       const api = bootstrapInlineRuntime();
 
       expect(api).toBeDefined();

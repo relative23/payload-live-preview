@@ -3,7 +3,7 @@
  * These compile-time checks keep that internal distinction without narrowing the public message.
  */
 import { expectTypeOf, it } from 'vitest';
-import type { UpdateTransaction } from '@/core/runtime-state';
+import type { UpdateTransaction } from '@/core/session/runtime-state';
 import type { PayloadLivePreviewMessage } from '@/types/payload-protocol';
 it('requires captured raw fields only after transaction acceptance', () => {
   expectTypeOf<UpdateTransaction['rawData']>().toEqualTypeOf<Record<string, unknown>>();

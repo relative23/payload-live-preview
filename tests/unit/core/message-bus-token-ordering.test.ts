@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MessageBus } from '@core/message-bus';
+import { MessageBus } from '@core/protocol/message-bus';
 import { TRUSTED, deferred, flushMicrotasks, makeMessage } from './message-bus-harness';
 
 describe('MessageBus — token validation ordering', () => {
