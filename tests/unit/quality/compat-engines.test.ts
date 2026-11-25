@@ -245,7 +245,7 @@ describe('installs a Playwright helper makes', () => {
   it('installs the consumer the matrix selects, and the CMS beside it', () => {
     const matrix = `    strategy:
       matrix:
-        astro: ['4.9.0', '7.4.5']
+        astro: ['7.4.5']
 `;
     const steps = run(
       'playwright.astro-resources.config.ts',
@@ -255,11 +255,7 @@ describe('installs a Playwright helper makes', () => {
       readInstalls('ci.yml', job('22.23.4', steps, matrix)).installs.map(
         (install) => install.fixture,
       ),
-    ).toEqual([
-      'tests/fixtures/payload-acl',
-      'tests/fixtures/astro-resource-versions/4.9.0',
-      'tests/fixtures/astro-resource-deps',
-    ]);
+    ).toEqual(['tests/fixtures/payload-acl', 'tests/fixtures/astro-resource-deps']);
   });
 
   it('takes the helper default when the step selects nothing', () => {

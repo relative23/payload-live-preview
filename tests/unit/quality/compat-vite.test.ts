@@ -128,7 +128,7 @@ describe('the sentence on the compatibility page', () => {
       'utf8',
     );
 
-    expect(page).toContain('Vite 5 through 8');
+    expect(page).toContain('Vite 7 through 8');
   });
 });
 

@@ -54,4 +54,18 @@ bound the range promises. The `astro-floor-base` job installs exactly 4.0.0 into
 own and runs the static base adapter in both delivery modes from the archive the Build job stores;
 `astro-floor-islands` does the same for the React island contract at 4.16.19 (ADR 0021).
 `quality/compat-matrix.json` lists both as evidence cells, and
-[Astro peer floors](../testing.md#astro-peer-floors) says what they show and what they do not.
+[Astro peer floor](../testing.md#astro-peer-floor) says what they show and what they do not.
+
+## Addendum (2026-11-25): 3.0 keeps one major
+
+The range is `>=7.2.8 <8.0.0` from 3.0 on (ADR 0007, row 35). Decision 2 said that a major which
+stops passing leaves the range; Astro 4, 5 and 6 still passed. They leave because upstream
+releases only its current major: 6.4.8 came five days before 7.0.0 and nothing has followed, and
+the three lines carry a critical advisory that is patched only in 7.2.8 (GHSA-26w7-cxv4-gfx2). The
+dependency audit did not turn red for it only because it reads the examples, not the version
+fixtures.
+
+What runs: the `astro-matrix` job and the fixtures for 4.0.0, 4.9.0, 4.16.19, 5.18.2 and 6.4.8 are
+gone. `astro-floor-base` installs exactly 7.2.8, the new lower bound, and runs the static base
+adapter in both delivery modes; the island and fragment jobs run on the version the fixtures pin.
+The next Astro major enters the range in a minor, with a matrix entry of its own.

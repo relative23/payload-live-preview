@@ -186,13 +186,6 @@ describe('workflow contracts', () => {
       violation: 'ci.yml job unit does not run the reviewed matrix',
     },
     {
-      label: 'a reduced Astro matrix',
-      file: 'ci.yml',
-      original: 'astro: [6, 5, 4]',
-      replacement: 'astro: [6]',
-      violation: 'ci.yml job astro-matrix does not run the reviewed matrix',
-    },
-    {
       label: 'a Next.js matrix that tests the version the fixture pins',
       file: 'ci.yml',
       original: 'next: [15]',
@@ -229,34 +222,36 @@ describe('workflow contracts', () => {
     {
       label: 'an Astro floor job that may fail',
       file: 'ci.yml',
-      original: '  astro-floor-base:\n    name: Astro floor 4.0.0 (static base adapter)\n',
+      original: '  astro-floor-base:\n    name: Astro floor 7.2.8 (static base adapter)\n',
       replacement:
-        '  astro-floor-base:\n    name: Astro floor 4.0.0 (static base adapter)\n    continue-on-error: true\n',
+        '  astro-floor-base:\n    name: Astro floor 7.2.8 (static base adapter)\n    continue-on-error: true\n',
       violation: 'ci.yml job astro-floor-base permits failures',
     },
     {
-      label: 'an island floor that tests another Astro than the one it names',
+      label: 'an island job that tests another Astro than the one it names',
       file: 'ci.yml',
-      original: "astro: ['4.16.19']",
-      replacement: "astro: ['5.18.2']",
-      violation: 'ci.yml job astro-floor-islands does not run the reviewed matrix',
+      original: "astro: ['7.4.5']",
+      replacement: "astro: ['7.2.8']",
+      violation: 'ci.yml job astro-fragment-islands does not run the reviewed matrix',
     },
     {
-      label: 'an island floor that does not tell the spec which Astro it installs',
+      label: 'an island job that does not tell the spec which Astro it installs',
       file: 'ci.yml',
       original: '          PLP_ASTRO_RESOURCE_VERSION: ${{ matrix.astro }}\n',
       replacement: '          PLP_ASTRO_RESOURCE_VERSION: 7.4.5\n',
       violation: 'env.PLP_ASTRO_RESOURCE_VERSION is not "${{ matrix.astro }}"',
     },
     {
-      label: 'a fragment ladder that drops its floor',
+      label: 'a fragment job that tests another Astro than the record names',
       file: 'ci.yml',
-      original: "astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.5']",
-      replacement: "astro: ['4.16.19', '5.18.2', '6.4.8', '7.4.5']",
+      original:
+        "    name: Astro fragment rendering (Astro ${{ matrix.astro }})\n    needs: build\n    runs-on: ubuntu-latest\n    timeout-minutes: 25\n    strategy:\n      fail-fast: false\n      matrix:\n        astro: ['7.4.5']",
+      replacement:
+        "    name: Astro fragment rendering (Astro ${{ matrix.astro }})\n    needs: build\n    runs-on: ubuntu-latest\n    timeout-minutes: 25\n    strategy:\n      fail-fast: false\n      matrix:\n        astro: ['7.2.8']",
       violation: 'ci.yml job astro-fragment-versions does not run the reviewed matrix',
     },
     {
-      label: 'a fragment ladder that runs every version as the newest',
+      label: 'a fragment job that ignores the version its matrix names',
       file: 'ci.yml',
       original:
         '          PLP_ASTRO_RESOURCE_VERSION: ${{ matrix.astro }}\n        run: PLP_CONTINUATION_TARBALL="$(ls "$PWD"/release-artifact/*.tgz)" npx playwright test --config playwright.astro-resources.config.ts',
@@ -576,16 +571,9 @@ describe('workflow contracts', () => {
   it('reads matrices from the parsed document', () => {
     const ci = parseWorkflow(readWorkflows().get('ci.yml') ?? '');
     expect(matrixValues(ci, 'unit', 'node')).toEqual([20, 22, 24, 26]);
-    expect(matrixValues(ci, 'astro-matrix', 'astro')).toEqual([6, 5, 4]);
     expect(matrixValues(ci, 'next-matrix', 'next')).toEqual([15]);
-    expect(matrixValues(ci, 'astro-floor-islands', 'astro')).toEqual(['4.16.19']);
-    expect(matrixValues(ci, 'astro-fragment-versions', 'astro')).toEqual([
-      '4.9.0',
-      '4.16.19',
-      '5.18.2',
-      '6.4.8',
-      '7.4.5',
-    ]);
+    expect(matrixValues(ci, 'astro-fragment-islands', 'astro')).toEqual(['7.4.5']);
+    expect(matrixValues(ci, 'astro-fragment-versions', 'astro')).toEqual(['7.4.5']);
     expect(matrixValues(ci, 'lint', 'node')).toEqual([]);
   });
 });

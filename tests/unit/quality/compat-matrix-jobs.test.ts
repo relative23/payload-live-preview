@@ -11,14 +11,8 @@ import {
  * the same list. These are the comparisons, against records and workflows invented for each case.
  */
 
-const record = (
-  next: readonly number[],
-  astro: readonly number[] = [6, 5, 4],
-): RecordedFramework[] => [
-  {
-    package: 'astro',
-    tested: [{ source: 'lockfile' }, ...astro.map((major) => ({ source: 'astro-matrix', major }))],
-  },
+const record = (next: readonly number[]): RecordedFramework[] => [
+  { package: 'astro', tested: [{ source: 'lockfile' }] },
   {
     package: 'next',
     tested: [{ source: 'lockfile' }, ...next.map((major) => ({ source: 'next-matrix', major }))],
@@ -30,63 +24,46 @@ const workflow =
   (job: string, key: string): readonly string[] =>
     values[`${job}.${key}`] ?? [];
 
-describe('the matrix jobs of the compatibility record', () => {
-  it('names one job for Astro and one for Next.js', () => {
+describe('the majors a matrix job installs against the majors the record lists', () => {
+  it('knows the one job that installs an older major', () => {
     expect(MATRIX_JOBS.map((job) => [job.package, job.job, job.key])).toEqual([
-      ['astro', 'astro-matrix', 'astro'],
       ['next', 'next-matrix', 'next'],
     ]);
   });
 
-  it('has nothing to say when each job installs the majors the record lists', () => {
-    const installed = workflow({
-      'astro-matrix.astro': ['6', '5', '4'],
-      'next-matrix.next': ['15'],
-    });
-    expect(matrixJobProblems(record([15]), installed)).toEqual([]);
+  it('has nothing to say when the job installs the majors the record lists', () => {
+    expect(matrixJobProblems(record([15]), workflow({ 'next-matrix.next': ['15'] }))).toEqual([]);
   });
 
-  it('names the Next.js matrix when the record lists a major the workflow does not install', () => {
-    const installed = workflow({ 'astro-matrix.astro': ['6', '5', '4'] });
-    expect(matrixJobProblems(record([15]), installed)).toEqual([
+  it('names the matrix when the record lists a major the workflow does not install', () => {
+    expect(matrixJobProblems(record([15]), workflow({}))).toEqual([
       'Next.js matrix: file lists [15], workflow runs []',
     ]);
   });
 
-  it('names the Next.js matrix when the workflow installs a major the record does not list', () => {
-    const installed = workflow({
-      'astro-matrix.astro': ['6', '5', '4'],
-      'next-matrix.next': ['15', '14'],
-    });
+  it('names the matrix when the workflow installs a major the record does not list', () => {
+    const installed = workflow({ 'next-matrix.next': ['15', '14'] });
     expect(matrixJobProblems(record([15]), installed)).toEqual([
       'Next.js matrix: file lists [15], workflow runs [15, 14]',
     ]);
   });
 
-  it('names the Astro matrix when the workflow runs fewer majors than the record lists', () => {
-    const installed = workflow({ 'astro-matrix.astro': ['6'], 'next-matrix.next': ['15'] });
-    expect(matrixJobProblems(record([15]), installed)).toEqual([
-      'Astro matrix: file lists [6, 5, 4], workflow runs [6]',
+  it('names the matrix when the workflow runs fewer majors than the record lists', () => {
+    const installed = workflow({ 'next-matrix.next': ['15'] });
+    expect(matrixJobProblems(record([15, 14, 13]), installed)).toEqual([
+      'Next.js matrix: file lists [15, 14, 13], workflow runs [15]',
     ]);
   });
 
   it('keeps the order the reviewed workflow runs them in', () => {
-    const installed = workflow({
-      'astro-matrix.astro': ['4', '5', '6'],
-      'next-matrix.next': ['15'],
-    });
-    expect(matrixJobProblems(record([15]), installed)).toEqual([
-      'Astro matrix: file lists [6, 5, 4], workflow runs [4, 5, 6]',
+    const installed = workflow({ 'next-matrix.next': ['13', '14', '15'] });
+    expect(matrixJobProblems(record([15, 14, 13]), installed)).toEqual([
+      'Next.js matrix: file lists [15, 14, 13], workflow runs [13, 14, 15]',
     ]);
   });
 
   it('reads a framework the record does not list at all as having no majors', () => {
-    const installed = workflow({
-      'astro-matrix.astro': ['6', '5', '4'],
-      'next-matrix.next': ['15'],
-    });
-    expect(matrixJobProblems([], installed)).toEqual([
-      'Astro matrix: file lists [], workflow runs [6, 5, 4]',
+    expect(matrixJobProblems([], workflow({ 'next-matrix.next': ['15'] }))).toEqual([
       'Next.js matrix: file lists [], workflow runs [15]',
     ]);
   });

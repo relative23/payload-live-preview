@@ -1,6 +1,6 @@
 /**
- * The historical Container floor needs an explicit application renderer.
- * These fixture contracts preserve the failing package-default probe and keep
+ * A page that keeps its catalog in request locals needs an explicit application renderer.
+ * These fixture contracts keep the package-default probe selectable and keep
  * request-local catalog data separate from browser-selected component code.
  */
 import { readFileSync } from 'node:fs';
@@ -11,22 +11,19 @@ const source = (path: string): string =>
   readFileSync(`tests/fixtures/astro-resource-locals/${path}.fixture`, 'utf8');
 
 describe('Astro request-local catalog fixture', () => {
-  it('keeps the default floor reproduction distinct from a chosen recipe', () => {
-    expect(astroResourceRenderer('4.9.0')).toBe('package-default');
+  it('keeps the default renderer distinct from a chosen recipe', () => {
     expect(astroResourceRenderer('7.4.5')).toBe('verified-context');
-    expect(astroResourceRenderer('4.9.0', 'locals-catalog')).toBe('locals-catalog');
     expect(astroResourceRenderer('7.4.5', 'locals-catalog')).toBe('locals-catalog');
   });
 
-  it.each(['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.5'])(
-    'allows an explicit installed-default countercheck on %s',
-    (version) => expect(astroResourceRenderer(version, 'package-default')).toBe('package-default'),
-  );
+  it('allows an explicit installed-default countercheck', () => {
+    expect(astroResourceRenderer('7.4.5', 'package-default')).toBe('package-default');
+  });
 
   it.each(['', 'auto', '../local', '/tmp/renderer'])(
     'rejects an unreviewed renderer %j before installation',
     (renderer) =>
-      expect(() => astroResourceRenderer('4.9.0', renderer)).toThrow(
+      expect(() => astroResourceRenderer('7.4.5', renderer)).toThrow(
         'Unreviewed Astro resource renderer',
       ),
   );

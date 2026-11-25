@@ -34,7 +34,7 @@ body:
     id: framework-version
     attributes:
       label: Framework version
-      placeholder: 'e.g. astro 4.16.19'
+      placeholder: 'e.g. astro 7.4.5'
     validations:
       required: true
   - type: input

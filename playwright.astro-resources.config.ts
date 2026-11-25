@@ -6,8 +6,8 @@ import { defineConfig } from '@playwright/test';
 import base from './playwright.astro-continuation.config';
 import { astroResourceRenderer } from './tests/e2e/helpers/astro-resource-versions';
 
-// Astro 4.9.0's container takes no props, so the packed default renders the catalog there and the
-// application renderer the verified-context case exercises does not exist.
+// With the packed default renderer the application renderer that the verified-context case
+// exercises does not exist.
 const packageDefault =
   astroResourceRenderer(
     process.env['PLP_ASTRO_RESOURCE_VERSION'] ?? '7.4.5',

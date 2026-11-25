@@ -156,32 +156,6 @@ export const CI: WorkflowSpec = {
         ],
       },
     ),
-    'astro-matrix': {
-      needs: ['build'],
-      matrix: { astro: [6, 5, 4] },
-      steps: [
-        ...FIXTURE_SETUP,
-        { run: 'bash scripts/ci-install-browser.sh chromium' },
-        DOWNLOAD_DIST,
-        {
-          run: 'npm --prefix examples/astro-payload install --no-audit --no-fund --ignore-scripts "astro@^${{ matrix.astro }}"',
-        },
-        {
-          run: [
-            'npx playwright test --project=chromium',
-            'tests/e2e/specs/accessibility.spec.ts',
-            'tests/e2e/specs/diagnostics.spec.ts',
-            'tests/e2e/specs/island-bridge.spec.ts',
-            'tests/e2e/specs/live-preview.spec.ts',
-            'tests/e2e/specs/navigation-lifecycle.spec.ts',
-            'tests/e2e/specs/root-replacement.spec.ts',
-            'tests/e2e/specs/scenarios.spec.ts',
-            'tests/e2e/specs/structural-morph.spec.ts',
-          ].join(' '),
-          env: { PLP_E2E_SERVERS: 'astro' },
-        },
-      ],
-    },
     // Next.js 15 over the Next.js fixture, whose lockfile pins 16. The production build is webpack
     // there and the base path is where an older Next differs from the newest, so both run beside the
     // development suite.
@@ -215,20 +189,22 @@ export const CI: WorkflowSpec = {
     // The jobs on the archive the Build job stored, each in a consumer of its own with a reviewed lock;
     // the run line names the archive and the Playwright scope, so a job that quietly tests the checkout
     // instead stops matching. Next.js in a pnpm workspace where Node finds another copy of `next` from
-    // the package, which declares no `next` peer; then the Astro floors the matrix above cannot reach.
+    // the package, which declares no `next` peer; then the Astro peer floor, which the example's lock
+    // cannot reach.
     'next-pnpm-workspace': archiveJob('playwright.next-pnpm-workspace.config.ts', 30),
     'astro-floor-base': archiveJob('playwright.astro-floor-base.config.ts', 25),
-    'astro-floor-islands': archiveJob(
+    // React islands inside native fragments, then native fragment rendering and page-owned resources,
+    // each on the exact Astro version the record names.
+    'astro-fragment-islands': archiveJob(
       'playwright.astro-islands.config.ts',
       25,
-      { astro: ['4.16.19'] },
+      { astro: ['7.4.5'] },
       { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
     ),
-    // Native fragment rendering and page-owned resources on the exact Astro versions the record names.
     'astro-fragment-versions': archiveJob(
       'playwright.astro-resources.config.ts',
       25,
-      { astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.5'] },
+      { astro: ['7.4.5'] },
       { PLP_ASTRO_RESOURCE_VERSION: '${{ matrix.astro }}' },
     ),
     // Next.js, SvelteKit, Nuxt 3 and 4, plain HTML, Vue and React production hosts on the

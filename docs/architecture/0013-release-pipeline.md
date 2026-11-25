@@ -381,6 +381,22 @@ retrofit an older certified workflow. A changed branch head is refused rather
 than silently substituted. Local recording-shell regressions cover these
 conditions; they do not claim a completed automatic GitHub routing run.
 
+### 12. 3.0 is prepared in pre mode (2026-11-25)
+
+`main` carries the changesets for 3.0, and the first of them is a `major`.
+Without pre mode the Version PR on `main` would propose `3.0.0`, and merging it
+as every Version PR before it was merged would publish the major. So
+`.changeset/pre.json` (`npx changeset pre enter rc`) is committed together with
+that first changeset. The Version PR now proposes `3.0.0-rc.N`; a merge
+publishes it under the dist-tag `rc` and leaves `latest` on 2.x (§4), and the
+changesets stay in place for the next candidate, which is why the gate
+publishes an unpublished version before it looks at them (§2). `3.0.0` itself
+needs `npx changeset pre exit` in a pull request of its own.
+
+Fixes for 2.x come from `release/2.x` in the meantime (§8). That branch can
+release only while its `release.yml` is the one on `main` (§11), so a change to
+that file on `main` is backported before the next 2.x release.
+
 ## Consequences
 
 - What is on npm is what CI tested, provably: manifest and registry archive are

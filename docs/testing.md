@@ -153,20 +153,20 @@ refused. A version of any other shape is refused. The pipeline is ADR
 
 ## Quality map
 
-| Risk                                      | Primary evidence                                                                                                                                                                                                | Lane                       |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| Type/API compatibility                    | strict `tsc`, negative packed type fixtures, API Extractor reports                                                                                                                                              | pull request               |
-| Package/module-resolution drift           | exact tgz, publint, ATTW, isolated ESM/CJS/NodeNext consumers                                                                                                                                                   | pull request               |
-| Parser, trust-boundary, and race mistakes | fixed regressions, fast-check properties/models, critical mutation tests                                                                                                                                        | PR + main push + scheduled |
-| Untested edits                            | critical per-file floors and changed-line LCOV gate                                                                                                                                                             | pull request               |
-| Layer erosion and dead code               | source dependency graph, cycle rules, Knip                                                                                                                                                                      | pull request               |
-| Browser/DOM differences                   | Playwright in Chromium, Firefox, WebKit and a real Payload application                                                                                                                                          | pull request               |
-| Accessibility regressions                 | semantic live-region assertions and Axe WCAG A/AA scans                                                                                                                                                         | pull request               |
-| Algorithmic or bundle regressions         | deterministic size/complexity gates and CodSpeed trends                                                                                                                                                         | PR + trend                 |
-| Resource retention                        | exact handle counts, forced-GC Node leak gate, Chromium heap soak                                                                                                                                               | main push + scheduled      |
-| Protocol ecosystem drift                  | captured real messages and pinned/latest/canary Payload watch                                                                                                                                                   | PR + scheduled             |
-| Peer floors the hooks promise             | React 18.0.0, Vue 3.3.0 and Svelte 5.0.0 installed over the lockfile; hook, route-refresh and fragment suite (the SvelteKit one against a component compiled by `svelte/compiler` and the real `svelte/server`) | pull request               |
-| Peer floors the Astro adapter promises    | the stored archive in reviewed locks: Astro 4.0.0 base adapter, 4.16.19 React islands, fragment rendering on 4.9.0 to 7.4.5; [details](#astro-peer-floors)                                                      | pull request               |
+| Risk                                           | Primary evidence                                                                                                                                                                                                | Lane                       |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Type/API compatibility                         | strict `tsc`, negative packed type fixtures, API Extractor reports                                                                                                                                              | pull request               |
+| Package/module-resolution drift                | exact tgz, publint, ATTW, isolated ESM/CJS/NodeNext consumers                                                                                                                                                   | pull request               |
+| Parser, trust-boundary, and race mistakes      | fixed regressions, fast-check properties/models, critical mutation tests                                                                                                                                        | PR + main push + scheduled |
+| Untested edits                                 | critical per-file floors and changed-line LCOV gate                                                                                                                                                             | pull request               |
+| Layer erosion and dead code                    | source dependency graph, cycle rules, Knip                                                                                                                                                                      | pull request               |
+| Browser/DOM differences                        | Playwright in Chromium, Firefox, WebKit and a real Payload application                                                                                                                                          | pull request               |
+| Accessibility regressions                      | semantic live-region assertions and Axe WCAG A/AA scans                                                                                                                                                         | pull request               |
+| Algorithmic or bundle regressions              | deterministic size/complexity gates and CodSpeed trends                                                                                                                                                         | PR + trend                 |
+| Resource retention                             | exact handle counts, forced-GC Node leak gate, Chromium heap soak                                                                                                                                               | main push + scheduled      |
+| Protocol ecosystem drift                       | captured real messages and pinned/latest/canary Payload watch                                                                                                                                                   | PR + scheduled             |
+| Peer floors the hooks promise                  | React 18.0.0, Vue 3.3.0 and Svelte 5.0.0 installed over the lockfile; hook, route-refresh and fragment suite (the SvelteKit one against a component compiled by `svelte/compiler` and the real `svelte/server`) | pull request               |
+| The Astro peer floor, and the archive in Astro | the stored archive in reviewed locks: the base adapter on Astro 7.2.8, React islands and fragment rendering on 7.4.5; [details](#astro-peer-floor)                                                              | pull request               |
 
 The machine-readable inventory is [quality/test-inventory.json](../quality/test-inventory.json).
 It is regenerated with `tsx scripts/test-policy.ts --write`; CI fails if it is
@@ -470,9 +470,7 @@ three engines, all outside CI ([compatibility page](compatibility.md#what-runs-a
 and the 4.0 pre-releases by the daily watch — wire format, sender source and
 a real admin — the latter as early warning only. The
 four real-app fixtures cover Astro 7, Next.js 16, SvelteKit 3 and Nuxt 3 in all
-three engines; the Astro
-4–7 peer range is wider than the single-major browser fixture and is backed
-by the `astro-matrix` job, and Next.js 15.5 by the `next-matrix` job, which
+three engines; Next.js 15.5 is backed by the `next-matrix` job, which
 installs it over the Next.js fixture and runs the development, webpack
 production and base-path suites in Chromium. Nuxt 4 has a fixture of its own,
 `examples/nuxt4-payload`, the Nuxt example in Nuxt 4's `app/` layout, and the
@@ -499,17 +497,17 @@ The following checks passed on 2026-10-23 on the package archive that was publis
 
 The Node row runs the official 20.19.0 binary with no framework or optional peer installed; its fragment endpoint uses a custom renderer and its session check a local `/me` stub, not a real Payload admin, and it covers no framework build, development server or browser. The Next checks use a controlled preview cookie and fragment tokens; they do not use a real Payload admin. The Payload 2 graph still has upstream audit findings, including a critical finding in the 2026-10-05 audit. Its passing preview cases establish compatibility, not a clean dependency graph. Payload 3 lifecycle and Payload 4 canary checks are not included in this table. The Payload 2 lifecycle and guards rows run development builds on Linux engines. The lifecycle row covers an owner replaced while a read is held, a document change by navigation and a reload of the preview frame. The guards row covers a late successful response of a replaced owner, messages from a foreign window and a foreign origin, a receiver switch in a running session and a sign-out in the middle of one; neither row covers a token that expires by time or a production build.
 
-The two Astro rows can be repeated from the repository. The `astro-floor-base` and `astro-floor-islands` jobs run their specs on every push in Chromium ([Astro peer floors](#astro-peer-floors)); the counts above are all three engines, with loader and inline delivery at five cases each and two control builds per engine for Astro 4.0.0.
+The two Astro rows had CI jobs of their own, which ran their specs on every push in Chromium until 3.0 left Astro 4 to 6 ([Astro peer floor](#astro-peer-floor)); the counts above are all three engines, with loader and inline delivery at five cases each and two control builds per engine for Astro 4.0.0.
 
-## Astro peer floors
+## Astro peer floor
 
-`astro@^4` installs the newest 4.x, so the `astro-matrix` job cannot say what the lower
-bound of the peer range does. Three more jobs run on every push, in Chromium. Each installs
-the archive the Build job stored (`release-candidate-<sha>`, the bytes the Release workflow
-publishes) into a consumer of its own, whose lockfile was reviewed once and is installed as
-it stands, not resolved at run time:
+The Astro example's lock pins the newest Astro the repository has reviewed, so the E2E jobs cannot
+say what the lower bound of the peer range does. Three more jobs run on every push, in Chromium.
+Each installs the archive the Build job stored (`release-candidate-<sha>`, the bytes the Release
+workflow publishes) into a consumer of its own, whose lockfile was reviewed once and is installed
+as it stands, not resolved at run time:
 
-- `astro-floor-base` — Astro 4.0.0, the lower bound of `peerDependencies.astro`
+- `astro-floor-base` — Astro 7.2.8, the lower bound of `peerDependencies.astro`
   ([lock](../tests/fixtures/astro-floor-base-deps/package-lock.json),
   [spec](../tests/e2e/continuation/astro-floor-base.spec.ts)). A static page with the
   shipped `RichText.astro` and `PreviewBoundary.astro` is built with `livePreview()` in
@@ -521,19 +519,20 @@ it stands, not resolved at run time:
   integration, and an `allowedOrigins` that does not name the parent, with the localhost
   shortcut off — and the same assertions must fail on them, or a pass could come from the
   static page alone.
-- `astro-floor-islands` — Astro 4.16.19 with `@astrojs/react` 3.6.3 and React 18.3.1
-  ([lock](../tests/fixtures/astro-react-versions/4.16.19/package-lock.json),
-  [spec](../tests/e2e/continuation/astro-islands.spec.ts)), the first Astro whose container
-  takes `resolve` (ADR 0021). The four cases of the island contract run under the
-  build-hash CSP: consecutive unsaved revisions keep the island's state, the page control
-  hydrates, unlisted inline script and style stay blocked, and soft navigation unmounts it.
+- `astro-fragment-islands` — Astro 7.4.5 with the React integration its lock pins
+  ([lock](../tests/fixtures/astro-react-deps/package-lock.json),
+  [spec](../tests/e2e/continuation/astro-islands.spec.ts), ADR 0021). The four cases of the
+  island contract run under the build-hash CSP: consecutive unsaved revisions keep the island's
+  state, the page control hydrates, unlisted inline script and style stay blocked, and soft
+  navigation unmounts it.
 - `astro-fragment-versions` — fragment rendering and page-owned resources (ADR 0020) on
-  Astro 4.9.0, 4.16.19, 5.18.2, 6.4.8 and 7.4.5, one matrix entry each with a lock of its own
-  ([4.9.0 lock](../tests/fixtures/astro-resource-versions/4.9.0/package-lock.json),
-  [spec](../tests/e2e/continuation/astro-resources.spec.ts)). 4.9.0 is the Container API
-  floor: its container takes no props, so the packed default renders the catalog there, and the
-  verified-context case, which needs the application's own renderer, is left out of that version
-  by the Playwright scope. The other five versions run it too.
+  Astro 7.4.5 ([lock](../tests/fixtures/astro-resource-deps/package-lock.json),
+  [spec](../tests/e2e/continuation/astro-resources.spec.ts)). The matrix has one entry today;
+  the next Astro major gets a second one with a lock of its own.
+
+The lower bound is 7.2.8 and not 7.0.0 because the versions below it carry a critical advisory
+(GHSA-26w7-cxv4-gfx2, patched in 7.2.8). Until 3.0 the range began at Astro 4.0.0, and these jobs
+ran on 4.0.0, 4.9.0, 4.16.19, 5.18.2 and 6.4.8 as well.
 
 To run them yourself, build and pack once, then point them at the archive. The first install
 needs the registry; later ones use the npm cache. Without `--project=chromium` all three
@@ -543,19 +542,19 @@ engines run, one after the other:
 npm run build
 npm run test:package -- --artifact-dir /tmp/release-artifact --source-commit "$(git rev-parse HEAD)"
 export PLP_CONTINUATION_TARBALL=/tmp/release-artifact/payload-live-preview-<version>.tgz
-npx playwright test --config playwright.astro-floor-base.config.ts                                   # port 4290
-PLP_ASTRO_RESOURCE_VERSION=4.16.19 npx playwright test --config playwright.astro-islands.config.ts   # port 4287
-PLP_ASTRO_RESOURCE_VERSION=4.9.0 npx playwright test --config playwright.astro-resources.config.ts   # port 4287
-npx playwright test --config playwright.astro-owner.config.ts                                       # port 4287, Astro 7.4.5, page-owned React
+npx playwright test --config playwright.astro-floor-base.config.ts   # port 4290, Astro 7.2.8
+npx playwright test --config playwright.astro-islands.config.ts      # port 4287, Astro 7.4.5
+npx playwright test --config playwright.astro-resources.config.ts    # port 4287, Astro 7.4.5
+npx playwright test --config playwright.astro-owner.config.ts        # port 4287, Astro 7.4.5, page-owned React
 ```
 
 What they do not show. The parent is a mock, so neither is a real-admin result. The island
-lane measures `client:load` only. The locks are the exact versions themselves, so
+job measures `client:load` only. The locks are the exact versions themselves, so
 `npm audit --package-lock-only` reports the advisories of those versions (counted on
-2026-10-24: one critical and four high for the Astro 4.0.0 lock, one critical and five high for
-the Astro 4.16.19 React lock). Only the tests install them, in a temporary directory outside the
-repository; the base lane serves a static build and the other lanes a Node server on loopback
-behind a throw-away TLS proxy. `fixture-audit` covers `examples/`, not these locks.
+2026-11-25: one moderate and nothing above it for the Astro 7.2.8 lock). Only the tests install
+them, in a temporary directory outside the repository; the base job serves a static build and
+the other jobs a Node server on loopback behind a throw-away TLS proxy. `fixture-audit` covers
+`examples/`, not these locks.
 
 ## Next.js without a `next` peer
 

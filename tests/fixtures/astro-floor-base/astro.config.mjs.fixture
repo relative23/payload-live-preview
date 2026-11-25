@@ -1,5 +1,5 @@
 /**
- * The original Astro 4 peer floor, built through the package's public integration export.
+ * The Astro peer floor, built through the package's public integration export.
  * One static page serves both delivery modes. A control removes the one capability the
  * spec's visible-behavior assertions depend on, so a pass cannot come from the page alone.
  */

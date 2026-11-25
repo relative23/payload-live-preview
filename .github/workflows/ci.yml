@@ -348,58 +348,6 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  astro-matrix:
-    name: Astro matrix (Astro ${{ matrix.astro }})
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        astro: [6, 5, 4]
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            examples/*/package-lock.json
-      - name: Use repository npm version
-        run: npm install --global "$(node -p "require('./package.json').packageManager")"
-      - run: npm ci
-      - run: bash scripts/ci-install-browser.sh chromium
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: dist-${{ github.sha }}
-          path: dist
-      # The install mutates the fixture manifest in this checkout only; the
-      # resolved version is printed so the log states what was tested.
-      # `--ignore-scripts`: the matrix installs a floating Astro nobody reviewed.
-      - run: npm --prefix examples/astro-payload install --no-audit --no-fund --ignore-scripts "astro@^${{ matrix.astro }}"
-      - run: node -p "'astro ' + require('./examples/astro-payload/node_modules/astro/package.json').version"
-      - env:
-          PLP_E2E_SERVERS: astro
-        run: >-
-          npx playwright test --project=chromium
-          tests/e2e/specs/accessibility.spec.ts
-          tests/e2e/specs/diagnostics.spec.ts
-          tests/e2e/specs/island-bridge.spec.ts
-          tests/e2e/specs/live-preview.spec.ts
-          tests/e2e/specs/navigation-lifecycle.spec.ts
-          tests/e2e/specs/root-replacement.spec.ts
-          tests/e2e/specs/scenarios.spec.ts
-          tests/e2e/specs/structural-morph.spec.ts
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: failure()
-        with:
-          name: playwright-report-astro-${{ matrix.astro }}
-          path: playwright-report/
-          retention-days: 7
-
   next-matrix:
     name: Next.js matrix (Next ${{ matrix.next }})
     needs: build
@@ -501,7 +449,7 @@ jobs:
   # Static base adapter at the peer floor (4.0.0), built in both delivery modes against a mock
   # parent, with two control builds that must fail the same assertions.
   astro-floor-base:
-    name: Astro floor 4.0.0 (static base adapter)
+    name: Astro floor 7.2.8 (static base adapter)
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -535,17 +483,17 @@ jobs:
             test-results/
           retention-days: 7
 
-  # React client:load islands inside native fragments at the first Astro whose container resolves
-  # island modules (4.16.19), with the React 18 integration of that era, under the build-hash CSP.
-  astro-floor-islands:
-    name: Astro floor (React islands, Astro ${{ matrix.astro }})
+  # React client:load islands inside native fragments (ADR 0021), with the React integration the
+  # fixture's lock pins, under the build-hash CSP.
+  astro-fragment-islands:
+    name: Astro fragment islands (React, Astro ${{ matrix.astro }})
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
-        astro: ['4.16.19']
+        astro: ['7.4.5']
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -572,15 +520,14 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
-          name: playwright-report-astro-floor-islands-${{ matrix.astro }}
+          name: playwright-report-astro-fragment-islands-${{ matrix.astro }}
           path: |
             playwright-report/
             test-results/
           retention-days: 7
 
-  # Native fragment rendering and page-owned resources (ADR 0020) on the exact Astro versions the
-  # record names, from the archive the Build job stored. The floor is 4.9.0, where the container takes
-  # no props and the packed default renders the catalog; the rest run the verified-context case too.
+  # Native fragment rendering and page-owned resources (ADR 0020) on the exact Astro version the
+  # record names, from the archive the Build job stored.
   astro-fragment-versions:
     name: Astro fragment rendering (Astro ${{ matrix.astro }})
     needs: build
@@ -589,7 +536,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        astro: ['4.9.0', '4.16.19', '5.18.2', '6.4.8', '7.4.5']
+        astro: ['7.4.5']
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

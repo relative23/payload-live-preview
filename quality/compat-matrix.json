@@ -41,7 +41,7 @@
       "feature": "base adapter at the declared framework floor: static output, loader and inline delivery",
       "version": {
         "kind": "floor",
-        "value": "4.0.0",
+        "value": "7.2.8",
         "package": "astro",
         "source": {
           "kind": "peer-floor"
@@ -52,7 +52,7 @@
       "backend": "mock admin",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "astro-floor-base"
@@ -62,40 +62,7 @@
           "src/adapters/astro/index.ts",
           "tests/e2e/continuation/astro-floor-base.spec.ts",
           "tests/fixtures/astro-floor-base-deps/package-lock.json"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
-      "id": "astro-base-floating-four",
-      "surface": "Astro",
-      "feature": "base adapter in the floating late-4.x matrix; not an exact-floor result",
-      "version": {
-        "kind": "floor",
-        "value": "4.0.0",
-        "package": "astro",
-        "source": {
-          "kind": "peer-floor"
-        },
-        "configuredRange": "^4"
-      },
-      "mode": "production",
-      "packageForm": "copied-local-package",
-      "backend": "mock admin",
-      "browsers": ["chromium"],
-      "evidence": {
-        "status": "configured",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "astro-matrix"
-        },
-        "sources": [".github/workflows/ci.yml", "tests/e2e/specs/live-preview.spec.ts"]
+        ]
       }
     },
     {
@@ -132,12 +99,12 @@
       }
     },
     {
-      "id": "astro-fragment-floor",
+      "id": "astro-fragment-archive",
       "surface": "Astro",
-      "feature": "native fragment rendering at the Container API floor",
+      "feature": "native fragment rendering and page-owned resources, from the packed archive",
       "version": {
-        "kind": "floor",
-        "value": "4.9.0",
+        "kind": "exact",
+        "value": "7.4.5",
         "package": "astro",
         "source": {
           "kind": "workflow-matrix",
@@ -151,7 +118,7 @@
       "backend": "mock admin and Payload 3.92.1 REST authorization fixture without an admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "astro-fragment-versions"
@@ -159,29 +126,22 @@
         "sources": [
           "src/adapters/astro/fragments.ts",
           "tests/e2e/continuation/astro-resources.spec.ts",
-          "tests/fixtures/astro-resource-versions/4.9.0/package-lock.json"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+          "tests/fixtures/astro-resource-deps/package-lock.json"
+        ]
       }
     },
     {
-      "id": "astro-islands-floor",
+      "id": "astro-islands-archive",
       "surface": "Astro",
-      "feature": "React client:load islands inside native fragments at the first Astro whose container resolves island modules",
+      "feature": "React client:load islands inside native fragments, from the packed archive",
       "version": {
-        "kind": "floor",
-        "value": "4.16.19",
+        "kind": "exact",
+        "value": "7.4.5",
         "package": "astro",
         "source": {
           "kind": "workflow-matrix",
           "file": "ci.yml",
-          "job": "astro-floor-islands",
+          "job": "astro-fragment-islands",
           "key": "astro"
         }
       },
@@ -190,23 +150,16 @@
       "backend": "mock admin and Payload 3.92.1 REST authorization fixture without an admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
-          "job": "astro-floor-islands"
+          "job": "astro-fragment-islands"
         },
         "sources": [
           "src/adapters/astro/island-modules.ts",
           "tests/e2e/continuation/astro-islands.spec.ts",
-          "tests/fixtures/astro-react-versions/4.16.19/package-lock.json"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+          "tests/fixtures/astro-react-deps/package-lock.json"
+        ]
       }
     },
     {
@@ -2028,7 +1981,7 @@
     {
       "name": "Astro",
       "package": "astro",
-      "supported": ">=4.0.0 <8.0.0",
+      "supported": ">=7.2.8 <8.0.0",
       "fixture": "examples/astro-payload",
       "tested": [
         {
@@ -2037,27 +1990,6 @@
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E",
           "vite": "^8.3.5"
-        },
-        {
-          "major": 6,
-          "source": "astro-matrix",
-          "browsers": ["chromium"],
-          "job": "Astro matrix",
-          "vite": "^7.3.2"
-        },
-        {
-          "major": 5,
-          "source": "astro-matrix",
-          "browsers": ["chromium"],
-          "job": "Astro matrix",
-          "vite": "^6.4.1"
-        },
-        {
-          "major": 4,
-          "source": "astro-matrix",
-          "browsers": ["chromium"],
-          "job": "Astro matrix",
-          "vite": "^5.4.11"
         }
       ],
       "vite": {
@@ -2201,7 +2133,7 @@
   ],
   "vite": {
     "measured": "2026-11-03",
-    "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE — every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 5 through 8. Remove this line when the dev tooling accepts 8."
+    "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE — every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 7 and 8. Remove this line when the dev tooling accepts 8."
   },
   "hooks": [
     {
