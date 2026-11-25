@@ -30,8 +30,8 @@ import {
 export const CI: WorkflowSpec = {
   name: 'CI',
   on: {
-    push: { branches: ['main', 'release/2.0'] },
-    pull_request: { branches: ['main', 'release/2.0'] },
+    push: { branches: ['main', 'release/2.x'] },
+    pull_request: { branches: ['main', 'release/2.x'] },
   },
   permissions: READ_ONLY,
   concurrency: {

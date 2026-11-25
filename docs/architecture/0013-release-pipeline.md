@@ -27,7 +27,7 @@ exactly that artifact by run id and name, reruns the package gate with
 
 `scripts/release-gate.ts` runs after every completed CI run and on
 `workflow_dispatch` with a `run_id`. It accepts only a completed, successful CI
-`push` run of this repository on a release branch — `main`, `release/1.x` or `release/2.0`,
+`push` run of this repository on a release branch — `main`, `release/1.x` or `release/2.x`,
 listed once as `RELEASE_BRANCHES` — whose head is an ancestor of that branch on
 `origin`, reads `package.json` at that commit, and asks the registry:
 
@@ -225,25 +225,31 @@ Open:
 - A re-entry by `workflow_dispatch` runs on main's ref, so a 1.x run re-entered
   that way shares main's concurrency group and queues with it.
 
-### 8. 2.0 patches alongside the next minor (added 2026-10-03)
+### 8. 2.x fixes alongside the next release (added 2026-10-03, the branch renamed 2026-11-25)
 
-`main` carries changesets for the next minor, so a patch for the published 2.0
-line needs a separate `release/2.0` branch from the last published 2.0 tag. The
-branch takes the patch and its regression test without the pending minor work.
+`main` carries the changesets for the next release, so a fix for the published
+line needs a branch of its own, cut from the last published tag. The branch
+takes the fix and its regression test without the pending work on `main`.
+
+From 2026-10-03 that branch was `release/2.0`, while `main` prepared 2.1.0.
+With 2.5.0 published `main` prepares 3.0, and `release/2.x` takes its place.
+`release/2.0` left the list on the same day: by the rule in §4 it could no
+longer publish, because every version it could carry is below `latest` in the
+same major.
 
 CI accepts pushes and pull requests for that exact branch. A push runs the
 same release-critical gates as `main`, including the nightly mutation scope
 and the five-minute browser soak. The release gate proves ancestry against
-`origin/release/2.0`; the publish job consumes that run's certified archive.
+`origin/release/2.x`; the publish job consumes that run's certified archive.
 The default branch must carry the updated release workflow before a maintenance
 run can release, because `workflow_run` reads that workflow from the default
 branch.
 
-Changesets on the maintenance branch use `baseBranch: "release/2.0"`. Run
+Changesets on the maintenance branch use `baseBranch: "release/2.x"`. Run
 `npm run version` in the maintenance pull request, as for 1.x (§7); automatic
-Version PRs remain on `main` only. The dist-tag rule in §4 is unchanged: a 2.0
-patch below an already published 2.1 `latest` is refused, so this route publishes
-2.0.6 before 2.1.0.
+Version PRs remain on `main` only. The dist-tag rule in §4 is unchanged: a 2.x
+fix takes `latest` as long as no stable 3.0.0 is published, and `legacy` after
+that.
 
 ### 9. Nightly policy scope correction (2026-10-03)
 
