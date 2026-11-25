@@ -17,11 +17,11 @@ export type CommandRunner = (executable: string, args: readonly string[]) => Com
 /**
  * Branches whose certified CI push runs may release, in one place: `main`
  * carries current development, `release/1.x` security fixes for 1.x, and
- * `release/2.0` patches for 2.0 (ADR 0013 §7–8). The gate condition in
+ * `release/2.x` fixes for 2.x (ADR 0013 §7–8). The gate condition in
  * `.github/workflows/release.yml` repeats the list;
  * `scripts/workflow-expectations.ts` derives that condition from this one.
  */
-export const RELEASE_BRANCHES = ['main', 'release/1.x', 'release/2.0'] as const;
+export const RELEASE_BRANCHES = ['main', 'release/1.x', 'release/2.x'] as const;
 
 type ReleaseBranch = (typeof RELEASE_BRANCHES)[number];
 

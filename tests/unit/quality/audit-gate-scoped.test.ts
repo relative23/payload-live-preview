@@ -486,7 +486,7 @@ describe('exposure changes', () => {
     const { root, lock, descriptor } = setup();
     validateExposure(descriptor, root, lock);
     writeFileSync(join(root, 'package.json'), '{"version":"2.1.0","scripts":{"dev":"http"}}');
-    writeFileSync(join(root, 'config.json'), '{"baseBranch":"release/2.0","fixed":[]}');
+    writeFileSync(join(root, 'config.json'), '{"baseBranch":"release/2.x","fixed":[]}');
     expect(() => validateExposure(descriptor, root, lock)).not.toThrow();
   });
   it.each([

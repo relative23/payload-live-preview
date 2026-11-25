@@ -79,7 +79,7 @@ function step(job: string, name: string): Step {
   return found;
 }
 
-function execute(command: Step, overrides: Record<string, string> = {}, branch = 'release/2.0') {
+function execute(command: Step, overrides: Record<string, string> = {}, branch = 'release/2.x') {
   const outputs = gate(branch) as unknown as Record<string, string>;
   const carried = Object.fromEntries(
     Object.entries(jobs['gate']?.outputs ?? {}).map(([key, expression]) => {
@@ -191,7 +191,7 @@ afterEach(() => {
 });
 
 describe('certified npm provenance source', () => {
-  it.each(['main', 'release/1.x', 'release/2.0'])('outputs the verified %s branch', (branch) => {
+  it.each(['main', 'release/1.x', 'release/2.x'])('outputs the verified %s branch', (branch) => {
     expect(gate(branch)).toMatchObject({ tested_sha: CERTIFIED_SHA, tested_branch: branch });
   });
 
@@ -202,10 +202,10 @@ describe('certified npm provenance source', () => {
     expect(gateStep?.env?.['RELEASE_RUN_ID']).toBe(
       '${{ inputs.run_id || github.event.workflow_run.id }}',
     );
-    expect(gate('release/2.0', '42')).toMatchObject({ run_id: '42', publish: 'true' });
+    expect(gate('release/2.x', '42')).toMatchObject({ run_id: '42', publish: 'true' });
   });
 
-  it.each(['main', 'release/1.x', 'release/2.0'])(
+  it.each(['main', 'release/1.x', 'release/2.x'])(
     'publishes only with the actual certified %s workflow identity',
     (branch) => {
       const actual = execute(step('publish', 'Publish with provenance'), {}, branch);
@@ -284,7 +284,7 @@ describe('release source router', () => {
     expect(jobs['source-dispatch']?.permissions).toEqual({ actions: 'write', contents: 'read' });
   });
 
-  it.each(['main', 'release/1.x', 'release/2.0'])(
+  it.each(['main', 'release/1.x', 'release/2.x'])(
     'checks the official %s head, dispatches certified inputs once and exits',
     (branch) => {
       const actual = execute(
@@ -325,7 +325,7 @@ describe('release source router', () => {
   });
 
   it.each<{ label: string; values: Record<string, string> }>([
-    { label: 'unknown branch', values: { TESTED_BRANCH: 'release/2.x' } },
+    { label: 'unknown branch', values: { TESTED_BRANCH: 'release/2.0' } },
     { label: 'malformed commit', values: { TESTED_SHA: 'main' } },
     { label: 'injected run id', values: { TESTED_RUN_ID: '42;false' } },
   ])('rejects $label before contacting GitHub', ({ values }) => {
@@ -360,13 +360,13 @@ describe('release source router', () => {
     {
       label: 'foreign workflow repository',
       values: {
-        GITHUB_WORKFLOW_REF: 'other/project/.github/workflows/release.yml@refs/heads/release/2.0',
+        GITHUB_WORKFLOW_REF: 'other/project/.github/workflows/release.yml@refs/heads/release/2.x',
       },
     },
     {
       label: 'wrong workflow path',
       values: {
-        GITHUB_WORKFLOW_REF: `${REPOSITORY}/.github/workflows/other.yml@refs/heads/release/2.0`,
+        GITHUB_WORKFLOW_REF: `${REPOSITORY}/.github/workflows/other.yml@refs/heads/release/2.x`,
       },
     },
     {
