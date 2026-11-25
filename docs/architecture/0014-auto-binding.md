@@ -63,7 +63,7 @@ It is therefore constrained the way a guess should be:
 - **Never** inside `<script>`, `<style>`, `<template>`, `<title>`, a form
   control's value, a `contenteditable` subtree, a shadow root, or an element
   or ancestor carrying the opt-out attribute. The first auto-binding commit named it
-  `data-payload-no-bind` (`src/core/auto-bind.ts`); until then this record
+  `data-payload-no-bind` (`src/core/bindings/auto-bind.ts`); until then this record
   left the name open on purpose, because the docs gate rightly refuses an
   attribute name the code does not define. `data-payload-owned` and an island
   are boundaries here as they are for the morph, and the search stays in the

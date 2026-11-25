@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
-import { ElementCache } from '@core/cache';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
+import { ElementCache } from '@core/bindings/cache';
 import {
   dependencyMapFromBinding,
   mergeDependencyMaps,
   parseDependencyList,
-} from '@core/dependencies';
+} from '@core/update/dependencies';
 import type { FieldRenderer } from '@core/types';
 import { buildBuiltinRenderers } from '@field-types/index';
 

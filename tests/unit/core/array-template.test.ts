@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { collectTemplateKeys, interpolateArrayTemplate } from '@core/array-template';
+import { collectTemplateKeys, interpolateArrayTemplate } from '@core/bindings/array-template';
 import { safeStringify } from '@field-types/utils';
 
 // The stringifier both callers hand in, so the suite exercises the real pairing

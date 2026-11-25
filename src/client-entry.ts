@@ -41,8 +41,8 @@ export type {
   RevisionDisplay,
   RevisionDisplayState,
   RevisionShortfall,
-} from './core/revision-display';
-export type { ConnectionStatus } from './core/state';
+} from './core/update/revision-display';
+export type { ConnectionStatus } from './core/session/state';
 export type { DefaultsProfile, EventSourcePolicy } from './types/defaults-profile';
 export type {
   FieldTransform,
@@ -62,8 +62,8 @@ export type {
   RouteStrategy,
   StrategyHandlers,
   UpdateSource,
-} from './core/strategies';
-export { registerRouteRefresh, type RouteRefresh } from './core/route-refresh';
+} from './core/strategies/strategies';
+export { registerRouteRefresh, type RouteRefresh } from './core/strategies/route-refresh';
 export type { PayloadDocumentEventDetail } from './types/payload-protocol';
 // `RenderContext.sanitizerPolicy` names it, so the entry has to as well.
 export type { SanitizerPolicyMode } from './security';

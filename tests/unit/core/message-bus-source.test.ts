@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MessageBus } from '@core/message-bus';
+import { MessageBus } from '@core/protocol/message-bus';
 
 /**
  * `eventSourcePolicy: 'parent-or-opener'` (ADR 0007, row "messages must

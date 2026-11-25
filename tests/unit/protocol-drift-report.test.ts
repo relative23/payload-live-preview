@@ -43,8 +43,8 @@ describe('the drift issue', () => {
     // hand-mirrored format lives.
     const body = issueBody(REPORT);
 
-    expect(body).toContain('src/core/message-bus.ts');
-    expect(body).toContain('src/core/data-merger.ts');
+    expect(body).toContain('src/core/protocol/message-bus.ts');
+    expect(body).toContain('src/core/merge/data-merger.ts');
     expect(body).toContain('src/types/payload-protocol.ts');
   });
 

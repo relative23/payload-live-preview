@@ -7,14 +7,14 @@
  * regression signals, not absolute browser timings.
  */
 import { bench, describe } from 'vitest';
-import { ElementCache } from '@core/cache';
-import { resolveFieldValue } from '@core/lifecycle';
+import { ElementCache } from '@core/bindings/cache';
+import { resolveFieldValue } from '@core/session/lifecycle';
 import { sanitizeHtml } from '@security/sanitizer';
 import { escapeHtml } from '@security/escape';
 import { lexicalToHtml } from '@lexical/render';
 import type { LexicalRoot } from '@lexical/types';
 import { diffArray } from '@schema/diff';
-import { applyStructuralPatches, createStructuralStore } from '@core/structural-applier';
+import { applyStructuralPatches, createStructuralStore } from '@core/bindings/structural-applier';
 import { EventEmitter } from '@events/emitter';
 
 function buildDom(fieldCount: number): void {

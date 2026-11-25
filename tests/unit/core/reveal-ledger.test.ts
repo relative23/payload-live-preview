@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { RevealLedger, type RevealSlot } from '@core/reveal-ledger';
+import { RevealLedger, type RevealSlot } from '@core/bindings/reveal-ledger';
 
 interface Binding {
   readonly owner?: string | undefined;

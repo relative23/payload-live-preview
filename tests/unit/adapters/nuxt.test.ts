@@ -12,7 +12,7 @@ import { withCspHeader } from '@adapters/shared/response';
 import { authorizePreviewRequest } from '@security/preview-authorization';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
 
 const ADMIN = 'https://admin.example.com';
 

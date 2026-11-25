@@ -11,8 +11,8 @@
  */
 
 import { onMount, tick } from 'svelte';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
-import { registerRouteRefresh } from '@core/route-refresh';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
+import { registerRouteRefresh } from '@core/strategies/route-refresh';
 
 /** The part of SvelteKit's `AfterNavigate` this reads; Kit 2 has no `shallow`. */
 export interface CommittedNavigation {

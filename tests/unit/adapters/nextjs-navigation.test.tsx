@@ -1,8 +1,8 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
-import { readRouteRefresh } from '@core/route-refresh';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
+import { readRouteRefresh } from '@core/strategies/route-refresh';
 
 /**
  * `<LivePreviewNavigation />` replaces the App Router bridge a Next preview

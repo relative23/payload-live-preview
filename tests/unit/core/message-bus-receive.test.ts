@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MessageBus } from '@core/message-bus';
+import { MessageBus } from '@core/protocol/message-bus';
 import { TRUSTED, UNTRUSTED, flushMicrotasks, makeMessage } from './message-bus-harness';
 
 describe('MessageBus — receive', () => {

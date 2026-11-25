@@ -2,7 +2,7 @@
 
 import type { PayloadFieldType } from '@/types/payload-protocol';
 import type { SanitizerPolicyMode } from '@security/sanitizer';
-import type { UpdateSource } from './strategies';
+import type { UpdateSource } from './strategies/strategies';
 
 /** Payload's field set plus the DOM-binding categories `html`, `url`, `image` and `structural-array`. */
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';

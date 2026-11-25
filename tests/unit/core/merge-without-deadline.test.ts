@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataMerger } from '@core/data-merger';
+import { DataMerger } from '@core/merge/data-merger';
 import { createDocumentSession } from '@adapters/shared/document-session';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { buildBuiltinRenderers } from '@field-types/index';
 
 /**

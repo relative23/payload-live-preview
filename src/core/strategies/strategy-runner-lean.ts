@@ -1,0 +1,89 @@
+/**
+ * The strategy runner the lean profile gets instead of the real one: it plans
+ * nothing, renders nothing, and says so once per feature (LP0104). Its purpose
+ * is that the pipeline needs no branch of its own — it holds a runner either
+ * way, and the profile decides which.
+ *
+ * Because this module names the real runner only as a type, the lean build
+ * drops that file and everything only it referenced: the morph, the fragment
+ * protocol client's server half, and the route refresh.
+ */
+
+import { reportUnboundChange } from '../update/fidelity';
+import { reportOmittedFeature } from '../session/profile';
+import type { StrategyRunner } from './strategy-runner';
+import { warnFragmentFallback, warnUnsupportedStrategy } from './strategy-warnings';
+import type { RuntimeDeps, RuntimeState, UpdateTransaction } from '../session/runtime-state';
+import { declaredSubfields, unboundChangedFields, type OwnerScope } from '../update/unbound-fields';
+import type { CachedElement } from '../types';
+
+/** What `UpdatePipeline` calls on a runner; both profiles satisfy it. */
+export type StrategyRunnerLike = Pick<
+  StrategyRunner,
+  | 'planFragments'
+  | 'escalateUnfaithful'
+  | 'hasUnboundChange'
+  | 'plansRoute'
+  | 'runFragments'
+  | 'refreshRoute'
+  | 'refreshAfterSave'
+  | 'warnFragmentFallback'
+  | 'warnUnsupportedStrategy'
+>;
+
+export function createLeanStrategyRunner(
+  deps: RuntimeDeps,
+  state: RuntimeState,
+): StrategyRunnerLike {
+  return {
+    planFragments: (): null => null,
+    // Nothing to escalate to. The pipeline still drains its queue, so a page
+    // that keeps producing findings does not keep producing entries; the
+    // patches stay as they are, and the revision says so (ADR 0023).
+    escalateUnfaithful: (transaction, _data, targets): void => {
+      for (const { fieldName: field } of targets) {
+        state.display.shortfall(transaction, { kind: 'unfaithful', field });
+      }
+    },
+    // Nothing here to escalate to, and the finding is still worth recording:
+    // a page that changes a field it does not bind is the page
+    // `inspect().fidelity` is read on, and `escalated` staying 0 beside it is
+    // the truth about this profile rather than silence about the change.
+    hasUnboundChange: (transaction: UpdateTransaction, ownerKeys: OwnerScope): boolean => {
+      if (transaction.baseline) return false;
+      const unbound = unboundChangedFields(
+        deps.cache,
+        transaction.touched,
+        transaction.locale,
+        ownerKeys,
+        declaredSubfields(
+          deps.subfieldCoverage,
+          state.changes.previousFields,
+          transaction.renderData?.fields,
+        ),
+      );
+      for (const field of unbound) {
+        reportUnboundChange(state, field);
+        state.display.shortfall(transaction, { kind: 'unbound', field });
+      }
+      return false;
+    },
+    plansRoute: (): boolean => false,
+    runFragments: (): Promise<void> => Promise.resolve(),
+    // A page that carries a route prelude anyway (it can be injected by hand)
+    // still gets no refresh here: this runtime has no code for one.
+    refreshRoute: (): Promise<void> => {
+      reportOmittedFeature('route refreshes');
+      return Promise.resolve();
+    },
+    // No route was rendered, so no save has one to render again.
+    refreshAfterSave: (): void => undefined,
+    warnFragmentFallback: (target: CachedElement): void => {
+      reportOmittedFeature('server-rendered fragments');
+      warnFragmentFallback(deps, state, target);
+    },
+    warnUnsupportedStrategy: (target: CachedElement): void => {
+      warnUnsupportedStrategy(deps, state, target);
+    },
+  };
+}

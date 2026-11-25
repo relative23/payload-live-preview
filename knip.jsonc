@@ -37,7 +37,7 @@
     "src/doctor/cli.ts",
     "src/migrate/runner.ts",
     // esbuild entry for the static-delivery bootstrap; nothing imports it.
-    "src/core/loader.ts",
+    "src/core/session/loader.ts",
     "src/fragment/inline.ts",
     "src/fragment/route-inline.ts",
     "scripts/api-contracts.ts",
@@ -95,7 +95,7 @@
   // therefore are not globally ignored.
   "ignoreIssues": {
     "scripts/release-contracts.ts": ["exports"],
-    "src/core/runtime.ts": ["exports"],
+    "src/core/session/runtime.ts": ["exports"],
     "src/detection/index.ts": ["exports", "types"],
     "src/lexical/blocks/registry.ts": ["exports"],
     "src/lexical/index.ts": ["exports", "types"],

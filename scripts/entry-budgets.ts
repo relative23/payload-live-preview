@@ -230,7 +230,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // plain text field now costs none of them, a page nobody binds costs none, and
   // a burst on a relationship or a rich-text field costs two: one that opens it
   // and one that closes it. The bytes are the decision that tells those apart
-  // (`src/core/merge-need.ts`) and the window a burst shares; the reasoning is in
+  // (`src/core/merge/merge-need.ts`) and the window a burst shares; the reasoning is in
   // bundle-budgets.ts.
   //
   // 2026-09-07 (Z5, the write that opens a quiet phase): every row that embeds

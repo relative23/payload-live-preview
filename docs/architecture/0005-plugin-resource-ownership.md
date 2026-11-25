@@ -144,7 +144,7 @@ are isolated and cannot replace that fallback or escape as unhandled rejections.
 ### Runtime sessions own what `start()` acquires
 
 2026-09-19 (2.1): the runtime gives each session a scope of the same kind.
-`start()` opens a `LifetimeScope` (`src/core/lifetime-scope.ts`: own, close in
+`start()` opens a `LifetimeScope` (`src/core/session/lifetime-scope.ts`: own, close in
 reverse, guard each release — the form the inline runtime carries; the plugin
 manager keeps `ResourceScope`, which adds staging, commit and per-kind counts
 the runtime never uses) and hands it the teardown in the order it must run — the last entry closes first: the deferred start, the ready-handshake

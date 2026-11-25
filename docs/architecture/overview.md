@@ -94,9 +94,9 @@ case. See [ADR 0011](0011-fragment-protocol-and-abuse-model.md) and
 
 ### The runtime — one source, several deliveries
 
-One source (`src/core/runtime.ts`) becomes the runtime at build time, twice:
+One source (`src/core/session/runtime.ts`) becomes the runtime at build time, twice:
 the full artifact and a lean one with optional features left out. The
-bootstrap (`src/core/loader.ts`) and the fragment and route preludes
+bootstrap (`src/core/session/loader.ts`) and the fragment and route preludes
 (`src/fragment/inline.ts`, `src/fragment/route-inline.ts`) are entries of their
 own, built beside it by `scripts/build-runtime.ts`. What differs is delivery:
 inlined into the response, or fetched as a content-hashed asset the browser may

@@ -5,7 +5,7 @@ import {
   isBindingInScope,
   messageOwnerKeys,
   readDocumentId,
-} from '@core/binding-owner';
+} from '@core/bindings/binding-owner';
 
 describe('owner keys', () => {
   it('names a global by its slug', () => {

@@ -25,17 +25,17 @@ questions to answer are three as well:
 
 The modules that answer them are the **trusted core**:
 
-| Module                          |     Lines | Decides                                                     |
-| ------------------------------- | --------: | ----------------------------------------------------------- |
-| `src/core/message-guards.ts`    |        83 | which shapes are a message                                  |
-| `src/core/message-bus.ts`       |       467 | which window may send and which verdict commits             |
-| `src/core/data-merger.ts`       |       290 | credentialed transport and which attempt wins               |
-| `src/core/attribute-binding.ts` |        68 | which attribute a remote value may become                   |
-| `src/security/url-validator.ts` |        60 | which URL is safe                                           |
-| `src/security/escape.ts`        |        48 | how text becomes escaped markup                             |
-| `src/security/sanitizer.ts`     |       530 | which tags and attributes CMS content keeps                 |
-| `src/security/trusted-types.ts` |        87 | the policy every HTML sink goes through                     |
-| **Total**                       | **1 633** | 1 212 without blank/comment lines; 41 exported declarations |
+| Module                                   |     Lines | Decides                                                     |
+| ---------------------------------------- | --------: | ----------------------------------------------------------- |
+| `src/core/protocol/message-guards.ts`    |        83 | which shapes are a message                                  |
+| `src/core/protocol/message-bus.ts`       |       467 | which window may send and which verdict commits             |
+| `src/core/merge/data-merger.ts`          |       290 | credentialed transport and which attempt wins               |
+| `src/core/bindings/attribute-binding.ts` |        68 | which attribute a remote value may become                   |
+| `src/security/url-validator.ts`          |        60 | which URL is safe                                           |
+| `src/security/escape.ts`                 |        48 | how text becomes escaped markup                             |
+| `src/security/sanitizer.ts`              |       530 | which tags and attributes CMS content keeps                 |
+| `src/security/trusted-types.ts`          |        87 | the policy every HTML sink goes through                     |
+| **Total**                                | **1 633** | 1 212 without blank/comment lines; 41 exported declarations |
 
 Measured on 2026-11-25, for 3.0. Until then the core had a ninth module,
 `legacy-population.ts`, 425 lines that planned and read the collection GETs of
@@ -392,7 +392,7 @@ Held by: gate 2; the core mutation profile; `tests/unit/security/trusted-types.t
 - **The fragment and route strategies** fetch the page's own origin with
   `credentials: 'same-origin'`; the route's HTML is parsed by `DOMParser` into
   an inert document before the head merge and morph (ADR 0011).
-- **The update pipeline** (`src/core/update-pipeline.ts`) holds no
+- **The update pipeline** (`src/core/update/update-pipeline.ts`) holds no
   capability, but it holds the order. It re-checks the revision after every
   await it makes — the merge, then the `beforeUpdate` hooks, which run under
   `emitWhile` with `isCurrent` as the predicate and are checked once more

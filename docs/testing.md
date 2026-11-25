@@ -19,7 +19,7 @@ npm run build:runtime
 `npm test` regenerates them through its `pretest` hook. The narrower scripts
 (`npm run test:unit`, `test:integration`, `typecheck`) do not — npm runs a
 `pre` hook only for the script that shares its name — so run `build:runtime`
-yourself after pulling a change to `src/core/runtime.ts`. Every CI job that
+yourself after pulling a change to `src/core/session/runtime.ts`. Every CI job that
 type-checks or runs tests runs it explicitly for the same reason.
 
 The common maintainer commands are:
@@ -43,7 +43,7 @@ The common maintainer commands are:
 
 `npm run test:mutation` mutates the small PR profile. The release-critical scope
 is every file with a per-file coverage baseline (`quality/coverage-policy.json`)
-plus the PR profile's three files and `src/core/a11y.ts`; `stryker.config.js`
+plus the PR profile's three files and `src/core/bindings/a11y.ts`; `stryker.config.js`
 builds that union at startup. The reviewed file list, mutant total and score are
 pinned in `quality/mutation-policy.json` — that file is the baseline, not this
 page:

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
-import type { RouteStrategy } from '@core/strategies';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
+import type { RouteStrategy } from '@core/strategies/strategies';
 import { TRUSTED, deferred, fireMessage, flushMicrotasks, textRenderer } from './lifecycle-harness';
 
 describe('LivePreviewRuntime — applying an update and emitting its events', () => {

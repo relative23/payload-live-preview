@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { A11yAnnouncer } from '@core/a11y';
+import { A11yAnnouncer } from '@core/bindings/a11y';
 
 const ID = 'payload-live-preview-a11y';
 

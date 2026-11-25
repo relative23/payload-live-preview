@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { TRUSTED, fireMessage, textRenderer } from './lifecycle-harness';
 
 describe('LivePreviewRuntime — the orphan-field diagnostic', () => {

@@ -54,14 +54,14 @@ export const HTML_SINKS: ReadonlyMap<string, HtmlSinkJustification> = new Map([
   ],
   ['src/field-types/text.ts::trustedHtml(escapeAndLinebreak(text))', 'escaped'],
   // Sanitised first, then parsed inertly to be adopted — safe twice over.
-  ['src/core/structural-applier.ts::trustedHtml(safe)', 'sanitised'],
+  ['src/core/bindings/structural-applier.ts::trustedHtml(safe)', 'sanitised'],
   // The sanitizer's own parse. Untrusted markup by definition on the first pass,
   // and its own previous output on the passes after (ADR 0016, 2026-10-02); it
   // is read back only after the fragment has been walked and stripped.
   ['src/security/sanitizer.ts::trustedHtml(markup)', 'inert-parse'],
   // A fragment the project's server rendered, parsed here and morphed into the
   // boundary. Sanitising it would strip the page's own legitimate markup.
-  ['src/core/strategy-runner.ts::trustedHtml(html)', 'trusted-origin'],
+  ['src/core/strategies/strategy-runner.ts::trustedHtml(html)', 'trusted-origin'],
 ]);
 
 /**
@@ -85,27 +85,30 @@ export type AttributeSinkJustification =
   'gated' | 'copied' | 'binding-stamp' | 'url-validated' | 'constant';
 
 export const ATTRIBUTE_SINKS: ReadonlyMap<string, AttributeSinkJustification> = new Map([
-  ['src/core/attribute-binding.ts::element.setAttribute(name, stringValue)', 'gated'],
+  ['src/core/bindings/attribute-binding.ts::element.setAttribute(name, stringValue)', 'gated'],
   // The keyed morph mirrors the rendered node's attributes onto the live one;
   // the rendered node is a sanitised item or a fragment the page's own server
   // rendered (`HTML_SINKS` says which, per caller).
-  ['src/core/morph.ts::live.setAttribute(attribute.name, attribute.value)', 'copied'],
+  ['src/core/bindings/morph.ts::live.setAttribute(attribute.name, attribute.value)', 'copied'],
   [
-    'src/core/structural-applier.ts::target.setAttribute(attribute.name, attribute.value)',
+    'src/core/bindings/structural-applier.ts::target.setAttribute(attribute.name, attribute.value)',
     'copied',
   ],
   // What every existing item of the list already carried, filtered through
   // `isWritableAttribute` before it is inherited by a rebuilt one.
-  ['src/core/array-template.ts::item.setAttribute(name, value)', 'copied'],
+  ['src/core/bindings/array-template.ts::item.setAttribute(name, value)', 'copied'],
   // `<meta>`/`<link>` attributes from the fresh route document, which the
   // page's own server rendered.
   ['src/fragment/route.ts::current.setAttribute(attribute.name, attribute.value)', 'copied'],
-  ['src/core/structural-applier.ts::first.setAttribute(KEY_ATTRIBUTE, key)', 'binding-stamp'],
+  [
+    'src/core/bindings/structural-applier.ts::first.setAttribute(KEY_ATTRIBUTE, key)',
+    'binding-stamp',
+  ],
   // The auto-binding search stamps the `data-payload-*` names it derived and
   // the field it matched (ADR 0014). Its rollback journal contains only those
   // same package-owned names and restores their previous values on supersession.
-  ['src/core/auto-bind.ts::element.setAttribute(name, value)', 'binding-stamp'],
-  ['src/core/auto-bind.ts::mutation.element.setAttribute(name, before)', 'binding-stamp'],
+  ['src/core/bindings/auto-bind.ts::element.setAttribute(name, value)', 'binding-stamp'],
+  ['src/core/bindings/auto-bind.ts::mutation.element.setAttribute(name, before)', 'binding-stamp'],
   ["src/field-types/url.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
   ["src/field-types/relationship.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
   ["src/field-types/upload.ts::element.setAttribute('href', url)", 'url-validated'],
@@ -122,12 +125,12 @@ export const ATTRIBUTE_SINKS: ReadonlyMap<string, AttributeSinkJustification> = 
   ],
   ["src/field-types/image.ts::(element as HTMLElement).style.backgroundImage = ''", 'constant'],
   // The bootstrap's URL and integrity are baked in by the generator at build time.
-  ['src/core/loader.ts::script.src = __LP_RUNTIME_SRC__', 'constant'],
+  ['src/core/session/loader.ts::script.src = __LP_RUNTIME_SRC__', 'constant'],
   // Development furniture: the live region and the unbound-fields overlay,
   // styled from this package's own constants; `position` is the plugin's own
   // option, and a consumer's CSS on a consumer's page is not a wire value.
   // Written through the CSSOM, which a strict `style-src` does not refuse (PHD-03).
-  ['src/core/a11y.ts::element.style.cssText = STYLE', 'constant'],
+  ['src/core/bindings/a11y.ts::element.style.cssText = STYLE', 'constant'],
   [
     "src/plugins/built-in/unbound-fields-overlay.ts::field.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'",
     'constant',

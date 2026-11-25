@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RelationshipTracker } from '@core/relationship-tracker';
+import { RelationshipTracker } from '@core/protocol/relationship-tracker';
 import type {
   PayloadDocumentEventDetail,
   PayloadLivePreviewMessage,

@@ -2,9 +2,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { buildBuiltinRenderers } from '@field-types/index';
-import { observeCapabilities } from '@core/protocol-version';
+import { observeCapabilities } from '@core/protocol/protocol-version';
 
 /**
  * The wire corpus (roadmap 1.8.0): messages captured verbatim from real

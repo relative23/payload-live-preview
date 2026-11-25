@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import type { FieldRenderer } from '@core/types';
-import type { RouteContext, RouteStrategy } from '@core/strategies';
+import type { RouteContext, RouteStrategy } from '@core/strategies/strategies';
 
 /**
  * The session scope's contract (ADR 0005, 2.1 note): everything a session

@@ -273,7 +273,7 @@ async function main(): Promise<void> {
       console.error('[protocol-watch] PROTOCOL DRIFT DETECTED (executed behaviour changed):');
       for (const f of failures) console.error(`  ✗ ${f.check} — got ${f.detail}`);
       console.error(
-        '[protocol-watch] Review src/core/message-bus.ts, src/core/data-merger.ts, ' +
+        '[protocol-watch] Review src/core/protocol/message-bus.ts, src/core/merge/data-merger.ts, ' +
           'src/types/payload-protocol.ts against the new @payloadcms/live-preview, ' +
           'and tests/fixtures/protocol-model.ts against the new admin.',
       );

@@ -4,8 +4,8 @@
  * those consumers complete while scalar-only pages avoid an authenticated read.
  */
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import type { RuntimeOptions } from '@core/lifecycle';
-import { ISLAND_EVENT, type IslandUpdateDetail } from '@core/islands';
+import type { RuntimeOptions } from '@core/session/lifecycle';
+import { ISLAND_EVENT, type IslandUpdateDetail } from '@core/bindings/islands';
 import { fragmentStrategyFrom, type StrategyRequest } from '@fragment/index';
 import { EventEmitter } from '@events/emitter';
 import { emailRenderer } from '@field-types/email';

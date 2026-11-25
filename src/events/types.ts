@@ -1,9 +1,9 @@
 /** Public event payloads. The map keys are the valid event names; `EventEmitter` is generic over it. */
 
 import type { PayloadDocumentEventDetail, PayloadLivePreviewData } from '@/types/payload-protocol';
-import type { UpdateSource } from '@core/strategies';
+import type { UpdateSource } from '@core/strategies/strategies';
 import type { DiagnosticCode } from '@core/diagnostic-codes';
-import type { RevisionDisplay } from '@core/revision-display';
+import type { RevisionDisplay } from '@core/update/revision-display';
 
 export interface LivePreviewEventMap {
   /** Once per startup attempt, after observers, cache and message listening are active. A rolled-back attempt emits it again on retry. */

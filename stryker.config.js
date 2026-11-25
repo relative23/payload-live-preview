@@ -86,12 +86,14 @@ const shard = parseShard(process.env['STRYKER_SHARD']);
 const prMutate = [
   'src/security/csp.ts',
   'src/security/url-validator.ts',
-  'src/core/field-value.ts',
+  'src/core/update/field-value.ts',
 ];
 
 const coveragePolicy = JSON.parse(readFileSync(join(root, 'quality/coverage-policy.json'), 'utf8'));
 const criticalFiles = Object.keys(coveragePolicy.criticalFiles ?? {});
-const nightlyMutate = [...new Set([...criticalFiles, ...prMutate, 'src/core/a11y.ts'])].sort();
+const nightlyMutate = [
+  ...new Set([...criticalFiles, ...prMutate, 'src/core/bindings/a11y.ts']),
+].sort();
 /**
  * The trusted core (`quality/trusted-core.json`): the nine modules a reader
  * has to trust before handing the package a page, mutated on their own so the

@@ -1,8 +1,8 @@
 /** Assembles the `inspect()` snapshot. Reads state only; sends nothing anywhere. */
 
 import { VERSION } from '../../version';
-import { detectProtocolProfile } from '../protocol-profile';
-import type { RuntimeDeps, RuntimeState } from '../runtime-state';
+import { detectProtocolProfile } from '../protocol/protocol-profile';
+import type { RuntimeDeps, RuntimeState } from '../session/runtime-state';
 import type { LivePreviewInspection } from './types';
 
 export function buildInspection(deps: RuntimeDeps, state: RuntimeState): LivePreviewInspection {

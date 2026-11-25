@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { withProfileDefaults } from '@client/config';
 import { runtimeDefaultsFor } from '@/types/defaults-profile';
 import type { FieldRenderer } from '@core/types';

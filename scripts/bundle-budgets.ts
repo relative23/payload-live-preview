@@ -57,7 +57,7 @@
 // runtime now knows whether a changed field has anywhere on the page to land,
 // and can refresh the route instead of dropping the edit. Most of it is the
 // addressability rules that the LP0201 diagnostic and the strategy decision now
-// share (`src/core/unbound-fields.ts`) — the locale suffix, the owner scope, and
+// share (`src/core/update/unbound-fields.ts`) — the locale suffix, the owner scope, and
 // the fact that a binding on `hero.eyebrow` covers the top-level field `hero`
 // the diff reports. The rest is the baseline flag on the diff and the LP0807
 // message.
@@ -182,7 +182,7 @@
 // the runtime rises +2 712 B raw / ~830 B gzip / ~700 B brotli, the lean profile
 // +2 716, measured against the same build without the change. Two parts, each
 // measured on its own by building the change minus that part: the decision
-// itself 1 333 B (`src/core/merge-need.ts` — what the page reads, what one
+// itself 1 333 B (`src/core/merge/merge-need.ts` — what the page reads, what one
 // changed field is worth, and the document carried over from the last answer),
 // the window a burst of requests shares 1 013 B, and the remaining 462 B the
 // pipeline plumbing both need (the resolved document as its own step, the

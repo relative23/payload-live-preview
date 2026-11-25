@@ -5,7 +5,7 @@
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createRouteStrategy } from '@fragment/index';
-import type { RouteContext } from '@core/strategies';
+import type { RouteContext } from '@core/strategies/strategies';
 
 const titles: unknown[] = [];
 const unmounted: Element[] = [];

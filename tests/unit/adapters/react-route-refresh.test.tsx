@@ -1,7 +1,7 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LivePreviewRouteRefresh } from '@adapters/react/index';
-import { readRouteRefresh } from '@core/route-refresh';
+import { readRouteRefresh } from '@core/strategies/route-refresh';
 
 /**
  * LP-6: the route strategy morphs fetched HTML into the living page, and on a

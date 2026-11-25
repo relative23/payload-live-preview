@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyStructuralPatches, createStructuralStore } from '@core/structural-applier';
+import { applyStructuralPatches, createStructuralStore } from '@core/bindings/structural-applier';
 import { diffArray } from '@schema/diff';
 
 describe('morph switch and template tags (ADR 0008)', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { resolveFieldType } from '@core/cache';
+import { resolveFieldType } from '@core/bindings/cache';
 import { emptyContext, makeTarget, rendererNamed } from './helpers';
 
 describe('url renderer', () => {

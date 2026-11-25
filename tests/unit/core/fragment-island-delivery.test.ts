@@ -5,9 +5,9 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
-import { ISLAND_EVENT, type IslandUpdateDetail } from '@core/islands';
-import type { FragmentStrategy } from '@core/strategies';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
+import { ISLAND_EVENT, type IslandUpdateDetail } from '@core/bindings/islands';
+import type { FragmentStrategy } from '@core/strategies/strategies';
 import { createFragmentStrategy } from '@fragment/index';
 import type { FragmentRequestBody } from '@/types/fragment-protocol';
 

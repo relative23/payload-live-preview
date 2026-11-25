@@ -1,6 +1,6 @@
 import { describe, expect } from 'vitest';
 import { fc, it } from '@fast-check/vitest';
-import { morphElement } from '@core/morph';
+import { morphElement } from '@core/bindings/morph';
 import { propertyParameters } from './fast-check';
 
 /**

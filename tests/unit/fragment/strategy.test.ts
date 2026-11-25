@@ -5,7 +5,7 @@
  * a response is judged is in `client.test.ts`.
  */
 import { describe, expect, it, vi } from 'vitest';
-import type { FragmentContext } from '@core/strategies';
+import type { FragmentContext } from '@core/strategies/strategies';
 import { fragmentStrategyFrom, type FragmentHandler } from '@fragment/index';
 
 function boundaryElement(id: string): Element {

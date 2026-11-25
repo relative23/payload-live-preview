@@ -4,7 +4,7 @@
  * compatible, including an errors-only record a Payload global may return.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { DataMerger, type MergeRequest } from '@core/data-merger';
+import { DataMerger, type MergeRequest } from '@core/merge/data-merger';
 import { deferred, jsonResponse } from './data-merger-harness';
 
 const SERVER = 'https://cms.example.com';

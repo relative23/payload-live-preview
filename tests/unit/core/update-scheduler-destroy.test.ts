@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { UpdateScheduler } from '@core/update-scheduler';
+import { UpdateScheduler } from '@core/update/update-scheduler';
 import { entry, update } from './update-scheduler-harness';
 
 describe('UpdateScheduler — destroy', () => {

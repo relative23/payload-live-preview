@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BINDING_ATTRIBUTES, ElementCache, GUESSED_ATTRIBUTE } from '@core/cache';
-import { FRAGMENT_ATTRIBUTE } from '@core/strategies';
+import { BINDING_ATTRIBUTES, ElementCache, GUESSED_ATTRIBUTE } from '@core/bindings/cache';
+import { FRAGMENT_ATTRIBUTE } from '@core/strategies/strategies';
 
 /**
  * The cache reads a binding's attributes once, when it builds the entry, and

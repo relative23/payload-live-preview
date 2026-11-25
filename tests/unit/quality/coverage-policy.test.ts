@@ -163,12 +163,12 @@ end_of_record
       criticalFiles: Record<string, { branches: number }>;
     } & CoveragePolicy;
     current.global.lines -= 1;
-    current.criticalFiles['src/core/cache.ts']!.branches -= 1;
+    current.criticalFiles['src/core/bindings/cache.ts']!.branches -= 1;
     delete current.criticalFiles['src/security/csp.ts'];
 
     expect(findCoveragePolicyRegressions(current, previous)).toEqual([
       'global.lines was lowered',
-      'src/core/cache.ts.branches was lowered',
+      'src/core/bindings/cache.ts.branches was lowered',
       'critical file baseline was removed: src/security/csp.ts',
     ]);
   });

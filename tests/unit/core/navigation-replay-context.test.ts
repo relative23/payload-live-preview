@@ -6,14 +6,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { buildBuiltinRenderers } from '@field-types/index';
-import { LivePreviewRuntime } from '@core/lifecycle';
-import { ISLAND_EVENT, type IslandUpdateDetail } from '@core/islands';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
+import { ISLAND_EVENT, type IslandUpdateDetail } from '@core/bindings/islands';
 import type {
   FragmentContext,
   FragmentReport,
   FragmentStrategy,
   RouteStrategy,
-} from '@core/strategies';
+} from '@core/strategies/strategies';
 import { IO, TRUSTED, fireMessage, flushMicrotasks, textRenderer } from './lifecycle-harness';
 
 describe('LivePreviewRuntime — navigation replay context', () => {

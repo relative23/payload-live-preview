@@ -16,7 +16,7 @@ import { numberRenderer } from './number';
 import { arrayRenderer } from './array';
 import { createStructuralArrayRenderer } from './structural-array';
 import { buildBuiltinRenderers as buildRegistry } from './registry';
-import { reportOmittedFeature } from '@core/profile';
+import { reportOmittedFeature } from '@core/session/profile';
 
 /**
  * The array renderers carry the keyed morph, the structural applier and the item

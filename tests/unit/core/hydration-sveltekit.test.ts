@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HYDRATION_WAIT_CAP_MS } from '@core/hydration';
+import { HYDRATION_WAIT_CAP_MS } from '@core/hydration/hydration';
 import {
   SVELTEKIT_ANNOUNCER_ID,
   SVELTEKIT_GLOBAL_PREFIX,
   whenSvelteKitMounted,
-} from '@core/hydration-sveltekit';
+} from '@core/hydration/hydration-sveltekit';
 
 /**
  * The seam the ADR 0015 addendum of 2026-10-01 describes: SvelteKit's start

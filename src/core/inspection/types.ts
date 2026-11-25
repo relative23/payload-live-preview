@@ -5,8 +5,8 @@
  * misbehaving preview is exactly the case worth diagnosing. Reading one
  * performs no I/O and transmits nothing.
  */
-import type { RevisionDisplay } from '../revision-display';
-import type { ConnectionStatus } from '../state';
+import type { RevisionDisplay } from '../update/revision-display';
+import type { ConnectionStatus } from '../session/state';
 
 /** Origin trust as the runtime currently sees it. */
 export interface InspectionOrigins {

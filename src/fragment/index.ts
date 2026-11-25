@@ -24,8 +24,8 @@ export type {
   RouteStrategy,
   StrategyHandlers,
   UpdateSource,
-} from '@core/strategies';
-export { FRAGMENT_ATTRIBUTE, resolveStrategy } from '@core/strategies';
+} from '@core/strategies/strategies';
+export { FRAGMENT_ATTRIBUTE, resolveStrategy } from '@core/strategies/strategies';
 export { DIAGNOSTIC_CODES, type DiagnosticCode } from '@core/diagnostic-codes';
 export {
   createRouteStrategy,

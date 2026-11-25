@@ -7,7 +7,7 @@ describe('bootstrapInlineRuntime — non-preview context', () => {
     Object.defineProperty(window, 'opener', { value: null, configurable: true });
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     expect(bootstrapInlineRuntime()).toBeUndefined();
     expect(window.__livePreview).toBeUndefined();
   });

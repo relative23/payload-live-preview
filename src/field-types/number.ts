@@ -1,7 +1,7 @@
 /** `number` renderer: raw value on inputs, `Intl.NumberFormat` elsewhere. */
 
 import { detectInitialLocale } from '@detection/locale';
-import { getNumberFormat } from '@core/intl-cache';
+import { getNumberFormat } from '@core/bindings/intl-cache';
 import type { CachedElement, FieldRenderer, RenderContext } from '@core/types';
 import { isEmptyValue, safeStringify } from './utils';
 import { formatOptionsFor } from './value-format';

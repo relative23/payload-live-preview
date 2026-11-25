@@ -27,15 +27,15 @@ import {
   FIELD_ATTRIBUTE,
   GUESSED_ATTRIBUTE,
   renderingStrategy,
-} from '@core/cache';
-import { parseDependencyList } from '@core/dependencies';
-import { isInsideIsland } from '@core/islands';
+} from '@core/bindings/cache';
+import { parseDependencyList } from '@core/update/dependencies';
+import { isInsideIsland } from '@core/bindings/islands';
 import {
   createNameAddressability,
   SYSTEM_FIELD_NAMES,
   uncoveredNamePaths,
   type ServerRendering,
-} from '@core/unbound-fields';
+} from '@core/update/unbound-fields';
 
 const ELEMENT_ID = 'payload-live-preview-unbound';
 

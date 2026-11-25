@@ -4,7 +4,7 @@
  */
 
 import type { CachedElement, FieldRenderer, RendererKey, RichTextRenderer } from '@core/types';
-import type { StrategyHandlers } from '@core/strategies';
+import type { StrategyHandlers } from '@core/strategies/strategies';
 import {
   runtimeDefaultsFor,
   type DefaultsProfile,

@@ -1,7 +1,7 @@
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
 import { livePreviewHandle } from '@adapters/sveltekit/index';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 
 /** The fake `resolve` applies `transformPageChunk` the way SvelteKit does: chunk by chunk, `|| ''`. */

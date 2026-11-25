@@ -16,15 +16,15 @@ const RUN_LANE = resolve(
 );
 
 const QUEUED =
-  '381112 bash /srv/tools/with-lock.sh real-admin systemd-run --user --scope -q -p MemoryMax=12G env STRYKER_SCOPE=nightly npx stryker run --mutate src/core/binding-writer.ts';
+  '381112 bash /srv/tools/with-lock.sh real-admin systemd-run --user --scope -q -p MemoryMax=12G env STRYKER_SCOPE=nightly npx stryker run --mutate src/core/bindings/binding-writer.ts';
 const SHELL =
-  "381064 /bin/bash -c source /home/u/.claude/shell-snapshots/snapshot.sh && eval 'bash /srv/tools/with-lock.sh real-admin npx stryker run --mutate src/core/lifecycle.ts'";
+  "381064 /bin/bash -c source /home/u/.claude/shell-snapshots/snapshot.sh && eval 'bash /srv/tools/with-lock.sh real-admin npx stryker run --mutate src/core/session/lifecycle.ts'";
 const RUNNING_NPM =
-  '383624 npm exec stryker run --mutate src/core/binding-writer.ts,src/core/lifecycle.ts';
+  '383624 npm exec stryker run --mutate src/core/bindings/binding-writer.ts,src/core/session/lifecycle.ts';
 const RUNNING_WORKER =
   '383977 /home/u/.local/bin/node /w/node_modules/@stryker-mutator/core/dist/src/child-proxy/child-process-proxy-worker.js';
 const RUNNING_NIGHTLY = '4100 node /w/scripts/resume-run-nightly.mjs --shard 2';
-const RUNNING_NPX = '4200 npx stryker run --mutate src/core/morph.ts';
+const RUNNING_NPX = '4200 npx stryker run --mutate src/core/bindings/morph.ts';
 const OTHERS = ['1 /sbin/init', '92 sleep 20', '1311 node /w/node_modules/.bin/vitest run'];
 
 const PROGRAM = `

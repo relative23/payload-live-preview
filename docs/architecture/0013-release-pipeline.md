@@ -257,7 +257,7 @@ The official [Main CI report](https://github.com/relative23/payload-live-preview
 and [Deep Quality report](https://github.com/relative23/payload-live-preview/actions/runs/37108394350)
 for `9f66fbf` both contain 64 mutated files; the policy named 63. Both reports'
 embedded sources match that commit byte for byte. The missing policy entry is
-`src/core/lifetime-scope.ts`, which the actual nightly configuration already
+`src/core/session/lifetime-scope.ts`, which the actual nightly configuration already
 includes.
 
 The policy now names that file and lowers the no-coverage maximum from 75 to

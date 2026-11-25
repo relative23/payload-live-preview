@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isMorphBoundary } from '@core/islands';
-import { morphElement, type MorphOptions } from '@core/morph';
+import { isMorphBoundary } from '@core/bindings/islands';
+import { morphElement, type MorphOptions } from '@core/bindings/morph';
 
 /**
  * The morph's contract, one case per promise, in the order ADR 0008 makes

@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as Vue from 'vue';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
-import { readRouteRefresh } from '@core/route-refresh';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
+import { readRouteRefresh } from '@core/strategies/route-refresh';
 import { bindNuxtNavigation, type NuxtNavigationApp } from '@adapters/nuxt/client';
 import livePreviewModule, {
   PLUGIN_FILENAME,

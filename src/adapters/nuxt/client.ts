@@ -10,8 +10,8 @@
  */
 
 import { nextTick } from 'vue';
-import { NAVIGATION_COMMIT_EVENT } from '@core/navigation-lifecycle';
-import { registerRouteRefresh } from '@core/route-refresh';
+import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
+import { registerRouteRefresh } from '@core/strategies/route-refresh';
 
 /** The part of the Nuxt app this reads: its router and one hook. */
 export interface NuxtNavigationApp {

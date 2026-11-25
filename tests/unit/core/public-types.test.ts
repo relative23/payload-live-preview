@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { DataMergerOptions } from '@core/data-merger';
-import type { RuntimeOptions } from '@core/lifecycle';
-import type { ApplyUpdate, ScheduledUpdate } from '@core/update-scheduler';
+import type { DataMergerOptions } from '@core/merge/data-merger';
+import type { RuntimeOptions } from '@core/session/lifecycle';
+import type { ApplyUpdate, ScheduledUpdate } from '@core/update/update-scheduler';
 import type { FieldRenderer } from '@core/types';
 
 /**

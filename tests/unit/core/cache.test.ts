@@ -5,7 +5,7 @@ import {
   TARGET_ATTRIBUTE_ATTRIBUTE,
   TYPE_ATTRIBUTE,
   resolveFieldType,
-} from '@core/cache';
+} from '@core/bindings/cache';
 
 function makeHtml(html: string): Element {
   const container = document.createElement('div');

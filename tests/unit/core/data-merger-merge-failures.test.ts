@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DataMerger } from '@core/data-merger';
+import { DataMerger } from '@core/merge/data-merger';
 import { deferred, jsonResponse } from './data-merger-harness';
 
 describe('DataMerger.merge — failure paths', () => {

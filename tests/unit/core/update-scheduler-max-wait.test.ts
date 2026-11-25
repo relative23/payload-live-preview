@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UpdateScheduler, type ScheduledUpdate } from '@core/update-scheduler';
+import { UpdateScheduler, type ScheduledUpdate } from '@core/update/update-scheduler';
 import type { CachedElement } from '@core/types';
 
 /** Key repeat schedules faster than the debounce; the flush must still happen. */

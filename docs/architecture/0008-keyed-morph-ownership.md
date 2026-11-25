@@ -229,13 +229,13 @@ and says why.
 The 2.1 plan asked for the line between the morph and the rules it obeys to
 be drawn, not for a second engine. It runs here:
 
-- **The engine** (`src/core/morph.ts`) pairs children by key or by position
+- **The engine** (`src/core/bindings/morph.ts`) pairs children by key or by position
   and kind (§2), synchronises attributes with the state exception (§3) and
   keeps focus across a move (§1). It does not know what an island, a custom
   element or a `contenteditable` region is: the subtrees it never enters come
   in as `MorphOptions.boundary`, a predicate.
 - **The coordinators** own the rules. `isMorphBoundary` (§4) lives in
-  `src/core/islands.ts` beside the island attribute it reads and is the
+  `src/core/bindings/islands.ts` beside the island attribute it reads and is the
   default the engine falls back to; it is exported as Experimental from
   `/structural` so another coordinator can compose the package rule with its
   own. A supplied `boundary` replaces the default. The structural applier, the

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DataMerger, type MergeRequest } from '@core/data-merger';
+import { DataMerger, type MergeRequest } from '@core/merge/data-merger';
 import { deferred, jsonResponse } from './data-merger-harness';
 
 describe('the base URL keeps no trailing slash', () => {

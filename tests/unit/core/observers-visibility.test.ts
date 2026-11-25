@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ObserverManager } from '@core/observers';
+import { ObserverManager } from '@core/bindings/observers';
 import { getLatestStub } from './observers-harness';
 
 describe('ObserverManager — visibility', () => {

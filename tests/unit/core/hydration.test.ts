@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FIELD_ATTRIBUTE } from '@core/cache';
+import { FIELD_ATTRIBUTE } from '@core/bindings/cache';
 import {
   BINDING_SELECTOR,
   HYDRATION_SLOT,
   HYDRATION_WAIT_CAP_MS,
   armReactCommitSignal,
   whenReactCommitted,
-} from '@core/hydration';
+} from '@core/hydration/hydration';
 
 /**
  * The seam ADR 0015 §2 describes: React's instrumentation protocol, read for

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
-import { UpdateScheduler } from '@core/update-scheduler';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
+import { UpdateScheduler } from '@core/update/update-scheduler';
 import type { CachedElement } from '@core/types';
 import { fireMessage, IO, textRenderer, TRUSTED } from './lifecycle-harness';
 

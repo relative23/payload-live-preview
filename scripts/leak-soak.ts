@@ -8,7 +8,7 @@
 import { strict as assert } from 'node:assert';
 import { setImmediate as waitImmediate } from 'node:timers/promises';
 import { JSDOM } from 'jsdom';
-import { LivePreviewRuntime } from '../src/core/lifecycle';
+import { LivePreviewRuntime } from '../src/core/session/lifecycle';
 import { EventEmitter } from '../src/events/emitter';
 import { buildBuiltinRenderers } from '../src/field-types';
 

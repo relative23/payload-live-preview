@@ -11,7 +11,7 @@ describe('bootstrapInlineRuntime — sanitizer policy', () => {
     document.body.innerHTML = '<div data-payload-field="body" data-payload-type="html"></div>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig({ sanitizerPolicy: 'compat' });
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     // Same module generation as the runtime's: `vi.resetModules()` ran in beforeEach.
     const { sanitizeHtml } = await import('@security/sanitizer');
     const api = bootstrapInlineRuntime();

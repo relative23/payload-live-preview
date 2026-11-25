@@ -105,9 +105,12 @@ const GROUPS: readonly ScopeGroup[] = [
     title: 'Protocol, origin and merge',
     theirs: 'base-package',
     ours: [
-      { file: 'src/core/message-bus.ts', does: 'ingress: origin, source, shape, token queue' },
-      { file: 'src/core/message-guards.ts', does: 'per-type shape guards' },
-      { file: 'src/core/data-merger.ts', does: 'the REST merge, with abort and ordering' },
+      {
+        file: 'src/core/protocol/message-bus.ts',
+        does: 'ingress: origin, source, shape, token queue',
+      },
+      { file: 'src/core/protocol/message-guards.ts', does: 'per-type shape guards' },
+      { file: 'src/core/merge/data-merger.ts', does: 'the REST merge, with abort and ordering' },
       { file: 'src/detection/origin.ts', does: 'which origins are trusted, and locking' },
       { file: 'src/types/payload-protocol.ts', does: 'the wire shapes both sides read' },
     ],

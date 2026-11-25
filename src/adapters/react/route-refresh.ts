@@ -2,7 +2,7 @@
  * `<LivePreviewRouteRefresh />` — lends the runtime the host router's own
  * refresh, so a route update is a re-render the framework performs rather than
  * fresh HTML this package morphs over the reconciler's nodes (see
- * `src/core/route-refresh.ts` for why that is worth avoiding).
+ * `src/core/strategies/route-refresh.ts` for why that is worth avoiding).
  *
  * It takes the refresh as a prop instead of reaching for `next/navigation`,
  * because `next` is not a dependency of this package and must not become one
@@ -23,7 +23,7 @@
  */
 
 import { useEffect, useRef, useTransition } from 'react';
-import { registerRouteRefresh } from '@core/route-refresh';
+import { registerRouteRefresh } from '@core/strategies/route-refresh';
 
 export interface LivePreviewRouteRefreshProps {
   /** The host router's refresh — `useRouter().refresh` in Next's App Router. */

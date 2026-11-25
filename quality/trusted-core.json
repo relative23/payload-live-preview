@@ -59,10 +59,10 @@
   ],
   "core": {
     "modules": {
-      "src/core/message-bus.ts": ["message-ingress", "message-egress"],
-      "src/core/message-guards.ts": [],
-      "src/core/data-merger.ts": ["network", "credentialed-request"],
-      "src/core/attribute-binding.ts": ["attribute-sink"],
+      "src/core/protocol/message-bus.ts": ["message-ingress", "message-egress"],
+      "src/core/protocol/message-guards.ts": [],
+      "src/core/merge/data-merger.ts": ["network", "credentialed-request"],
+      "src/core/bindings/attribute-binding.ts": ["attribute-sink"],
       "src/security/sanitizer.ts": ["html-sink", "attribute-sink"],
       "src/security/trusted-types.ts": ["trusted-types-policy"],
       "src/security/escape.ts": [],
@@ -74,7 +74,7 @@
     },
     "dependencies": {
       "src/core/diagnostics.ts": "Wraps a consumer's logger so a diagnostic that throws cannot become a second failure; 38 lines, no capability.",
-      "src/core/protocol-version.ts": "The protocol version constant the `ready` handshake announces, and the capability table read off the wire (ADR 0010); the bus takes only the constant.",
+      "src/core/protocol/protocol-version.ts": "The protocol version constant the `ready` handshake announces, and the capability table read off the wire (ADR 0010); the bus takes only the constant.",
       "src/core/thenable.ts": "Assimilates a thenable a synchronous callback returned, so a rejected promise from consumer code does not surface as unhandled; 14 lines.",
       "src/types/dev-warning.ts": "One development warning per key and process, outside production only, keys on `globalThis`; the sanitizer calls it from `setSanitizerDocument()` alone. No capability: it reads `NODE_ENV` and writes `console.warn`, and a console that throws is swallowed.",
       "src/security/sanitizer-report.ts": "LP0409, the once-per-name warning that the strict sanitizer removed an attribute the 1.x default kept. A report, never a behaviour: the attribute stays removed whether or not the warning prints."
@@ -86,15 +86,15 @@
       "capabilities": ["message-egress"],
       "why": "The admin-side reporter for reveal tier 2: posts `{ type, field }` to the preview window at its exact origin, never `'*'`. It runs in the admin, not in the page, and carries a field name, never a value."
     },
-    "src/core/loader.ts": {
+    "src/core/session/loader.ts": {
       "capabilities": ["script-load"],
       "why": "The static-delivery bootstrap: one `<script>` whose `src` and `integrity` are build-time constants the generator prepends. Nothing from the page or the wire reaches the URL."
     },
-    "src/core/strategy-runner.ts": {
+    "src/core/strategies/strategy-runner.ts": {
       "capabilities": ["html-sink"],
       "why": "Morphs a fragment the page's own server rendered into its boundary, parsed into a `<template>` first. Sanitising it would strip the page's own legitimate markup; the sink inventory records it as `trusted-origin`."
     },
-    "src/core/structural-applier.ts": {
+    "src/core/bindings/structural-applier.ts": {
       "capabilities": ["html-sink"],
       "why": "Parses an item the sanitizer already cleaned into a `<template>` so it can be adopted; `sanitised` in the sink inventory, and inert twice over."
     },

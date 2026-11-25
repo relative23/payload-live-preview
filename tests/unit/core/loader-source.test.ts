@@ -38,7 +38,7 @@ describe('the bootstrap armed for React (ADR 0015)', () => {
     };
     delete hooked.__REACT_DEVTOOLS_GLOBAL_HOOK__;
 
-    await import('@core/loader');
+    await import('@core/session/loader');
 
     // Read afresh: the `delete` above narrowed the property for the checker.
     const installed = (
@@ -57,7 +57,7 @@ describe('the bootstrap source', () => {
     vi.stubGlobal('__LP_RUNTIME_SRC__', '/rt.js');
     vi.stubGlobal('__LP_RUNTIME_INTEGRITY__', '');
 
-    await import('@core/loader');
+    await import('@core/session/loader');
 
     expect(document.head.querySelectorAll('script')).toHaveLength(0);
     // Without the define nothing is armed: the hook is React's to find.
@@ -72,7 +72,7 @@ describe('the bootstrap source', () => {
     vi.stubGlobal('__LP_RUNTIME_SRC__', '/rt.abc.js');
     vi.stubGlobal('__LP_RUNTIME_INTEGRITY__', 'sha384-xyz');
 
-    await import('@core/loader');
+    await import('@core/session/loader');
 
     const script = document.head.querySelector('script');
     expect(script?.getAttribute('src')).toBe('/rt.abc.js');
@@ -90,7 +90,7 @@ describe('the bootstrap source', () => {
     vi.stubGlobal('__LP_RUNTIME_SRC__', '/rt.js');
     vi.stubGlobal('__LP_RUNTIME_INTEGRITY__', '');
 
-    await import('@core/loader');
+    await import('@core/session/loader');
 
     const script = document.head.querySelector('script');
     expect(script?.getAttribute('src')).toBe('/rt.js');

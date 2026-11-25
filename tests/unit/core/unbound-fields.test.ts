@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ElementCache } from '@core/cache';
+import { ElementCache } from '@core/bindings/cache';
 import {
   createNameAddressability,
   createPathCoverage,
@@ -10,7 +10,7 @@ import {
   unboundChangedFields,
   uncoveredDocumentPaths,
   uncoveredNamePaths,
-} from '@core/unbound-fields';
+} from '@core/update/unbound-fields';
 
 /**
  * The addressability rule the unbound-change escalation, LP0203 and the

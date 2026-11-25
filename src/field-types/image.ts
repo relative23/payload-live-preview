@@ -6,7 +6,7 @@
  */
 
 import { escapeCssUrl } from '@security/escape';
-import { resolveFieldValue } from '@core/field-value';
+import { resolveFieldValue } from '@core/update/field-value';
 import { markNoWriteCallback } from '@core/internal-outcome';
 import type { CachedElement, FieldRenderer, RenderContext } from '@core/types';
 import { readMedia, type MediaShape } from '@lexical/value-shapes';

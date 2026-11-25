@@ -6,7 +6,7 @@ describe('bootstrapInlineRuntime — handover', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const first = bootstrapInlineRuntime();
     expect(first?.configSignature).toBeTypeOf('string');
     document.body.insertAdjacentHTML('beforeend', '<p data-payload-field="lede"></p>');
@@ -20,7 +20,7 @@ describe('bootstrapInlineRuntime — handover', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const global = globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple };
     global.__LIVE_PREVIEW_CONFIG__ = bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const first = bootstrapInlineRuntime();
     const firstSignature = first?.configSignature;
 
@@ -58,7 +58,7 @@ describe('bootstrapInlineRuntime — handover', () => {
     Object.defineProperty(window, '__livePreview', { value: legacy, configurable: true });
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig();
-    const { bootstrapInlineRuntime } = await import('@core/runtime');
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     expect(bootstrapInlineRuntime()).toBe(legacy);
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(legacy.destroy).not.toHaveBeenCalled();

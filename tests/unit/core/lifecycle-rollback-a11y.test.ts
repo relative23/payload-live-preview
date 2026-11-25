@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { A11yAnnouncer } from '@core/a11y';
+import { A11yAnnouncer } from '@core/bindings/a11y';
 import { EventEmitter } from '@events/emitter';
-import { LivePreviewRuntime } from '@core/lifecycle';
+import { LivePreviewRuntime } from '@core/session/lifecycle';
 import type { FieldRenderer } from '@core/types';
 
 /**

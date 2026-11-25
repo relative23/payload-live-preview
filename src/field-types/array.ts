@@ -11,9 +11,9 @@ import {
   inheritItemAttributes,
   interpolateArrayTemplate,
   sharedItemAttributes,
-} from '@core/array-template';
+} from '@core/bindings/array-template';
 import { markNoWriteCallback } from '@core/internal-outcome';
-import { templateSanitizeOptions } from '@core/template-sanitize';
+import { templateSanitizeOptions } from '@core/bindings/template-sanitize';
 import type { FieldRenderer } from '@core/types';
 import { isEmptyValue, safeStringify } from './utils';
 

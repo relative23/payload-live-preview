@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bindNavigationLifecycle } from '@core/navigation-lifecycle';
+import { bindNavigationLifecycle } from '@core/session/navigation-lifecycle';
 
 function target() {
   return {
