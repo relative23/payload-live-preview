@@ -80,10 +80,11 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // `try`, so a production build drops them. No request path changes.
 // 2026-11-24: 1 654 → 1 656. data-merger.ts +2: the endpoint path aborts a response the server
 // refuses and checks that the abort accepted no newer merge, as the population path already did.
-// 2026-11-25 (3.0, ADR 0007 row 25): 1 656 → 1 142. Payload 2's transport leaves: legacy-population.ts
+// 2026-11-25 (3.0, ADR 0007 row 25): 1 656 → 1 146. Payload 2's transport leaves: legacy-population.ts
 // is gone, data-merger.ts loses the population branch and message-guards.ts the schema parse
-// (1 385 → 873 for the protocol scope), and document-session.ts no longer keeps a schema (271 → 269).
-export const REVIEWED_SCOPE_LINES = 1142;
+// (1 385 → 873 for the protocol scope). document-session.ts no longer keeps a schema and reports an
+// update of a Payload 2 admin as unavailable instead of merging it (271 → 273).
+export const REVIEWED_SCOPE_LINES = 1146;
 
 interface OurFile {
   readonly file: string;

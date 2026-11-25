@@ -63,8 +63,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +141/+81/+53 B; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +440/+147/+140 B; prior reserves kept.
   // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; −31/+1/−35 B; the raw and Brotli ceilings stay, they fell; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10357/-3213/-2810 B; prior reserves kept.
-  'client.cjs': { raw: 160_250, gzip: 50_321, brotli: 43_411 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10290/-3184/-2729 B; prior reserves kept.
+  'client.cjs': { raw: 160_317, gzip: 50_350, brotli: 43_492 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -110,8 +110,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +141/+84/+86 B; prior reserves kept.
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +440/+149/+140 B; prior raw/gzip reserves kept; the Brotli ceiling keeps its reserve.
   // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; −31/+2/−37 B; the raw and Brotli ceilings stay, they fell; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10357/-3216/-2822 B; prior reserves kept.
-  'client.js': { raw: 160_169, gzip: 50_308, brotli: 43_382 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10290/-3185/-2775 B; prior reserves kept.
+  'client.js': { raw: 160_236, gzip: 50_339, brotli: 43_429 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).
@@ -172,8 +172,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +1676/+617/+524 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +132/+38/-17 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+96/-13 B; the Brotli ceiling stays, it fell; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10062/-3235/-2800 B; prior reserves kept.
-  'lean.cjs': { raw: 114_903, gzip: 36_426, brotli: 32_141 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9693/-3084/-2711 B; prior reserves kept.
+  'lean.cjs': { raw: 115_272, gzip: 36_577, brotli: 32_230 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 91 757 → 91 791 (+34 B, measured 91 738 → 91 772).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 91 791 → 91 840 (+49 B, measured 91 772 → 91 821); gzip 29 171 → 29 183 (+12 B, measured 29 167 → 29 179).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 91 840 → 91 858 (+18 B, measured 91 821 → 91 839); gzip 29 183 → 29 190 (+7 B, measured 29 179 → 29 186).
@@ -214,8 +214,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +1676/+617/+477 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +132/+37/+87 B; prior reserves kept.
   // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +147/+95/+66 B; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10062/-3234/-2746 B; prior reserves kept.
-  'lean.js': { raw: 114_892, gzip: 36_419, brotli: 32_271 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9693/-3083/-2694 B; prior reserves kept.
+  'lean.js': { raw: 115_261, gzip: 36_570, brotli: 32_323 },
   // 2026-09-16 (2.0.1 Version PR): gzip 5 602 → 5 612. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 5 600 against a cushion of 2 B. Twelve bytes over that measurement  as the rows that never flipped carry.
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 16 307 → 16 527 (+220 B, measured 16 305 → 16 525); gzip 5 612 → 5 665 (+53 B, measured 5 600 → 5 653); brotli 5 072 → 5 162 (measured 5 072; under the 2 % notice).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 16 527 → 16 755 (+228 B, measured 16 525 → 16 753); gzip 5 665 → 5 720 (+55 B, measured 5 653 → 5 708).
@@ -254,14 +254,16 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+11/-9 B; same 86/37/61 B cushions.
   // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +404/+129/+108 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +67/+30/+66 B; prior reserves kept.
-  'plugins.cjs': { raw: 22_455, gzip: 8_228, brotli: 7_298 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+9/+41 B; prior reserves kept.
+  'plugins.cjs': { raw: 22_481, gzip: 8_237, brotli: 7_339 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+12/+1 B; same 86/33/92 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -32/+0/+9 B; same 86/33/92 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2605/+921/+832 B; same 86/33/92 B cushions.
   // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+11/+10 B; same 86/33/92 B cushions.
   // 2026-10-29 (the route renders only for real changes): paired Node24.22.1/npm12.0.2; +404/+136/+112 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +67/+31/+48 B; prior reserves kept.
-  'plugins.js': { raw: 22_431, gzip: 8_218, brotli: 7_308 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+9/+7 B; prior reserves kept.
+  'plugins.js': { raw: 22_457, gzip: 8_227, brotli: 7_315 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+423/+399 B; same 20/3/84 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+13/-6 B; same 20/3/84 B cushions.
   // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+0/+2 B; same 20/3/84 B cushions.
@@ -273,7 +275,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // retain the prior 20/3/120 B reserves.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +67/+34/+30 B; prior reserves kept.
   // 2026-11-24 (O-53, the entry's logic in `./strategy` beside a barrel that only re-exports): paired Node22.23.2/zlib1.3.1, main 739ab51 against the change; +0/+12/+0 B. The modules stand in another order inside the bundle and nothing else moved; prior reserves kept.
-  'fragment.cjs': { raw: 17_064, gzip: 6_531, brotli: 5_864 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+9/+1 B; prior reserves kept.
+  'fragment.cjs': { raw: 17_090, gzip: 6_540, brotli: 5_865 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+429/+364 B; same 20/9/79 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+16/+17 B; same 20/9/79 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured -4/-2/-1 B; same 20/9/79 B cushions.
@@ -285,5 +288,6 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // Node24.19/npm12.0.2, epoch1791096072: +133/+47/+68 B raw/gzip/Brotli;
   // retain the prior 20/9/120 B reserves.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +67/+36/+20 B; prior reserves kept.
-  'fragment.js': { raw: 16_994, gzip: 6_503, brotli: 5_850 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+8/+2 B; prior reserves kept.
+  'fragment.js': { raw: 17_020, gzip: 6_511, brotli: 5_852 },
 };

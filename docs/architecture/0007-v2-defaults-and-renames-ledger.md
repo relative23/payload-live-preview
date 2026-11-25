@@ -110,18 +110,19 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
-2026-11-25 (3.0): rows 25 and 30 are carried out. An update that carries
-`fieldSchemaJSON` is not refused. The field is no longer read, so it decides
-neither a field type nor a request, and the update is merged through the
-server like any other. A Payload 2 admin names no collection and no global, so
-a page it previews gets the typed scalar values and nothing populated; the
-development notice names the 2.x line of this package. With the schema go the
-things that stood on it: `RenderContext.schema`, the types
+2026-11-25 (3.0): rows 25 and 30 are carried out. An admin that sends
+`fieldSchemaJSON` is a Payload 2 admin, and its updates are refused: from the
+first such message on, the runtime applies nothing of that peer and reports
+`LP0504` once, in every build, and a hook reports `unavailable` with the same
+reason. The page stays as the server rendered it. Applying what could be
+applied was the alternative and was not taken: the scalar values would have
+arrived and every relationship stayed an id, without a word in production. With
+the schema go the things that stood on it: `RenderContext.schema`, the types
 `PayloadFieldSchema`, `PayloadBlockSchema` and `PayloadFieldCondition`, the
 option labels of the `select` renderer, and `fieldTyping` and
 `populatesRelationships` on `ProtocolProfile`, the two labels the addendum of
 2026-10-03 kept for 2.x. A sender of its own that added a schema for its field
-types sets `data-payload-type` on the bindings instead. `buildLivePreviewUrl()`
+types leaves the field out and sets `data-payload-type` on the bindings. `buildLivePreviewUrl()`
 and the config plugin read `collectionConfig` and `globalConfig`, not
 `documentInfo`. The `payload` peer range is `^3.0.0 || ^4.0.0-0`.
 

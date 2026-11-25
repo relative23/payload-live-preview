@@ -17,9 +17,8 @@ captures. As of 4.0.0-beta.6, Payload 4 needs Node 24.22.1 or later, and its
 admin Next.js 16.4 or a later 16.x release.
 
 **Payload 2.x** is not supported. The 2.x line of this package is the one for
-Payload 2: this release reads no `fieldSchemaJSON` and populates no relationship
-for a Payload 2 admin, and says so once in development when such an admin sends
-an update
+Payload 2: this release applies nothing of an admin that sends `fieldSchemaJSON`,
+which only Payload 2 does, and reports `LP0504` when it refuses
 ([ADR 0007 ledger, entry 25](architecture/0007-v2-defaults-and-renames-ledger.md#ledger),
 [Preparing for 3.0](migration.md#preparing-for-30)).
 

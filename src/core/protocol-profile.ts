@@ -8,7 +8,7 @@ import type { ProtocolCapability } from './protocol-version';
 export type ProtocolProfileName = 'unknown' | 'payload-2' | 'payload-3';
 
 export interface ProtocolProfile {
-  /** `payload-2` names an admin this package no longer serves: its schema is not read. */
+  /** `payload-2` names an admin this package no longer serves: its updates are refused (LP0504). */
   readonly name: ProtocolProfileName;
   /** Whether the peer reports document saves and relationship edits. */
   readonly documentEvents: boolean;

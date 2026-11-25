@@ -134,7 +134,7 @@ and the doctor's reader of a served configuration joined as critical files, so
 the scope is 82 files and 12 114 mutants, 55 of them without coverage. For
 2.3.1 the same 82 files hold 12 657 mutants, 89.16 % detected, 48 without
 coverage (2026-11-02). The scope has since grown to 87 files. 3.0 takes three
-of them out with Payload 2: the 84 that remain hold 12 059 mutants, 88.81 %
+of them out with Payload 2: the 84 that remain hold 12 058 mutants, 88.84 %
 detected, 49 without coverage (2026-11-25). The score
 is lower although no file detects less than before, because the 847 mutants of
 the three files that left were detected at 96 %. The four
@@ -190,8 +190,9 @@ so a review can refer to one, and each names the gate or test that holds it.
 - **G2** A `payload-live-preview` message's `data` is a plain object or absent;
   every optional scalar has its type or is absent; `null` counts as absent,
   because JSON bridges send it (`isLivePreviewMessage`, `normalizeLivePreviewMessage`).
-- **G3** `fieldSchemaJSON`, which a Payload 2 admin sends, is not read: the
-  guards neither parse nor type it, and it reaches no renderer and no request.
+- **G3** `fieldSchemaJSON`, which a Payload 2 admin sends, is neither parsed
+  nor typed here and reaches no renderer and no request. The pipeline refuses
+  every update of a peer that showed it (`LP0504`).
 - **G4** Unknown fields are kept, so the protocol can grow without a release.
 
 Held by: the core mutation profile; `tests/unit/core/message-bus-shapes.test.ts`.

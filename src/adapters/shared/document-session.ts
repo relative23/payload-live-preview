@@ -17,7 +17,7 @@
 import { readDocumentId } from '@core/binding-owner';
 import { DataMerger } from '@core/data-merger';
 import { MessageBus } from '@core/message-bus';
-import { observeCapabilities, PAYLOAD_2_HINT } from '@core/protocol-version';
+import { observeCapabilities, PAYLOAD_2_REFUSED } from '@core/protocol-version';
 import { isDevMode } from '@detection/environment';
 import { noticeOnce, type BundlerEnv } from '@detection/notice';
 import { OriginDetector } from '@detection/origin';
@@ -149,7 +149,7 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
   readonly #requireLocale: boolean;
   readonly #deadline: boolean;
   #warnedUnproven = false;
-  #warnedPayload2 = false;
+  #unsupported = false;
 
   constructor(initialData: T, options: DocumentSessionOptions) {
     this.#detector = new OriginDetector({
@@ -303,14 +303,20 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
   async #handle(message: PayloadLivePreviewMessage): Promise<void> {
     const data = message.data;
     if (data === undefined) return;
-    if (
-      !this.#warnedPayload2 &&
-      isDevMode() &&
-      observeCapabilities(message).includes('schema-json')
-    ) {
-      this.#warnedPayload2 = true;
-      console.warn(PAYLOAD_2_HINT);
+    // Payload 2 is not served: once its schema showed, the session takes none of the peer's updates.
+    if (!this.#unsupported && observeCapabilities(message).includes('schema-json')) {
+      this.#unsupported = true;
+      if (isDevMode()) console.warn(PAYLOAD_2_REFUSED);
+      // A merge still in flight for an earlier update must not publish over the refusal.
+      this.#revision += 1;
+      this.#publish({
+        ...this.#snapshot,
+        isLoading: false,
+        status: 'unavailable',
+        error: new Error(PAYLOAD_2_REFUSED),
+      });
     }
+    if (this.#unsupported) return;
     // Before the revision moves: an update for another document must not abort this one's merge.
     if (!this.#accepts(message, data)) return;
     const target = this.#document;

@@ -91,8 +91,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/+48 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +90/+8/+38 B; prior reserves kept.
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+120/+186 B; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10005/-3254/-2623 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 212_448, gzip: 66_610, brotli: 56_897 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3199/-2596 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 212_549, gzip: 66_665, brotli: 56_924 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -147,8 +147,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-05 (2.4.2, a full-mode merge leaves the nonce out where the page's script-src allows inline scripts with 'unsafe-inline'): paired Node24.22.1/npm12.0.2; +278/+142/+29 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +92/+26/+14 B; prior reserves kept.
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+116/+44 B; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10005/-3239/-2630 B; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 186_697, gzip: 58_538, brotli: 49_694 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3187/-2628 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 186_798, gzip: 58_590, brotli: 49_696 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -242,8 +242,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/-17 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +88/+12/+36 B; prior reserves kept.
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+116/+99 B; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10005/-3239/-2655 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 206_379, gzip: 64_859, brotli: 55_182 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3184/-2593 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 206_480, gzip: 64_914, brotli: 55_244 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -270,8 +270,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +1051/+385/+340 B; prior reserves kept.
   // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; +70/−22/−11 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
   // 2026-11-24 (the merge endpoint aborts a response the server refuses): paired Node22.23.2/zlib1.3.1; +38/−4/−2 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -8093/-2563/-2350 B; prior reserves kept.
-  'adapters/react/index.js': { raw: 18_378, gzip: 6_146, brotli: 5_658 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -7974/-2510/-2314 B; prior reserves kept.
+  'adapters/react/index.js': { raw: 18_497, gzip: 6_199, brotli: 5_694 },
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +80/+22/+22 B; same 16/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -165/-26/-29 B; same 16/12/120 B cushions.
   // 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7766/+2534/+2343 B; cushions 16/12/120 B.
@@ -288,8 +288,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-03 (2.4, the defaults 3.0 changes say so in development): paired Node24.22.1/npm12.0.2; +986/+370/+313 B; prior reserves kept.
   // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; +70/−22/−7 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
   // 2026-11-24 (the merge endpoint aborts a response the server refuses): paired Node22.23.2/zlib1.3.1; +38/−4/+0 B; the gzip and Brotli ceilings stay; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -8093/-2573/-2365 B; prior reserves kept.
-  'adapters/vue/index.js': { raw: 17_340, gzip: 5_855, brotli: 5_378 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -7974/-2513/-2328 B; prior reserves kept.
+  'adapters/vue/index.js': { raw: 17_459, gzip: 5_915, brotli: 5_415 },
   //
   // 2026-09-06 (R4, zero-config setup): one new row. `adapters/nuxt/module.js`
   // is the build-time Nuxt module — a few hundred bytes, because all it does is
@@ -379,8 +379,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/+84 B; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +90/+27/-28 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+116/+34 B; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10005/-3236/-2697 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 206_111, gzip: 64_760, brotli: 55_020 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3174/-2710 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 206_212, gzip: 64_822, brotli: 55_007 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -441,6 +441,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-05 (2.4.2, the payload-session check asks /me for redirect: 'manual' and refuses a 3xx): paired Node24.22.1/npm12.0.2; +18/+13/-34 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-11-05 (2.4.2, a full-mode union into script-src also reaches the page's own script-src-elem): paired Node24.22.1/npm12.0.2; +89/+20/+106 B; prior reserves kept.
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+119/+150 B; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -10005/-3238/-2640 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 205_193, gzip: 64_460, brotli: 55_032 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3183/-2610 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 205_294, gzip: 64_515, brotli: 55_062 },
 };

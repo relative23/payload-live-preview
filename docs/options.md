@@ -172,7 +172,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 157 954 for authorized inline delivery. It fetches one
+  (ADR 0015), against 158 055 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -475,9 +475,9 @@ still wins, `0` for none. Until then an adapter or `generateInlineScript()`
 without `mergeTimeoutMs`, and a hook without `timeoutMs`, says so once in
 development (ADR 0007 ledger, row 27).
 
-A `fieldSchemaJSON` in an update, which only a Payload 2 admin sends, is not
-read: it decides no field type and no request
-([ADR 0010](architecture/0010-protocol-capabilities-by-observation.md)).
+An update with `fieldSchemaJSON`, which only a Payload 2 admin sends, is
+refused, and so is every later update of that sender (`LP0504`,
+[ADR 0010](architecture/0010-protocol-capabilities-by-observation.md)).
 
 The DOM runtime asks only when the answer can change what the page shows. A page whose every
 binding renders a plain scalar of a top-level field, and a page with no binding,

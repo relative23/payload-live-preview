@@ -20,7 +20,7 @@ export const CAPABILITY_DOCUMENTATION: Readonly<
     fallback: 'none — every peer has it',
   },
   'schema-json': {
-    gates: 'the payload-2 profile and the notice that Payload 2 is not supported',
+    gates: 'the payload-2 profile, whose updates are refused: Payload 2 is not supported (LP0504)',
     fallback: 'none: field types come from the page and from value shapes for every peer',
   },
   locale: {

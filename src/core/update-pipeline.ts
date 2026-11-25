@@ -113,6 +113,8 @@ export class UpdatePipeline {
     countsAsUpdate: boolean,
   ): void {
     const { deps, state } = this;
+    // Payload 2 is not served (LP0504): once its schema showed, nothing of the peer is applied.
+    if (state.protocol.unsupported) return;
     // A level, not an edge: the panel repeats its last document event in every
     // message and never clears it, so only a changed event about a document
     // other than this one is news (LP-1).

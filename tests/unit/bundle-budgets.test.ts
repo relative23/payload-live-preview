@@ -47,12 +47,13 @@ describe('release bundle budgets', () => {
     // +11/+5/+1 lean, +226/+110/-13 route, +226/+97/+61 fragments; reserves unchanged.
     // 2026-10-31 (moved rows, kept blocks, select labels, the details reveal, variants, picture
     // sources and internalLinkPattern): the pins follow the paired measurement in the budget files.
-    // 2026-11-25 (3.0, Payload 2 leaves, ADR 0007 row 25): -9998/-3206/-2844 default,
-    // -10055/-3251/-2781 lean, -9998/-3521/-2730 route, -9998/-3474/-2740 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 143_817, gzip: 45_449, brotli: 39_958 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 114_547, gzip: 36_160, brotli: 31_817 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 152_412, gzip: 47_998, brotli: 42_022 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 157_997, gzip: 49_940, brotli: 43_821 });
+    // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25):
+    // -9897/-3150/-2788 default, -9686/-3104/-2672 lean, -9897/-3463/-2714 route,
+    // -9897/-3418/-2708 fragments; reserves unchanged.
+    expect(INLINE_BUDGET).toEqual({ raw: 143_918, gzip: 45_505, brotli: 40_014 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 114_916, gzip: 36_307, brotli: 31_926 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 152_513, gzip: 48_056, brotli: 42_038 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 158_098, gzip: 49_996, brotli: 43_853 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

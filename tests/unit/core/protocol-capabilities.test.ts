@@ -151,13 +151,12 @@ describe('runtime', () => {
     expect(rt.inspect().protocol.observed).toEqual(['document-events', 'locale']);
     expect(rt.inspect().protocol.profile).toBe('payload-3');
   });
-  it('a schema on the wire marks the peer as Payload 2.x', async () => {
+  it('a schema on the wire marks the peer as Payload 2.x, and nothing of it is applied', () => {
     const rt = start();
-    const done = afterUpdate();
     post({ title: 'a' }, { fieldSchemaJSON: [{ name: 'title', type: 'text' }] });
-    await done;
     expect(rt.inspect().protocol.profile).toBe('payload-2');
     expect(rt.inspect().protocol.capabilities).toContain('schema-json');
+    expect(rt.updateCount).toBe(0);
   });
   it('an announced version keeps its grants when a capability is observed later', async () => {
     const rt = start();

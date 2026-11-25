@@ -158,8 +158,8 @@
 // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +141 / +87 / +66, `core.js` +141 / +84 / +41, `index.cjs` +288 / +181 / +97, `index.js` +288 / +183 / +80.
 // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +144/+111/+124 B; prior reserves kept.
 // 2026-11-02 (2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired, same epoch): initLivePreview from root +92, generateInlineScript from root +89, initLivePreview from core +91, createLivePreviewMiddleware from nextjs +89, LEAN_RUNTIME from lean +96, useLivePreviewDocument from vue +8.
-// 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9998/-3474/-2740 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 157_997, gzip: 49_940, brotli: 43_821 } as const;
+// 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9897/-3418/-2708 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 158_098, gzip: 49_996, brotli: 43_853 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -304,5 +304,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 157_997, gzip: 49_940, brotli: 43_8
 // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +2132/+726/+627 B; prior reserves kept.
 // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +673/+224/+148 B; prior reserves kept.
 // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +144/+87/+10 B; prior reserves kept.
-// 2026-11-25 (3.0, Payload 2 leaves: no schema is read and nothing is populated for it, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9998/-3521/-2730 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 152_412, gzip: 47_998, brotli: 42_022 } as const;
+// 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9897/-3463/-2714 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 152_513, gzip: 48_056, brotli: 42_038 } as const;

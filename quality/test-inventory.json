@@ -22,7 +22,7 @@
   "totals": {
     "files": 529,
     "suites": 1031,
-    "tests": 4641,
+    "tests": 4643,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 430,
       "suites": 919,
-      "tests": 4227,
+      "tests": 4229,
       "benchmarks": 0
     }
   },
@@ -1929,7 +1929,7 @@
       "path": "tests/unit/core/payload-2-hint.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 5,
+      "tests": 7,
       "benchmarks": 0
     },
     {

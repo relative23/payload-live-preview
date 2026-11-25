@@ -80,6 +80,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
+    readonly UnsupportedAdmin: "LP0504";
     readonly HandlerThrew: "LP0601";
     readonly TransformThrew: "LP0602";
     readonly RendererThrew: "LP0603";

@@ -28,8 +28,9 @@ save-triggered equivalent of this package's route strategy.
 - **The merge.** Payload posts raw form values; populated relationships
   come from a REST request the official client and this runtime make the
   same way (`serverURL`, `depth`). A Payload 2 admin also sends
-  `fieldSchemaJSON`. This release does not read it and populates nothing from
-  it; the 2.x line of this package is the one for Payload 2.
+  `fieldSchemaJSON`. This release refuses the updates of a sender that does
+  (`LP0504`); the 2.x line of this package is the one for Payload 2, and a
+  sender of your own leaves the field out.
 - **The handshake.** Both post `ready: true` to announce that the receiver is
   listening. This is a best-effort hint, not a guarantee that the admin sends
   the document again.
