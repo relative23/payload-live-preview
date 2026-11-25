@@ -4,8 +4,9 @@ import { ProtocolTracker } from '@/core/protocol-tracker';
 import { PAYLOAD_2_HINT } from '@/core/protocol-version';
 
 /**
- * Only Payload 2 sends `fieldSchemaJSON`, and 3.0 ends Payload 2 support (ADR 0007, row 25). The
- * hint is the one place a project on it hears that while it runs, once and only in development.
+ * Only Payload 2 sends `fieldSchemaJSON`, and this package no longer serves Payload 2 (ADR 0007,
+ * row 25). The hint is the one place a project on it hears that while it runs, once and only in
+ * development.
  */
 
 const ADMIN = 'https://admin.example.com';
@@ -16,7 +17,7 @@ describe('the Payload 2 hint from the runtime', () => {
     vi.unstubAllEnvs();
   });
 
-  it('warns once when a message shows the schema, and names the release that ends support', () => {
+  it('warns once when a message shows the schema, and names the release line for Payload 2', () => {
     const warn = vi.fn();
     const tracker = new ProtocolTracker();
     tracker.observe(['locale'], noop, warn);
@@ -26,7 +27,8 @@ describe('the Payload 2 hint from the runtime', () => {
     expect(warn.mock.calls).toEqual([[PAYLOAD_2_HINT]]);
     expect(PAYLOAD_2_HINT).toBe(
       '[payload-live-preview] This admin sends fieldSchemaJSON, which only Payload 2 does. ' +
-        'Every 2.x release of this package supports Payload 2; 3.0 supports Payload 3 and 4.',
+        'This release supports Payload 3 and 4: it reads no schema and populates no relationship ' +
+        'for Payload 2. Use payload-live-preview 2.x with Payload 2.',
     );
   });
 

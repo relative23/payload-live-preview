@@ -12,7 +12,6 @@
  * many costs a round trip nobody sees.
  */
 
-import { lookupSchema, type SchemaIndex } from '@schema/index';
 import type { ElementCache } from './cache';
 import type { DataMerger, MergeRequest, MergeResult } from './data-merger';
 import type { DependencyMap } from './dependencies';
@@ -156,7 +155,7 @@ export class MergeNeed {
         fields[field] = value;
         continue;
       }
-      const verdict = verdictFor(field, base[field], value, deps.cache, transaction.schemaIndex);
+      const verdict = verdictFor(field, base[field], value, deps.cache);
       if (verdict !== 'own') {
         merge = true;
         this.resolvedLocale = null;
@@ -259,25 +258,18 @@ function verdictFor(
   previous: unknown,
   value: unknown,
   cache: ElementCache,
-  schemaIndex: SchemaIndex | undefined,
 ): FieldVerdict {
   // A structure — a rich-text tree, an array, a group — may hold a reference
   // inside it, and the message's own copy of it is still what the editor typed.
   if (!isScalar(value)) return 'ask';
-  if (!isScalar(previous) || namesAReference(field, cache, schemaIndex)) return 'keep';
+  if (!isScalar(previous) || namesAReference(field, cache)) return 'keep';
   // A field that was empty can be filled with either a word or an id, and the
   // two look alike. Render it and ask: a word must not wait for the answer.
   return previous == null ? 'ask' : 'own';
 }
 
-/** A document id and a title are both strings; only the schema or a binding says which this is. */
-function namesAReference(
-  field: string,
-  cache: ElementCache,
-  schemaIndex: SchemaIndex | undefined,
-): boolean {
-  const schema = schemaIndex === undefined ? undefined : lookupSchema(schemaIndex, field);
-  if (schema !== undefined && !SELF_SUFFICIENT_TYPES.has(schema.type)) return true;
+/** A document id and a title are both strings; only a binding says which this is. */
+function namesAReference(field: string, cache: ElementCache): boolean {
   if (cache.get(field)?.some(rendersAReference) === true) return true;
   // `venue.title` is a page saying the field holds a document; the owner scope
   // is off here on purpose, because a binding in any document still says so.

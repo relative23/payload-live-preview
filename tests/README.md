@@ -42,9 +42,7 @@ Where does a new test go?
   `tests/integration/wire-corpus.test.ts`. Record a new version with
   `PLP_RECORD_CORPUS=1 npm run test:e2e:real-payload` after bumping
   `examples/payload-backend`; `npm run compat:check` then expects the version
-  in `quality/compat-matrix.json`. `examples/` has no Payload 2 fixture, so
-  the 2.32.3 capture came from a throwaway 2.x project and is re-recorded by
-  hand (its `$comment` says how it was made).
+  in `quality/compat-matrix.json`.
 - `tests/fixtures/real-payload-message.json` — one message captured verbatim
   from a Payload 3.85 admin, driven through the real bus and runtime by
   `tests/integration/real-payload-protocol.test.ts`.

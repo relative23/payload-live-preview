@@ -20,8 +20,8 @@ export const CAPABILITY_DOCUMENTATION: Readonly<
     fallback: 'none — every peer has it',
   },
   'schema-json': {
-    gates: 'field typing from fieldSchemaJSON (Payload 2.x) and the payload-2 profile',
-    fallback: 'field types come from DOM heuristics and Lexical auto-detection',
+    gates: 'the payload-2 profile and the notice that Payload 2 is not supported',
+    fallback: 'none: field types come from the page and from value shapes for every peer',
   },
   locale: {
     gates:

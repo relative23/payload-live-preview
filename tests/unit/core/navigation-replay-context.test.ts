@@ -59,7 +59,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
     runtime.destroy();
   });
 
-  it('retains locale, schema, and owner scope without repeating relationship ingress', async () => {
+  it('retains locale and owner scope without repeating relationship ingress', async () => {
     document.body.innerHTML =
       '<section data-payload-owner="global:homepage">' +
       '<p data-payload-field="title">published</p>' +
@@ -86,7 +86,6 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       type: 'payload-live-preview',
       globalSlug: 'homepage',
       locale: 'de',
-      fieldSchemaJSON: [{ name: 'title', type: 'text' }],
       externallyUpdatedRelationship: {
         entitySlug: 'categories',
         id: 'related',
@@ -110,7 +109,6 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       fields: { title: 'ungespeichert' },
       globalSlug: 'homepage',
       locale: 'de',
-      schema: [{ name: 'title', type: 'text' }],
     });
     runtime.destroy();
   });

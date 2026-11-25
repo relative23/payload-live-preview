@@ -5,13 +5,14 @@ installs one root URL callback, enables the mapped collections and globals, and
 can set the toolbar breakpoints. It is a Payload config plugin, not a browser
 runtime plugin and not a frontend adapter.
 
-The entry is structural: it imports neither Payload 2 nor Payload 3. The same
-transform handles the callback arguments used by Payload 2.32.3
-(`documentInfo`) and Payload 3.x (`collectionConfig` / `globalConfig`).
-Payload 4 is still a pre-release and the direction of this package: support
-becomes official with the stable 4.0 release. Payload 2 support ends with 3.0
-of this package ([ADR 0007](architecture/0007-v2-defaults-and-renames-ledger.md#ledger),
-entry 25); every 2.x release keeps it. The plugin was measured once
+The entry is structural: it imports neither Payload 3 nor Payload 4. The
+transform reads the callback arguments both pass (`collectionConfig` /
+`globalConfig`). Payload 4 is still a pre-release and the direction of this
+package: support becomes official with the stable 4.0 release. Payload 2 is
+served by the 2.x line of this package
+([ADR 0007](architecture/0007-v2-defaults-and-renames-ledger.md#ledger),
+entry 25): this release does not read the `documentInfo` argument a Payload 2
+admin passes, so its callback returns the fallback path there. The plugin was measured once
 against 4.0.0-beta.4, outside CI, and the
 [compatibility page](compatibility.md#what-runs-against-each-version) says what that run covered and
 what it left out; its `order` option and `null` resolvers were measured once
@@ -44,9 +45,6 @@ export default buildConfig({
   ],
 });
 ```
-
-Payload 2 imports `buildConfig` from `payload/config`; the plugin import and
-options stay the same.
 
 Every mapped key is added to `admin.livePreview.collections` or
 `admin.livePreview.globals`. The installed callback uses the same mapping to
@@ -91,7 +89,7 @@ with the same `order` keep their list order. The function `livePreview()`
 returns has no `order`, so a URL-writing plugin with a higher one runs after it
 wherever it is listed. To move this plugin later, give it a higher value with
 the `order` option: `livePreview({ …, order: 1000 })`. Without the option it has
-no `order`, as before. Payload 2.32.3 runs plugins in list order and ignores it.
+no `order`, as before.
 
 The function also carries `slug: 'payload-live-preview'`, the name another
 plugin finds it under in `config.plugins`. Payload's telemetry (read in 3.94.2
@@ -108,7 +106,7 @@ is not sent.
 | `fallback`     | Path for an unmapped entity or a resolver that returns `''`; `null` means no preview                               | `'/'`       |
 | `previewParam` | Query parameter added as `<name>=true`; keep a custom name in the adapter's `previewQueryParams`; `null` adds none | `'preview'` |
 | `breakpoints`  | Payload toolbar breakpoints with number or CSS-string dimensions; supplied values replace the existing root list   | preserved   |
-| `order`        | Plugin position in Payload 3 and 4, lower runs first; Payload 2 ignores it                                         | unset (`0`) |
+| `order`        | Plugin position in Payload 3 and 4, lower runs first                                                               | unset (`0`) |
 
 The default frontend adapters recognize query intent through `preview`,
 `draft` and `livePreview`. Add a custom `previewParam` to the adapter's
@@ -164,11 +162,6 @@ checks that in Chromium, Firefox and WebKit. The same target passed once in
 Chromium against 4.0.0-beta.6, outside CI, on 2026-10-31. A slug that declines
 stays in the root list, because the decision is made per document.
 
-Keep to strings on Payload 2. Its published `LivePreviewConfig['url']` function
-type accepts only a string or `Promise<string>`, which this plugin's structural
-types cannot check for you. In the 2.32.3 source the panel still opens and
-renders no frame; that was read, not run.
-
 `buildLivePreviewUrl()` from `/payload` has the same nullable overload, and it
 remains the manual building block. Use it when another plugin already owns the
 surrounding config or when an application deliberately composes a more involved
@@ -182,13 +175,12 @@ site's request-time adapter with `authorizePreview` and one of the strategies
 in [authorization.md](authorization.md).
 
 Prefer `payload-session` where the editor cookie reaches the preview site. A
-manual signed-token URL callback is a Payload 3 server-side integration only;
-do not put a signing secret in a Payload 2 config callback, which runs in the
-admin browser. The same URL token may also be needed by page entry, fragment
+manual signed-token URL callback is a Payload 3 server-side integration only.
+The same URL token may also be needed by page entry, fragment
 requests and reloads, so a one-use replay store is not a complete lifecycle by
 itself. That manual boundary is described with the token recipe in
 [authorization.md](authorization.md#signed-token).
 
-The separation is deliberate: URL selection is shared across Payload 2 and 3,
+The separation is deliberate: URL selection is shared across Payload 3 and 4,
 while credentials and draft access belong to a server that can keep secrets.
 See [ADR 0017](architecture/0017-structural-payload-config-plugin.md).

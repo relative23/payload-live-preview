@@ -389,24 +389,27 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     expect(document.querySelector('h1')?.textContent).toBe('raw title');
     runtime.destroy();
   });
-  it('does not ask the server for a document a Payload 2.x admin populates itself', async () => {
-    // A 2.x admin posts `fieldSchemaJSON` and populated relationships; a
-    // request would only fetch what the message already carries.
+  it('merges a message that carries fieldSchemaJSON through the server, like any other', async () => {
+    // Only Payload 2 sends a schema. It is not read, so it decides no transport.
     document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
-    const fetchFn = vi.fn();
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response(JSON.stringify({ id: '1', title: 'merged by the server' })));
     const runtime = makeRuntime({
-      dataMerge: { serverURL: 'https://cms.example.com', fetchFn: fetchFn as typeof fetch },
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn },
     });
     runtime.start();
     fireMessage({
       type: 'payload-live-preview',
       collectionSlug: 'posts',
-      fieldSchemaJSON: [],
-      data: { id: '1', title: 'populated by the admin' },
+      fieldSchemaJSON: [{ name: 'venue', type: 'relationship', relationTo: 'venues' }],
+      data: { id: '1', title: 'typed in the admin' },
     });
     await vi.advanceTimersByTimeAsync(50);
-    expect(fetchFn).not.toHaveBeenCalled();
-    expect(document.querySelector('h1')?.textContent).toBe('populated by the admin');
+    expect(fetchFn).toHaveBeenCalledOnce();
+    expect(fetchFn.mock.calls[0]?.[0]).toBe('https://cms.example.com/api/posts/1');
+    expect(fetchFn.mock.calls[0]?.[1]).toMatchObject({ method: 'POST' });
+    expect(document.querySelector('h1')?.textContent).toBe('merged by the server');
     runtime.destroy();
   });
 

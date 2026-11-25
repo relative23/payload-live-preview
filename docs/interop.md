@@ -25,28 +25,14 @@ save-triggered equivalent of this package's route strategy.
   Messages captured from real admins are replayed through this runtime in
   its test suite, and a daily check executes the official client against
   the same captures, so the two packages cannot drift apart unnoticed.
-- **The merge.** Payload 3.x posts raw form values; populated relationships
+- **The merge.** Payload posts raw form values; populated relationships
   come from a REST request the official client and this runtime make the
-  same way (`serverURL`, `depth`). The measured Payload 2.32.3 sender can
-  post raw relationship IDs. It sends `fieldSchemaJSON` on the first send
-  and after a window-type change; later messages can omit it. This package
-  retains accepted schema within each session and uses credentialed collection
-  GETs when population is needed, with the configured depth and any supplied
-  locale. The v2 schema path does not use the v3 method-override POST. A session
-  captured from a real Payload 2.32.3 admin
-  (`tests/fixtures/wire-corpus/payload-2.32.3.json`) is replayed with the 3.x
-  and 4.0 canary captures; it edits text, rich text and an array across a save,
-  and contains no relationship field.
+  same way (`serverURL`, `depth`). A Payload 2 admin also sends
+  `fieldSchemaJSON`. This release does not read it and populates nothing from
+  it; the 2.x line of this package is the one for Payload 2.
 - **The handshake.** Both post `ready: true` to announce that the receiver is
-  listening. This is a best-effort hint, not a document or schema resend
-  guarantee. In the measured Payload 2.32.3 provider, replacing a hook or
-  reloading only the child iframe does not itself reset the parent's
-  readiness state or first-send schema cache. A fresh hook starts from its
-  own `initialData` and cannot borrow another session's schema, so it reports
-  `'unavailable'` and reads nothing. Loading the admin page again sends a
-  schema with its first message and the preview populates again. The lifecycle
-  probe of `examples/payload-version-lanes` measures both steps in development
-  builds.
+  listening. This is a best-effort hint, not a guarantee that the admin sends
+  the document again.
 
 ## Moving from `@payloadcms/live-preview-react`
 

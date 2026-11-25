@@ -3,7 +3,7 @@
 [![CI](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node >= 24](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](package.json)
-[![Payload 2.x / 3.x / 4.x beta](https://img.shields.io/badge/Payload-2.x%20%2F%203.x%20%2F%204.x%20beta-black)](#compatibility)
+[![Payload 3.x / 4.x beta](https://img.shields.io/badge/Payload-3.x%20%2F%204.x%20beta-black)](#compatibility)
 [![npm](https://img.shields.io/npm/v/payload-live-preview?color=cb3837&logo=npm)](https://www.npmjs.com/package/payload-live-preview)
 
 ![The Payload admin posts every keystroke; the runtime in the preview iframe patches the bound element in place, has your server render a fragment boundary, or refreshes the route](.github/social-preview.png)
@@ -18,7 +18,7 @@ One runtime serves every framework. The Astro, Next.js, SvelteKit and Nuxt adapt
 
 ## Highlights
 
-- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 48 KB gzip — 37 KB with the lean artifact, 48 to 50 KB once the route or fragment prelude is appended ([docs/options.md](docs/options.md)). The adapters for Astro, Next.js, SvelteKit and Nuxt deliver it; where they decide per request they also authorize the request, merge `frame-ancestors` into your CSP and mark the changed response `private, no-store`. They provide the fragment endpoint and, outside Astro, the route that serves the runtime asset.
+- **One runtime, every frontend.** One TypeScript runtime compiled to a self-contained inline script of about 44 KB gzip — 35 KB with the lean artifact, 48 to 50 KB once the route or fragment prelude is appended ([docs/options.md](docs/options.md)). The adapters for Astro, Next.js, SvelteKit and Nuxt deliver it; where they decide per request they also authorize the request, merge `frame-ancestors` into your CSP and mark the changed response `private, no-store`. They provide the fragment endpoint and, outside Astro, the route that serves the runtime asset.
 - **Patch, fragment, route.** A binding is patched in place; a `data-payload-fragment` boundary is rendered again by your server from the unsaved form state; a patch that fell short, or a change nothing binds, goes to the fragment render or a route refresh when the page has one ([below](#patch-fragment-route)).
 - **Delivery.** Inline, or a bootstrap that fetches the content-hashed, SRI-verified runtime only inside a preview (`delivery: 'asset'`; Astro's static equivalent is `mode: 'loader'`). Where something decides per request — Astro's middleware, `await LivePreviewScript(…)` in Next.js, the SvelteKit handle, the Nuxt Nitro plugin — a public visitor receives no script at all ([docs/deployment.md](docs/deployment.md#what-a-public-visitor-pays)).
 - **Payload 3.x native.** `serverURL` re-fetches the populated document, like the official client, so relationship and upload fields render as content rather than as IDs — but only when an edit needs one: in the DOM runtime, typing into a text field costs no request, and a burst on a relationship costs two requests, at its start and its end, rather than one per keystroke.
@@ -31,11 +31,11 @@ One runtime serves every framework. The Astro, Next.js, SvelteKit and Nuxt adapt
 
 ## Compatibility
 
-| Payload | Status                                   | Tested                                                                                                     |
-| ------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| 3.x     | supported                                | the real admin on every push (3.94.2; Chromium, Firefox, WebKit), and against `payload@latest` every day   |
-| 4.x     | pre-release, followed; official with 4.0 | captured beta messages on every push; the real admin against `payload@beta` every day, as an early warning |
-| 2.x     | supported in 2.x; ends with 3.0          | captured admin messages on every push                                                                      |
+| Payload | Status                                          | Tested                                                                                                     |
+| ------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 3.x     | supported                                       | the real admin on every push (3.94.2; Chromium, Firefox, WebKit), and against `payload@latest` every day   |
+| 4.x     | pre-release, followed; official with 4.0        | captured beta messages on every push; the real admin against `payload@beta` every day, as an early warning |
+| 2.x     | not supported: use the 2.x line of this package | —                                                                                                          |
 
 <!-- compat-matrix:start -->
 
@@ -50,7 +50,7 @@ Node >=24.0.0; the unit and integration suites run on Node 24, 26.
 
 <!-- compat-matrix:end -->
 
-`payload` is an optional peer, `^2.0.0 || ^3.0.0 || ^4.0.0-0`, so npm never installs it. Payload 4 pre-releases need Node 24.22.1 or later. Version 3.0 of this package drops Payload 2 and needs Node 24 or newer ([Preparing for 3.0](docs/migration.md#preparing-for-30)). What runs against each version, and what differs between Payload 2, 3 and 4: [docs/compatibility.md](docs/compatibility.md).
+`payload` is an optional peer, `^3.0.0 || ^4.0.0-0`, so npm never installs it. Payload 4 pre-releases need Node 24.22.1 or later. This package needs Node 24 or newer; a site on Payload 2 or an older Node stays on the 2.x line ([Preparing for 3.0](docs/migration.md#preparing-for-30)). What runs against each version, and what differs between Payload 3 and 4: [docs/compatibility.md](docs/compatibility.md).
 
 ## Install
 
@@ -64,7 +64,7 @@ The root `payload-live-preview` carries the client, the inline script generator,
 
 The config plugin enables mapped collections and globals, installs their shared
 URL callback and can set the toolbar breakpoints. It is structural across
-Payload 2.32.3 and 3.x and imports neither version:
+Payload 3 and 4 and imports neither version:
 
 ```ts
 import { livePreview } from 'payload-live-preview/plugin';
@@ -146,7 +146,7 @@ The helper appends `?preview=true`, one of the query parameters (`preview`, `dra
 
 The config plugin accepts no signing secret or token option. Where no session
 cookie crosses origins, the manual `signed-token` URL callback is a Payload 3
-server-side integration only; never put its secret in a Payload 2 callback.
+server-side integration only.
 [docs/authorization.md](docs/authorization.md) explains that boundary, the
 open multi-request token lifecycle, the `payload-session` and `verifier`
 strategies, and the initial draft read.
@@ -414,7 +414,7 @@ The reading path, with a glossary: [docs/README.md](docs/README.md).
 
 - Framework guides: [Astro](docs/astro.md) · [Next.js](docs/nextjs.md) · [SvelteKit](docs/sveltekit.md) · [Nuxt](docs/nuxt.md) · [Plain HTML](docs/html.md) · [React hook](docs/react.md) · [Vue composable](docs/vue.md)
 - [docs/bindings.md](docs/bindings.md) — data attributes, field types, owners, typed bindings and codegen
-- [docs/payload.md](docs/payload.md) — Payload 2/3 config plugin, merge rules and URL conflicts
+- [docs/payload.md](docs/payload.md) — Payload config plugin, merge rules and URL conflicts
 - [docs/compatibility.md](docs/compatibility.md) — support per Payload major, what differs between them, what runs against each version
 - [docs/options.md](docs/options.md) — package entries, every option and its default, Payload 3.x population
 - [docs/authorization.md](docs/authorization.md) — strategies, signed tokens, the initial draft read

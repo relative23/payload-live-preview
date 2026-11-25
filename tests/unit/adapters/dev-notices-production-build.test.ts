@@ -71,7 +71,7 @@ describe.each(BUNDLES)('$name', ({ entry, symbol, texts }) => {
   it('carries no notice and no registry in a production build', () => {
     const code = bundle(entry, symbol, 'production');
     // The session and the origin detector are in it, only the notices are not.
-    expect(code.length).toBeGreaterThan(20_000);
+    expect(code.length).toBeGreaterThan(10_000);
     for (const text of [...texts, REGISTRY]) expect(code).not.toContain(text);
   });
 

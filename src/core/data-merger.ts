@@ -1,14 +1,11 @@
 /**
- * Payload 3 raw form values use its REST merge with the method-override header.
- * Payload 2 sends a schema instead of a target, so it uses local values and
- * collection GETs to populate references. A newer merge aborts the one in flight,
- * and captured attempt identity drops obsolete results even when a shim ignores abort.
- * An optional deadline aborts a merge that has not answered in time.
+ * Raw form values go to Payload's REST merge with the method-override header.
+ * A newer merge aborts the one in flight, and captured attempt identity drops
+ * obsolete results even when a shim ignores abort. An optional deadline aborts
+ * a merge that has not answered in time.
  */
 
 import { isolateDiagnostic, noopDiagnostic } from './diagnostics';
-import type { PayloadFieldSchema } from '@/types/payload-protocol';
-import { fillLegacyPopulation, planLegacyPopulation, populationBody } from './legacy-population';
 
 export interface DataMergerOptions {
   /** Payload server origin, e.g. `https://cms.example.com`. */
@@ -27,7 +24,6 @@ export interface DataMergerOptions {
 }
 
 export interface MergeRequest {
-  readonly schema?: readonly PayloadFieldSchema[] | undefined;
   readonly collectionSlug?: string | undefined;
   readonly globalSlug?: string | undefined;
   readonly data: Record<string, unknown>;
@@ -115,25 +111,9 @@ export class DataMerger {
     this.timeoutMs = timeoutMs > 0 && timeoutMs < Number.POSITIVE_INFINITY ? timeoutMs : undefined;
   }
 
-  /** A v2 schema plans local values and GETs; a v3 target needs its document identity. */
+  /** A merge needs the identity of its document. */
   canMerge(request: MergeRequest): boolean {
-    try {
-      const schema = request.schema;
-      if (schema !== undefined) {
-        planLegacyPopulation(
-          request.data,
-          schema,
-          this.serverURL,
-          this.apiRoute,
-          this.depth,
-          request.locale,
-        );
-        return true;
-      }
-      return this.endpointOf(request) !== null;
-    } catch {
-      return false;
-    }
+    return this.endpointOf(request) !== null;
   }
 
   /**
@@ -181,7 +161,6 @@ export class DataMerger {
     const previous = this.inflight;
     this.inflight = null;
     let controller: AbortController | null = null;
-    let legacy = false;
     const superseded = (): boolean => this.attempt !== attempt;
     // Every wait on the server races one deadline, armed with the attempt's controller at its
     // first request; a shim that ignores the abort cannot hold the merge past it, and what it
@@ -209,55 +188,6 @@ export class DataMerger {
     try {
       previous?.abort();
       if (superseded()) return { status: 'superseded' };
-      const schema = request.schema;
-      legacy = schema !== undefined;
-      if (schema !== undefined) {
-        const plan = planLegacyPopulation(
-          request.data,
-          schema,
-          this.serverURL,
-          this.apiRoute,
-          this.depth,
-          request.locale,
-        );
-        if (superseded()) return { status: 'superseded' };
-        if (plan.requests.length === 0) return { status: 'merged', doc: plan.doc };
-        const fetchFn = this.fetchFn ?? (typeof fetch === 'function' ? fetch : undefined);
-        if (superseded()) return { status: 'superseded' };
-        if (fetchFn === undefined) return { status: 'unavailable' };
-        controller = new AbortController();
-        this.inflight = controller;
-        for (const population of plan.requests) {
-          const response = await within(
-            fetchFn(population.url, {
-              method: 'GET',
-              credentials: 'include',
-              redirect: 'error',
-              signal: controller.signal,
-            }),
-            controller,
-          );
-          if (superseded()) return { status: 'superseded' };
-          const ok = response.ok;
-          if (superseded()) return { status: 'superseded' };
-          if (!ok) {
-            const status = response.status;
-            if (superseded()) return { status: 'superseded' };
-            controller.abort();
-            if (superseded()) return { status: 'superseded' };
-            this.log('merge HTTP', status);
-            return superseded() ? { status: 'superseded' } : { status: 'unavailable' };
-          }
-          const body = await within(
-            populationBody(response, controller.signal, () => !superseded()),
-            controller,
-          );
-          if (superseded()) return { status: 'superseded' };
-          fillLegacyPopulation(population, body);
-          if (superseded()) return { status: 'superseded' };
-        }
-        return { status: 'merged', doc: plan.doc };
-      }
       // The endpoint reads the request's own values, which may be consumer
       // getters that start a newer merge before throwing.
       const endpoint = this.endpointOf(request);
@@ -334,14 +264,7 @@ export class DataMerger {
         this.log('merge timeout', timeoutMs);
         return { status: 'unavailable' };
       }
-      if (legacy) {
-        controller?.abort();
-        if (superseded()) return { status: 'superseded' };
-      }
-      this.log(
-        'merge exception',
-        legacy ? new Error('legacy population could not be resolved') : error,
-      );
+      this.log('merge exception', error);
       if (superseded()) return { status: 'superseded' };
       return { status: 'unavailable' };
     } finally {

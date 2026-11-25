@@ -80,7 +80,10 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // `try`, so a production build drops them. No request path changes.
 // 2026-11-24: 1 654 → 1 656. data-merger.ts +2: the endpoint path aborts a response the server
 // refuses and checks that the abort accepted no newer merge, as the population path already did.
-export const REVIEWED_SCOPE_LINES = 1656;
+// 2026-11-25 (3.0, ADR 0007 row 25): 1 656 → 1 142. Payload 2's transport leaves: legacy-population.ts
+// is gone, data-merger.ts loses the population branch and message-guards.ts the schema parse
+// (1 385 → 873 for the protocol scope), and document-session.ts no longer keeps a schema (271 → 269).
+export const REVIEWED_SCOPE_LINES = 1142;
 
 interface OurFile {
   readonly file: string;
@@ -104,10 +107,6 @@ const GROUPS: readonly ScopeGroup[] = [
       { file: 'src/core/message-bus.ts', does: 'ingress: origin, source, shape, token queue' },
       { file: 'src/core/message-guards.ts', does: 'per-type shape guards' },
       { file: 'src/core/data-merger.ts', does: 'the REST merge, with abort and ordering' },
-      {
-        file: 'src/core/legacy-population.ts',
-        does: 'bounded v2 GET planning, response identity and body teardown',
-      },
       { file: 'src/detection/origin.ts', does: 'which origins are trusted, and locking' },
       { file: 'src/types/payload-protocol.ts', does: 'the wire shapes both sides read' },
     ],

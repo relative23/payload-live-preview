@@ -3,13 +3,8 @@
  * runs (`RuntimeState`). Both are shared by the pipeline collaborators.
  */
 
-import type {
-  PayloadFieldSchema,
-  PayloadLivePreviewData,
-  PayloadLivePreviewMessage,
-} from '@/types/payload-protocol';
+import type { PayloadLivePreviewData, PayloadLivePreviewMessage } from '@/types/payload-protocol';
 import type { EventEmitter } from '@events/emitter';
-import type { SchemaIndex } from '@schema/index';
 import type { SanitizerPolicyMode } from '@security/sanitizer';
 import type { A11yAnnouncer } from './a11y';
 import type { AutoBindMode, KeptGuesses } from './auto-bind';
@@ -40,8 +35,6 @@ export interface UpdateTransaction {
   /** Raw fields captured once when the data-bearing update or replay was accepted. */
   readonly rawData: Record<string, unknown>;
   readonly locale: string | undefined;
-  readonly schema: readonly PayloadFieldSchema[] | undefined;
-  readonly schemaIndex: SchemaIndex | undefined;
   readonly receivedAt: number;
   /** A save in another document may change populated values only, so render everything. */
   readonly forceRender: boolean;
@@ -134,8 +127,6 @@ export class RuntimeState {
   hydration: HydrationState = 'idle';
   activeUpdate: UpdateTransaction | null = null;
   locale: string | undefined = undefined;
-  schema: readonly PayloadFieldSchema[] | undefined = undefined;
-  schemaIndex: SchemaIndex | undefined = undefined;
   updateCount = 0;
   supersededCount = 0;
   completedCount = 0;

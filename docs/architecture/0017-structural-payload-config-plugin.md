@@ -203,3 +203,13 @@ Measured on 2026-10-31 with Node 24.22.1:
   `buildConfig()`, on both versions.
 - `tsc` reports nothing in the fixture's `payload.config.ts` against either
   version's `Plugin` type.
+
+## Addendum (2026-11-25): Payload 3 and 4 only
+
+3.0 ends Payload 2 support ([ADR 0007](0007-v2-defaults-and-renames-ledger.md#ledger),
+row 25). `buildLivePreviewUrl()` and `livePreview()` read `collectionConfig`
+and `globalConfig`, the arguments Payload 3 and 4 pass, and no longer the
+`documentInfo` argument of Payload 2: a call that carries only `documentInfo`
+gets the fallback path. The package gate type-checks the plugin against
+Payload 3.89.0; the check against Payload 2.32.3 is removed with the lane
+that installed it.

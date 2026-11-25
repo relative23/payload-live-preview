@@ -57,7 +57,7 @@ import {
 import { checkDeclaredValuesExist } from './package-smoke-values';
 import { findForbiddenPackageLifecycleScripts } from './release-contracts';
 
-const PAYLOAD_PLUGIN_TYPE_VERSIONS = ['2.32.3', '3.89.0'] as const;
+const PAYLOAD_PLUGIN_TYPE_VERSIONS = ['3.89.0'] as const;
 
 async function createPayloadPluginTypeConsumer(options: {
   readonly archiveDirectory: string;
@@ -206,13 +206,6 @@ async function main(): Promise<void> {
     const packageName = manifestValue['name'];
 
     const payloadTypeArchives = resolve(temporaryRoot, 'payload-plugin-type-archives');
-    const payload2TypeConsumer = resolve(temporaryRoot, 'payload-2.32.3-type-consumer');
-    await createPayloadPluginTypeConsumer({
-      archiveDirectory: payloadTypeArchives,
-      consumer: payload2TypeConsumer,
-      packageArchive: tarball,
-      version: '2.32.3',
-    });
     const payload3TypeConsumer = resolve(temporaryRoot, 'payload-3.89.0-type-consumer');
     await createPayloadPluginTypeConsumer({
       archiveDirectory: payloadTypeArchives,
@@ -369,7 +362,6 @@ async function main(): Promise<void> {
     );
     failures.push(
       ...(await checkPackedPayloadPluginTypeContracts({
-        payload2: payload2TypeConsumer,
         payload3: payload3TypeConsumer,
         packageName,
       })),
@@ -381,7 +373,7 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      `[package] PASS ${String(evidence.files.length)} packed files; publint, ATTW, ${String(typedApiEntries.length)} API reports, isolated script-free strict installs, peer-free and explicit-peer ESM/CJS, every declared value present at runtime, exact Payload 2.32.3/3.89.0 plugin types, DOM-less Lexical sanitizer contexts, CLI, and positive/negative strict NodeNext types verified`,
+      `[package] PASS ${String(evidence.files.length)} packed files; publint, ATTW, ${String(typedApiEntries.length)} API reports, isolated script-free strict installs, peer-free and explicit-peer ESM/CJS, every declared value present at runtime, exact Payload 3.89.0 plugin types, DOM-less Lexical sanitizer contexts, CLI, and positive/negative strict NodeNext types verified`,
     );
 
     await finalizePackageArtifact({

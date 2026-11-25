@@ -195,8 +195,7 @@ const template = '<li><a href="{{url}}">{{title}}</a></li>';
 `date` · `select` · `radio` · `relationship` · `upload` · `image` · `url` ·
 `array` · `blocks` · `structural-array`
 
-The type comes from `data-payload-type` when set, else from the field schema
-when the admin sends one (Payload 2.x), else from the element: the marker
+The type comes from `data-payload-type` when set, else from the element: the marker
 attributes (`data-payload-richtext`, `data-payload-html`,
 `data-payload-structural`, `data-payload-array`), then `<img>` → `image`,
 `<a>` → `url`, `<time>` → `date`, `<input type="checkbox|number">` →
@@ -351,8 +350,7 @@ What it never does, so a wrong element is not rewritten on every keystroke:
 
 Two things to know before turning it on. A guess inherits no
 `data-payload-format`. A number is never guessed — only strings are looked for
-— but a date it binds on a `<time>` element (or wherever a Payload 2.x schema
-says `date`) is written by the date renderer, so the first write reports
+— but a date it binds on a `<time>` element is written by the date renderer, so the first write reports
 [`LP0412`](troubleshooting.md#diagnostic-codes) where the template formatted
 the value differently — the diagnostic is the measure of what the guess could
 not know. And a guess rests on the value being unique on the page: a title

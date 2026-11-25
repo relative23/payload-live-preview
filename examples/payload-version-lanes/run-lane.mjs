@@ -18,32 +18,6 @@ import { source, read, digest, json, preparedContract } from './inputs.mjs';
 import { boundedStages } from './shared/bounded-stage-diagnostic.mjs';
 import { diagnostic } from './shared/diagnostics.mjs';
 import { verifyOwnedGraph } from './owned-graph.mjs';
-import { engines, v2Titles } from './plan.mjs';
-import { verifyInstalledCandidate } from './v2/identity.mjs';
-
-// What a passed v2 probe may be quoted for, and what it does not show.
-const acceptance = {
-  dom: {
-    status: 'native-v2-dom-session-scoped-passed',
-    limitation:
-      'Real v2 DOM/session and chosen relationship; not native hooks, a v4 profile or the release matrix.',
-  },
-  lifecycle: {
-    status: 'native-v2-hook-lifecycle-scoped-passed',
-    limitation:
-      'Real v2 native hooks in development bundles on Linux engines: an owner replaced while a read is held, a document change by navigation and a reload of the preview frame, each followed by an admin restart; not the cases of the guards probe (a late answer, foreign senders, a receiver switch, a sign-out), production builds, capacity, cross-site cookies, native Safari or the release matrix.',
-  },
-  guards: {
-    status: 'native-v2-hook-guards-scoped-passed',
-    limitation:
-      'Real v2 native hooks in development bundles on Linux engines: a late answer to a replaced owner or session, windows and origins the hook must not take, a receiver switch in a running session and a sign-out in the middle of one; not production builds, an expiry by time, Payload 3, capacity, cross-site cookies, native Safari or the release matrix.',
-  },
-  population: {
-    status: 'native-v2-hook-population-scoped-passed',
-    limitation:
-      'Real v2 native hooks fed by the admin form and relationship picker, with session gating; not lifecycle, capacity, cross-site cookies, native Safari or the release matrix.',
-  },
-};
 
 // What a mutation job looks like in the process table.
 const MUTATION_JOB =
@@ -95,12 +69,9 @@ export async function runLane(action, options) {
   if (action === 'probe') {
     assert.match(options['lock-sha256'] ?? '', /^[a-f0-9]{64}$/u);
     assert.equal(digest(resolve(prepared.app, 'package-lock.json')), options['lock-sha256']);
-    const installed = read(
-      resolve(prepared.lane === 'v2' ? read(prepared.runFile).run : prepared.out, 'install.json'),
-    );
+    const installed = read(resolve(prepared.out, 'install.json'));
     assert.equal(installed.lockSHA256 ?? installed.lockSha256, options['lock-sha256']);
-    if (prepared.lane !== 'v2')
-      assert.ok(!existsSync(prepared.database), 'Use a fresh own database for a native probe');
+    assert.ok(!existsSync(prepared.database), 'Use a fresh own database for a native probe');
   }
   const queue = resolve(prepared.out, action);
   mkdirSync(queue, { mode: 0o700 });
@@ -137,13 +108,7 @@ export async function runLane(action, options) {
     idle();
     if (action === 'probe') {
       assert.equal(digest(resolve(prepared.app, 'package-lock.json')), options['lock-sha256']);
-      if (prepared.lane === 'v2')
-        verifyInstalledCandidate(
-          prepared.app,
-          { version: prepared.archiveVersion, sha256: prepared.archiveSHA256 },
-          read(prepared.inventory),
-        );
-      else verifyOwnedGraph(prepared, prepared.laneDefinition, options['lock-sha256']);
+      verifyOwnedGraph(prepared, prepared.laneDefinition, options['lock-sha256']);
     }
   };
   const stage = boundedStages({
@@ -169,8 +134,6 @@ export async function runLane(action, options) {
     PLP_VERSION_LANES_REPO: prepared.repo,
     PLP_VERSION_LANE_PREPARED: options.prepared,
     PLP_VERSION_LANE_VERSION: prepared.payloadVersion,
-    PLP_P2_RUN_FILE: prepared.runFile,
-    PLP_P2_RESOURCES_RELEASED: '1',
     PLP_R6_WORK: prepared.app,
     PLP_R6_SURFACE: prepared.surface,
     PLP_R6_ARCHIVE_SHA: prepared.archiveSHA256,
@@ -184,57 +147,11 @@ export async function runLane(action, options) {
     if (action === 'install') {
       await stage(
         'strict-install',
-        prepared.lane === 'v2'
-          ? resolve(prepared.harness, 'install.mjs')
-          : resolve(source, 'install-lane.mjs'),
-        prepared.lane === 'v2' ? [] : [options.prepared],
+        resolve(source, 'install-lane.mjs'),
+        [options.prepared],
         env,
         1_200_000,
       );
-    } else if (prepared.lane === 'v2') {
-      await stage(
-        'native-v2-three-engines',
-        resolve(prepared.harness, 'run.mjs'),
-        [],
-        env,
-        1_500_000,
-      );
-      const settings = read(prepared.runFile);
-      const report = read(resolve(settings.run, 'browser-results.json'));
-      assert.equal(report.status, 'passed');
-      assert.deepEqual(report.errors, []);
-      assert.equal(report.tests.length, prepared.expectedCases);
-      assert.equal(report.totals.passed, prepared.expectedCases);
-      assert.equal(report.totals.skipped, 0);
-      assert.equal(report.totals.failed, 0);
-      assert.equal(report.candidateSha256, prepared.archiveSHA256);
-      assert.equal(report.variant, prepared.variant);
-      const titles = v2Titles(prepared.laneDefinition, prepared.probe);
-      for (const browser of engines) {
-        const tests = report.tests.filter((test) => test.project === browser);
-        assert.equal(tests.length, titles.length);
-        assert.deepEqual(tests.map((test) => test.title).sort(), [...titles].sort());
-        for (const test of tests) {
-          assert.equal(test.status, 'passed');
-          assert.equal(test.expectedStatus, 'passed');
-          assert.equal(test.retry, 0);
-          assert.deepEqual(test.errors, []);
-        }
-      }
-      const identity = read(resolve(settings.run, 'identity.json'));
-      assert.equal(identity.dependencyLockSha256, options['lock-sha256']);
-      assert.equal(identity.candidate.sha256, prepared.archiveSHA256);
-      const audit = read(resolve(settings.run, 'credential-audit.json'));
-      assert.deepEqual(audit.findings, []);
-      json(resolve(queue, 'accepted-v2.json'), {
-        status: acceptance[prepared.probe].status,
-        expectedCases: prepared.expectedCases,
-        surface: prepared.surface,
-        archiveSHA256: prepared.archiveSHA256,
-        variant: prepared.variant,
-        browserReportSHA256: digest(resolve(settings.run, 'browser-results.json')),
-        limitation: acceptance[prepared.probe].limitation,
-      });
     } else {
       await stage(
         'own-compiler-and-initial-ssr',

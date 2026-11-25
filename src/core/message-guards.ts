@@ -1,13 +1,12 @@
 /**
  * Shape guards for the messages the bus accepts. `null` counts as absent, as
- * JSON bridges send it. The schema parser owns bounded, fail-closed normalization.
+ * JSON bridges send it.
  */
 
 import type {
   PayloadDocumentEventMessage,
   PayloadLivePreviewMessage,
 } from '@/types/payload-protocol';
-import { parseFieldSchema } from '@schema/parser';
 
 export function isObjectMessage(value: unknown): value is { type: string } {
   return (
@@ -20,7 +19,6 @@ export function isLivePreviewMessage(value: { type: string }): value is PayloadL
   const v = value as Record<string, unknown>;
   if (v['data'] !== undefined && v['data'] !== null && !isPlainObject(v['data'])) return false;
   return (
-    optionalTypeOk(v['fieldSchemaJSON'], (x) => Array.isArray(x)) &&
     optionalTypeOk(v['globalSlug'], (x) => typeof x === 'string') &&
     optionalTypeOk(v['collectionSlug'], (x) => typeof x === 'string') &&
     optionalTypeOk(v['locale'], (x) => typeof x === 'string') &&
@@ -64,7 +62,6 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
 
 const NULL_AS_ABSENT_FIELDS = [
   'data',
-  'fieldSchemaJSON',
   'globalSlug',
   'collectionSlug',
   'locale',
@@ -73,11 +70,7 @@ const NULL_AS_ABSENT_FIELDS = [
   'protocolVersion',
 ] as const satisfies readonly (keyof PayloadLivePreviewMessage)[];
 
-/**
- * Drop `null` optionals so downstream sees the strict public type, and parse
- * the field schema entry by entry (malformed entries are dropped). Unknown
- * fields stay, for protocol evolution.
- */
+/** Drop `null` optionals so downstream sees the strict public type. Unknown fields stay, for protocol evolution. */
 export function normalizeLivePreviewMessage(
   message: PayloadLivePreviewMessage,
 ): PayloadLivePreviewMessage {
@@ -86,9 +79,5 @@ export function normalizeLivePreviewMessage(
     const wireValue: unknown = Reflect.get(normalized, field);
     if (wireValue === null) Reflect.deleteProperty(normalized, field);
   }
-  if (!Array.isArray(normalized.fieldSchemaJSON)) return normalized;
-  return {
-    ...normalized,
-    fieldSchemaJSON: parseFieldSchema(normalized.fieldSchemaJSON),
-  };
+  return normalized;
 }

@@ -4,34 +4,54 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { post, startRuntime, TRUSTED } from '../../helpers/runtime';
-import { populationURL } from '../../helpers/population';
 
-const schema = [{ name: 'author', type: 'relationship', relationTo: 'authors' }];
 const raw = { author: 'A' };
 
-describe('legacy population after locale read refusal', () => {
+/** Every update names its document, as the admin of Payload 3 and 4 does. */
+function send(fields: Record<string, unknown>, extra: Record<string, unknown> = {}): void {
+  post({ id: '1', ...fields }, { extra: { collectionSlug: 'posts', ...extra } });
+}
+
+interface MergeBody {
+  readonly data: { readonly author: string };
+  readonly locale?: string;
+}
+
+function bodyOf(init: RequestInit | undefined): MergeBody {
+  const body = init?.body;
+  if (typeof body !== 'string') throw new Error('the merge posts a JSON string');
+  return JSON.parse(body) as MergeBody;
+}
+
+/** The server's answer: the posted values with the author populated under `name`. */
+function merged(name: string): typeof fetch {
+  return (_input, init) => {
+    const { data } = bodyOf(init);
+    return Promise.resolve(
+      new Response(JSON.stringify({ ...data, author: { id: data.author, name } })),
+    );
+  };
+}
+
+describe('population after locale read refusal', () => {
   it.each(['fr', 'en'] as const)(
     'keeps the last successful locale after refusal before the next %s update',
     async (nextLocale) => {
       document.body.innerHTML = '<p data-payload-field="author.name">Initial</p>';
       const fetchFn = vi
         .fn<typeof fetch>()
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ docs: [{ id: 'A', name: 'Ada en' }] })),
-        )
+        .mockImplementationOnce(merged('Ada en'))
         .mockResolvedValueOnce(new Response('Access denied', { status: 403 }))
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ docs: [{ id: 'A', name: 'Ada fr' }] })),
-        );
+        .mockImplementationOnce(merged('Ada fr'));
       const { runtime } = startRuntime({
         eventSourcePolicy: 'any',
         dataMerge: { serverURL: TRUSTED, depth: 1, fetchFn },
       });
       const name = document.querySelector('p');
       try {
-        post({ ...raw }, { extra: { fieldSchemaJSON: schema, locale: 'en' } });
+        send({ ...raw }, { locale: 'en' });
         await vi.waitFor(() => expect(name?.textContent).toBe('Ada en'));
-        post({ ...raw }, { extra: { locale: 'fr' } });
+        send({ ...raw }, { locale: 'fr' });
         await vi.waitFor(() =>
           expect(runtime.inspect().revisions.display).toMatchObject({
             state: 'partial',
@@ -40,12 +60,12 @@ describe('legacy population after locale read refusal', () => {
         );
         expect(name?.textContent).toBe('Ada en');
 
-        post({ ...raw }, { extra: { locale: nextLocale } });
+        send({ ...raw }, { locale: nextLocale });
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(3));
         expect(fetchFn).toHaveBeenCalledTimes(nextLocale === 'fr' ? 3 : 2);
-        expect(
-          fetchFn.mock.calls.map(([input]) => populationURL(input).searchParams.get('locale')),
-        ).toEqual(nextLocale === 'fr' ? ['en', 'fr', 'fr'] : ['en', 'fr']);
+        expect(fetchFn.mock.calls.map(([, init]) => bodyOf(init).locale ?? null)).toEqual(
+          nextLocale === 'fr' ? ['en', 'fr', 'fr'] : ['en', 'fr'],
+        );
         await vi.waitFor(() => expect(name?.textContent).toBe(`Ada ${nextLocale}`));
         expect(runtime.inspect().revisions.display).toMatchObject({
           state: 'current',
@@ -59,7 +79,7 @@ describe('legacy population after locale read refusal', () => {
   );
 });
 
-describe('legacy population before any successful locale context', () => {
+describe('population before any successful locale context', () => {
   it.each([
     ['http', false],
     ['http', true],
@@ -76,17 +96,14 @@ describe('legacy population before any successful locale context', () => {
       } else {
         fetchFn.mockRejectedValueOnce(new Error('offline'));
       }
-      fetchFn.mockResolvedValueOnce(
-        new Response(JSON.stringify({ docs: [{ id: 'A', name: 'Ada recovered' }] })),
-      );
+      fetchFn.mockImplementationOnce(merged('Ada recovered'));
       const { runtime } = startRuntime({
         eventSourcePolicy: 'any',
         dataMerge: { serverURL: TRUSTED, depth: 1, fetchFn },
       });
       const data = { author: 'A', title: 'Typed default' };
-      const fields = [...schema, { name: 'title', type: 'text' }];
       try {
-        post({ ...data }, { extra: { fieldSchemaJSON: fields } });
+        send({ ...data });
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(1));
         expect(runtime.inspect().revisions.display).toMatchObject({
           state: 'partial',
@@ -100,7 +117,7 @@ describe('legacy population before any successful locale context', () => {
           runtime.destroy();
           runtime.start();
         }
-        post({ ...data }, restart ? { extra: { fieldSchemaJSON: fields } } : {});
+        send({ ...data });
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(2));
         expect(fetchFn).toHaveBeenCalledTimes(2);
         await vi.waitFor(() =>
@@ -110,10 +127,11 @@ describe('legacy population before any successful locale context', () => {
           state: 'current',
           shortfalls: [],
         });
-        expect(
-          fetchFn.mock.calls.map(([input]) => populationURL(input).searchParams.has('locale')),
-        ).toEqual([false, false]);
-        post({ ...data });
+        expect(fetchFn.mock.calls.map(([, init]) => 'locale' in bodyOf(init))).toEqual([
+          false,
+          false,
+        ]);
+        send({ ...data });
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(3));
         expect(fetchFn).toHaveBeenCalledTimes(2);
         expect(document.querySelector('p')?.textContent).toBe('Ada recovered');
@@ -125,7 +143,7 @@ describe('legacy population before any successful locale context', () => {
   );
 });
 
-describe('legacy population after a same-locale relationship refusal', () => {
+describe('population after a same-locale relationship refusal', () => {
   it.each([
     ['en', 'http', false],
     ['en', 'exception', false],
@@ -140,33 +158,26 @@ describe('legacy population after a same-locale relationship refusal', () => {
     async (locale, fault, restart) => {
       document.body.innerHTML =
         '<h1 data-payload-field="title">Initial title</h1><p data-payload-field="author.name">Initial author</p>';
-      const fetchFn = vi
-        .fn<typeof fetch>()
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ docs: [{ id: 'A', name: 'Ada A' }] })),
-        );
+      const fetchFn = vi.fn<typeof fetch>().mockImplementationOnce(merged('Ada A'));
       if (fault === 'http') {
         fetchFn.mockResolvedValueOnce(new Response('Access denied', { status: 403 }));
       } else {
         fetchFn.mockRejectedValueOnce(new Error('offline'));
       }
-      fetchFn.mockResolvedValueOnce(
-        new Response(JSON.stringify({ docs: [{ id: 'B', name: 'Bob B' }] })),
-      );
+      fetchFn.mockImplementationOnce(merged('Bob B'));
       const { runtime } = startRuntime({
         eventSourcePolicy: 'any',
         dataMerge: { serverURL: TRUSTED, depth: 1, fetchFn },
       });
-      const fields = [...schema, { name: 'title', type: 'text' }];
       const first = { author: 'A', title: 'Typed A' };
       const changed = { author: 'B', title: 'Typed B' };
       const envelope = locale === undefined ? {} : { locale };
       try {
-        post({ ...first }, { extra: { ...envelope, fieldSchemaJSON: fields } });
+        send({ ...first }, envelope);
         await vi.waitFor(() => expect(document.querySelector('p')?.textContent).toBe('Ada A'));
         expect(fetchFn).toHaveBeenCalledOnce();
 
-        post({ ...changed }, { extra: envelope });
+        send({ ...changed }, envelope);
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(2));
         expect(fetchFn).toHaveBeenCalledTimes(2);
         expect(document.querySelector('p')?.textContent).toBe('Ada A');
@@ -180,10 +191,7 @@ describe('legacy population after a same-locale relationship refusal', () => {
           runtime.destroy();
           runtime.start();
         }
-        post(
-          { ...changed },
-          { extra: { ...envelope, ...(restart ? { fieldSchemaJSON: fields } : {}) } },
-        );
+        send({ ...changed }, envelope);
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(3));
         expect(fetchFn).toHaveBeenCalledTimes(3);
         await vi.waitFor(() => expect(document.querySelector('p')?.textContent).toBe('Bob B'));
@@ -192,15 +200,17 @@ describe('legacy population after a same-locale relationship refusal', () => {
           state: 'current',
           shortfalls: [],
         });
-        expect(
-          fetchFn.mock.calls.map(([input]) =>
-            populationURL(input).searchParams.get('where[id][in]'),
-          ),
-        ).toEqual(['A', 'B', 'B']);
-        expect(
-          fetchFn.mock.calls.map(([input]) => populationURL(input).searchParams.get('locale')),
-        ).toEqual([locale ?? null, locale ?? null, locale ?? null]);
-        post({ ...changed }, { extra: envelope });
+        expect(fetchFn.mock.calls.map(([, init]) => bodyOf(init).data.author)).toEqual([
+          'A',
+          'B',
+          'B',
+        ]);
+        expect(fetchFn.mock.calls.map(([, init]) => bodyOf(init).locale ?? null)).toEqual([
+          locale ?? null,
+          locale ?? null,
+          locale ?? null,
+        ]);
+        send({ ...changed }, envelope);
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(4));
         expect(fetchFn).toHaveBeenCalledTimes(3);
         expect(document.querySelector('p')?.textContent).toBe('Bob B');
@@ -216,7 +226,7 @@ describe('legacy population after a same-locale relationship refusal', () => {
   );
 });
 
-describe('legacy population behind shared trailing merge results', () => {
+describe('population behind shared trailing merge results', () => {
   it.each([
     ['en', 'http'],
     ['en', 'exception'],
@@ -228,11 +238,7 @@ describe('legacy population behind shared trailing merge results', () => {
       vi.useFakeTimers();
       document.body.innerHTML =
         '<h1 data-payload-field="title">Initial title</h1><p data-payload-field="author.name">Initial author</p>';
-      const fetchFn = vi
-        .fn<typeof fetch>()
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ docs: [{ id: 'A', name: 'Ada A' }] })),
-        );
+      const fetchFn = vi.fn<typeof fetch>().mockImplementationOnce(merged('Ada A'));
       for (let index = 0; index < 2; index += 1) {
         if (fault === 'http') {
           fetchFn.mockResolvedValueOnce(new Response('Access denied', { status: 403 }));
@@ -240,35 +246,29 @@ describe('legacy population behind shared trailing merge results', () => {
           fetchFn.mockRejectedValueOnce(new Error('offline'));
         }
       }
-      fetchFn.mockResolvedValueOnce(
-        new Response(JSON.stringify({ docs: [{ id: 'B', name: 'Bob B' }] })),
-      );
+      fetchFn.mockImplementationOnce(merged('Bob B'));
       const { runtime } = startRuntime({
         debounceMs: 50,
         eventSourcePolicy: 'any',
         dataMerge: { serverURL: TRUSTED, depth: 1, fetchFn },
       });
-      const fields = [...schema, { name: 'title', type: 'text' }];
       const envelope = locale === undefined ? {} : { locale };
       const changed = { author: 'B', title: 'Typed B' };
       try {
-        post(
-          { author: 'A', title: 'Typed A' },
-          { extra: { ...envelope, fieldSchemaJSON: fields } },
-        );
+        send({ author: 'A', title: 'Typed A' }, envelope);
         await vi.advanceTimersByTimeAsync(100);
         expect(document.querySelector('p')?.textContent).toBe('Ada A');
         expect(fetchFn).toHaveBeenCalledOnce();
 
-        post({ ...changed }, { extra: envelope });
+        send({ ...changed }, envelope);
         await vi.advanceTimersByTimeAsync(0);
         expect(fetchFn).toHaveBeenCalledTimes(2);
         expect(runtime.inspect().revisions.display).toMatchObject({
           state: 'pending',
           shortfalls: [{ kind: 'merge' }],
         });
-        post({ ...changed }, { extra: envelope });
-        post({ ...changed }, { extra: envelope });
+        send({ ...changed }, envelope);
+        send({ ...changed }, envelope);
         await vi.advanceTimersByTimeAsync(0);
         expect(fetchFn).toHaveBeenCalledTimes(2);
         expect(document.querySelector('p')?.textContent).toBe('Ada A');
@@ -283,7 +283,7 @@ describe('legacy population behind shared trailing merge results', () => {
         });
         expect(document.querySelector('p')?.textContent).toBe('Ada A');
 
-        post({ ...changed }, { extra: envelope });
+        send({ ...changed }, envelope);
         await vi.advanceTimersByTimeAsync(100);
         expect(fetchFn).toHaveBeenCalledTimes(4);
         expect(document.querySelector('p')?.textContent).toBe('Bob B');
@@ -291,15 +291,19 @@ describe('legacy population behind shared trailing merge results', () => {
           state: 'current',
           shortfalls: [],
         });
-        expect(
-          fetchFn.mock.calls.map(([input]) =>
-            populationURL(input).searchParams.get('where[id][in]'),
-          ),
-        ).toEqual(['A', 'B', 'B', 'B']);
-        expect(
-          fetchFn.mock.calls.map(([input]) => populationURL(input).searchParams.get('locale')),
-        ).toEqual([locale ?? null, locale ?? null, locale ?? null, locale ?? null]);
-        post({ ...changed }, { extra: envelope });
+        expect(fetchFn.mock.calls.map(([, init]) => bodyOf(init).data.author)).toEqual([
+          'A',
+          'B',
+          'B',
+          'B',
+        ]);
+        expect(fetchFn.mock.calls.map(([, init]) => bodyOf(init).locale ?? null)).toEqual([
+          locale ?? null,
+          locale ?? null,
+          locale ?? null,
+          locale ?? null,
+        ]);
+        send({ ...changed }, envelope);
         await vi.advanceTimersByTimeAsync(100);
         expect(fetchFn).toHaveBeenCalledTimes(4);
         expect(document.querySelector('p')?.textContent).toBe('Bob B');
@@ -332,23 +336,12 @@ describe('retained population when a consumer returns', () => {
         '<h1 data-payload-field="title">Initial title</h1><p data-payload-field="author.name">Initial author</p>';
       const fetchFn = vi
         .fn<typeof fetch>()
-        .mockResolvedValueOnce(new Response(JSON.stringify({ docs: [{ id: 'A', name: 'Ada A' }] })))
-        .mockResolvedValueOnce(
-          new Response(
-            JSON.stringify({
-              docs: [
-                change === 'related-save'
-                  ? { id: 'A', name: 'Ada refreshed' }
-                  : { id: 'B', name: 'Bob B' },
-              ],
-            }),
-          ),
-        );
+        .mockImplementationOnce(merged('Ada A'))
+        .mockImplementationOnce(merged(change === 'related-save' ? 'Ada refreshed' : 'Bob B'));
       const { runtime } = startRuntime({
         eventSourcePolicy: 'any',
         dataMerge: { serverURL: TRUSTED, depth: 1, fetchFn },
       });
-      const fields = [...schema, { name: 'title', type: 'text' }];
       const envelope = locale === undefined ? {} : { locale };
       const first = { author: 'A', title: 'Typed A' };
       const changed =
@@ -362,7 +355,7 @@ describe('retained population when a consumer returns', () => {
         change === 'relationship' ? 'Bob B' : change === 'related-save' ? 'Ada refreshed' : 'Ada A';
       const name = document.querySelector('p')!;
       try {
-        post({ ...first }, { extra: { ...envelope, fieldSchemaJSON: fields } });
+        send({ ...first }, envelope);
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(1));
         expect(name.textContent).toBe('Ada A');
         expect(fetchFn).toHaveBeenCalledOnce();
@@ -371,21 +364,19 @@ describe('retained population when a consumer returns', () => {
         runtime.refreshCache();
         expect(fetchFn).toHaveBeenCalledOnce();
         expect(runtime.inspect().revisions.display).toMatchObject({ revision: 1 });
-        post(
+        send(
           { ...changed },
           {
-            extra: {
-              ...envelope,
-              ...(change === 'related-save'
-                ? {
-                    externallyUpdatedRelationship: {
-                      entitySlug: 'authors',
-                      id: 'A',
-                      updatedAt: '2026-10-04T12:00:00.000Z',
-                    },
-                  }
-                : {}),
-            },
+            ...envelope,
+            ...(change === 'related-save'
+              ? {
+                  externallyUpdatedRelationship: {
+                    entitySlug: 'authors',
+                    id: 'A',
+                    updatedAt: '2026-10-04T12:00:00.000Z',
+                  },
+                }
+              : {}),
           },
         );
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(2));
@@ -397,7 +388,7 @@ describe('retained population when a consumer returns', () => {
         runtime.refreshCache();
         expect(fetchFn).toHaveBeenCalledOnce();
         expect(runtime.inspect().revisions.display).toMatchObject({ revision: 2 });
-        post({ ...changed }, { extra: envelope });
+        send({ ...changed }, envelope);
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(3));
         expect(fetchFn).toHaveBeenCalledTimes(readsAgain ? 2 : 1);
         expect(name.textContent).toBe(expectedName);
@@ -407,12 +398,10 @@ describe('retained population when a consumer returns', () => {
           state: 'current',
           shortfalls: [],
         });
-        expect(
-          fetchFn.mock.calls.map(([input]) =>
-            populationURL(input).searchParams.get('where[id][in]'),
-          ),
-        ).toEqual(readsAgain ? ['A', changed.author] : ['A']);
-        post({ ...changed }, { extra: envelope });
+        expect(fetchFn.mock.calls.map(([, init]) => bodyOf(init).data.author)).toEqual(
+          readsAgain ? ['A', changed.author] : ['A'],
+        );
+        send({ ...changed }, envelope);
         await vi.waitFor(() => expect(runtime.inspect().revisions.completed).toBe(4));
         expect(fetchFn).toHaveBeenCalledTimes(readsAgain ? 2 : 1);
         expect(name.textContent).toBe(expectedName);

@@ -43,7 +43,7 @@ function running(...tables: readonly (readonly string[])[]): boolean[] {
   return JSON.parse(stdout) as boolean[];
 }
 
-describe('Payload 2 lane idle check', () => {
+describe('version lane idle check', () => {
   it('sees no job in a table of other processes', () => {
     expect(running([], OTHERS)).toEqual([false, false]);
   });

@@ -7,7 +7,6 @@ import { LivePreviewClient } from '@/client/index';
 import { bootstrapInlineRuntime } from '@core/runtime';
 import { buildBuiltinRenderers } from '@field-types/index';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
-import { parseFieldSchema } from '@schema/parser';
 import { jsonResponse } from './data-merger-harness';
 
 /**
@@ -118,20 +117,6 @@ describe('DataMerger with timeoutMs', () => {
     await vi.advanceTimersByTimeAsync(4_999);
     expect(box.result).toBeUndefined();
     await vi.advanceTimersByTimeAsync(1);
-    expect({ result: box.result, aborted: signals[0]?.aborted }).toEqual({
-      result: { status: 'unavailable' },
-      aborted: true,
-    });
-  });
-
-  it('bounds the Payload 2 population reads the same way', async () => {
-    const { fetchFn, signals } = hangingFetch();
-    const merger = new DataMerger({ serverURL: SERVER, fetchFn, timeoutMs: 5_000 });
-    const schema = parseFieldSchema([
-      { name: 'author', type: 'relationship', relationTo: 'authors' },
-    ]);
-    const box = settledWith(merger.merge({ schema, data: { author: 'A' } }));
-    await vi.advanceTimersByTimeAsync(5_000);
     expect({ result: box.result, aborted: signals[0]?.aborted }).toEqual({
       result: { status: 'unavailable' },
       aborted: true,

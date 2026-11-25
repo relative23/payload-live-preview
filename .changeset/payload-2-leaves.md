@@ -1,0 +1,5 @@
+---
+'payload-live-preview': major
+---
+
+Payload 2 is no longer supported (ADR 0007, rows 25 and 30): the `payload` peer range is `^3.0.0 || ^4.0.0-0`, and a site on Payload 2 stays on the 2.x line of this package. An update's `fieldSchemaJSON`, which only a Payload 2 admin sends, is no longer read. It decides no field type and starts no collection read; every update is merged through the server's method-override `POST`, and a development notice names the 2.x line when such an admin sends an update. Removed with the schema: the types `PayloadFieldSchema`, `PayloadBlockSchema` and `PayloadFieldCondition`, `fieldSchemaJSON` on `PayloadLivePreviewMessage`, `schema` on `RenderContext` and on `PayloadLivePreviewData`, the option labels of the `select` renderer, and `fieldTyping` and `populatesRelationships` on `ProtocolProfile`. `buildLivePreviewUrl()` and the config plugin read `collectionConfig` and `globalConfig`, no longer `documentInfo`. On Payload 3 or 4 nothing changes unless a custom renderer read `context.schema`, or a sender of your own added a schema for field types: set `data-payload-type` on those bindings.

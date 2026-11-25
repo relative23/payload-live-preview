@@ -120,12 +120,15 @@ describe('declarations', () => {
   });
   it('derives the profile from what was observed', () => {
     expect(detectProtocolProfile(new Set()).name).toBe('unknown');
-    expect(detectProtocolProfile(new Set(['schema-json'])).name).toBe('payload-2');
-    expect(detectProtocolProfile(new Set(['schema-json'])).populatesRelationships).toBe('admin');
+    expect(detectProtocolProfile(new Set(['schema-json']))).toEqual({
+      name: 'payload-2',
+      documentEvents: false,
+    });
     expect(detectProtocolProfile(new Set(['document-events'])).name).toBe('payload-3');
-    expect(detectProtocolProfile(new Set(['relationship-events'])).populatesRelationships).toBe(
-      'server',
-    );
+    expect(detectProtocolProfile(new Set(['relationship-events']))).toEqual({
+      name: 'payload-3',
+      documentEvents: true,
+    });
   });
 });
 

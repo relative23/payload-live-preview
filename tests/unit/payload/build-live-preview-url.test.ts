@@ -129,14 +129,14 @@ describe('buildLivePreviewUrl — 1.0 behaviour', () => {
     expect(both(globalArgs('shared'))).toBe(`${BASE}/from-global?preview=true`);
   });
 
-  it('reads the entity slug from Payload 2 documentInfo', () => {
+  it("does not read the entity from Payload 2's documentInfo: such a call gets the fallback", () => {
     expect(url(payload2Args('collection', 'services', { slug: 'thai-massage' }))).toBe(
-      `${BASE}/services/thai-massage?preview=true`,
+      `${BASE}/?preview=true`,
     );
-    expect(url(payload2Args('global', 'contact'))).toBe(`${BASE}/de/contact?preview=true`);
+    expect(url(payload2Args('global', 'contact'))).toBe(`${BASE}/?preview=true`);
   });
 
-  it('prefers Payload 3 entity config when both callback shapes are present', () => {
+  it('reads the entity config and nothing beside it', () => {
     expect(
       url({
         ...payload2Args('collection', 'services', { slug: 'thai-massage' }),

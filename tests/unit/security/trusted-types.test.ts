@@ -124,7 +124,7 @@ describe('sinks under an enforcing policy', () => {
     expect(sanitizeHtml('<b>x</b><script>y()</script>')).toBe('<b>x</b>');
     expect(createHTML).toHaveBeenCalledWith('<b>x</b><script>y()</script>');
     const renderers = buildBuiltinRenderers();
-    const context: RenderContext = { allFields: {}, locale: undefined, schema: undefined };
+    const context: RenderContext = { allFields: {}, locale: undefined };
     const target = (fieldType: string) =>
       ({
         element: document.createElement('div'),

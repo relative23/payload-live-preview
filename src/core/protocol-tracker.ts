@@ -24,7 +24,7 @@ export class ProtocolTracker {
     for (const capability of fresh) this.observed.add(capability);
     this.negotiation = negotiateProtocol(this.negotiation.theirs, this.observed);
     log('protocol', `observed=${fresh.join(',')}`);
-    // A byte trade like the lean profile's others: it drops the hint, not Payload 2's behaviour.
+    // A byte trade like the lean profile's others: it drops the hint.
     if (
       !(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__) &&
       fresh.includes('schema-json') &&

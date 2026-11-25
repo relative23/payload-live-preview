@@ -12,7 +12,6 @@ import {
   NPM_CI,
   NPM_VERSION,
   MATRIX_SETUP,
-  PAYLOAD_2_ADVISORIES,
   PINNED_SETUP,
   SETUP_NODE,
   READ_ONLY,
@@ -47,7 +46,9 @@ export const CI: WorkflowSpec = {
         CHECKOUT,
         {
           uses: 'actions/dependency-review-action',
-          with: { 'fail-on-severity': 'high', 'allow-ghsas': PAYLOAD_2_ADVISORIES.join(', ') },
+          // No advisory is allowed past the review: the last list left with the Payload 2 lane.
+          with: { 'fail-on-severity': 'high' },
+          withOnly: true,
         },
       ],
     },

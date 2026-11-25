@@ -16,8 +16,6 @@ function transaction(fields: Record<string, unknown>): UpdateTransaction {
     message: { type: 'payload-live-preview', collectionSlug: 'posts', data: fields },
     rawData: fields,
     locale: undefined,
-    schema: undefined,
-    schemaIndex: undefined,
     receivedAt: 1,
     forceRender: false,
     countsAsUpdate: true,

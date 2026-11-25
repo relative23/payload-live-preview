@@ -27,23 +27,20 @@ The modules that answer them are the **trusted core**:
 
 | Module                          |     Lines | Decides                                                     |
 | ------------------------------- | --------: | ----------------------------------------------------------- |
-| `src/core/message-guards.ts`    |        94 | which shapes are a message                                  |
+| `src/core/message-guards.ts`    |        83 | which shapes are a message                                  |
 | `src/core/message-bus.ts`       |       467 | which window may send and which verdict commits             |
-| `src/core/data-merger.ts`       |       364 | credentialed transport and which attempt wins               |
-| `src/core/legacy-population.ts` |       425 | bounded v2 planning, response identity and body teardown    |
+| `src/core/data-merger.ts`       |       290 | credentialed transport and which attempt wins               |
 | `src/core/attribute-binding.ts` |        68 | which attribute a remote value may become                   |
 | `src/security/url-validator.ts` |        60 | which URL is safe                                           |
 | `src/security/escape.ts`        |        48 | how text becomes escaped markup                             |
 | `src/security/sanitizer.ts`     |       530 | which tags and attributes CMS content keeps                 |
 | `src/security/trusted-types.ts` |        87 | the policy every HTML sink goes through                     |
-| **Total**                       | **2 143** | 1 701 without blank/comment lines; 47 exported declarations |
+| **Total**                       | **1 633** | 1 212 without blank/comment lines; 41 exported declarations |
 
-Measured on 2026-11-02, for 2.3.1. The full 425-line population primitive is counted:
-417 lines in the initial v2 correction, then two lines for the separately
-reviewed native-stream work bound, two for shared polymorphic-target work
-and three for bounded block-definition lookup, which made 424; three later
-reviews net one more (one line removed, two added). Delegating these checks
-does not remove them from the reader's trust scope.
+Measured on 2026-11-25, for 3.0. Until then the core had a ninth module,
+`legacy-population.ts`, 425 lines that planned and read the collection GETs of
+Payload 2. It left with that transport, `data-merger.ts` lost its population
+branch and `message-guards.ts` the schema parse, and the total fell from 2 146.
 
 The boundary is not a feeling about which files are important. A module is in
 the core because it **holds a capability**: it listens to messages, sends a
@@ -60,12 +57,12 @@ and is listed nowhere fails the build.
 
 ### The three gates
 
-**1. The core cannot grow.** `scripts/check-trusted-core.ts` counts the nine
+**1. The core cannot grow.** `scripts/check-trusted-core.ts` counts the eight
 modules the way `wc -l` does and holds the total at the number in
 `trusted-core.json` — the exact measurement, no headroom. A line added to the
 core is a line every reader has to trust, so adding one means raising the
-number and writing down why, next to the number. The same file lists the six
-modules the core imports from outside itself: the field-schema parser,
+number and writing down why, next to the number. The same file lists the five
+modules the core imports from outside itself:
 a diagnostic wrapper, a thenable guard, the protocol version constant,
 a development warning and the sanitizer report. A new dependency fails
 until it is reviewed too.
@@ -84,20 +81,27 @@ or `formaction` cannot be written by name at all. A `fetch` that appears in a
 renderer is a red build, and so is a justification whose site has moved.
 
 **3. The core's tests notice a changed line.** A Stryker profile mutates the
-nine modules and nothing else (`STRYKER_SCOPE=core`), with every mutant killed
+eight modules and nothing else (`STRYKER_SCOPE=core`), with every mutant killed
 as the target. The retained score is in
 [quality/mutation-policy-core.json](../quality/mutation-policy-core.json): the
-complete run of the nine modules on 2026-10-16, four workers, 29 minutes,
+complete run of the nine modules the core had on 2026-10-16, four workers, 29 minutes,
 measured 2 080 mutants, 98.94 % detected (a timeout counts as detected), 22 survived and none left unexecuted by
 a test. Each of the 22 is on that file's `equivalent` list — by file, line,
 mutator and the text it replaced — with one sentence saying why the program
-does the same with and without it: 13 in `legacy-population.ts`, six in
+does the same with and without it: 13 in `legacy-population.ts` then, six in
 `message-bus.ts`, two in `url-validator.ts` and one in `trusted-types.ts`. The
 policy fails the run when a survivor is missing from the list or a listed one
 is killed now, and the survivors stay visible in the report. For 2.3.1, after
 the changes to `data-merger.ts` and `sanitizer.ts` since then, the scope holds
 2 133 mutants: 2 095 killed, 16 timeouts and the same 22 survivors, 98.97 %
 (2026-11-02).
+
+3.0 takes `legacy-population.ts` out of the core, and with it 630 mutants and
+the 13 survivors listed for it. The eight modules hold 1 409 mutants; nine
+survive and are on the list, six in `message-bus.ts`, two in
+`url-validator.ts` and one in `trusted-types.ts`, which is 99.36 % detected
+(2026-11-25: the two changed modules mutated on the final source, the six
+others from the report of the last run on `main`).
 
 Before `legacy-population.ts` joined, the core was eight modules, measured at
 1 202 mutants on 2026-09-11, 99.17 % killed, 10 survived and none left
@@ -129,9 +133,13 @@ baseline to 11 670 mutants and 53 without coverage. In 2.2 the inline generator
 and the doctor's reader of a served configuration joined as critical files, so
 the scope is 82 files and 12 114 mutants, 55 of them without coverage. For
 2.3.1 the same 82 files hold 12 657 mutants, 89.16 % detected, 48 without
-coverage (2026-11-02). The four
-critical coverage cells added in 2.1 cover the population primitive, document
-session, parser and walker; the Coverage job holds their floors (95 % of lines and
+coverage (2026-11-02). The scope has since grown to 87 files. 3.0 takes three
+of them out with Payload 2: the 84 that remain hold 12 059 mutants, 88.81 %
+detected, 49 without coverage (2026-11-25). The score
+is lower although no file detects less than before, because the 847 mutants of
+the three files that left were detected at 96 %. The four
+critical coverage cells added in 2.1 covered the population primitive, document
+session, parser and walker; three of them left with Payload 2 in 3.0, and the Coverage job holds the session's floors (95 % of lines and
 branches, every function) on every push, like every other critical file.
 
 These three rest on two that already existed: the layer rules (no upward
@@ -169,8 +177,8 @@ hit, probes the encoding call makes itself — which are gone.
 
 ## The core in reading order
 
-Read the modules in this order. Three of them lean on a primitive that comes
-after them: `data-merger.ts` on `legacy-population.ts`, `attribute-binding.ts`
+Read the modules in this order. Two of them lean on a primitive that comes
+after them: `attribute-binding.ts`
 on `url-validator.ts` and `sanitizer.ts` on `trusted-types.ts`; the later
 section is where that primitive's invariants are. Every invariant has a number
 so a review can refer to one, and each names the gate or test that holds it.
@@ -182,10 +190,8 @@ so a review can refer to one, and each names the gate or test that holds it.
 - **G2** A `payload-live-preview` message's `data` is a plain object or absent;
   every optional scalar has its type or is absent; `null` counts as absent,
   because JSON bridges send it (`isLivePreviewMessage`, `normalizeLivePreviewMessage`).
-- **G3** `fieldSchemaJSON` is parsed entry by entry and a throw becomes an
-  empty schema. The normalized schema supplies renderer types and v2 relation
-  targets, without granting authorization. The population primitive validates
-  every destination, ID and response independently before filling a document.
+- **G3** `fieldSchemaJSON`, which a Payload 2 admin sends, is not read: the
+  guards neither parse nor type it, and it reaches no renderer and no request.
 - **G4** Unknown fields are kept, so the protocol can grow without a release.
 
 Held by: the core mutation profile; `tests/unit/core/message-bus-shapes.test.ts`.
@@ -223,12 +229,10 @@ ordering, generations) and the fast-check models in
 
 ### 3. `data-merger.ts` — credentialed reads and which attempt wins
 
-- **M1** Payload 3 requests its collection document or global by POST with
-  `X-Payload-HTTP-Method-Override: GET`. Payload 2 instead reads schema-owned
-  relationship IDs by collection GET, with no body or method override.
-  Scalar v2 updates settle locally. Legacy destinations stay on the configured
-  CMS origin and refuse redirects; `serverURL` loses trailing slashes without
-  a regular expression that could backtrack.
+- **M1** The merge requests its collection document or global by POST with
+  `X-Payload-HTTP-Method-Override: GET`, on the configured CMS origin;
+  `serverURL` loses trailing slashes without a regular expression that could
+  backtrack. No other request leaves this module.
 - **M2** A slug or id with `/`, `\`, a control character, a lone surrogate,
   `.`/`..`, an empty string or over its length limit (128 for a slug, 512 for
   an id) never becomes a URL segment, and a slug with `?` or `#` does not
@@ -241,38 +245,11 @@ ordering, generations) and the fast-check models in
   ignored the signal — the attempt counter alone decides, since nothing but
   this class aborts the signal and only after the counter moved (`attempt`).
 - **M5** A non-OK response, invalid body or exception is `unavailable`.
-  A successful legacy plan requires every requested response identity before
-  the independent document is returned. A hook keeps its last good document;
-  the DOM runtime may retain the raw update, but never applies a partial
-  population or an HTTP error body.
+  A hook keeps its last good document; the DOM runtime may retain the raw
+  update, but never applies an HTTP error body.
 
 Held by: `network` and `credentialed-request` reviewed per module (gate 2);
 the core mutation profile; `tests/unit/core/data-merger-*.test.ts`.
-
-### 3b. `legacy-population.ts` — the delegated v2 population primitive
-
-- **L1** Only schema-owned relationships/uploads and rich-text relation nodes
-  plan reads. An arbitrary root or JSON `relationTo`/`value` pair does not.
-- **L2** An independent structured-data copy is bounded by 64 levels,
-  10,000 nodes and 1,048,576 UTF-16 code units of string values.
-  Invalid IDs, collection names,
-  cycles and sparse arrays are refused.
-- **L3** The planner limits IDs to 1,000, requests to 64 and URLs to
-  8,192 characters. Each query contains at most 20 IDs, preserves locale
-  and depth, and stays on the configured CMS origin.
-- **L4** Each response must contain every requested identity exactly once,
-  with no unexpected identity. All requests must succeed before the caller
-  receives the populated document.
-- **L5** Native bodies stop at one MiB and 10,000 chunks, including empty
-  chunks. This bounds stream work as well as bytes.
-- **L6** Supersession/refusal cancels an unfinished reader, releases its
-  lock and removes its abort listener. A hostile pending read cannot start
-  another old read chain after the attempt has been replaced.
-
-Held by: the counted core primitive and resource inventory;
-`tests/unit/core/data-merger-v2*.test.ts` and
-`tests/unit/core/legacy-population-stream-work.test.ts`. Both DOM and session
-caller regressions use the anonymized observed v2 message shape.
 
 ### 4. `attribute-binding.ts` — which attribute a remote value may become
 

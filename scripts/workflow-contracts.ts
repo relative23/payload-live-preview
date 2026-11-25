@@ -35,6 +35,8 @@ export interface UsesStepSpec extends ConditionalStep {
   readonly uses: string;
   readonly name?: string;
   readonly with?: Readonly<Record<string, string>>;
+  /** The step may carry no input beside those in `with`. */
+  readonly withOnly?: true;
   readonly continueOnError?: string;
 }
 
@@ -217,6 +219,13 @@ function checkStep(step: YamlRecord, spec: StepSpec, label: string, violations: 
       normalizeExpression(actual[name]) !== normalizeExpression(value)
     ) {
       violations.push(`${label} ${key}.${name} is not ${JSON.stringify(value)}`);
+    }
+  }
+  if (!('run' in spec) && spec.withOnly === true) {
+    for (const name of Object.keys(actual)) {
+      if (!Object.hasOwn(expected ?? {}, name)) {
+        violations.push(`${label} with.${name} is not a reviewed input`);
+      }
     }
   }
   if ('run' in spec) {

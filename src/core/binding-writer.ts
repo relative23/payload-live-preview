@@ -7,12 +7,11 @@
 
 import { definedOnly } from '@/types/defined-only';
 import { sameRevision } from './message-bus';
-import { lookupSchema, payloadTypeToRenderer } from '@schema/index';
 import { applyAttributeBinding } from './attribute-binding';
 import { reportServerFormatting, reportUnfaithfulPatch, watchServerFormatting } from './fidelity';
 import { rendererUsesNoWriteOutcome } from './internal-outcome';
 import { type RuntimeDeps, type RuntimeState, type UpdateTransaction } from './runtime-state';
-import type { CachedElement, FieldRenderer, RenderContext, RendererKey } from './types';
+import type { CachedElement, FieldRenderer, RenderContext } from './types';
 import type { ScheduledUpdate } from './update-scheduler';
 
 export class BindingWriter {
@@ -54,12 +53,8 @@ export class BindingWriter {
       return false;
     }
     const { target, value } = update;
-    const schemaEntry =
-      transaction.schemaIndex !== undefined
-        ? lookupSchema(transaction.schemaIndex, target.fieldName)
-        : undefined;
-    let type = resolveFieldType(target, schemaEntry?.type);
-    // Payload 3.x sends no schema; a Lexical root is unmistakable.
+    let type = target.fieldType;
+    // The admin sends no field types; a Lexical root is unmistakable.
     if (type === 'text' && target.explicitFieldType !== true && looksLikeLexicalRoot(value)) {
       type = 'richText';
     }
@@ -77,7 +72,6 @@ export class BindingWriter {
     const context: RenderContext = {
       allFields: update.allFields,
       locale: target.locale ?? transaction.locale,
-      schema: schemaEntry,
       ...this.instanceContext,
     };
     // A boundary anchor stays out of layout and the accessibility tree while empty.
@@ -164,16 +158,6 @@ export class BindingWriter {
     );
     return false;
   }
-}
-
-/** Explicit `data-payload-type` wins over the schema, which wins over tag heuristics. */
-function resolveFieldType(target: CachedElement, schemaType: string | undefined): RendererKey {
-  if (target.explicitFieldType) return target.fieldType;
-  if (schemaType !== undefined) {
-    const mapped = payloadTypeToRenderer(schemaType);
-    if (mapped !== undefined) return mapped;
-  }
-  return target.fieldType;
 }
 
 /** Built-in renderers may return exact `false` for a deliberate no-write; the public type stays `void`. */

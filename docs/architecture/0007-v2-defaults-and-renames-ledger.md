@@ -110,6 +110,21 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
+2026-11-25 (3.0): rows 25 and 30 are carried out. An update that carries
+`fieldSchemaJSON` is not refused. The field is no longer read, so it decides
+neither a field type nor a request, and the update is merged through the
+server like any other. A Payload 2 admin names no collection and no global, so
+a page it previews gets the typed scalar values and nothing populated; the
+development notice names the 2.x line of this package. With the schema go the
+things that stood on it: `RenderContext.schema`, the types
+`PayloadFieldSchema`, `PayloadBlockSchema` and `PayloadFieldCondition`, the
+option labels of the `select` renderer, and `fieldTyping` and
+`populatesRelationships` on `ProtocolProfile`, the two labels the addendum of
+2026-10-03 kept for 2.x. A sender of its own that added a schema for its field
+types sets `data-payload-type` on the bindings instead. `buildLivePreviewUrl()`
+and the config plugin read `collectionConfig` and `globalConfig`, not
+`documentInfo`. The `payload` peer range is `^3.0.0 || ^4.0.0-0`.
+
 ## Addendum — what `pll migrate` automates
 
 Four ledger entries have codemods: 1 (`rename-is-preview-request`), 7

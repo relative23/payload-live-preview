@@ -150,3 +150,25 @@ The `DataMerger` and `DocumentSession` regressions exercise scalar updates with
 `author: null` without a GET, and a raw author ID with one schema-owned collection
 GET. These unit inputs reconstruct the installed sender codepath; they are not
 captured native document-change packets or proof of restart/reload recovery.
+
+## Addendum (2026-11-25): 3.0 no longer serves the schema signal
+
+3.0 ends Payload 2 support ([ADR 0007](0007-v2-defaults-and-renames-ledger.md#ledger),
+rows 25 and 30). The `schema-json` capability stays in the table as a signal the
+runtime recognises: it sets the `payload-2` profile that `inspect()` reports, and
+it prints one development notice that names the 2.x line of this package. It
+gates nothing else. `fieldSchemaJSON` is not parsed, a wrongly typed one no
+longer makes a message invalid, and the field reaches no renderer and no
+request.
+
+The three addenda above describe the collection GETs, the cache rules and the
+empty containers of the schema path. That path is removed: `legacy-population.ts`
+and the schema parser are gone, and every update is merged through the server's
+method-override `POST`. A Payload 2 admin sends neither a collection nor a
+global slug, so its updates find no merge target and are rendered from the
+values the message carries.
+
+The alternative was to refuse an update that carries a schema. It was not
+taken: a sender of its own may add the field beside a merge target, and
+refusing would have needed a branch that exists only for an admin this release
+does not support.

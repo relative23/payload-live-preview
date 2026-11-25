@@ -4,7 +4,6 @@
  */
 
 import type { PayloadLivePreviewData, PayloadLivePreviewMessage } from '@/types/payload-protocol';
-import { buildSchemaIndex } from '@schema/index';
 import { adoptUniqueBindings, restoreUniqueBindings } from './auto-bind';
 import { isBindingInScope } from './binding-owner';
 import type { MergeResult } from './data-merger';
@@ -119,14 +118,8 @@ export class UpdatePipeline {
     // other than this one is news (LP-1).
     const relationshipInspection = countsAsUpdate ? state.relationships.inspect(message) : null;
     const locale = typeof message.locale === 'string' ? message.locale : state.locale;
-    let schema = state.schema;
-    let schemaIndex = state.schemaIndex;
-    if (Array.isArray(message.fieldSchemaJSON)) {
-      schema = message.fieldSchemaJSON;
-      schemaIndex = buildSchemaIndex(message.fieldSchemaJSON);
-    }
-    // Schema parsing and synthetic message accessors are trust boundaries. A
-    // newer accepted revision that reentered there already owns the runtime.
+    // Synthetic message accessors are a trust boundary. A newer accepted
+    // revision that reentered there already owns the runtime.
     const incumbent = state.activeUpdate;
     if (
       !state.isRunning() ||
@@ -142,8 +135,6 @@ export class UpdatePipeline {
       message,
       rawData,
       locale,
-      schema,
-      schemaIndex,
       receivedAt: Date.now(),
       forceRender: relationshipEdit !== null || owesForceRender(previous),
       countsAsUpdate,
@@ -164,8 +155,6 @@ export class UpdatePipeline {
     // reached its terminal state counts as superseded. Publish the new owner
     // before aborting: an AbortSignal listener may accept a newer revision.
     state.locale = locale;
-    state.schema = schema;
-    state.schemaIndex = schemaIndex;
     if (previous !== null && !previous.completed && previous.countsAsUpdate) {
       state.supersededCount += 1;
     }
@@ -236,7 +225,6 @@ export class UpdatePipeline {
     const { message } = transaction;
     return {
       fields,
-      ...(transaction.schema !== undefined ? { schema: transaction.schema } : {}),
       ...(typeof message.globalSlug === 'string' ? { globalSlug: message.globalSlug } : {}),
       ...(typeof message.collectionSlug === 'string'
         ? { collectionSlug: message.collectionSlug }
@@ -307,7 +295,6 @@ export class UpdatePipeline {
       collectionSlug: message.collectionSlug,
       globalSlug: message.globalSlug,
       data: raw,
-      ...(transaction.schema === undefined ? {} : { schema: transaction.schema }),
       locale: transaction.locale,
     });
     // A request the burst shares is not one the page waits for: it renders what

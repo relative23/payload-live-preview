@@ -28,7 +28,6 @@ async function drainMicrotasks(): Promise<void> {
 describe('MessageBus properties', () => {
   it('rejects generated invalid optional field types without leaking an update', () => {
     const invalidField = fc.constantFrom(
-      ['fieldSchemaJSON', 'not-an-array'] as const,
       ['globalSlug', 42] as const,
       ['collectionSlug', false] as const,
       ['locale', {}] as const,

@@ -2,70 +2,6 @@
   "schemaVersion": 1,
   "status": "source-only-prepared-not-installed-not-native-executed",
   "lanes": {
-    "v2": {
-      "version": "2.32.3",
-      "nodeMinimum": "24.0.0",
-      "admin": "Express/Webpack",
-      "nextPeer": null,
-      "versions": {
-        "@payloadcms/bundler-webpack": "1.0.9",
-        "@payloadcms/db-mongodb": "1.7.5",
-        "@payloadcms/richtext-lexical": "0.11.4",
-        "@swc/core": "1.6.1",
-        "ajv": "8.14.0",
-        "express": "4.21.2",
-        "payload": "2.32.3",
-        "react": "18.3.1",
-        "react-dom": "18.3.1"
-      },
-      "ports": {
-        "admin": 4570,
-        "frontend": 4571,
-        "mongo": 27222
-      },
-      "surface": "dom",
-      "mongoImage": "mongo@sha256:9854f7139445d766a9523571d6f047530c45547460ffcf8259eb2bf4264632ca",
-      "scope": "Original R4 real-admin DOM/session/relationship characterization, unchanged exact v2 runtime template. No H19 closure claim. Optional React/Vue probes list the native lifecycle and population titles below for each CSRF variant; execution remains separate from a source declaration.",
-      "expectedTitles": [
-        "the packed plugin supplies the preview URL and Payload 2 schema is observed",
-        "unsaved title reaches the preview and leaves the database unchanged",
-        "unsaved subtitle reaches the preview",
-        "markup typed into a scalar remains text",
-        "a relationship chosen in the admin reaches the populated preview field",
-        "the real session gates runtime injection and the initial global read",
-        "Payload 2 authorizes cookie-only without triggering the new Origin retry",
-        "an explicitly listed origin is accepted and an unlisted origin is refused"
-      ],
-      "nativeLifecycleTitles": {
-        "freshOwner": "same-realm fresh owner refuses retired work before distinct provider recovery",
-        "documentNavigation": "real admin navigation owns saved SSR data and first-schema population",
-        "childReload": "child reload refuses schema-less updates before distinct provider recovery"
-      },
-      "nativeGuardsTitles": {
-        "lateResponse": "a late successful response of a replaced owner leaves the record and the tree as they were",
-        "foreignSenders": "a window of the admin origin that is not the admin and a foreign origin are refused while the admin's own message is taken",
-        "originAlone": "with every window allowed, the origin check alone refuses an origin nobody listed",
-        "noOriginLock": "a second listed origin is taken after the first and an origin that is not listed is still refused",
-        "receiverSwitch": "naming another frame as the receiver of a running session restores the seed, retires the old window and acts once on the new one",
-        "receiverSwitchHeld": "an answer to a read held at the receiver switch cannot change the new session",
-        "authExpiry": "a sign-out in the same context makes the next update unavailable with the HTTP status and a sign-in brings it back"
-      },
-      "nativePopulationTitles": {
-        "hydration": "native SSR hydrates and the authentic first v2 schema message settles live",
-        "unsavedTitle": "a real unsaved title reaches the native tree while the saved document stays unchanged",
-        "sessionSchema": "a subsequent schema-free subtitle update uses the session schema",
-        "markupAsText": "scalar markup stays text in the native renderer",
-        "populatedRelationship": "the real relationship id is populated by credentialed cross-origin collection GET",
-        "nextRelationship": "relationship changes after the first schema populate the next id rather than keep the old author",
-        "editorSession": "only the real editor session receives the native preview and its initial saved read",
-        "csrfVariant": "the real v2 session keeps cookie-only and explicit Origin behavior in its pinned CSRF variant"
-      },
-      "nativeLifecycleVersions": {
-        "vue": "3.5.42",
-        "@vue/server-renderer": "3.5.42",
-        "esbuild": "0.28.2"
-      }
-    },
     "v3": {
       "version": "3.90.2",
       "nodeMinimum": "24.0.0",
@@ -246,7 +182,7 @@
       "scope": "Fresh isolated regular dependency consumer, actual native SSR/hydration/remount/document/target and credential-free actual wire metadata. v4 remains a pre-release characterization with profile review required, never transferred to v3 support."
     }
   },
-  "separation": "Every prepare uses a new output, exact package manifest, own vendor archive, own lock and new DB. v2 never uses the v3 demo or v4 packages. v4 never contributes Node20 support. No latest/range dependency or peer-bypass option.",
+  "separation": "Every prepare uses a new output, exact package manifest, own vendor archive, own lock and new DB. v4 never contributes Node20 support. No latest/range dependency or peer-bypass option.",
   "archiveSelection": "Explicit absolute --tarball and SHA256; no default or repack.",
   "runtimeProbeRequires": [
     "Exact reviewed installed lock SHA256",
