@@ -173,7 +173,7 @@ const RELEASE: WorkflowSpec = {
         testedCommit(TESTED_SHA),
         {
           uses: 'actions/setup-node',
-          with: { 'node-version': '22.23.2', 'registry-url': 'https://registry.npmjs.org' },
+          with: { 'node-version': '24.22.3', 'registry-url': 'https://registry.npmjs.org' },
         },
         NPM_VERSION,
         NPM_CI,

@@ -1,6 +1,6 @@
 {
   "sources": {
-    ".github/workflows/release.yml": "d09358469c1dc4d646598a4e585468762df50bd35a87e1a04a3bf39946ff30f8"
+    ".github/workflows/release.yml": "b7e06cf0cd261656b8ddfa6a8407f9fe18f77eccfc20d91cbbe09cca2bc121ce"
   },
   "directories": [],
   "absentFiles": ["pnpm-workspace.yaml", "lerna.json"],

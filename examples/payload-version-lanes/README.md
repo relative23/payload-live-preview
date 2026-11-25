@@ -6,8 +6,8 @@ Use this example from the repository root with a selected package archive.
 
 | Lane | Admin | Required Node | Native probe |
 | --- | --- | --- | --- |
-| `v2` | Express/Webpack, React 18.3.1, pinned Mongo | 20.19.0 | 24 DOM/session cases, or per React or Vue surface 9 lifecycle, 21 guard or 24 population cases |
-| `v3` | Next 16.3.4, React 19.2.8, Vue 3.5.42 | 20.19.0 | 12 lifecycle cases per surface, or 3 saved-wire cases |
+| `v2` | Express/Webpack, React 18.3.1, pinned Mongo | 24.0.0 | 24 DOM/session cases, or per React or Vue surface 9 lifecycle, 21 guard or 24 population cases |
+| `v3` | Next 16.3.4, React 19.2.8, Vue 3.5.42 | 24.0.0 | 12 lifecycle cases per surface, or 3 saved-wire cases |
 | `v4` | Next 16.4.3, React 19.2.8, Vue 3.5.42 | 24.22.1 | Separate pre-release characterization |
 
 These Node values are lane requirements, not measurements of the SDK's Node
