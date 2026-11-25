@@ -58,11 +58,11 @@ Outside CI:
 
 Every version in the README's framework table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-Of the 55 feature rows of `quality/compat-matrix.json`, 50 passed in the CI run the last Version PR recorded (commit `6367809`, 2026-11-24, `quality/compat-results.json`); the other 5 have no recorded result.
+Of the 55 feature rows of `quality/compat-matrix.json`, 25 passed in the CI run the last Version PR recorded (commit `6367809`, 2026-11-24, `quality/compat-results.json`); the other 30 have no recorded result.
 
-Vite 7 through 8: that is what the supported framework majors install (Astro 7 → 8, SvelteKit 3 → 8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-11-03. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
+Vite 7 through 8: that is what the supported framework majors install (Astro 7 → 8, SvelteKit 3 → 8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-11-25. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
-The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the `hook-matrix` job runs after installing the floors over the lockfile (React 18.0.0, Vue 3.3.0, Svelte 5.0.0), and at what the lockfile installs (React 19.3.1, Vue 3.5.44, Svelte 5.57.3), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by `svelte/compiler` and rendered by the real `svelte/server`.
+The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the `hook-matrix` job runs after installing the floors over the lockfile (React 18.0.0, Vue 3.3.0, Svelte 5.0.0), and at what the lockfile installs (React 19.3.1, Vue 3.5.46, Svelte 5.59.1), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by `svelte/compiler` and rendered by the real `svelte/server`.
 
 <!-- compat-evidence:end -->
 

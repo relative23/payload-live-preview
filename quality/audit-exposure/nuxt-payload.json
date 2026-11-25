@@ -58,8 +58,8 @@
   ],
   "callers": {
     "node_modules/nitropack": [
-      "2.13.4",
-      "sha512-tX7bT6zxNeMwkc6hxHiZeUoTOjVrcjoh1Z3cmxOlodIqjl4HISgqfGOmkWSayky3Nv9Z5+KQH52F8nmXJY5AAA=="
+      "2.14.0",
+      "sha512-QfKn/WcQ+aJoSv9TCvh2TAknAzlcSCF0SNiLyqTlOVelLxod/u6AdQM+Z5MLgE8UrOU1SbwhbG1/q8us2yp8Pg=="
     ],
     "node_modules/listhen": [
       "1.10.1",

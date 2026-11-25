@@ -28,8 +28,8 @@
   ],
   "callers": {
     "node_modules/astro": [
-      "7.4.5",
-      "sha512-n5lET11/qnrOWn4wNpXxD9g2VKkTIa162hHgrkMPChMQC5q/xh2lY2OerK5mpsEAFCNmXsYA7NISE+9Uo7Cxxg=="
+      "7.4.13",
+      "sha512-tcpMXEB9jypYzbnzT/g6yxL0jRkFlj3WsvxcWgsxRjPBUE6r81qLo/7kN5GMWz6hC7spzrg6fvCeL2HG0Bl68g=="
     ],
     "node_modules/http-cache-semantics": [
       "4.3.0",

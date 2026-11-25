@@ -8,7 +8,7 @@
       "feature": "base live preview and structural updates",
       "version": {
         "kind": "exact",
-        "value": "7.4.5",
+        "value": "7.4.13",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -20,19 +20,12 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/live-preview.spec.ts", "playwright.config.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/live-preview.spec.ts", "playwright.config.ts"]
       }
     },
     {
@@ -71,7 +64,7 @@
       "feature": "native fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "7.4.5",
+        "value": "7.4.13",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -83,19 +76,12 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/hybrid-fragment.spec.ts", "src/adapters/astro/fragments.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/hybrid-fragment.spec.ts", "src/adapters/astro/fragments.ts"]
       }
     },
     {
@@ -168,7 +154,7 @@
       "feature": "real Payload admin to production preview",
       "version": {
         "kind": "exact",
-        "value": "7.4.5",
+        "value": "7.4.13",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -180,19 +166,12 @@
       "backend": "Payload 3.92.1 admin",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-e2e"
         },
-        "sources": ["tests/real-payload/homepage-live-preview.spec.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/real-payload/homepage-live-preview.spec.ts"]
       }
     },
     {
@@ -201,7 +180,7 @@
       "feature": "base live preview and asset delivery",
       "version": {
         "kind": "exact",
-        "value": "16.4.3",
+        "value": "16.4.6",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -213,19 +192,12 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/nextjs-live-preview.spec.ts", "playwright.config.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/nextjs-live-preview.spec.ts", "playwright.config.ts"]
       }
     },
     {
@@ -234,7 +206,7 @@
       "feature": "synchronous fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "16.4.3",
+        "value": "16.4.6",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -246,19 +218,12 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/nextjs-fragment.spec.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/nextjs-fragment.spec.ts"]
       }
     },
     {
@@ -327,7 +292,7 @@
       "feature": "production build/start, native navigation and reload, unsaved related drafts under a real Payload login",
       "version": {
         "kind": "exact",
-        "value": "16.4.3",
+        "value": "16.4.6",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -339,7 +304,7 @@
       "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -350,14 +315,7 @@
           "playwright.next-continuation.config.ts",
           "tests/e2e/helpers/next-continuation.ts",
           "tests/fixtures/next-continuation/next.config.mjs.fixture"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -366,7 +324,7 @@
       "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
       "version": {
         "kind": "exact",
-        "value": "16.4.3",
+        "value": "16.4.6",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -378,7 +336,7 @@
       "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -389,14 +347,7 @@
           "scripts/next-production-fixture.mjs",
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -405,7 +356,7 @@
       "feature": "server handle, base live preview and asset delivery",
       "version": {
         "kind": "exact",
-        "value": "3.1.1",
+        "value": "3.4.0",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -417,19 +368,12 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"]
       }
     },
     {
@@ -438,7 +382,7 @@
       "feature": "native fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "3.1.1",
+        "value": "3.4.0",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -450,19 +394,12 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"]
       }
     },
     {
@@ -471,7 +408,7 @@
       "feature": "production build/start, native navigation and reload, unsaved related drafts under a real Payload login",
       "version": {
         "kind": "exact",
-        "value": "3.1.1",
+        "value": "3.4.0",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -483,7 +420,7 @@
       "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -493,14 +430,7 @@
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.sveltekit-continuation.config.ts",
           "tests/fixtures/sveltekit-continuation/vite.config.ts.fixture"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -509,7 +439,7 @@
       "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
       "version": {
         "kind": "exact",
-        "value": "3.1.1",
+        "value": "3.4.0",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -521,7 +451,7 @@
       "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -532,14 +462,7 @@
           "scripts/sveltekit-production-fixture.mjs",
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -581,7 +504,7 @@
       "feature": "Nitro integration, base live preview and asset delivery",
       "version": {
         "kind": "exact",
-        "value": "4.6.3",
+        "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
@@ -593,19 +516,12 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "nuxt4"
         },
-        "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"]
       }
     },
     {
@@ -647,7 +563,7 @@
       "feature": "native Vue fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "4.6.3",
+        "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
@@ -659,19 +575,12 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "nuxt4"
         },
-        "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"]
       }
     },
     {
@@ -757,7 +666,7 @@
       "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
       "version": {
         "kind": "exact",
-        "value": "4.6.3",
+        "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
@@ -769,7 +678,7 @@
       "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -780,14 +689,7 @@
           "scripts/nuxt-production-fixture.mjs",
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1190,7 +1092,7 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
       "version": {
         "kind": "exact",
-        "value": "16.4.3",
+        "value": "16.4.6",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -1202,7 +1104,7 @@
       "backend": "Payload 3.92.1 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1211,14 +1113,7 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1227,7 +1122,7 @@
       "feature": "live preview against the real Payload admin with Payload's CSRF list on, with the editor's real session and the hook's merge request",
       "version": {
         "kind": "exact",
-        "value": "16.4.3",
+        "value": "16.4.6",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -1239,7 +1134,7 @@
       "backend": "Payload 3.92.1 admin with the CSRF list",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-csrf"
@@ -1249,14 +1144,7 @@
           "tests/real-payload/surface-hook.spec.ts",
           "examples/payload-backend/payload.config.ts",
           "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1265,7 +1153,7 @@
       "feature": "an admin that keeps autoLogin issues no cookie, so the payload-session check serves the public page while the admin works",
       "version": {
         "kind": "exact",
-        "value": "16.4.3",
+        "value": "16.4.6",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -1277,7 +1165,7 @@
       "backend": "Payload 3.92.1 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1285,14 +1173,7 @@
         "sources": [
           "tests/real-payload/surface-autologin.spec.ts",
           "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1338,7 +1219,7 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
       "version": {
         "kind": "exact",
-        "value": "3.1.1",
+        "value": "3.4.0",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -1350,7 +1231,7 @@
       "backend": "Payload 3.92.1 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1359,14 +1240,7 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1412,7 +1286,7 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
       "version": {
         "kind": "exact",
-        "value": "4.6.3",
+        "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
@@ -1424,7 +1298,7 @@
       "backend": "Payload 3.92.1 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1433,14 +1307,7 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1449,7 +1316,7 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session), middleware delivery on the built Node server run without NODE_ENV=production",
       "version": {
         "kind": "exact",
-        "value": "7.4.5",
+        "value": "7.4.13",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -1461,7 +1328,7 @@
       "backend": "Payload 3.92.1 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1470,14 +1337,7 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1590,7 +1450,7 @@
       "feature": "document merge composable on a Nuxt page against the real Payload admin",
       "version": {
         "kind": "exact",
-        "value": "3.5.44",
+        "value": "3.5.46",
         "package": "vue",
         "source": {
           "kind": "lockfile",
@@ -1602,19 +1462,12 @@
       "backend": "Payload 3.92.1 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
         },
-        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"]
       }
     },
     {
@@ -1721,7 +1574,7 @@
       "feature": "ClientRouter commit and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "7.4.5",
+        "value": "7.4.13",
         "package": "astro",
         "source": {
           "kind": "lockfile",
@@ -1733,7 +1586,7 @@
       "backend": "mock admin and optimized Astro preview",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
@@ -1742,14 +1595,7 @@
           "src/adapters/astro/page-facts.ts",
           "tests/e2e/specs/astro-soft-navigation.spec.ts",
           "playwright.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1758,7 +1604,7 @@
       "feature": "App Router commit, streamed binding and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "16.4.3",
+        "value": "16.4.6",
         "package": "next",
         "source": {
           "kind": "lockfile",
@@ -1770,7 +1616,7 @@
       "backend": "mock admin and native App Router",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
@@ -1780,14 +1626,7 @@
           "src/adapters/nextjs/client.ts",
           "tests/e2e/specs/nextjs-live-preview.spec.ts",
           "playwright.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1796,7 +1635,7 @@
       "feature": "afterNavigate commit, invalidation and streamed binding replay",
       "version": {
         "kind": "exact",
-        "value": "3.1.1",
+        "value": "3.4.0",
         "package": "@sveltejs/kit",
         "source": {
           "kind": "lockfile",
@@ -1808,7 +1647,7 @@
       "backend": "mock admin and hydrated SvelteKit route",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
@@ -1818,14 +1657,7 @@
           "src/adapters/sveltekit/client.ts",
           "tests/e2e/specs/sveltekit-live-preview.spec.ts",
           "playwright.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1872,7 +1704,7 @@
       "feature": "route commit, refresh ordering and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "4.6.3",
+        "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
@@ -1884,7 +1716,7 @@
       "backend": "mock admin and hydrated Nuxt route",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "nuxt4"
@@ -1894,14 +1726,7 @@
           "src/adapters/nuxt/client.ts",
           "tests/e2e/specs/nuxt-live-preview.spec.ts",
           "playwright.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1985,11 +1810,11 @@
       "fixture": "examples/astro-payload",
       "tested": [
         {
-          "version": "7.4.5",
+          "version": "7.4.13",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E",
-          "vite": "^8.3.5"
+          "vite": "^8.3.8"
         }
       ],
       "vite": {
@@ -2004,7 +1829,7 @@
       "fixture": "examples/nextjs-payload",
       "tested": [
         {
-          "version": "16.4.3",
+          "version": "16.4.6",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E"
@@ -2024,7 +1849,7 @@
       "fixture": "examples/sveltekit-payload",
       "tested": [
         {
-          "version": "3.1.1",
+          "version": "3.4.0",
           "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E",
@@ -2043,12 +1868,12 @@
       "fixture": "examples/nuxt-payload",
       "tested": [
         {
-          "version": "4.6.3",
+          "version": "4.7.0",
           "source": "lockfile",
           "fixture": "examples/nuxt4-payload",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "nuxt4",
-          "vite": "^8.3.5"
+          "vite": "^8.3.8"
         },
         {
           "version": "3.21.11",
@@ -2132,7 +1957,7 @@
     }
   ],
   "vite": {
-    "measured": "2026-11-03",
+    "measured": "2026-11-25",
     "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE — every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 7 and 8. Remove this line when the dev tooling accepts 8."
   },
   "hooks": [
@@ -2155,7 +1980,7 @@
       "peer": ">=3.3",
       "job": "hook-matrix",
       "floor": "3.3.0",
-      "current": "3.5.44",
+      "current": "3.5.46",
       "suites": [
         "tests/unit/adapters/vue-composable.test.ts",
         "tests/unit/core/hydration-vue.test.ts",
@@ -2168,7 +1993,7 @@
       "peer": ">=5",
       "job": "hook-matrix",
       "floor": "5.0.0",
-      "current": "5.57.3",
+      "current": "5.59.1",
       "suites": [
         "tests/unit/adapters/sveltekit-fragments-real.test.ts",
         "tests/unit/adapters/sveltekit-fragments.test.ts"

@@ -145,7 +145,7 @@ function makeRuntime(
     disableVisibilityGate: true,
     enableA11y: false,
     warn: () => {},
-    ...(route === undefined ? {} : { strategies: { route }, onUnboundChange: 'route' }),
+    ...(route === undefined ? {} : { strategies: { route }, onUnfaithfulPatch: 'escalate' }),
     ...extra,
   });
 }

@@ -103,6 +103,8 @@ async function buildRuntime(lean = false): Promise<string> {
       // Large sequences and aggressive inlining save raw bytes here but make
       // the highly repetitive validation/lifecycle code compress worse.
       sequences: false,
+      // terser types the level as an enum its module does not export at run time.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-assignment
       inline: 1,
       join_vars: false,
       // Off since `inspect()` exists. The setting rewrites `true`/`false` to

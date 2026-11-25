@@ -88,7 +88,9 @@ describe('bootstrapInlineRuntime — onUnfaithfulPatch over the wire', () => {
   });
 
   it("keeps obeying the 2.0 slot a page's generated script may still carry", async () => {
+    /* eslint-disable @typescript-eslint/no-deprecated -- the 2.0 name is what this case is about */
     expect((await bootstrapWith({ onUnboundChange: 'ignore' })).refreshes).toBe(0);
     expect((await bootstrapWith({ onUnboundChange: 'route' })).refreshes).toBe(1);
+    /* eslint-enable @typescript-eslint/no-deprecated */
   });
 });

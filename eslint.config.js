@@ -86,6 +86,21 @@ export default tseslint.config(
     rules: { '@typescript-eslint/explicit-function-return-type': 'off' },
   },
   {
+    files: [
+      'scripts/**/*.ts',
+      'src/codegen/**/*.ts',
+      'src/doctor/**/*.ts',
+      'src/migrate/**/*.ts',
+      'tests/unit/migrate/**/*.ts',
+    ],
+    // 2026-11-25: off where the code works on ts-morph nodes. typescript-eslint 8.74 added the
+    // rule to the strict preset. ts-morph builds its node classes from mixins (`class IfStatement
+    // extends IfStatementBase`, a `Constructor<…> & typeof Statement`), and the rule does not find
+    // `Node` behind such a base: it reported all 81 places that hand a node on as `Node`, and
+    // none of them was a value its constructor had not made. It stays on for the runtime.
+    rules: { '@typescript-eslint/no-unsafe-class-instance-assignment': 'off' },
+  },
+  {
     files: ['tests/**/*.ts', 'scripts/**/*.ts'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',

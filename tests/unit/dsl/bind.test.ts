@@ -84,6 +84,7 @@ describe('bindByPath() — proxy form', () => {
       bindByPath<Homepage>((d) => {
         // Force a throw after reading the first field — runtime should
         // keep `heroTitle` and bail gracefully.
+        // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator -- the read is the point: the proxy records it
         void d.heroTitle;
         throw new Error('boom');
       }),

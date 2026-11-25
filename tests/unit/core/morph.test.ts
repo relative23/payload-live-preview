@@ -34,8 +34,9 @@ describe('compatibility and boundaries', () => {
         '<my-morph-widget data-payload-morph title="old"><b>old</b><p data-payload-owned>owned</p></my-morph-widget>',
       ),
       true,
-    ) as MorphWidget;
+    );
     document.body.append(live);
+    if (!(live instanceof MorphWidget)) throw new Error('the registry did not upgrade the element');
     const state = live.state;
     const listener = vi.fn();
     live.addEventListener('click', listener);

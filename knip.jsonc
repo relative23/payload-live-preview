@@ -41,6 +41,9 @@
     "src/fragment/inline.ts",
     "src/fragment/route-inline.ts",
     "scripts/api-contracts.ts",
+    // `build:runtime` hands this file to an inline `node -e` launcher as an
+    // argument, which Knip does not read as a script to run.
+    "scripts/build-runtime.ts",
     "tests/**/*.{test,spec,bench}.ts",
     // The hardening config discovers this characterization through a Vitest
     // include glob, which Knip cannot follow as a static import.
