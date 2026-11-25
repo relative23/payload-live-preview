@@ -33,7 +33,7 @@ One runtime serves every framework. The Astro, Next.js, SvelteKit and Nuxt adapt
 
 | Payload | Status                                   | Tested                                                                                                     |
 | ------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| 3.x     | supported                                | the real admin on every push (3.92.1; Chromium, Firefox, WebKit), and against `payload@latest` every day   |
+| 3.x     | supported                                | the real admin on every push (3.94.2; Chromium, Firefox, WebKit), and against `payload@latest` every day   |
 | 4.x     | pre-release, followed; official with 4.0 | captured beta messages on every push; the real admin against `payload@beta` every day, as an early warning |
 | 2.x     | supported in 2.x; ends with 3.0          | captured admin messages on every push                                                                      |
 
@@ -100,7 +100,7 @@ compose both routing policies explicitly. A resolver or the `fallback` may be
 `null` for a document without a preview on Payload 3 and 4. The complete merge
 and conflict rules are in [docs/payload.md](docs/payload.md).
 
-In the Payload 3.92.1 admin, a collection document gets its native Live
+In the Payload 3.94.2 admin, a collection document gets its native Live
 Preview after its first save. The create screen has no preview toggle and no
 frame, for a function-valued URL and for a fixed string alike. The frame that
 appears after the save loads the URL the plugin's function builds from the saved

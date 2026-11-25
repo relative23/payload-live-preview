@@ -572,7 +572,7 @@ export const authorizePreview = (request: PreviewAuthorizationRequest) =>
 ```
 
 `payload.auth()` returns a user of any auth collection, with its slug in
-`user.collection` (Payload 3.92.1, `auth/strategies/jwt.js`), so the check
+`user.collection` (Payload 3.94.2, `auth/strategies/jwt.js`), so the check
 keeps the preview to the admin's collection; add a role check when not every
 user there may see drafts. The verifier returns no `payloadHeaders`, so a
 draft read through `definePreview()` carries no credential. A page in the same

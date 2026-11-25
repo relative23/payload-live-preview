@@ -40,7 +40,7 @@ Payload outside that range gets npm's `ERESOLVE` error.
 
 On every push:
 
-- Payload 3.92.1: every adapter's example runs against the real admin, `examples/payload-backend`, in Chromium, Firefox and WebKit.
+- Payload 3.94.2: every adapter's example runs against the real admin, `examples/payload-backend`, in Chromium, Firefox and WebKit.
 - Payload 2.32.3: `fieldSchemaJSON` typing in `tests/integration/schema-driven.test.ts`.
 - Payload 2.32.3, 3.85.0, 3.88.0, 3.89.0, 4.0.0-beta.4, 4.0.0-beta.6: the messages a real admin of each version sent, captured once and replayed in `tests/integration/wire-corpus.test.ts`.
 
@@ -58,7 +58,7 @@ Outside CI:
 
 Every version in the README's framework table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-Of the 55 feature rows of `quality/compat-matrix.json`, 25 passed in the CI run the last Version PR recorded (commit `6367809`, 2026-11-24, `quality/compat-results.json`); the other 30 have no recorded result.
+Of the 55 feature rows of `quality/compat-matrix.json`, 14 passed in the CI run the last Version PR recorded (commit `6367809`, 2026-11-24, `quality/compat-results.json`); the other 41 have no recorded result.
 
 Vite 7 through 8: that is what the supported framework majors install (Astro 7 → 8, SvelteKit 3 → 8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-11-25. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 

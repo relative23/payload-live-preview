@@ -101,7 +101,7 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "mock admin and Payload 3.92.1 REST authorization fixture without an admin UI",
+      "backend": "mock admin and Payload 3.94.2 REST authorization fixture without an admin UI",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -133,7 +133,7 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "mock admin and Payload 3.92.1 REST authorization fixture without an admin UI",
+      "backend": "mock admin and Payload 3.94.2 REST authorization fixture without an admin UI",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -163,7 +163,7 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -301,7 +301,7 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
+      "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -333,7 +333,7 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
+      "backend": "Payload 3.94.2 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -417,7 +417,7 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
+      "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -448,7 +448,7 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
+      "backend": "Payload 3.94.2 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -598,10 +598,10 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
+      "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -611,14 +611,7 @@
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.nuxt-continuation.config.ts",
           "tests/fixtures/nuxt-continuation/nuxt.config.ts.fixture"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -636,10 +629,10 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
+      "backend": "Payload 3.94.2 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -650,14 +643,7 @@
           "scripts/nuxt-production-fixture.mjs",
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -675,7 +661,7 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
+      "backend": "Payload 3.94.2 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -806,10 +792,10 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads behind an authorized Node host; the test sends the editor messages, not Payload admin UI",
+      "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads behind an authorized Node host; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -819,14 +805,7 @@
           "tests/e2e/continuation/next-host.spec.ts",
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.html-continuation.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -879,10 +858,10 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
+      "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -893,14 +872,7 @@
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.react-continuation.config.ts",
           "tests/fixtures/react-continuation/src/Preview.tsx.fixture"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -950,10 +922,10 @@
       },
       "mode": "production",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.92.1 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
+      "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -964,14 +936,7 @@
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.vue-continuation.config.ts",
           "tests/fixtures/vue-continuation/src/Preview.vue.fixture"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1056,7 +1021,7 @@
       "feature": "config plugin URL and breakpoint behavior in a real admin",
       "version": {
         "kind": "exact",
-        "value": "3.92.1",
+        "value": "3.94.2",
         "package": "payload",
         "source": {
           "kind": "lockfile",
@@ -1065,10 +1030,10 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-e2e"
@@ -1076,14 +1041,7 @@
         "sources": [
           "examples/payload-backend/payload.config.ts",
           "tests/real-payload/homepage-live-preview.spec.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1101,7 +1059,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -1131,7 +1089,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin with the CSRF list",
+      "backend": "Payload 3.94.2 admin with the CSRF list",
       "browsers": ["chromium"],
       "evidence": {
         "status": "configured",
@@ -1162,7 +1120,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -1182,7 +1140,7 @@
       "feature": "a collection document has no native preview on its create screen, for a plugin-routed and a fixed string URL, and takes unsaved edits after its first save",
       "version": {
         "kind": "exact",
-        "value": "3.92.1",
+        "value": "3.94.2",
         "package": "payload",
         "source": {
           "kind": "lockfile",
@@ -1191,10 +1149,10 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1203,14 +1161,7 @@
           "tests/real-payload/surface-create.spec.ts",
           "playwright.real-payload.config.ts",
           "examples/payload-backend/payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1228,7 +1179,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -1258,10 +1209,10 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1270,14 +1221,7 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1295,7 +1239,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -1325,7 +1269,7 @@
       },
       "mode": "production",
       "packageForm": "linked-worktree",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -1354,25 +1298,15 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
         },
-        "sources": [
-          "tests/real-payload/surface-smoke.spec.ts",
-          "playwright.real-payload.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/real-payload/surface-smoke.spec.ts", "playwright.real-payload.config.ts"]
       }
     },
     {
@@ -1389,10 +1323,10 @@
       },
       "mode": "production",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1401,14 +1335,7 @@
           "playwright.real-payload.config.ts",
           "examples/pure-html/build.mjs",
           "tests/real-payload/surface-findings.spec.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        ]
       }
     },
     {
@@ -1426,22 +1353,15 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
+        "status": "configured",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
         },
-        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
+        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"]
       }
     },
     {
@@ -1459,7 +1379,7 @@
       },
       "mode": "development",
       "packageForm": "copied-local-package",
-      "backend": "Payload 3.92.1 admin",
+      "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
         "status": "configured",
@@ -1896,7 +1816,7 @@
   },
   "payload": [
     {
-      "version": "3.92.1",
+      "version": "3.94.2",
       "source": "tests",
       "how": "every adapter's example runs against the real admin, `examples/payload-backend`, in Chromium, Firefox and WebKit"
     },

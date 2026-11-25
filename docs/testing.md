@@ -462,7 +462,7 @@ drift the moment Payload ships it, and tier 5 does the same for a framework
 release. Per Payload version that means: 2.x is
 covered by a corpus captured from a real 2.32.3 admin, captured-message
 integration tests and `fieldSchemaJSON` typing;
-3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.92.1 by the
+3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.94.2 by the
 real-admin E2E on every push; 4.0.0-beta.4 and beta.6 by corpora captured from
 a real Payload 4 admin (the fixture stays on 3.x), by one measurement of the config
 plugin against a real admin and, for beta.6, by one run of the field-findings suite in
@@ -605,7 +605,7 @@ dependencies a reviewed lock pins: the matching example's, and for Vue and React
 [`tests/fixtures/vue-host-deps`](../tests/fixtures/vue-host-deps/package-lock.json) and
 [`tests/fixtures/react-host-deps`](../tests/fixtures/react-host-deps/package-lock.json). The
 archive the Build job stored stands in place of the package, and the host is served behind a
-throw-away TLS proxy. Beside it runs Payload 3.92.1 on SQLite
+throw-away TLS proxy. Beside it runs Payload 3.94.2 on SQLite
 ([lock](../tests/fixtures/payload-acl/package-lock.json)): two editors sign in there, and its
 access control decides what each one may read. The seven cases:
 
