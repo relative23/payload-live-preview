@@ -22,7 +22,7 @@
   "totals": {
     "files": 529,
     "suites": 1031,
-    "tests": 4639,
+    "tests": 4641,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 430,
       "suites": 919,
-      "tests": 4225,
+      "tests": 4227,
       "benchmarks": 0
     }
   },
@@ -3189,7 +3189,7 @@
       "path": "tests/unit/quality/coverage-policy.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 18,
+      "tests": 20,
       "benchmarks": 0
     },
     {
