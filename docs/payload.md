@@ -85,7 +85,7 @@ order. Make it run after any URL-writing plugin when it should detect that
 conflict.
 
 That order is not always the list order. The `buildConfig()` of Payload
-3.90.2, 3.92.0, 3.92.1, 4.0.0-beta.4 and 4.0.0-beta.6 sorts plugins by their `order` property, lower
+3.90.2, 3.92.0, 3.92.1, 3.94.2, 4.0.0-beta.4 and 4.0.0-beta.6 sorts plugins by their `order` property, lower
 first and `0` when it is unset (Payload marks `order` experimental); plugins
 with the same `order` keep their list order. The function `livePreview()`
 returns has no `order`, so a URL-writing plugin with a higher one runs after it
@@ -94,7 +94,7 @@ the `order` option: `livePreview({ …, order: 1000 })`. Without the option it h
 no `order`, as before. Payload 2.32.3 runs plugins in list order and ignores it.
 
 The function also carries `slug: 'payload-live-preview'`, the name another
-plugin finds it under in `config.plugins`. Payload's telemetry (read in 3.92.1
+plugin finds it under in `config.plugins`. Payload's telemetry (read in 3.94.2
 and 4.0.0-beta.6) reports only slugs that start with `@payloadcms/`, so this one
 is not sent.
 
@@ -116,7 +116,7 @@ The default frontend adapters recognize query intent through `preview`,
 marker; configure another intent signal or explicit delivery path. None of
 these signals authorize a draft request.
 
-Payload 3.92.1 gives a collection document its native Live Preview only after
+Payload 3.94.2 gives a collection document its native Live Preview only after
 the first save. On the create screen there is no preview toggle, no panel and no
 frame, whether the collection's URL comes from this plugin's function or from a
 fixed `admin.livePreview.url` string, and typing does not change that. After the
@@ -127,12 +127,12 @@ the frame, and REST reads before and after show that the collection holds only
 the save. The `create` target of the real-admin
 suite (`tests/real-payload/surface-create.spec.ts`) measures all of this in
 Chromium, Firefox and WebKit. In Payload's source (`handleLivePreview` in
-`@payloadcms/ui`, read in 3.92.1) a function-valued URL is evaluated only for a
+`@payloadcms/ui`, read in 3.94.2) a function-valued URL is evaluated only for a
 saved document; the suite does not test that part.
 
 The real-admin fixture runs the Astro (static, hybrid and middleware), Next.js,
 SvelteKit, Nuxt and plain HTML examples, a React hook page and a Vue composable
-page against a real Payload 3.92.1 admin and proves unsaved edits on an existing
+page against a real Payload 3.94.2 admin and proves unsaved edits on an existing
 global. CI runs the static Astro target in Chromium and every other target in
 Chromium, Firefox and WebKit, and runs the Next.js session and hook targets once
 more in Chromium with Payload's `csrf` list set
@@ -158,7 +158,7 @@ livePreview({
 });
 ```
 
-In the Payload 3.92.1 admin, a saved document whose resolver returns `null` has
+In the Payload 3.94.2 admin, a saved document whose resolver returns `null` has
 no toggle, no panel and no frame; the `create` target of the real-admin suite
 checks that in Chromium, Firefox and WebKit. The same target passed once in
 Chromium against 4.0.0-beta.6, outside CI, on 2026-10-31. A slug that declines
