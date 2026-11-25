@@ -69,6 +69,7 @@ jobs:
     with:
       dist-artifact: dist-${{ github.sha }}
       soak-duration-ms: ${{ github.event.schedule == '17 2 * * 0' && '1800000' || '300000' }}
+      full-mutation: always
 
   browser-bench:
     name: Chromium Update-to-Paint Trend

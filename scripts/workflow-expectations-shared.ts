@@ -126,10 +126,19 @@ export const sourceDate = (sha: string, verifyHead: boolean): StepSpec => ({
   operators: true,
 });
 export const callBuild: JobSpec = { uses: './.github/workflows/build.yml', permissions: READ_ONLY };
-export const callCriticalGates = (soakDuration: string, condition?: string): JobSpec => ({
+/** `fullMutation` says when the six shards run: see `scripts/mutation-plan.ts`. */
+export const callCriticalGates = (
+  soakDuration: string,
+  fullMutation: 'always' | 'unpublished-version',
+  condition?: string,
+): JobSpec => ({
   ...(condition === undefined ? {} : { if: condition }),
   needs: ['build'],
   uses: './.github/workflows/critical-gates.yml',
   permissions: READ_ONLY,
-  with: { 'dist-artifact': 'dist-${{ github.sha }}', 'soak-duration-ms': soakDuration },
+  with: {
+    'dist-artifact': 'dist-${{ github.sha }}',
+    'soak-duration-ms': soakDuration,
+    'full-mutation': fullMutation,
+  },
 });
