@@ -4,7 +4,7 @@
   "lanes": {
     "v2": {
       "version": "2.32.3",
-      "nodeMinimum": "20.19.0",
+      "nodeMinimum": "24.0.0",
       "admin": "Express/Webpack",
       "nextPeer": null,
       "versions": {
@@ -68,7 +68,7 @@
     },
     "v3": {
       "version": "3.90.2",
-      "nodeMinimum": "20.19.0",
+      "nodeMinimum": "24.0.0",
       "admin": "Next16.3.4 webpack",
       "versions": {
         "payload": "3.90.2",

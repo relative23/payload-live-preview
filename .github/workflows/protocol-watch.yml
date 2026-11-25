@@ -48,7 +48,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 24.22.3
           cache: npm
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
@@ -88,15 +88,10 @@ jobs:
         include:
           - dist-tag: latest
             soft-fail: false
-            # Payload 3.92 needs ^22.23.4, and a bare 22 resolved to 22.23.3 on the runners (2026-10-25)
-            node: 22.23.4
           # beta is a major (Payload 4) and may not even boot this fixture;
-          # a red run here is news, not a broken build. It needs its own Node:
-          # payload@4 and @payloadcms/next@4 declare `node >=24.22.1` (4.0.0-beta.4),
-          # so on 22 the row could never boot the admin whatever else was fixed.
+          # a red run here is news, not a broken build.
           - dist-tag: beta
             soft-fail: true
-            node: 24.22.1
     continue-on-error: ${{ matrix.soft-fail }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -104,7 +99,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -170,7 +165,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22.23.4
+          node-version: 24.22.3
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: protocol-watch-*

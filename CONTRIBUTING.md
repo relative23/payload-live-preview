@@ -4,9 +4,9 @@ Thanks for contributing to `payload-live-preview`. This document covers everythi
 
 ## Development setup
 
-Requirements: Node.js >= 22.22 and the npm version declared by
-`packageManager`. npm 12 needs Node 22.22 or newer, so development does too;
-the published package still supports Node >= 20.19 (`engines`).
+Requirements: Node.js 24.22.3 or newer, the version every CI job runs, and the
+npm version declared by `packageManager`. The published package supports
+Node >= 24.0.0 (`engines`).
 
 ```sh
 git clone https://github.com/relative23/payload-live-preview.git

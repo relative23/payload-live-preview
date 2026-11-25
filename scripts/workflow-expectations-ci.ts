@@ -67,7 +67,7 @@ export const CI: WorkflowSpec = {
       ],
     },
     unit: {
-      matrix: { node: [20, 22, 24, 26] },
+      matrix: { node: [24, 26] },
       steps: [
         ...MATRIX_SETUP,
         BUILD_RUNTIME,
@@ -329,7 +329,7 @@ export const CI: WorkflowSpec = {
       timeoutMinutes: 10,
       steps: [
         { uses: 'actions/checkout', with: { 'persist-credentials': 'false' } },
-        { uses: 'actions/setup-node', with: { 'node-version': '22.23.4' } },
+        { uses: 'actions/setup-node', with: { 'node-version': '24.22.3' } },
         {
           uses: 'actions/download-artifact',
           with: { pattern: 'repeated-attempts-*', path: 'repeated-attempts' },
@@ -467,7 +467,7 @@ export const CRITICAL_GATES: WorkflowSpec = {
         {
           uses: 'actions/setup-node',
           with: {
-            'node-version': '22.23.4',
+            'node-version': '24.22.3',
             'cache-dependency-path': 'package-lock.json\nexamples/*/package-lock.json',
           },
         },

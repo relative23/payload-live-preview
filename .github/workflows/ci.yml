@@ -21,6 +21,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Every job of every workflow runs one exact Node, 24.22.3: a bare major floats with the runner
+# image, and the newest framework floor among the fixtures is Payload 4's ^24.22.3. The unit matrix
+# is the exception: it asks whether the package runs on the newest Node 24 and 26.
 jobs:
   dependency-review:
     name: Dependency Review
@@ -57,7 +60,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 24.22.3
           cache: npm
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
@@ -84,7 +87,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22, 24, 26]
+        node: [24, 26]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -93,14 +96,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      # The pinned npm exists for reproducible packaging, and that is enforced
-      # on the pinned Node elsewhere. Here the point is the opposite: does the
-      # package work on each Node it claims? npm 12 needs Node 22.22+, so the
-      # oldest supported Node keeps its bundled npm — which is also the npm a
-      # consumer on that version actually has. Only an engine mismatch falls
-      # back; any other install failure still fails the job.
-      - name: Use the repository npm version where this Node supports it
-        run: node scripts/use-repository-npm.mjs
+      - name: Use repository npm version
+        run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
       - run: npm run build:runtime
       - run: npm run test:unit
@@ -128,7 +125,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22.23.2
+          node-version: 24.22.3
           cache: npm
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
@@ -153,7 +150,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 24.22.3
           cache: npm
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
@@ -181,7 +178,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22.23.2
+          node-version: 24.22.3
           cache: npm
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
@@ -213,7 +210,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 24.22.3
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
       # Lockfile-only audits: the advisories are a property of the reviewed
@@ -257,8 +254,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # Astro 7.4 needs >=22.23.4 (7.4.2 on 2026-10-27, 7.4.5 still), and a bare 22 resolved to 22.23.3 on the runners
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -309,8 +305,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # Nuxt 4.6 needs ^22.22.3; the job matches the E2E job's Node
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -363,7 +358,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -420,7 +415,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -459,8 +454,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # compat:check counts a bare 22 as 22.0.0, and the floor consumer's lock needs 22.20 (2026-10-28)
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -500,8 +494,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # The ACL fixture installs Payload 3.92, which needs ^22.23.4; compat:check counts a bare 22 as 22.0.0 (2026-10-28)
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -543,8 +536,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # The ACL fixture installs Payload 3.92, which needs ^22.23.4; compat:check counts a bare 22 as 22.0.0 (2026-10-28)
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -588,8 +580,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # The ACL fixture installs Payload 3.92, which needs ^22.23.4; compat:check counts a bare 22 as 22.0.0 (2026-10-28)
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -623,8 +614,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # Payload 3.92 needs ^22.23.4, and a bare 22 resolved to 22.23.3 on the runners (2026-10-25)
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -669,8 +659,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # Payload 3.92 needs ^22.23.4, and a bare 22 resolved to 22.23.3 on the runners (2026-10-25)
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -745,8 +734,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # Payload 3.92 needs ^22.23.4, and a bare 22 resolved to 22.23.3 on the runners (2026-10-25)
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -800,8 +788,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          # Payload 3.92 needs ^22.23.4, and a bare 22 resolved to 22.23.3 on the runners (2026-10-25)
-          node-version: 22.23.4
+          node-version: 24.22.3
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -849,7 +836,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22.23.4
+          node-version: 24.22.3
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: repeated-attempts-*

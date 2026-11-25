@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node >= 20.19](https://img.shields.io/badge/node-%3E%3D20.19-brightgreen)](package.json)
+[![Node >= 24](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](package.json)
 [![Payload 2.x / 3.x / 4.x beta](https://img.shields.io/badge/Payload-2.x%20%2F%203.x%20%2F%204.x%20beta-black)](#compatibility)
 [![npm](https://img.shields.io/npm/v/payload-live-preview?color=cb3837&logo=npm)](https://www.npmjs.com/package/payload-live-preview)
 
@@ -46,11 +46,11 @@ One runtime serves every framework. The Astro, Next.js, SvelteKit and Nuxt adapt
 | SvelteKit | 3.x                                                                               | 3.1.1 (chromium, firefox, webkit)                                      |
 | Nuxt      | 4.x; 3.x (end of life since 31 July 2026: kept working, not officially supported) | 4.6.3 (chromium, firefox, webkit); 3.21.11 (chromium, firefox, webkit) |
 
-Node >=20.19.0; the unit and integration suites run on Node 20, 22, 24, 26.
+Node >=24.0.0; the unit and integration suites run on Node 24, 26.
 
 <!-- compat-matrix:end -->
 
-`payload` is an optional peer, `^2.0.0 || ^3.0.0 || ^4.0.0-0`, so npm never installs it. Payload 4 pre-releases need Node 24.22.1 or later. Version 3.0 of this package drops Payload 2 and needs Node 22 or newer ([Preparing for 3.0](docs/migration.md#preparing-for-30)). What runs against each version, and what differs between Payload 2, 3 and 4: [docs/compatibility.md](docs/compatibility.md).
+`payload` is an optional peer, `^2.0.0 || ^3.0.0 || ^4.0.0-0`, so npm never installs it. Payload 4 pre-releases need Node 24.22.1 or later. Version 3.0 of this package drops Payload 2 and needs Node 24 or newer ([Preparing for 3.0](docs/migration.md#preparing-for-30)). What runs against each version, and what differs between Payload 2, 3 and 4: [docs/compatibility.md](docs/compatibility.md).
 
 ## Install
 

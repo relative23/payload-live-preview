@@ -6,19 +6,10 @@ export const CHECKOUT: StepSpec = { uses: 'actions/checkout' };
 export const SETUP_NODE: StepSpec = { uses: 'actions/setup-node' };
 export const PINNED_NODE: StepSpec = {
   uses: 'actions/setup-node',
-  with: { 'node-version': '22.23.2' },
+  with: { 'node-version': '24.22.3' },
 };
 export const NPM_VERSION: StepSpec = {
   run: 'npm install --global "$(node -p "require(\'./package.json\').packageManager")"',
-};
-/**
- * The Node matrix asks whether the package works on each Node it claims, so it
- * takes the pinned npm only where that npm runs. Reproducible packaging is
- * enforced on the pinned Node, not here.
- */
-export const NPM_VERSION_WHERE_SUPPORTED: StepSpec = {
-  name: 'Use the repository npm version where this Node supports it',
-  run: 'node scripts/use-repository-npm.mjs',
 };
 export const NPM_CI: StepSpec = { run: 'npm ci' };
 export const BUILD_RUNTIME: StepSpec = { run: 'npm run build:runtime' };
@@ -42,7 +33,7 @@ export const FIXTURE_CACHE: StepSpec = {
   with: { 'cache-dependency-path': 'package-lock.json\nexamples/*/package-lock.json' },
 };
 export const SETUP = [CHECKOUT, SETUP_NODE, NPM_VERSION, NPM_CI] as const;
-export const MATRIX_SETUP = [CHECKOUT, SETUP_NODE, NPM_VERSION_WHERE_SUPPORTED, NPM_CI] as const;
+export const MATRIX_SETUP = [CHECKOUT, SETUP_NODE, NPM_VERSION, NPM_CI] as const;
 export const PINNED_SETUP = [CHECKOUT, PINNED_NODE, NPM_VERSION, NPM_CI] as const;
 export const FIXTURE_SETUP = [CHECKOUT, FIXTURE_CACHE, NPM_VERSION, NPM_CI] as const;
 export const READ_ONLY = { contents: 'read' } as const;

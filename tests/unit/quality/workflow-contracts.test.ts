@@ -181,8 +181,8 @@ describe('workflow contracts', () => {
     {
       label: 'a reduced Node matrix',
       file: 'ci.yml',
-      original: 'node: [20, 22, 24, 26]',
-      replacement: 'node: [22]',
+      original: 'node: [24, 26]',
+      replacement: 'node: [24]',
       violation: 'ci.yml job unit does not run the reviewed matrix',
     },
     {
@@ -376,10 +376,10 @@ describe('workflow contracts', () => {
     {
       label: 'a floating build Node version',
       file: 'build.yml',
-      original: 'node-version: 22.23.2',
-      replacement: 'node-version: 22',
+      original: 'node-version: 24.22.3',
+      replacement: 'node-version: 24',
       violation:
-        'build.yml job build step uses actions/setup-node with.node-version is not "22.23.2"',
+        'build.yml job build step uses actions/setup-node with.node-version is not "24.22.3"',
     },
     {
       label: 'a publish job that ignores the gate',
@@ -457,8 +457,8 @@ describe('workflow contracts', () => {
     {
       label: 'a floating action tag',
       file: 'ci.yml',
-      original: `      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 22\n          cache: npm\n${NPM_VERSION_STEP}      - run: npm ci\n      # The generated`,
-      replacement: `      - uses: actions/checkout@v4\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 22\n          cache: npm\n${NPM_VERSION_STEP}      - run: npm ci\n      # The generated`,
+      original: `      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 24.22.3\n          cache: npm\n${NPM_VERSION_STEP}      - run: npm ci\n      # The generated`,
+      replacement: `      - uses: actions/checkout@v4\n        with:\n          persist-credentials: false\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 24.22.3\n          cache: npm\n${NPM_VERSION_STEP}      - run: npm ci\n      # The generated`,
       violation: 'ci.yml job lint uses an unpinned action: actions/checkout@v4',
     },
     {
@@ -570,7 +570,7 @@ describe('workflow contracts', () => {
 
   it('reads matrices from the parsed document', () => {
     const ci = parseWorkflow(readWorkflows().get('ci.yml') ?? '');
-    expect(matrixValues(ci, 'unit', 'node')).toEqual([20, 22, 24, 26]);
+    expect(matrixValues(ci, 'unit', 'node')).toEqual([24, 26]);
     expect(matrixValues(ci, 'next-matrix', 'next')).toEqual([15]);
     expect(matrixValues(ci, 'astro-fragment-islands', 'astro')).toEqual(['7.4.5']);
     expect(matrixValues(ci, 'astro-fragment-versions', 'astro')).toEqual(['7.4.5']);

@@ -294,7 +294,7 @@ a stall that grows common is looked into instead of absorbed.
   job that installs a fixture lockfile (through `scripts/ci-install-fixture.sh`,
   `npm ci` or `npm install` with `--prefix`, or a Playwright helper listed in
   `scripts/compat-engines.ts`) and fails when a locked package's `engines.node`
-  refuses the job's Node. A bare `node-version: 22` counts as 22.0.0.
+  refuses the job's Node. A bare `node-version: 24` counts as 24.0.0.
   Each feature row of the matrix names the CI job that runs it. A Version PR
   records the CI run it releases (`npm run compat:record`, in the Release
   workflow): the run and its jobs go to `quality/compat-results.json`, and

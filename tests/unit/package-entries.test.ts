@@ -70,7 +70,7 @@ describe('package entries', () => {
     // project has no "type": "module". `withLivePreview` lives in `./nextjs`,
     // which is ESM-only: without a `default` condition the require finds no
     // export and the documented setup fails to build (found in a clean project,
-    // H12). Node 20.19, the floor, loads the ESM file through require(esm).
+    // H12). Every supported Node loads the ESM file through require(esm).
     const nextjs = manifest.exports['./nextjs'] as Conditions;
     expect(nextjs.require).toBeUndefined();
     expect(nextjs.default).toEqual(nextjs.import);

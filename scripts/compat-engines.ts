@@ -66,8 +66,8 @@ export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
   },
   {
     // The npm lock pnpm itself comes from. The workspace's own lock is pnpm's, which this gate does
-    // not read; on Linux its highest Node floor is the package's own 20.19.0, and next 16.4.3 and
-    // sharp 0.35.5 ask for 20.9.0 (2026-11-04).
+    // not read; on Linux its highest Node floor is the package's own, 24.0.0 since 2026-11-25, and
+    // next 16.4.3 and sharp 0.35.5 ask for 20.9.0 (2026-11-04).
     config: 'playwright.next-pnpm-workspace.config.ts',
     fixtures: ['tests/fixtures/next-pnpm-workspace-tool'],
   },

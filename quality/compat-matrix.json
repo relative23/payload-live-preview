@@ -2065,8 +2065,8 @@
     }
   ],
   "node": {
-    "engines": ">=20.19.0",
-    "tested": [20, 22, 24, 26],
+    "engines": ">=24.0.0",
+    "tested": [24, 26],
     "job": "Unit Tests"
   },
   "payload": [
