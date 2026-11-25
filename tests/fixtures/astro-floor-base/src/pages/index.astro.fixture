@@ -12,7 +12,7 @@ const body = { root: { type: 'root', children: [
 ---
 <!doctype html>
 <html lang="en">
-  <head><meta charset="utf-8" /><title>Astro 4 floor</title></head>
+  <head><meta charset="utf-8" /><title>Astro floor</title></head>
   <body>
     <article data-payload-owner="collection:pages:7">
       <h1 data-payload-field="title" data-payload-type="text">Saved title</h1>

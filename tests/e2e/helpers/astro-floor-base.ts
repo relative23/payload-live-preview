@@ -1,5 +1,5 @@
 /**
- * The exact Astro 4 peer floor is a static production consumer of one retained archive.
+ * The exact Astro peer floor is a static production consumer of one retained archive.
  * It installs the reviewed lock with only the archive record replaced, proves the semantic
  * checker rejects a template that transpilation alone accepts, builds a delivery mode on
  * request and serves the output on loopback. The parent page is a mock: this gate proves
@@ -33,7 +33,7 @@ import {
 import { copyFixtureTemplates, deriveArchiveConsumer } from './native-consumer';
 
 /** The floor is the lower bound of the `astro` peer range; a unit test holds the two together. */
-export const ASTRO_FLOOR_VERSION = '4.0.0';
+export const ASTRO_FLOOR_VERSION = '7.2.8';
 /** Loopback port of the static site; the Playwright config names the same one. */
 export const ASTRO_FLOOR_PORT = 4290;
 const ORIGIN = `http://localhost:${String(ASTRO_FLOOR_PORT)}`;

@@ -22,7 +22,7 @@
   "totals": {
     "files": 562,
     "suites": 1081,
-    "tests": 4890,
+    "tests": 4887,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 462,
       "suites": 968,
-      "tests": 4468,
+      "tests": 4465,
       "benchmarks": 0
     }
   },
@@ -3196,7 +3196,7 @@
       "path": "tests/unit/quality/astro-island-fixture.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 3,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -3238,7 +3238,7 @@
       "path": "tests/unit/quality/astro-resource-versions.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 3,
       "benchmarks": 0
     },
     {

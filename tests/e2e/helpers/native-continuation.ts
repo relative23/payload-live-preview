@@ -37,11 +37,7 @@ import {
   checkAstroResourceTemplates,
   recordAstroResources,
 } from './astro-resources';
-import {
-  astroResourceRenderer,
-  astroResourceVersion,
-  prepareAstroResourceVersion,
-} from './astro-resource-versions';
+import { astroResourceRenderer, astroResourceVersion } from './astro-resource-versions';
 import { copyFixtureTemplates, deriveArchiveConsumer } from './native-consumer';
 
 const ROOT = process.cwd();
@@ -290,10 +286,9 @@ export async function startNativeContinuation(
     await copyFixtureTemplates(resolve(ROOT, `tests/fixtures/${framework}-continuation`), app);
     if (isAstroResources) {
       await copyFixtureTemplates(resolve(ROOT, 'tests/fixtures/astro-resources'), app);
-      await prepareAstroResourceVersion(app, resourceVersion!.version);
       if (resourceRenderer === 'package-default') {
-        // This exact floor is a reproduction, not a green context/resource claim:
-        // its public Container API has no props option. Exercise the packed default.
+        // The packed default renderer, without the application's own: the catalog only,
+        // no verified-context case.
         await copyFixtureTemplates(resolve(ROOT, 'tests/fixtures/astro-resource-floor'), app);
       }
       if (resourceRenderer === 'locals-catalog') {

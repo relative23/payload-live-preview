@@ -19,13 +19,6 @@ export interface MatrixJob {
 
 export const MATRIX_JOBS = [
   {
-    package: 'astro',
-    source: 'astro-matrix',
-    job: 'astro-matrix',
-    key: 'astro',
-    label: 'Astro matrix',
-  },
-  {
     package: 'next',
     source: 'next-matrix',
     job: 'next-matrix',

@@ -156,12 +156,12 @@ carries the same ones as the page in a preview.
 The Astro results below are dated measurements on earlier source-built
 archives, recorded in [ADR 0020](architecture/0020-astro-page-owned-resources.md)
 on 2026-09-27 and [ADR 0021](architecture/0021-fragment-islands-hydrate-from-the-build.md)
-on 2026-09-28. The specs named below are what runs today. Three jobs run from
-the package archive on every push, in Chromium: base integration on Astro
-4.0.0, fragment islands on 4.16.19, and fragment rendering with page-owned
-resources on 4.9.0, 4.16.19, 5.18.2, 6.4.8 and 7.4.5. The other engines,
-the islands on 7.4.5, verified React context and page ownership
-are run by hand ([Astro peer floors](testing.md#astro-peer-floors)).
+on 2026-09-28. They include Astro 4 to 6, which 3.0 no longer supports: the
+peer range begins at Astro 7.2.8. The specs named below are what runs today.
+Three jobs run from the package archive on every push, in Chromium: base
+integration on Astro 7.2.8, and fragment islands and fragment rendering with
+page-owned resources on 7.4.5. The other engines, verified React context and
+page ownership are run by hand ([Astro peer floor](testing.md#astro-peer-floor)).
 
 A successful isolated container render does not register the component's CSS
 with the page. On the measured Astro 7.3.2 production path, a component imported
@@ -203,8 +203,7 @@ assets. The default container still passes props only; request URL, params,
 trusted locals and extra renderer setup require the existing application
 `render` override. Never copy browser-provided locals or headers wholesale.
 The 2026-09-27 recipe measurements used exact Astro 4.16.19, 5.18.2, 6.4.8
-and 7.3.2 in all three browsers. Astro 4 uses the original
-`ViewTransitions` export for the same native navigation owner. Additional
+and 7.3.2 in all three browsers. Additional
 framework hydration and untested versions remain separate verification work.
 
 On exact Astro 4.9.0 the Container API does not consume `props`. Measured on
@@ -294,9 +293,8 @@ This is measured on Astro 7.4.5 with `@astrojs/react` 7.1.2 in three browsers
 [ADR 0021](architecture/0021-fragment-islands-hydrate-from-the-build.md)), for
 React islands with `client:load`. The other directives (`client:idle`,
 `client:visible`, `client:media`, `client:only`) and the clients of other
-frameworks are not measured. `resolve` is a container option of Astro 4.16 and
-later, and the island lane runs Astro 7.4.5 and 4.16.19; earlier versions are
-not claimed, and neither is `astro dev`. Without the build's table the render
+frameworks are not measured. The island job runs Astro 7.4.5; `astro dev` is
+not claimed. Without the build's table the render
 refuses with a message that names `livePreview()` and `astro build`
 ([unit test](../tests/unit/adapters/astro-island-modules.test.ts)).
 

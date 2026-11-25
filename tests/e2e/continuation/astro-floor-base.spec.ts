@@ -1,5 +1,5 @@
 /**
- * The exact Astro 4 peer floor is a static production consumer of one archive, built in
+ * The exact Astro peer floor is a static production consumer of one archive, built in
  * both delivery modes. The parent is a mock that posts the observed Payload message shape,
  * so this proves framework delivery and DOM behavior at the floor, not a real admin.
  * Two control builds drop one capability each; the same visible-behavior assertions must
@@ -119,7 +119,7 @@ async function assertionFails(assertion: Promise<unknown>): Promise<void> {
 }
 
 function describeDelivery(delivery: FloorDelivery): void {
-  test.describe(`Astro 4.0.0 floor, ${delivery} delivery`, () => {
+  test.describe(`Astro floor, ${delivery} delivery`, () => {
     let site: AstroFloorSite | undefined;
     test.beforeAll(async () => {
       test.setTimeout(240_000);
@@ -200,7 +200,7 @@ function describeControl(
   title: string,
   assertions: readonly Assertion[],
 ): void {
-  test.describe(`Astro 4.0.0 floor, control build: ${control}`, () => {
+  test.describe(`Astro floor, control build: ${control}`, () => {
     let site: AstroFloorSite | undefined;
     test.beforeAll(async () => {
       test.setTimeout(240_000);

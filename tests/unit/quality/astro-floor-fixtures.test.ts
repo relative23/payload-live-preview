@@ -1,6 +1,6 @@
 /**
- * The two Astro floor consumers are reviewed locks, not resolutions made at run time.
- * These checks keep each manifest, lock and install policy exact, tie the base floor to
+ * The Astro floor consumer is a reviewed lock, not a resolution made at run time.
+ * These checks keep its manifest, lock and install policy exact, tie the base floor to
  * the peer range it claims to cover, and keep a control build from becoming the default.
  */
 import { readFileSync } from 'node:fs';
@@ -33,40 +33,16 @@ const NPMRC =
 
 const consumers = [
   {
-    label: 'Astro 4.0.0 base floor',
+    label: 'Astro 7.2.8 base floor',
     directory: 'tests/fixtures/astro-floor-base-deps',
     direct: {
-      astro: '4.0.0',
-      vite: '5.4.21',
-      '@astrojs/check': '0.9.10',
+      astro: '7.2.8',
+      vite: '8.3.5',
+      '@astrojs/check': '0.9.12',
       typescript: '5.9.3',
       '@types/node': '22.20.1',
     },
-    // sharp 0.32.6 would download libvips; the static page renders no image, so its hook stays off.
-    allowScripts: {
-      'esbuild@0.19.12': true,
-      'esbuild@0.21.5': true,
-      'sharp@0.32.6': false,
-      'fsevents@2.3.3': false,
-    },
-  },
-  {
-    label: 'Astro 4.16.19 React islands',
-    directory: 'tests/fixtures/astro-react-versions/4.16.19',
-    direct: {
-      astro: '4.16.19',
-      '@astrojs/node': '8.3.4',
-      '@astrojs/react': '3.6.3',
-      vite: '5.4.21',
-      react: '18.3.1',
-      'react-dom': '18.3.1',
-      '@astrojs/check': '0.9.10',
-      typescript: '5.9.3',
-      '@types/node': '22.20.1',
-      '@types/react': '18.3.12',
-      '@types/react-dom': '18.3.1',
-    },
-    allowScripts: { 'esbuild@0.21.5': true, 'sharp@0.33.5': true, 'fsevents@2.3.3': false },
+    allowScripts: { 'esbuild@0.28.2': true, 'fsevents@2.3.3': false },
   },
 ] as const;
 
@@ -120,7 +96,7 @@ describe.each(consumers)('$label consumer', ({ label, directory, direct, allowSc
   });
 });
 
-describe('Astro 4.0.0 base floor fixture', () => {
+describe('Astro base floor fixture', () => {
   it('sits on the lower bound of the peer range the package declares', () => {
     const peers = (JSON.parse(read('package.json')) as { peerDependencies: Record<string, string> })
       .peerDependencies;
@@ -164,7 +140,7 @@ describe('Astro 4.0.0 base floor fixture', () => {
   });
 });
 
-describe('Astro 4.16.19 island lane', () => {
+describe('Astro island lane', () => {
   it('names the React renderer and the build-hash CSP as part of the scope', () => {
     const config = read('playwright.astro-islands.config.ts');
     expect(config).toContain("process.env['PLP_ASTRO_RESOURCE_RENDERER'] ??= 'react-islands'");
