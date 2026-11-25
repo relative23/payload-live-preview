@@ -120,7 +120,7 @@ input.
 
 All five cases run twice in this repository — against the session this hook uses
 in [`document-session.test.ts`](../tests/unit/adapters/document-session.test.ts),
-and against the lockfile's exact `@payloadcms/live-preview` 3.88.0 in
+and against the lockfile's exact `@payloadcms/live-preview` 3.94.2 in
 [`payload-hook-comparison.test.ts`](../tests/unit/adapters/payload-hook-comparison.test.ts),
 which imports the installed package rather than describing it. Both run in
 `npm run test:unit`, which CI runs on every push to `main` and every pull
@@ -134,7 +134,7 @@ React wrapper.
 
 ### Five where the results differ
 
-| Measured with                                                                  | `@payloadcms/live-preview` 3.88.0                                              | This hook                                                                                                                                                                         |
+| Measured with                                                                  | `@payloadcms/live-preview` 3.94.2                                              | This hook                                                                                                                                                                         |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                                                                                                                                        |
 | Two messages, the first answered after 40 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands                                                                                                                 |

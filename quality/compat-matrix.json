@@ -2155,7 +2155,7 @@
       "peer": ">=3.3",
       "job": "hook-matrix",
       "floor": "3.3.0",
-      "current": "3.5.44",
+      "current": "3.5.46",
       "suites": [
         "tests/unit/adapters/vue-composable.test.ts",
         "tests/unit/core/hydration-vue.test.ts",
@@ -2168,7 +2168,7 @@
       "peer": ">=5",
       "job": "hook-matrix",
       "floor": "5.0.0",
-      "current": "5.57.3",
+      "current": "5.59.1",
       "suites": [
         "tests/unit/adapters/sveltekit-fragments-real.test.ts",
         "tests/unit/adapters/sveltekit-fragments.test.ts"

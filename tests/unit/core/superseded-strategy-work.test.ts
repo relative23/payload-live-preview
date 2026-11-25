@@ -76,7 +76,7 @@ function start(
     warn: () => {},
     log,
     autoBind,
-    onUnboundChange: 'route',
+    onUnfaithfulPatch: 'escalate',
     ...(strategies === undefined ? {} : { strategies }),
   });
   runtime.start();

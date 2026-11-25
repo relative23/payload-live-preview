@@ -8,7 +8,7 @@
  * unit tests only string-match the output).
  */
 
-import { Project } from 'ts-morph';
+import { ModuleResolutionKind, Project, ScriptTarget } from 'ts-morph';
 import { describe, expect, it } from 'vitest';
 import { emitTypes } from '@/codegen/emit/emit-types';
 import { extractSchema } from '@/codegen/parser/extract-schema';
@@ -66,8 +66,8 @@ describe('codegen end-to-end', () => {
       compilerOptions: {
         strict: true,
         noImplicitAny: true,
-        target: 99 /* ESNext */,
-        moduleResolution: 100 /* Bundler */,
+        target: ScriptTarget.ESNext,
+        moduleResolution: ModuleResolutionKind.Bundler,
         skipLibCheck: true,
       },
     });

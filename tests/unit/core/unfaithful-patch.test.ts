@@ -498,6 +498,7 @@ describe('a changed field with no binding', () => {
   it("is off again when the 2.0 name says 'ignore'", async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">Server rendered</h1>';
     const route = fakeRoute();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 name is what this case is about
     const runtime = start({ strategies: { route }, onUnboundChange: 'ignore' });
 
     await connectThenEdit({ title: 'Server rendered', callout: 'the section is not on the page' });
@@ -509,6 +510,7 @@ describe('a changed field with no binding', () => {
   it("keeps working when the 2.0 name says 'route'", async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">Server rendered</h1>';
     const route = fakeRoute();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 name is what this case is about
     const runtime = start({ strategies: { route }, onUnboundChange: 'route' });
 
     await connectThenEdit({ title: 'Server rendered', callout: 'the section is not on the page' });
