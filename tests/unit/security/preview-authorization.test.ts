@@ -9,7 +9,6 @@ import {
   type FetchLike,
   type PayloadSessionStrategy,
   type PreviewAuthorizationRequest,
-  type PreviewTokenReplayChecks,
   type PreviewTokenReplayStore,
   type SignedTokenStrategy,
   type SubtleCryptoLike,
@@ -360,57 +359,30 @@ describe('signed-token strategy', () => {
     ).toBe('unavailable');
   });
 
-  it('still accepts the deprecated two-step shape, which the 1.x review showed cannot be atomic', async () => {
-    // The 1.x store: a read, then a write. Sequential requests are refused
-    // as before. Two that arrive together both pass the read before either
-    // writes; the test pins that behaviour so the deprecation says something
-    // true rather than cosmetic.
-    //
-    // The read answers only once `readsBeforeAnswer` requests have read, not
-    // after a timer: with a 5 ms wait the race was decided by how long the
-    // second request's signature check took, and on a loaded CI runner that was
-    // longer than the wait, so the first request marked the token before the
-    // second had read, and the pinned "both pass" came back as "replayed".
-    const store = (
-      readsBeforeAnswer: number,
-    ): // eslint-disable-next-line @typescript-eslint/no-deprecated -- the deprecation is what this test holds
-    PreviewTokenReplayChecks => {
-      const used = new Set<string>();
-      let reads = 0;
-      let release = (): void => {};
-      const everyoneRead = new Promise<void>((resolve) => {
-        release = resolve;
-      });
-      return {
-        isUsed: async (id) => {
-          // Read at the moment of the query; the answer arrives once the others read too.
-          const seen = used.has(id);
-          reads += 1;
-          if (reads >= readsBeforeAnswer) release();
-          await everyoneRead;
-          return seen;
-        },
-        markUsed: (id) => {
-          used.add(id);
-        },
-      };
-    };
+  it('refuses the two-step store of the 2.0 beta as a configuration error, before it reads a token', async () => {
+    // `isUsed` and `markUsed` cannot be one step, so 3.0 removed the shape (ADR 0007, row 20).
+    // Without the check such a store would refuse every token as `unavailable` and never say why.
+    const isUsed = vi.fn(() => false);
+    const replay = { isUsed, markUsed: () => undefined } as unknown as PreviewTokenReplayStore;
     const url = `${SITE}/page?previewToken=${await token()}`;
-    const sequential = store(1);
-    expect(
-      (await authorizePreviewRequest(request(url), { ...strategy, replay: sequential })).outcome,
-    ).toBe('authorized');
-    expect(
-      (await authorizePreviewRequest(request(url), { ...strategy, replay: sequential })).outcome,
-    ).toBe('replayed');
-    const replay = store(2);
-    const together = (
-      await Promise.all([
-        authorizePreviewRequest(request(url), { ...strategy, replay }),
-        authorizePreviewRequest(request(url), { ...strategy, replay }),
-      ])
-    ).map((result) => result.outcome);
-    expect(together).toEqual(['authorized', 'authorized']);
+
+    await expect(authorizePreviewRequest(request(url), { ...strategy, replay })).rejects.toThrow(
+      new PreviewConfigurationError(
+        'payload-live-preview: a `signed-token` replay store needs `consume(id, expiresAt)`, which ' +
+          'checks and records in one step; the `isUsed` and `markUsed` shape was removed in 3.0',
+      ),
+    );
+    await expect(
+      authorizePreviewRequest(request(`${SITE}/page`), { ...strategy, replay }),
+    ).rejects.toThrow(PreviewConfigurationError);
+    expect(isUsed).not.toHaveBeenCalled();
+    // `null` is no store either; a JavaScript config can pass it.
+    await expect(
+      authorizePreviewRequest(request(url), {
+        ...strategy,
+        replay: null as unknown as PreviewTokenReplayStore,
+      }),
+    ).rejects.toThrow(PreviewConfigurationError);
   });
 
   it('caps the lifetime at one hour and refuses a short secret at construction', async () => {
@@ -423,6 +395,19 @@ describe('signed-token strategy', () => {
     await expect(
       issuePreviewToken({ audience: SITE }, { secret: 'short', crypto }),
     ).rejects.toThrow(/32 bytes/);
+    // The floor is 32 bytes, and 32 bytes meet it.
+    await expect(
+      issuePreviewToken({ audience: SITE }, { secret: 'a'.repeat(31), crypto }),
+    ).rejects.toThrow(/32 bytes/);
+    const atTheFloor = { ...strategy, secret: 'a'.repeat(32) };
+    const minted = await issuePreviewToken(
+      { audience: SITE },
+      { secret: atTheFloor.secret, crypto, now: () => NOW },
+    );
+    expect(
+      (await authorizePreviewRequest(request(`${SITE}/page?previewToken=${minted}`), atTheFloor))
+        .outcome,
+    ).toBe('authorized');
     await expect(
       authorizePreviewRequest(request(`${SITE}/page`), { ...strategy, secret: 'short' }),
     ).rejects.toThrow(PreviewConfigurationError);

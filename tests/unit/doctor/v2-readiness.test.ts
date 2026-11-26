@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is held on purpose until 3.0 */
 import { describe, expect, it } from 'vitest';
 import { analyzeV2Readiness, readInlineConfig } from '@doctor/readiness';
 import { generateInlineScript } from '@inline/generator';
-import { livePreviewScriptProps } from '@adapters/nextjs/index';
+import { scriptElementProps } from '@adapters/nextjs/script-element';
 import type { DoctorFinding, DoctorProbe, DoctorResponse } from '@doctor/types';
 
 const CMS = 'https://cms.example.com';
@@ -100,7 +99,7 @@ describe('analyzeV2Readiness', () => {
 
     // The same through an adapter, inline and as the bootstrap of asset delivery.
     for (const delivery of ['inline', 'asset'] as const) {
-      const props = livePreviewScriptProps({ allowedOrigins: [CMS], delivery });
+      const props = scriptElementProps({ allowedOrigins: [CMS], delivery });
       expect(analyzeV2Readiness(probe(props.dangerouslySetInnerHTML.__html))).toEqual([]);
     }
   });
@@ -125,7 +124,7 @@ describe('analyzeV2Readiness', () => {
     );
     const adapter = analyzeV2Readiness(
       probe(
-        livePreviewScriptProps({ allowedOrigins: [CMS], defaults: 'v1' }).dangerouslySetInnerHTML
+        scriptElementProps({ allowedOrigins: [CMS], defaults: 'v1' }).dangerouslySetInnerHTML
           .__html,
       ),
     );

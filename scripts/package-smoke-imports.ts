@@ -160,44 +160,33 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
 }
 
 /**
- * Every entry is its own bundle with its own copy of the sanitizer, so a
- * document supplied through one entry must reach the rich text another renders.
- * 2.0.1 kept it per copy: `lexicalToHtml` from `/lexical` warned and returned
- * unsanitised HTML on a server that had called the root's setter. The fake
- * document counts the `createElement('template')` of each sanitising pass; its
- * template's content writes through an element of its own document (2.2.1).
- *
- * The setter's own deprecation warning (ADR 0026) is counted apart: called
- * through both entries, it prints once, since the issued keys live on the realm.
+ * 3.0 removed `setSanitizerDocument()` and the document it held on the realm
+ * (ADR 0007, row 16): no entry exports the setter, and a render that names no
+ * document does not read the slot. A 2.x copy of the package in the same
+ * process can still fill it, which is what the probe does.
  *
  * The probe is a fixed text; the two specifiers arrive as arguments
  * (`process.argv[1]` and `[2]`), so no value is spliced into code.
  */
-const SHARED_SANITIZER_DOCUMENT_BODY = [
-  'let calls = 0; const warnings = []; const deprecations = [];',
-  "console.warn = (message) => { const text = String(message); (text.includes('is removed in 3.0') ? deprecations : warnings).push(text); };",
-  "const writer = { innerHTML: '', firstChild: null, append: () => undefined };",
-  "root.setSanitizerDocument({ createElement: () => { calls += 1; return { innerHTML: '', content: { childNodes: [], firstChild: null, ownerDocument: { createElement: () => writer } } }; } });",
+const REMOVED_SANITIZER_DOCUMENT_BODY = [
+  "if ('setSanitizerDocument' in root || 'setSanitizerDocument' in lexical) throw new Error('setSanitizerDocument() is still exported');",
+  'let calls = 0; const warnings = [];',
+  'console.warn = (message) => { warnings.push(String(message)); };',
+  "globalThis[Symbol.for('payload-live-preview.sanitizer-document')] = { createElement: () => { calls += 1; throw new Error('the realm slot was read'); } };",
   "lexical.lexicalToHtml({ root: { type: 'root', children: [{ type: 'paragraph', children: [{ type: 'text', text: 'x', format: 0 }] }] } });",
-  'const used = calls;',
-  "if (used < 1 || warnings.length > 0) throw new Error('lexicalToHtml from /lexical did not use the document set through the root: ' + calls + ' template(s), ' + JSON.stringify(warnings));",
-  'lexical.setSanitizerDocument(null);',
-  "root.lexicalToHtml({ root: { type: 'root', children: [] } });",
-  "if (calls !== used || warnings.length !== 1) throw new Error('clearing through /lexical did not clear the root: ' + calls + ' template(s), ' + warnings.length + ' warning(s)');",
-  "if (deprecations.length !== 1) throw new Error('setSanitizerDocument() through two entries did not warn exactly once: ' + JSON.stringify(deprecations));",
+  "if (calls !== 0 || warnings.length !== 1) throw new Error('a render without a document read the realm slot or did not warn once: ' + calls + ' call(s), ' + JSON.stringify(warnings));",
 ].join(' ');
 
-const SHARED_SANITIZER_DOCUMENT_PROBES: Readonly<Record<'esm' | 'cjs', string>> = {
-  esm: `const root = await import(process.argv[1]); const lexical = await import(process.argv[2]); ${SHARED_SANITIZER_DOCUMENT_BODY}`,
-  cjs: `const root = require(process.argv[1]); const lexical = require(process.argv[2]); (async () => { ${SHARED_SANITIZER_DOCUMENT_BODY} })().catch((error) => { console.error(error); process.exit(1); });`,
+const REMOVED_SANITIZER_DOCUMENT_PROBES: Readonly<Record<'esm' | 'cjs', string>> = {
+  esm: `const root = await import(process.argv[1]); const lexical = await import(process.argv[2]); ${REMOVED_SANITIZER_DOCUMENT_BODY}`,
+  cjs: `const root = require(process.argv[1]); const lexical = require(process.argv[2]); (async () => { ${REMOVED_SANITIZER_DOCUMENT_BODY} })().catch((error) => { console.error(error); process.exit(1); });`,
 };
 
 /**
  * Characterise the public `/lexical` entry in Node, where no DOM is global.
  * Built-ins escape their inputs, while custom renderers are trusted code and
  * stay unsanitised when the caller supplies no parser; that path must warn.
- * Explicit per-call documents isolate concurrent requests, and the legacy
- * root-entry setter remains a cross-bundle fallback until 3.0 (ADR 0002).
+ * Explicit per-call documents isolate concurrent requests.
  *
  * The executable markup below is a fixed probe string. Package specifiers are
  * process arguments, never interpolated into this source.
@@ -221,21 +210,17 @@ const DOMLESS_LEXICAL_BODY = [
   'try { lexical.lexicalToHtml(content, { requireDocument: true }); } catch (error) { refused = error; }',
   "if (refused?.name !== 'SanitizerEnvironmentError') throw new Error('requireDocument did not refuse a DOM-less render: ' + String(refused));",
   "const documentFacade = () => { const dom = new JSDOM('<!doctype html><html><body></body></html>'); let calls = 0; return { value: { createElement: (tag) => { calls += 1; return dom.window.document.createElement(tag); } }, calls: () => calls, close: () => { dom.window.close(); } }; };",
-  'const first = documentFacade(); const second = documentFacade(); const fallback = documentFacade();',
+  'const first = documentFacade(); const second = documentFacade();',
   "const assertSanitised = (html, label) => { if (html.includes('<script') || html.includes(' onerror=\"') || html.includes('href=\"javascript:')) throw new Error(label + ' kept active custom markup: ' + html); };",
   'try {',
-  '  root.setSanitizerDocument(fallback.value);',
   '  const [firstHtml, secondHtml] = await Promise.all([Promise.resolve().then(() => lexical.lexicalToHtml(content, { document: first.value })), Promise.resolve().then(() => lexical.lexicalToHtml(content, { document: second.value }))]);',
   "  assertSanitised(firstHtml, 'first per-call document'); assertSanitised(secondHtml, 'second per-call document');",
   // The sanitizer parses what it rewrote again to confirm it settled (ADR 0016), so the count is
   // the parses one rendering takes, the same for every document and never zero.
   '  const parses = first.calls();',
-  "  if (parses < 1 || second.calls() !== parses || fallback.calls() !== 0) throw new Error('per-call documents were not isolated: ' + [first.calls(), second.calls(), fallback.calls()].join('/'));",
-  '  const fallbackHtml = lexical.lexicalToHtml(content);',
-  "  assertSanitised(fallbackHtml, 'global fallback document');",
-  "  if (fallback.calls() !== parses) throw new Error('global fallback document was called ' + String(fallback.calls()) + ' times, not ' + String(parses));",
+  "  if (parses < 1 || second.calls() !== parses) throw new Error('per-call documents were not isolated: ' + [first.calls(), second.calls()].join('/'));",
   '} finally {',
-  '  lexical.setSanitizerDocument(null); first.close(); second.close(); fallback.close();',
+  '  first.close(); second.close();',
   '}',
   "if (typeof globalThis.document !== 'undefined') throw new Error('the Lexical smoke installed a global document');",
   "if (globalThis.__plpPackageSmoke !== undefined) throw new Error('the fixed custom markup executed inside the smoke');",
@@ -518,7 +503,7 @@ export async function checkPackedImportSmokes(inputs: {
       [
         `--input-type=${format === 'esm' ? 'module' : 'commonjs'}`,
         '--eval',
-        SHARED_SANITIZER_DOCUMENT_PROBES[format],
+        REMOVED_SANITIZER_DOCUMENT_PROBES[format],
         packageSpecifier(inputs.packageName, '.'),
         packageSpecifier(inputs.packageName, './lexical'),
       ],
@@ -526,7 +511,7 @@ export async function checkPackedImportSmokes(inputs: {
     );
     if (shared.status !== 0) {
       failures.push(
-        `${format} sanitizer document is not shared across entries:\n${detailFor(shared)}`,
+        `${format} the removed sanitizer document is still exported or read:\n${detailFor(shared)}`,
       );
     }
   }

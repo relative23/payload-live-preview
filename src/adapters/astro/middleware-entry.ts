@@ -4,9 +4,9 @@
  */
 
 import { createLivePreviewMiddleware } from './middleware';
-import type { LivePreviewAstroOptions } from './types';
+import type { PreviewAdapterOptions } from '@adapters/shared/options';
 
 // @ts-expect-error — virtual module, provided at build time
 import options from 'virtual:payload-live-preview/options';
 
-export const onRequest = createLivePreviewMiddleware(options as LivePreviewAstroOptions);
+export const onRequest = createLivePreviewMiddleware(options as PreviewAdapterOptions);

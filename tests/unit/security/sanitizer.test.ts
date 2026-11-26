@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-deprecated -- the process-wide document slot is exercised on purpose until 3.0 */
 import { describe, expect, it, vi } from 'vitest';
-import { sanitizeHtml, setSanitizerDocument } from '@security/sanitizer';
+import { sanitizeHtml } from '@security/sanitizer';
 
 describe('sanitizeHtml — allow-list', () => {
   it('keeps allowed tags and structure', () => {
@@ -33,13 +32,8 @@ describe('sanitizeHtml — allow-list', () => {
     const createElement = vi.fn(() => {
       throw new Error('the empty-input fast path must not parse');
     });
-    setSanitizerDocument({ createElement });
-    try {
-      expect(sanitizeHtml('')).toBe('');
-      expect(createElement).not.toHaveBeenCalled();
-    } finally {
-      setSanitizerDocument(null);
-    }
+    expect(sanitizeHtml('', { document: { createElement } })).toBe('');
+    expect(createElement).not.toHaveBeenCalled();
   });
 });
 

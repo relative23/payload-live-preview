@@ -330,15 +330,8 @@ opts out of the warning too.
 
 Since 2.1 a render can name its document instead: `lexicalToHtml(value, {
 document })`, and `<RichText document={doc} />` passes it through; two requests
-at once never share one. `setSanitizerDocument()` remains the fallback and is
-deprecated for 3.0.
-Since 2.0.2 one `setSanitizerDocument()` call covers every entry: the document
-set through the root, `payload-live-preview/core` or
-`payload-live-preview/lexical` is the one all entries use, and
-`payload-live-preview/lexical` exports the setter itself. Through 2.0.1 each
-entry kept its own document, so the `lexicalToHtml` from
-`payload-live-preview/lexical` returned unsanitized HTML on a server even after
-the root's setter had run.
+at once never share one. 3.0 removed `setSanitizerDocument()`, the process-wide
+fallback: a server render names its document or has the global one.
 
 The built-in nodes read the shapes `@payloadcms/richtext-lexical` actually
 serializes, not vanilla Lexical's: a link is

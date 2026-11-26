@@ -82,7 +82,7 @@ export function deliveryFamilies(
     ],
     [
       'authorized Next.js row',
-      /`livePreviewScriptProps\(\)` in the root layout\s*\|[^|]*\|\s*(\d[\d ]*\d), twice/gu,
+      /`await LivePreviewScript\(…\)` for an authorized editor\s*\|[^|]*\|\s*(\d[\d ]*\d), twice/gu,
       facts.runtime + facts.nextAuthorized,
     ],
     [

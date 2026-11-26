@@ -8,7 +8,6 @@
 
 import { type INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/types/inline-config';
 import { EventEmitter } from '@events/emitter';
-import { resolveUnfaithfulPatchMode } from '../update/fidelity';
 import { LivePreviewRuntime } from './lifecycle';
 import { resolveStrategyPreludes } from '../strategies/strategy-preludes';
 import { OriginDetector } from '@detection/origin';
@@ -20,8 +19,11 @@ import type { FieldRenderer } from '../types';
 import { safeConsoleDebug, safeConsoleWarn } from '../diagnostics';
 
 /** Positional wire format, derived from the key table `src/inline/generator.ts` writes. */
-type ConfigTupleOf<K extends readonly (keyof InlineScriptConfig)[]> = {
-  readonly [I in keyof K]?: InlineScriptConfig[K[I]];
+type ConfigTupleOf<K extends readonly PropertyKey[]> = {
+  // A retired slot has no option behind it, and nothing is read from it.
+  readonly [I in keyof K]?: K[I] extends keyof InlineScriptConfig
+    ? InlineScriptConfig[K[I]]
+    : undefined;
 };
 type RuntimeBuildConfig = ConfigTupleOf<typeof INLINE_CONFIG_KEYS>;
 
@@ -83,7 +85,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     fragmentEndpoint,
     revealEditedField = false,
     routeStrategy = false,
-    onUnboundChange,
+    _onUnboundChange,
     onUnfaithfulPatch,
     autoBind = 'off',
     hydration,
@@ -147,9 +149,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     ...(subfieldCoverage === undefined ? {} : { subfieldCoverage }),
     skipUnchanged,
     revealEditedField,
-    // Resolved here rather than passed through as two slots: an empty slot must
-    // not read as a chosen `'ignore'`, and the runtime takes one answer.
-    onUnfaithfulPatch: resolveUnfaithfulPatchMode({ onUnfaithfulPatch, onUnboundChange }),
+    ...(onUnfaithfulPatch === undefined ? {} : { onUnfaithfulPatch }),
     autoBind,
     ...(hydration !== undefined ? { hydration } : {}),
     sanitizerPolicy,

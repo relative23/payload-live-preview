@@ -92,8 +92,9 @@ one step — Redis `SET key 1 NX PX <ttl>`, a unique insert — because a read
 followed by a write lets two requests that carry the same token and arrive
 together both pass. `true` admits the token; any other answer refuses it as
 `replayed`, a throw as `unavailable`. The two-call `isUsed`/`markUsed` shape of
-the 2.0 beta is still accepted, deprecated, and removed in 3.0: it is the
-two-step shape and has exactly that race. A strategy that checks a token
+the 2.0 beta is the two-step shape and has exactly that race; 3.0 removed it,
+and a store without `consume` is a `PreviewConfigurationError` at the first
+request. A strategy that checks a token
 against it warns once in development.
 
 ```ts
@@ -135,8 +136,7 @@ So the `PayloadLivePreviewMessage.data?: Record<string, unknown>` contract is en
 
 Browser/live Lexical output and `html`-typed fields run through a curated DOM
 sanitizer. During SSR, `lexicalToHtml()` uses that same backstop only when it
-has a DOM: the `document` passed with the call, the deprecated
-`setSanitizerDocument()` slot, or a global one. Without one, built-in node
+has a DOM: the `document` passed with the call, or a global one. Without one, built-in node
 renderers remain escape-by-default, custom node and block renderers' markup is
 returned as written, and the call warns once. With `requireDocument: true` it
 throws `SanitizerEnvironmentError` instead, as `sanitizeHtml()` always does;
@@ -160,8 +160,8 @@ sanitizer:
 `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })` and
 the `RichText` Astro component's `document` prop, e.g. linkedom's
 `parseHTML(...).document`. Two requests rendering at once each keep their own;
-nothing is shared through the process. `setSanitizerDocument()` stays as the
-fallback for a call that names none and is deprecated for 3.0 (ADR 0007 ledger).
+nothing is shared through the process. 3.0 removed `setSanitizerDocument()`,
+the process-wide fallback for a call that named none (ADR 0007 ledger, row 16).
 
 **What it writes is what it cleaned.** Since 2.2.1 the sanitizer writes the
 cleaned nodes themselves, through an element of their own document. Up to
@@ -175,14 +175,7 @@ jsdom and happy-dom were not affected. A document that gives no such element,
 or one that does not end up holding the cleaned nodes, now makes the call
 throw `SanitizerEnvironmentError` instead.
 
-**One sanitizer document for every entry.** Since 2.0.2 the document given to
-`setSanitizerDocument()` is held on the global object, so one call through the
-root, `payload-live-preview/core` or `payload-live-preview/lexical` (which
-exports the setter too) serves the sanitizer in every entry. Through 2.0.1 the
-document belonged to the entry it was set through, so each entry needed its own
-call, and `payload-live-preview/lexical` had no setter: its `lexicalToHtml()`
-returned unsanitized HTML on a server even after the root's call.
-`setSanitizerPolicy()` is not shared that way; it sets the default of the root
+**The sanitizer policy belongs to one entry.** `setSanitizerPolicy()` sets the default of the root
 entry, the only one that exports it.
 
 **Policies.** `sanitizerPolicy: 'strict'` is the default everywhere — the

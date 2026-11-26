@@ -9,7 +9,6 @@ import { ElementCache, hasSameBindingIdentity } from '../bindings/cache';
 import { DataMerger } from '../merge/data-merger';
 import type { DiagnosticCode } from '../diagnostic-codes';
 import { isolateDiagnostic, noopDiagnostic, safeConsoleWarn } from '../diagnostics';
-import { resolveUnfaithfulPatchMode } from '../update/fidelity';
 import { buildInspection } from '../inspection/snapshot';
 import type { LivePreviewInspection } from '../inspection/types';
 import { markNoWriteCallback } from '../internal-outcome';
@@ -180,7 +179,7 @@ export class LivePreviewRuntime {
       dependencies: options.dependencies ?? {},
       strategies: options.strategies ?? {},
       revealEditedField: options.revealEditedField === true,
-      onUnfaithfulPatch: resolveUnfaithfulPatchMode(options),
+      onUnfaithfulPatch: options.onUnfaithfulPatch ?? 'escalate',
       autoBind: options.autoBind ?? 'off',
       hydration: options.hydration,
     };

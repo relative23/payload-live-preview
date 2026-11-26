@@ -124,13 +124,6 @@ export interface PreviewAdapterOptions<Req = Request> {
    */
   readonly routeStrategy?: boolean | 'after-save';
   /**
-   * The 2.0 name for `onUnfaithfulPatch`, kept until 3.0. `'route'` means
-   * `'escalate'`, `'ignore'` means `'ignore'`.
-   *
-   * @deprecated Renamed to `onUnfaithfulPatch`.
-   */
-  readonly onUnboundChange?: 'ignore' | 'route';
-  /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn — a value no renderer can represent, a Lexical block whose
    * markup the write drops, a changed field with no binding at all.

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is held on purpose until 3.0 */
 /**
  * ADR 0007's 2.0 gate, "migration verified in two materially different apps" —
  * app two: the Next.js fixture as it stood at v1.8.1.
@@ -22,7 +21,7 @@ import type { Node as MorphNode } from 'ts-morph';
 import { describe, expect, it } from 'vitest';
 import * as rootEntry from '@/index';
 import { generateInlineScript, type InlineScriptConfig } from '@/inline/generator';
-import { livePreviewScriptProps } from '@adapters/nextjs/index';
+import { scriptElementProps } from '@adapters/nextjs/script-element';
 import { loadTsMorph, packageBindings, parseScript } from '@migrate/ast';
 import { runMigrate } from '@migrate/runner';
 
@@ -151,7 +150,7 @@ describe('app two: the Next.js fixture at v1.8.1, upgraded to 2.0', () => {
   it('and it is the configuration the Next.js adapter writes without being asked', async () => {
     const after = await inlineScriptOptions(join(EXPECTED, 'app/layout.tsx'));
     const { hydration, ...rest } = after;
-    const adapter = livePreviewScriptProps(rest);
+    const adapter = scriptElementProps(rest);
 
     expect(hydration).toBe('react');
     expect(configLine(adapter.dangerouslySetInnerHTML.__html)).toBe(

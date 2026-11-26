@@ -239,11 +239,17 @@ describe('generateInlineScript', () => {
     expect(INLINE_CONFIG_KEYS.indexOf('softNavigationEvents')).toBe(25);
     expect(INLINE_CONFIG_KEYS.indexOf('subfieldCoverage')).toBe(26);
     expect(INLINE_CONFIG_KEYS.indexOf('mergeTimeoutMs')).toBe(27);
+    // Slot 20 is retired: it held `onUnboundChange` until 3.0, keeps its number and stays empty.
+    const retired = INLINE_CONFIG_KEYS.indexOf('onUnboundChange');
     const every = Object.fromEntries(
-      INLINE_CONFIG_KEYS.map((key, index) => [key, `slot-${String(index)}`]),
+      INLINE_CONFIG_KEYS.flatMap((key, index) =>
+        index === retired ? [] : [[key, `slot-${String(index)}`]],
+      ),
     ) as unknown as InlineScriptConfig;
     expect(generatedConfig(generateInlineScript({ ...every, mergeDepth: 1 }))).toEqual(
-      INLINE_CONFIG_KEYS.map((key, index) => (key === 'mergeDepth' ? 1 : `slot-${String(index)}`)),
+      INLINE_CONFIG_KEYS.map((key, index) =>
+        key === 'mergeDepth' ? 1 : index === retired ? undefined : `slot-${String(index)}`,
+      ),
     );
   });
 

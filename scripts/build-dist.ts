@@ -51,7 +51,6 @@ const PUBLIC_FUNCTION_NAMES: readonly string[] = [
   'registerRouteRefresh',
   'sanitizeHtml',
   'setCspCrypto',
-  'setSanitizerDocument',
 ];
 const PUBLIC_FUNCTION_NAME_PATTERN = new RegExp(`^(?:${PUBLIC_FUNCTION_NAMES.join('|')})$`, 'u');
 

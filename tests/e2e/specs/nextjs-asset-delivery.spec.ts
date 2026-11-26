@@ -6,9 +6,10 @@ import { NEXT_ORIGIN, post, waitForPreviewFrame, waitForStarted } from '../helpe
  * `delivery: 'asset'` through the Next.js adapter. Both fixtures live in
  * `examples/nextjs-payload`: `/` is the inline default, `/asset` carries the
  * bootstrap and fetches the runtime from the route handler in
- * `app/payload-live-preview/[file]`. The `(asset)` root layout stays on the
- * synchronous `livePreviewScriptProps()` on purpose — it is what still measures
- * what an option alone can do, now that the inline layout gates on a verdict.
+ * `app/payload-live-preview/[file]`. The `(asset)` root layout uses the
+ * synchronous `livePreviewScriptProps()`, which builds this bootstrap and nothing
+ * else since 3.0: it measures what an option alone can do, beside the inline
+ * layout that gates on a verdict.
  *
  * What is asserted is the trade the option makes. The page gets small, the
  * runtime arrives as one cacheable file whose name is its hash, the browser

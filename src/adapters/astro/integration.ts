@@ -120,6 +120,14 @@ const VIRTUAL_OPTIONS_ID = 'virtual:payload-live-preview/options';
 const RESOLVED_VIRTUAL_OPTIONS_ID = `\0${VIRTUAL_OPTIONS_ID}`;
 const MIDDLEWARE_ENTRYPOINT = 'payload-live-preview/astro/middleware-entry';
 
+/** The two functions the options type has no place for; a JavaScript config can still pass them. */
+function requestFunctionsOf(options: object): {
+  readonly authorizePreview?: unknown;
+  readonly shouldInject?: unknown;
+} {
+  return options;
+}
+
 /**
  * Inline and loader delivery decide once, at build time, for every page, so a function meant to run
  * per request would never be called, and `authorizePreview` is the one a project reads as the
@@ -128,7 +136,8 @@ const MIDDLEWARE_ENTRYPOINT = 'payload-live-preview/astro/middleware-entry';
  */
 function refuseRequestFunctions(options: LivePreviewAstroOptions): void {
   const mode = options.mode === 'loader' ? 'loader' : 'inline';
-  if (options.authorizePreview !== undefined) {
+  const given = requestFunctionsOf(options);
+  if (given.authorizePreview !== undefined) {
     throw new Error(
       `payload-live-preview: \`authorizePreview\` cannot be used with mode '${mode}' — inline and ` +
         'loader delivery run no server hook, so the function would never be called. Use mode ' +
@@ -136,7 +145,7 @@ function refuseRequestFunctions(options: LivePreviewAstroOptions): void {
         '`createLivePreviewMiddleware({ authorizePreview, ... })` in src/middleware.ts (ADR 0024).',
     );
   }
-  if (options.shouldInject !== undefined) {
+  if (given.shouldInject !== undefined) {
     throw new Error(
       `payload-live-preview: \`shouldInject\` cannot be used with mode '${mode}' — inline and ` +
         'loader delivery decide once, at build time, for every page, so the function would never ' +
@@ -284,14 +293,15 @@ function setupMiddlewareMode(ctx: AstroConfigSetupContext, options: LivePreviewA
         'hooks (Astro >= 4). Upgrade Astro or use the default inline mode.',
     );
   }
-  if (options.authorizePreview !== undefined) {
+  const given = requestFunctionsOf(options);
+  if (given.authorizePreview !== undefined) {
     throw new Error(
       "payload-live-preview: `authorizePreview` cannot be used with mode 'middleware' — " +
         'options are serialized into the build. Compose `createLivePreviewMiddleware()` ' +
         'in your own `src/middleware.ts` to pass the hook.',
     );
   }
-  if (options.shouldInject !== undefined) {
+  if (given.shouldInject !== undefined) {
     throw new Error(
       "payload-live-preview: `shouldInject` cannot be used with mode 'middleware' — " +
         'options are serialized into the build. Use `previewQueryParams`/`previewSignals`, ' +
@@ -315,12 +325,7 @@ function setupMiddlewareMode(ctx: AstroConfigSetupContext, options: LivePreviewA
     );
   }
 
-  const {
-    mode: _mode,
-    shouldInject: _shouldInject,
-    authorizePreviewModule: _reference,
-    ...serializable
-  } = options;
+  const { mode: _mode, authorizePreviewModule: _reference, ...serializable } = options;
   const json = JSON.stringify(serializable).replace(/</g, '\\u003C');
   // Vite resolves a root-relative path against the project root.
   const optionsModule =

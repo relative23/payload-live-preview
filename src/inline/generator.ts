@@ -4,6 +4,7 @@
  */
 
 import { warnChangingDefaults, warnDeprecatedOptions } from '@/types/dev-warning';
+import { refuseRemovedOptions } from '@/types/removed-options';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import { V1_RUNTIME_DEFAULTS } from '@/types/defaults-profile';
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
@@ -25,8 +26,7 @@ function assertBuilt(source: string, artifact: string): void {
 
 /** The inline script body without `<script>` tags; see `wrapWithScriptTag()`. */
 export function generateInlineScript(config: InlineScriptConfig = {}): string {
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- read to warn about it
-  warnDeprecatedOptions({ defaults: config.defaults, onUnboundChange: config.onUnboundChange });
+  warnDeprecatedOptions({ defaults: config.defaults });
   warnChangingDefaults(config);
   const runtime = runtimeFor(config);
   return [configStatement(config), ...strategyPrelude(config), runtime].join('\n');
@@ -83,13 +83,18 @@ function configStatement(config: InlineScriptConfig): string {
 
 /** The positional wire literal the runtime destructures; shared by the inline script and the loader. */
 function buildConfigLiteral(config: InlineScriptConfig): string {
+  refuseRemovedOptions(config);
   assertMergeDepthExplicit(config);
   const profile = profileSlots(config);
   // `null` counts as omitted, and omitted slots stay empty (`[,,1]`): a JSON
   // `null` would bypass the runtime's destructuring defaults. Defaults remains
   // in its established slot 24; later rows are append-only and may be absent.
+  // Read by name: a retired slot has no option behind it, and the refusal above lets no value
+  // for one through, so it stays empty.
+  const given = config as Readonly<Record<string, unknown>>;
+  const filled = profile as Readonly<Record<string, unknown>>;
   const values: unknown[] = INLINE_CONFIG_KEYS.map((key) => {
-    const value = config[key] ?? profile[key];
+    const value = given[key] ?? filled[key];
     assertSerializable(key, value);
     return value;
   });

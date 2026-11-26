@@ -82,7 +82,7 @@ describe('the delivery byte claims', () => {
     ],
     [
       'authorized Next.js row',
-      '| Next.js, `livePreviewScriptProps()` in the root layout | the whole runtime | 158 885, twice | why |',
+      '| Next.js, `await LivePreviewScript(…)` for an authorized editor | the whole runtime | 158 885, twice | why |',
       '158 885',
       '158 609',
     ],

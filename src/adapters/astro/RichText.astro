@@ -53,8 +53,7 @@ interface Props {
   class?: string;
   /**
    * The DOM the sanitizer parses with on the server, e.g. linkedom's
-   * `parseHTML(...).document`, for this render. Without it the document
-   * `setSanitizerDocument()` supplied is used.
+   * `parseHTML(...).document`, for this render.
    */
   document?: SanitizerDocument;
   /** Throw instead of rendering unsanitised markup when no document is available (ADR 0025). */

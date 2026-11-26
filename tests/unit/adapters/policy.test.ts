@@ -113,7 +113,6 @@ describe('inlineScriptConfig', () => {
     ['sanitizerPolicy', 'compat', 'sanitizerPolicy', 'compat'],
     ['fragments', { endpoint: '/payload/fragment' }, 'fragmentEndpoint', '/payload/fragment'],
     ['routeStrategy', true, 'routeStrategy', true],
-    ['onUnboundChange', 'route', 'onUnboundChange', 'route'],
     ['onUnfaithfulPatch', 'warn', 'onUnfaithfulPatch', 'warn'],
     ['autoBind', 'unique', 'autoBind', 'unique'],
     ['subfieldCoverage', 'declared', 'subfieldCoverage', 'declared'],

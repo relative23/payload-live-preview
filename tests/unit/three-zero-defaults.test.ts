@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is what part of this file holds */
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { livePreview } from '@adapters/astro/index';
 import { livePreviewScriptProps } from '@adapters/nextjs/index';
@@ -9,10 +8,11 @@ import { resetDevWarnings } from '@/types/dev-warning';
 /**
  * The server half of "3.0 announces itself" (ADR 0026, 2026-11-03): once per
  * process in development, never in production, an adapter or the generator
- * names a merge without a deadline (ADR 0007, row 27), `livePreviewScriptProps()`
- * names the runtime it puts into every page (row 32), and the Astro integration
- * names the inline default 3.0 replaces with `loader` (row 33). The sizes are
- * measured from what was generated, not quoted.
+ * names a merge without a deadline (ADR 0007, row 27), and the Astro integration
+ * names the inline default 3.0 replaces with `loader` (row 33). What 3.0 already
+ * did is here too: `livePreviewScriptProps()` builds a bootstrap and refuses
+ * inline delivery (row 32). The sizes are measured from what was generated, not
+ * quoted.
  */
 
 const ADMIN = 'https://admin.example.com';
@@ -51,29 +51,31 @@ describe('a merge without a deadline (row 27)', () => {
   });
 });
 
-describe('livePreviewScriptProps() with inline delivery (row 32)', () => {
+describe('livePreviewScriptProps() without inline delivery (row 32)', () => {
   const options = { allowedOrigins: [ADMIN], mergeDepth: 1, mergeTimeoutMs: 10_000 } as const;
+  const refusal =
+    "payload-live-preview: `livePreviewScriptProps()` needs `delivery: 'asset'` since 3.0. " +
+    'For an inline script render `await LivePreviewScript({ request, ...options })`, which ' +
+    'renders nothing for a request it does not authorize (ADR 0007, row 32).';
 
-  it('names the bytes it put into the page, once', () => {
-    const props = livePreviewScriptProps(options);
-    livePreviewScriptProps(options);
-    const bytes = new TextEncoder().encode(props.dangerouslySetInnerHTML.__html).length;
-    expect(bytes).toBeGreaterThan(100_000);
-    expect(said()).toEqual([
-      expect.stringContaining(`\`livePreviewScriptProps()\` put ${String(bytes)} bytes of runtime`),
-    ]);
-    expect(said()[0]).toContain('3.0 removes inline delivery from it');
-  });
-
-  it("says nothing with `delivery: 'asset'`, whose page carries a bootstrap", () => {
+  it("builds a bootstrap with `delivery: 'asset'`, and says nothing", () => {
     const props = livePreviewScriptProps({ ...options, delivery: 'asset' });
     expect(props.dangerouslySetInnerHTML.__html.length).toBeLessThan(5_000);
     expect(said()).toEqual([]);
   });
 
-  it('says nothing in production', () => {
+  it('has no inline delivery in its type', () => {
+    // @ts-expect-error -- the options need `delivery: 'asset'` since 3.0
+    expect(() => livePreviewScriptProps(options)).toThrow(refusal);
+  });
+
+  it('refuses what a JavaScript caller can still pass, in production too', () => {
+    const untyped = livePreviewScriptProps as (options?: object) => unknown;
+
+    expect(() => untyped({ ...options, delivery: 'inline' })).toThrow(refusal);
+    expect(() => untyped()).toThrow(refusal);
     vi.stubEnv('NODE_ENV', 'production');
-    livePreviewScriptProps(options);
+    expect(() => untyped(options)).toThrow(refusal);
     expect(said()).toEqual([]);
   });
 });

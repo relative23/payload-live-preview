@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasPreviewIntent } from '@adapters/shared/preview-request';
+import { hasPreviewIntent, type PreviewRequestOptions } from '@adapters/shared/preview-request';
 
 describe('hasPreviewIntent', () => {
   it('detects the default preview query params', () => {
@@ -116,48 +116,24 @@ describe('hasPreviewIntent — a url the URL parser rejects', () => {
   });
 });
 
-describe('hasPreviewIntent — allowedOrigins is the name, adminOrigins the 1.x alias', () => {
+describe('hasPreviewIntent — allowedOrigins is the one name for the admin origins', () => {
   const CMS = 'https://cms.example.com';
   const OTHER = 'https://other.example';
   const fromAdmin = () =>
     new Request('https://x.test/p', { headers: { referer: `${CMS}/admin/collections/posts/1` } });
 
-  // Both spellings must decide identically until the alias goes in 3.0.
-  const spellings = [
-    ['allowedOrigins', { allowedOrigins: [CMS] }, true],
-    ['allowedOrigins, another origin', { allowedOrigins: [OTHER] }, false],
-    ['adminOrigins', { adminOrigins: [CMS] }, true],
-    ['adminOrigins, another origin', { adminOrigins: [OTHER] }, false],
-  ] as const;
-
-  it.each(spellings)(
-    '%s matches the referer like the other spelling',
-    (_label, options, expected) => {
-      expect(hasPreviewIntent(fromAdmin(), options)).toBe(expected);
-      expect(hasPreviewIntent(fromAdmin(), { ...options, signals: ['referer'] })).toBe(expected);
-    },
-  );
-
-  // With both given, only `allowedOrigins` is read — an empty list included.
-  const precedence = [
-    [
-      'allowedOrigins matches, adminOrigins does not',
-      { allowedOrigins: [CMS], adminOrigins: [OTHER] },
-      true,
-    ],
-    [
-      'adminOrigins matches, allowedOrigins does not',
-      { allowedOrigins: [OTHER], adminOrigins: [CMS] },
-      false,
-    ],
-    [
-      'allowedOrigins empty, adminOrigins matches',
-      { allowedOrigins: [], adminOrigins: [CMS] },
-      false,
-    ],
-  ] as const;
-
-  it.each(precedence)('%s → allowedOrigins wins', (_label, options, expected) => {
+  it.each([
+    ['the admin origin', { allowedOrigins: [CMS] }, true],
+    ['another origin', { allowedOrigins: [OTHER] }, false],
+  ] as const)('%s decides the referer signal', (_label, options, expected) => {
     expect(hasPreviewIntent(fromAdmin(), options)).toBe(expected);
+    expect(hasPreviewIntent(fromAdmin(), { ...options, signals: ['referer'] })).toBe(expected);
+  });
+
+  it('does not read the 1.x key adminOrigins, which 3.0 removed (ADR 0007, row 13)', () => {
+    const removed = { adminOrigins: [CMS] } as PreviewRequestOptions;
+
+    expect(hasPreviewIntent(fromAdmin(), removed)).toBe(false);
+    expect(hasPreviewIntent(fromAdmin(), { ...removed, signals: ['referer'] })).toBe(false);
   });
 });

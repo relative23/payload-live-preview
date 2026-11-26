@@ -4,12 +4,12 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-DRTckcxE.js';
-import { b } from '../../fragment-endpoint-DRTckcxE.js';
-import { c } from '../../fragment-endpoint-DRTckcxE.js';
-import { F } from '../../fragment-endpoint-DRTckcxE.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-DRTckcxE.js';
-import { P as PreviewAdapterOptions } from '../../options-bLQzS5vs.js';
+import { a } from '../../fragment-endpoint-N2sNaJKk.js';
+import { b } from '../../fragment-endpoint-N2sNaJKk.js';
+import { c } from '../../fragment-endpoint-N2sNaJKk.js';
+import { F } from '../../fragment-endpoint-N2sNaJKk.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-N2sNaJKk.js';
+import { P as PreviewAdapterOptions } from '../../options-C9pYRi9h.js';
 
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (request: Request) => Promise<Response>;
@@ -71,11 +71,6 @@ export interface LivePreviewScriptProps {
 // @public
 export function livePreviewScriptProps(options: LivePreviewNextOptions & {
     readonly delivery: 'asset';
-    readonly nonce?: string;
-}): LivePreviewScriptProps;
-
-// @public @deprecated
-export function livePreviewScriptProps(options?: LivePreviewNextOptions & {
     readonly nonce?: string;
 }): LivePreviewScriptProps;
 

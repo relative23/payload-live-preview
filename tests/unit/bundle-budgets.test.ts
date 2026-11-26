@@ -50,10 +50,10 @@ describe('release bundle budgets', () => {
     // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25):
     // -9897/-3150/-2788 default, -9686/-3104/-2672 lean, -9897/-3463/-2714 route,
     // -9897/-3418/-2708 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 143_918, gzip: 45_505, brotli: 40_014 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 114_916, gzip: 36_307, brotli: 31_926 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 152_513, gzip: 48_056, brotli: 42_038 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 158_098, gzip: 49_996, brotli: 43_853 });
+    expect(INLINE_BUDGET).toEqual({ raw: 143_828, gzip: 45_464, brotli: 39_948 });
+    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 114_825, gzip: 36_259, brotli: 31_890 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 152_423, gzip: 48_013, brotli: 41_989 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 158_008, gzip: 49_947, brotli: 43_817 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

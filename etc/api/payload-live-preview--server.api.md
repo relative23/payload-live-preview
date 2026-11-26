@@ -328,8 +328,6 @@ export interface PreviewRequestLike {
 
 // @public (undocumented)
 export interface PreviewRequestOptions {
-    // @deprecated (undocumented)
-    readonly adminOrigins?: readonly string[];
     readonly allowedOrigins?: readonly string[];
     readonly queryParams?: readonly string[];
     readonly signals?: readonly PreviewSignal[];
@@ -381,14 +379,6 @@ export interface PreviewTokenClaims {
     // (undocumented)
     readonly subject?: string;
     readonly ttlMs?: number;
-}
-
-// @public @deprecated (undocumented)
-export interface PreviewTokenReplayChecks {
-    // (undocumented)
-    isUsed(id: string): Promise<boolean> | boolean;
-    // (undocumented)
-    markUsed(id: string, expiresAt: number): Promise<void> | void;
 }
 
 // @public
@@ -451,7 +441,7 @@ export interface SignedTokenStrategy {
     readonly now?: () => number;
     readonly purpose?: string;
     // (undocumented)
-    readonly replay?: PreviewTokenReplayStore | PreviewTokenReplayChecks;
+    readonly replay?: PreviewTokenReplayStore;
     readonly secret: string | Uint8Array;
     readonly transport?: PreviewTokenTransport;
     // (undocumented)

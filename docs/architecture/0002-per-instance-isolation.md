@@ -63,6 +63,10 @@ once because a page's `trusted-types` directive allows the name once
 (`src/security/trusted-types.ts`). Neither carries renderer, transform, origin or
 update state; both stay outside the per-instance rule on purpose.
 
+2026-11-26 (3.0): the sanitizer document left the realm. `setSanitizerDocument()`
+is removed (ADR 0007, row 16), a server call names its document, and the slot is
+no longer read. The Trusted Types policy is the one such slot that remains.
+
 2026-09-19 (2.1): the sanitizer document is named per call now
 (`sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, the
 `RichText` component's `document` prop), so two server requests in flight each

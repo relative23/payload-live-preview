@@ -512,8 +512,6 @@ export interface InlineScriptConfig {
     readonly intersectionRootMargin?: string;
     readonly mergeDepth?: number;
     readonly mergeTimeoutMs?: number;
-    // @deprecated
-    readonly onUnboundChange?: 'ignore' | 'route';
     readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
     readonly revealEditedField?: boolean;
     readonly routeStrategy?: boolean | 'after-save';
@@ -660,9 +658,6 @@ export interface IslandUpdateDetail {
 
 // @internal (undocumented)
 export function isLexicalContent(value: unknown): value is LexicalRoot;
-
-// @public @deprecated (undocumented)
-export const isPreviewRequest: typeof hasPreviewIntent;
 
 // @public
 export function isSafeUrl(url: unknown): boolean;
@@ -1194,8 +1189,6 @@ export interface PreviewRequestLike {
 
 // @public (undocumented)
 export interface PreviewRequestOptions {
-    // @deprecated (undocumented)
-    readonly adminOrigins?: readonly string[];
     readonly allowedOrigins?: readonly string[];
     readonly queryParams?: readonly string[];
     // Warning: (ae-forgotten-export) The symbol "PreviewSignal" needs to be exported by the entry point index.d.ts
@@ -1216,14 +1209,6 @@ export interface PreviewTokenClaims {
     // (undocumented)
     readonly subject?: string;
     readonly ttlMs?: number;
-}
-
-// @public @deprecated (undocumented)
-export interface PreviewTokenReplayChecks {
-    // (undocumented)
-    isUsed(id: string): Promise<boolean> | boolean;
-    // (undocumented)
-    markUsed(id: string, expiresAt: number): Promise<void> | void;
 }
 
 // @public
@@ -1431,9 +1416,6 @@ export type SanitizerPolicyMode = 'compat' | 'strict';
 // @internal
 export function setCspCrypto(crypto: WebCryptoLike | null): void;
 
-// @public @deprecated
-export function setSanitizerDocument(doc: SanitizerDocument | null): void;
-
 // @public
 export function setSanitizerPolicy(mode: SanitizerPolicyMode): void;
 
@@ -1450,7 +1432,7 @@ export interface SignedTokenStrategy {
     readonly now?: () => number;
     readonly purpose?: string;
     // (undocumented)
-    readonly replay?: PreviewTokenReplayStore | PreviewTokenReplayChecks;
+    readonly replay?: PreviewTokenReplayStore;
     readonly secret: string | Uint8Array;
     readonly transport?: PreviewTokenTransport;
     // (undocumented)

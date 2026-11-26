@@ -49,7 +49,6 @@ options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The led
 | `fragmentEndpoint`         | —      | yes           | as `fragments: { endpoint }`                                        | —                        | — (no fragment client)                              | same                                 |
 | `routeStrategy`            | —      | yes           | yes                                                                 | —                        | `false`                                             | same                                 |
 | `onUnfaithfulPatch`        | —      | yes           | yes                                                                 | —                        | `'escalate'`                                        | same                                 |
-| `onUnboundChange`          | —      | yes           | yes                                                                 | —                        | — (alias, deprecated)                               | same                                 |
 | `autoBind`                 | yes    | yes           | yes                                                                 | —                        | `'off'`                                             | same                                 |
 | `subfieldCoverage`         | yes    | yes           | yes                                                                 | —                        | `'descendant'`                                      | same                                 |
 | `hydration`                | —      | yes           | `'manual'`; the Next.js, Nuxt and SvelteKit adapters set the others | —                        | — (start on `DOMContentLoaded`)                     | same                                 |
@@ -123,7 +122,7 @@ fifty-five rows.
   `,` or a control character is refused at startup: in the header it would end
   the directive and start one of its own.
 - **How an update reaches an element** — `fragmentEndpoint` / `fragments`,
-  `routeStrategy`, `onUnfaithfulPatch` and its 1.x name `onUnboundChange`,
+  `routeStrategy`, `onUnfaithfulPatch`,
   `strategies`, `dependencies`, `autoBind`, `subfieldCoverage`. Three
   strategies exist because patching cannot create markup and a route refresh
   cannot be done per keystroke
@@ -172,7 +171,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 158 055 for authorized inline delivery. It fetches one
+  (ADR 0015), against 157 965 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -268,9 +267,9 @@ true`.
   `inspect().fidelity` counts the findings under every mode — `unfaithful`,
   and `escalated` for the ones a strategy took — so a page that has nowhere to
   escalate to shows the gap rather than hiding it.
-  `onUnboundChange` is the 1.x name for the same decision and still decides when
-  it is given — `'route'` means `'escalate'` — until it is removed in 3.0. An
-  adapter given it warns once in development, and `pll migrate` renames it.
+  3.0 removed `onUnboundChange`, the 1.x name for the same decision (`'route'`
+  meant `'escalate'`): an adapter or the generator given it refuses to start and
+  names `pll migrate`, which renames it.
 - `hydration: 'react'` holds the runtime's start — no `ready`, no listener —
   until React has committed the tree that holds the bindings, so the first
   write lands on markup React keeps instead of on markup React is about to
@@ -379,9 +378,8 @@ morph in `/structural`. Every entry is a self-contained bundle with its own type
 declarations and its own copy of the code it shares with the others, so a
 Lexical node or block renderer registered through one entry is not seen by
 another ([docs/renderers.md](renderers.md#renderrichtext-one-renderer-for-ssr-and-preview));
-the document given to `setSanitizerDocument()` is held once for all of them
-since 2.0.2, and since 2.1 a call names its own (`sanitizeHtml(html, { document })`,
-`lexicalToHtml(content, { document })`). The adapters (`react`, `vue` and `nuxt-module` included), `annotate`, `codegen/astro`, `doctor`, `migrate` and
+a server call names the document it sanitises with (`sanitizeHtml(html, { document })`,
+`lexicalToHtml(content, { document })`), and no entry holds one for another since 3.0. The adapters (`react`, `vue` and `nuxt-module` included), `annotate`, `codegen/astro`, `doctor`, `migrate` and
 the `.astro` components are ESM-only; the rest ship ESM and CommonJS builds.
 
 Every entry has a stability class, stated here and, for the experimental
@@ -406,7 +404,7 @@ the runtime.
 | `payload-live-preview/core`                          | Stable       | The client and runtime without the built-in plugin constructors, generator or adapters; `createDocumentSession()` (`@beta`).                                                                              |
 | `payload-live-preview/client`                        | Stable       | `LivePreviewClient` and `initLivePreview()` alone.                                                                                                                                                        |
 | `payload-live-preview/structural`                    | Experimental | The structural array renderer, the keyed morph and the `data-payload-depends` helpers; `morphElement()`, `MorphOptions`, `isMorphBoundary()` and `retainIslandBoundary()` are `@beta`, ADR 0008's engine. |
-| `payload-live-preview/lexical`                       | Stable       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`, `setSanitizerDocument()`.                                                                                  |
+| `payload-live-preview/lexical`                       | Stable       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`.                                                                                                            |
 | `payload-live-preview/plugins`                       | Stable       | `PluginManager`, plugin types and the built-in plugins.                                                                                                                                                   |
 | `payload-live-preview/fragment`                      | Stable       | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                                                                                                          |
 | `payload-live-preview/server`                        | Stable       | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `previewBindingsFromLocals()`, `bind()`.                                                                |

@@ -4,7 +4,6 @@
  */
 
 import { createAuthorizedPreviewContext } from '@/types/authorized-preview';
-import { warnOnce } from '@/types/dev-warning';
 import {
   PreviewConfigurationError,
   refused,
@@ -53,17 +52,6 @@ export interface PreviewTokenReplayStore {
   consume(id: string, expiresAt: number): Promise<boolean> | boolean;
 }
 
-/**
- * @deprecated The store shape of the 2.0 beta, removed in 3.0. Its two calls cannot be one
- * step, so two requests with the same token that arrive together both pass
- * `isUsed` before either reaches `markUsed`. Implement
- * {@link PreviewTokenReplayStore.consume} instead.
- */
-export interface PreviewTokenReplayChecks {
-  isUsed(id: string): Promise<boolean> | boolean;
-  markUsed(id: string, expiresAt: number): Promise<void> | void;
-}
-
 export interface SignedTokenStrategy {
   readonly type: 'signed-token';
   /** Shared secret, at least 32 bytes; shorter ones are refused on first use. */
@@ -76,8 +64,7 @@ export interface SignedTokenStrategy {
   readonly transport?: PreviewTokenTransport;
   /** Resolve the request's locale for the `loc` binding. Unset: tokens with `loc` are refused as `wrong-locale`. */
   readonly locale?: (request: PreviewAuthorizationRequest) => string | undefined;
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 beta shape is accepted until 3.0
-  readonly replay?: PreviewTokenReplayStore | PreviewTokenReplayChecks;
+  readonly replay?: PreviewTokenReplayStore;
   readonly crypto?: SubtleCryptoLike;
   readonly now?: () => number;
 }
@@ -257,6 +244,7 @@ export async function authorizeToken(
   strategy: SignedTokenStrategy,
 ): Promise<PreviewAuthorization> {
   const secret = secretBytes(strategy.secret);
+  assertReplayStore(strategy.replay);
   const crypto = cryptoFor(strategy.crypto);
   if (crypto === undefined) return refused('unavailable');
   const token = readToken(request, strategy.transport);
@@ -330,28 +318,31 @@ export async function authorizeToken(
 }
 
 /**
+ * A store without `consume` is a configuration error, said at the first request. Without this
+ * the 2.0 beta shape (`isUsed` and `markUsed`, removed in 3.0) would refuse every token as
+ * `unavailable` and never say why.
+ */
+function assertReplayStore(store: { readonly consume?: unknown } | null | undefined): void {
+  if (store === undefined) return;
+  if (typeof store?.consume !== 'function') {
+    throw new PreviewConfigurationError(
+      'payload-live-preview: a `signed-token` replay store needs `consume(id, expiresAt)`, which ' +
+        'checks and records in one step; the `isUsed` and `markUsed` shape was removed in 3.0',
+    );
+  }
+}
+
+/**
  * `true` when `id` was not seen before. A store that returns anything but
  * `true` from `consume` refuses the token: fail closed, since a forgotten
- * return would otherwise admit every replay. The 2.0 beta shape keeps its two
- * steps and its race; that is why it is deprecated rather than emulated.
+ * return would otherwise admit every replay.
  */
 async function consumeTokenId(
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 beta shape is accepted until 3.0
-  store: PreviewTokenReplayStore | PreviewTokenReplayChecks,
+  store: PreviewTokenReplayStore,
   id: string,
   expiresAt: number,
 ): Promise<boolean> {
-  if ('consume' in store) {
-    // The store is consumer code; its answer is a value, not a type.
-    const answer: unknown = await store.consume(id, expiresAt);
-    return answer === true;
-  }
-  warnOnce(
-    'replay-is-used',
-    'A `signed-token` replay store with `isUsed` and `markUsed` is removed in 3.0: implement ' +
-      '`consume(id, expiresAt)`, which checks and records in one step (ADR 0026).',
-  );
-  if (await store.isUsed(id)) return false;
-  await store.markUsed(id, expiresAt);
-  return true;
+  // The store is consumer code; its answer is a value, not a type.
+  const answer: unknown = await store.consume(id, expiresAt);
+  return answer === true;
 }

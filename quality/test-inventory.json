@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 530,
-    "suites": 1032,
-    "tests": 4649,
+    "suites": 1030,
+    "tests": 4634,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 431,
-      "suites": 920,
-      "tests": 4235,
+      "suites": 918,
+      "tests": 4220,
       "benchmarks": 0
     }
   },
@@ -788,7 +788,7 @@
       "path": "tests/unit/adapters/astro-integration.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 19,
+      "tests": 20,
       "benchmarks": 0
     },
     {
@@ -2188,7 +2188,7 @@
       "path": "tests/unit/core/unfaithful-patch.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 24,
+      "tests": 23,
       "benchmarks": 0
     },
     {
@@ -2265,7 +2265,7 @@
       "path": "tests/unit/deprecation-warnings.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 10,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -3473,6 +3473,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/removed-options.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 2,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/schema/diff.test.ts",
       "group": "unit",
       "suites": 3,
@@ -3623,7 +3630,7 @@
       "path": "tests/unit/security/preview-token-failure-paths.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 19,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -3657,8 +3664,8 @@
     {
       "path": "tests/unit/security/sanitizer-environment.test.ts",
       "group": "unit",
-      "suites": 6,
-      "tests": 13,
+      "suites": 4,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -3771,13 +3778,6 @@
       "group": "unit",
       "suites": 1,
       "tests": 7,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/upgrade-from-1x.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 4,
       "benchmarks": 0
     }
   ]

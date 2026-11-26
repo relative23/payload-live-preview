@@ -153,9 +153,9 @@ after its `iat` as `'invalid'`). Strategy options: `secret` (at least 32 bytes),
 or `{ kind: 'header', name }`, default `x-preview-token`), `locale` (a
 resolver; without one a token carrying a locale is `'wrong-locale'`) and
 `replay` (a store whose `consume(id, expiresAt)` checks and records in one
-step, see [docs/security.md](security.md); none is shipped, and the deprecated
-`isUsed`/`markUsed` shape lets two simultaneous requests with one token both
-pass). `scope` carries the
+step, see [docs/security.md](security.md); none is shipped, and the
+`isUsed`/`markUsed` shape of the 2.0 beta, which let two simultaneous requests
+with one token both pass, is refused since 3.0). `scope` carries the
 bindings; `payloadHeaders` is empty, so a draft read sends only what you pass
 as `headers` — a server-side credential of your own, never one from the request.
 

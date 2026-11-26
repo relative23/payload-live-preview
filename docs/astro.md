@@ -142,8 +142,7 @@ document left the markup unsanitised; 2.2.1 fixes that
 ([docs/security.md](security.md#html-sanitization)). Add `requireDocument` and a
 render without a document throws instead of returning unsanitised markup, as
 3.0 does by default ([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)).
-Without the prop the component uses the document the deprecated
-`setSanitizerDocument()` supplied.
+Without the prop the component has the global document or none.
 
 That is the whole frontend. Open the page inside the admin's preview and edits appear as you type.
 
