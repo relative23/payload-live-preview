@@ -75,11 +75,7 @@ by its entries) replaces the session with a new one that starts from the
 current `initialData`, so merged data is dropped. If the same
 component can move from one CMS document to another, remount it with a key that
 includes the document owner and id. This releases the old session and starts a
-new one from the new `initialData`. On Payload 2 that session starts without a
-field schema, and Payload 2.32.3 sends the schema only with its first message
-to the preview: the next update reports `'unavailable'` and reads nothing until
-the admin page is loaded again
-([interop.md](interop.md#what-is-shared-exactly)). A read the old session
+new one from the new `initialData`. A read the old session
 started can still answer after that, for example when a custom `fetchFn` (an
 option meant for tests) ignores the abort signal. The answer changes nothing:
 the new session keeps what it has and starts no read for it.
@@ -153,9 +149,9 @@ names a global, and `locale` also leaves alone an update the admin sends for
 another locale. One that names no locale still merges; 3.0 leaves that one
 alone too (ADR 0007 ledger, row 31). An update that does not say which
 document it is for is left
-alone as well, with one warning per hook in development: Payload 2 sends no
-collection or global slug, so leave `document` out on Payload 2, and a create
-screen has no id yet. A changed `document` replaces the session, like the other
+alone as well, with one warning per hook in development: a create screen has
+no id yet, and a Payload 2 admin, which this release does not serve, sends no
+collection or global slug. A changed `document` replaces the session, like the other
 options. Without `document`, give the hook to the component that renders the
 document being edited, and render other documents from the data your server
 loaded.
@@ -178,22 +174,15 @@ it ends, a burst being updates less than `debounceMs` (50 ms by default) apart.
 `npm run test:interaction` records 0 requests for a plain text field and 2 for
 rich text and for a relationship over 18 keystrokes, 30 ms apart.
 
-Payload 3 uses a `POST` to the REST API with
-`X-Payload-HTTP-Method-Override: GET`. It returns the stored document with the
-unsaved values applied and relationships populated.
-
-Payload 2 sends `fieldSchemaJSON` and raw form values. The session retains
-that accepted schema for later messages that omit it. Scalars settle without
-a request; raw relationship IDs are grouped into bounded collection `GET`
-requests with the configured `depth` and message locale. Those reads include
-the editor's credentials and never send the method-override POST.
-An invalid or incomplete population keeps the last good document and reports
-`'unavailable'`, and so does a read that Payload refuses. When the editor's
-session ends in the middle of a preview, Payload 2.32.3 answers the next read
-with 403: `error` names it, `data` and `revision` stay, and the first update
-after a new sign-in is `'live'` again. The DOM runtime uses the same merger
+The session sends a `POST` to the REST API with
+`X-Payload-HTTP-Method-Override: GET`. Payload returns the stored document with
+the unsaved values applied and relationships populated. An answer that is not
+the document, and a read that Payload refuses, keep the last good document and
+report `'unavailable'`: `error` names the refusal, `data` and `revision` stay,
+and the next update that merges is `'live'` again. The DOM runtime uses the
+same merger
 ([ADR 0010](architecture/0010-protocol-capabilities-by-observation.md)).
-The real-admin runs of the hook and the composable (Payload 2.32.3 and 3.94.2)
+The real-admin runs of the hook and the composable (Payload 3.94.2)
 use development bundles; a production build of both is server-rendered,
 hydrated and taken through its lifecycle against the mock admin (`tests/e2e/specs/react-vue-tarball.spec.ts`).
 

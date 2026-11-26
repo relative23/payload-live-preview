@@ -109,14 +109,6 @@
     "src/core/hydration-vue.ts::Object.defineProperty(this, VUE_APP_PROPERTY, {": {
       "release": "global",
       "why": "The per-element own property the accessor writes when Vue assigns its app; belongs to the page's element, not to a session (ADR 0015, addendum)."
-    },
-    "src/core/legacy-population.ts::Object.defineProperty(record, key, {": {
-      "release": "caller",
-      "why": "2026-10-03: Defines an own data slot on an independent bounded document copy, never a global accessor. The caller owns the resulting document lifetime."
-    },
-    "src/core/legacy-population.ts::signal.addEventListener('abort', abort, { once: true });": {
-      "release": "caller",
-      "why": "2026-10-03: The population operation owns this abort listener. Its finally removes it on success, refusal, failure or supersession; that same primitive cancels unfinished native readers and releases their lock."
     }
   }
 }

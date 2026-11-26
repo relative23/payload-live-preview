@@ -14,13 +14,7 @@ export type {
   RendererKey,
   RichTextRenderer,
 } from './core/types';
-export type {
-  PayloadBlockSchema,
-  PayloadFieldCondition,
-  PayloadFieldSchema,
-  PayloadFieldType,
-  PayloadLivePreviewData,
-} from './types/payload-protocol';
+export type { PayloadFieldType, PayloadLivePreviewData } from './types/payload-protocol';
 export { EventEmitter } from './events';
 export type { EventHandler, LivePreviewEventMap, Unsubscribe } from './events';
 export { DIAGNOSTIC_CODES, type DiagnosticCode } from './core/diagnostic-codes';

@@ -435,7 +435,7 @@ export async function edgeCases(modules: EdgeModules): Promise<readonly EdgeCase
         check(
           url({
             data: {},
-            documentInfo: { global: { slug: 'homepage' } },
+            globalConfig: { slug: 'homepage' },
             locale: 'en',
           }) === 'https://site.example.com/?preview=true',
           'plugin: URL callback did not execute in the Web-only context',

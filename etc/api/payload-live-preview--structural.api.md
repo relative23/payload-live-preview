@@ -114,47 +114,6 @@ export const OWNED_ATTRIBUTE = "data-payload-owned";
 // @internal
 export function parseDependencyList(value: string | null | undefined): readonly string[];
 
-// @public (undocumented)
-export interface PayloadBlockSchema {
-    // (undocumented)
-    readonly [extra: string]: unknown;
-    // (undocumented)
-    readonly fields: readonly PayloadFieldSchema[];
-    // (undocumented)
-    readonly slug: string;
-}
-
-// @public
-export type PayloadFieldCondition = (data: unknown, siblingData: unknown) => boolean;
-
-// @public
-export interface PayloadFieldSchema {
-    // (undocumented)
-    readonly [extra: string]: unknown;
-    // (undocumented)
-    readonly admin?: {
-        readonly condition?: PayloadFieldCondition;
-    };
-    // (undocumented)
-    readonly blocks?: readonly PayloadBlockSchema[];
-    // (undocumented)
-    readonly fields?: readonly PayloadFieldSchema[];
-    // (undocumented)
-    readonly hasMany?: boolean;
-    // (undocumented)
-    readonly label?: string;
-    // (undocumented)
-    readonly localized?: boolean;
-    // (undocumented)
-    readonly name: string;
-    // (undocumented)
-    readonly relationTo?: string | readonly string[];
-    // (undocumented)
-    readonly required?: boolean;
-    // (undocumented)
-    readonly type: PayloadFieldType;
-}
-
 // @public
 export type PayloadFieldType = 'text' | 'textarea' | 'richText' | 'email' | 'number' | 'checkbox' | 'date' | 'select' | 'radio' | 'array' | 'blocks' | 'group' | 'tabs' | 'row' | 'collapsible' | 'relationship' | 'upload' | 'point' | 'json' | 'code' | 'ui';
 
@@ -168,8 +127,6 @@ export interface PayloadLivePreviewData {
     readonly globalSlug?: string;
     // (undocumented)
     readonly locale?: string;
-    // (undocumented)
-    readonly schema?: readonly PayloadFieldSchema[];
 }
 
 // @public
@@ -180,7 +137,6 @@ export interface RenderContext {
     readonly renderRichText?: RichTextRenderer;
     readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
     readonly sanitizerPolicy?: SanitizerPolicyMode;
-    readonly schema: PayloadFieldSchema | undefined;
     readonly serverURL?: string;
 }
 

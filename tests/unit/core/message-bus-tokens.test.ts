@@ -62,7 +62,6 @@ describe('MessageBus — token validation', () => {
       type: 'payload-live-preview',
       ready: true,
       data: null,
-      fieldSchemaJSON: null,
       globalSlug: null,
       collectionSlug: null,
       locale: null,

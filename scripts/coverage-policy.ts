@@ -266,9 +266,26 @@ export function evaluateDiffCoverage(
 }
 
 /** Thresholds only ratchet up; an ignore pattern may only be removed or narrowed. */
+/**
+ * Where the files of the base went, read off `git diff --name-status --find-renames`:
+ * the new path of a renamed file, `null` for a deleted one.
+ */
+export function parseMovedFiles(nameStatus: string): ReadonlyMap<string, string | null> {
+  const moved = new Map<string, string | null>();
+  for (const line of nameStatus.split('\n')) {
+    const [status, from, to] = line.split('\t');
+    if (status === undefined || from === undefined) continue;
+    if (status === 'D') moved.set(from, null);
+    else if (status.startsWith('R') && to !== undefined) moved.set(from, to);
+  }
+  return moved;
+}
+
+/** A baseline follows its file: it leaves with a deleted one and is held under a renamed one's new path. */
 export function findCoveragePolicyRegressions(
   current: CoveragePolicy,
   previous: CoveragePolicy,
+  moved: ReadonlyMap<string, string | null> = new Map(),
 ): readonly string[] {
   const regressions: string[] = [];
   for (const metric of ['lines', 'functions', 'branches', 'statements'] as const) {
@@ -287,14 +304,17 @@ export function findCoveragePolicyRegressions(
   }
 
   for (const [path, previousThresholds] of Object.entries(previous.criticalFiles)) {
-    const currentThresholds = current.criticalFiles[path];
+    const destination = current.criticalFiles[path] === undefined ? moved.get(path) : undefined;
+    if (destination === null) continue;
+    const currentPath = destination ?? path;
+    const currentThresholds = current.criticalFiles[currentPath];
     if (currentThresholds === undefined) {
       regressions.push(`critical file baseline was removed: ${path}`);
       continue;
     }
     for (const metric of ['lines', 'functions', 'branches'] as const) {
       if (currentThresholds[metric] < previousThresholds[metric]) {
-        regressions.push(`${path}.${metric} was lowered`);
+        regressions.push(`${currentPath}.${metric} was lowered`);
       }
     }
   }
@@ -428,8 +448,19 @@ async function main(): Promise<void> {
     await withoutDeclarationOnlyModules(changedLines, repositoryRoot),
   );
   const previous = readPreviousPolicy(base);
+  const moved = parseMovedFiles(
+    gitOutput(repositoryRoot, [
+      'diff',
+      '--name-status',
+      '--find-renames',
+      '--diff-filter=DR',
+      base,
+      '--',
+      'src',
+    ]),
+  );
   const regressions =
-    previous === undefined ? [] : findCoveragePolicyRegressions(COVERAGE_POLICY, previous);
+    previous === undefined ? [] : findCoveragePolicyRegressions(COVERAGE_POLICY, previous, moved);
   const failures = [...result.violations, ...regressions];
 
   if (failures.length > 0) {

@@ -4,8 +4,7 @@
 merged document as refs, so your components re-render with it. Same shape as
 Payload's own `useLivePreview`, with this package's merge underneath — and the
 same session as the [React hook](react.md); only the reactivity differs.
-Payload 2 uses the accepted field schema and credentialed collection GETs
-for raw relationships; Payload 3 uses its method-override merge POST.
+The session merges through Payload's method-override `POST`.
 The [transport details](react.md#five-where-the-results-differ) apply to both.
 
 > This is the other half of the package, not a replacement for it. The DOM
@@ -91,16 +90,12 @@ a call without one throws rather than leaking both for the life of the page.
 The options belong to that scope; they are not reactive inputs. If a route reuses
 the component for another CMS document, key and remount the preview component by
 document owner and id. Disposal cancels the old session, and the new setup call
-starts from its own `initialData`. On Payload 2 that session starts without a
-field schema, and Payload 2.32.3 sends the schema only with its first message
-to the preview: the next update reports `'unavailable'` and reads nothing until
-the admin page is loaded again
-([interop.md](interop.md#what-is-shared-exactly)). A read the old scope started
+starts from its own `initialData`. A read the old scope started
 can still answer after that, for example when a custom `fetchFn` (an option
 meant for tests) ignores the abort signal. The answer changes nothing: the new
 session keeps what it has and starts no read for it.
 
-The real-admin runs of the composable (Payload 2.32.3 and 3.94.2) use
+The real-admin runs of the composable (Payload 3.94.2) use
 development bundles; a production build is server-rendered, hydrated and taken
 through its lifecycle against the mock admin
 (`tests/e2e/specs/react-vue-tarball.spec.ts`).

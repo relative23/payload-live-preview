@@ -1,7 +1,7 @@
 /**
  * `buildLivePreviewUrl()`: the callback `admin.livePreview.url` expects, built
  * from slug → path mappings. It never imports `payload`; the argument shapes of
- * Payload 2, 3 and 4 are described structurally.
+ * Payload 3 and 4 are described structurally.
  */
 
 /** Arguments Payload passes to `admin.livePreview.url`. */
@@ -10,21 +10,6 @@ export interface LivePreviewUrlArgs {
   readonly locale?: string | { readonly code?: string | null; readonly [extra: string]: unknown };
   readonly collectionConfig?: { readonly slug: string };
   readonly globalConfig?: { readonly slug: string };
-  /** Payload 2 identifies the edited entity here instead of through the top-level configs. */
-  readonly documentInfo?: {
-    readonly collection?: {
-      /** Payload 2 inherits this runtime value through a mapped config type. */
-      readonly slug?: string;
-      /** Structural anchor for Payload 2's published sanitized config type. */
-      readonly fields?: unknown;
-    };
-    readonly global?: {
-      /** Payload 2 inherits this runtime value through a mapped config type. */
-      readonly slug?: string;
-      /** Structural anchor for Payload 2's published sanitized config type. */
-      readonly fields?: unknown;
-    };
-  };
   readonly [extra: string]: unknown;
 }
 
@@ -120,23 +105,8 @@ function findResolver(
   options: BuildLivePreviewUrlNullableOptions,
   args: LivePreviewUrlArgs,
 ): NullablePathResolver | undefined {
-  // Payload 3's explicit callback arguments win as a pair. Looking through a
-  // stale `documentInfo` when either is present could select the wrong entity.
-  if (args.collectionConfig !== undefined || args.globalConfig !== undefined) {
-    return findResolverBySlug(options, args.collectionConfig?.slug, args.globalConfig?.slug);
-  }
-  return findResolverBySlug(
-    options,
-    args.documentInfo?.collection?.slug,
-    args.documentInfo?.global?.slug,
-  );
-}
-
-function findResolverBySlug(
-  options: BuildLivePreviewUrlNullableOptions,
-  collectionSlug: string | undefined,
-  globalSlug: string | undefined,
-): NullablePathResolver | undefined {
+  const collectionSlug = args.collectionConfig?.slug;
+  const globalSlug = args.globalConfig?.slug;
   if (
     collectionSlug !== undefined &&
     options.collections !== undefined &&

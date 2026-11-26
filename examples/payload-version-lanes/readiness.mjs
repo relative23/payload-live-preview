@@ -8,8 +8,8 @@ import { spawnSync } from 'node:child_process';
 import { realpathSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { source, read, json, sourceContract, preparedContract } from './inputs.mjs';
-import { engines, v2Specs } from './plan.mjs';
-import { planTitles } from './v2/identity.mjs';
+
+const engines = ['chromium', 'firefox', 'webkit'];
 
 export function listLanes() {
   const { definition, manifestSHA256, inputs } = sourceContract();
@@ -48,14 +48,10 @@ export function discoverLane(options) {
     PWDEBUG: '',
     PW_TEST_REPORTER: '',
     PLP_VERSION_LANES_REPO: prepared.repo,
-    PLP_P2_RUN_FILE: prepared.runFile,
     PLP_VERSION_LANE_PREPARED: options.prepared,
     PLP_VERSION_LANE_VERSION: prepared.payloadVersion,
   };
-  const config =
-    prepared.lane === 'v2'
-      ? resolve(prepared.harness, 'browser/config.cjs')
-      : resolve(source, 'discovery.config.mjs');
+  const config = resolve(source, 'discovery.config.mjs');
   const result = spawnSync(
     process.execPath,
     [resolve(tool, 'cli.js'), 'test', '--config', config, '--list', '--reporter=json'],
@@ -109,21 +105,11 @@ export function discoverLane(options) {
       cases.filter((item) => item.project === browser).length,
       prepared.expectedCases / engines.length,
     );
-  // A v2 probe lists the spec file and titles its plan names; v3 and v4 run one spec each.
-  const specs =
-    prepared.lane === 'v2'
-      ? v2Specs(prepared.laneDefinition, prepared.probe)
-      : { [prepared.probe === 'wire' ? 'wire.spec.mjs' : 'lifecycle.diagnostic.spec.mjs']: [] };
-  assert.deepEqual([...new Set(cases.map((item) => item.file))].sort(), Object.keys(specs).sort());
-  if (prepared.lane === 'v2')
-    for (const browser of engines)
-      assert.deepEqual(
-        cases
-          .filter((item) => item.project === browser)
-          .map((item) => item.title)
-          .sort(),
-        planTitles(specs).sort(),
-      );
+  // A cell runs one spec.
+  assert.deepEqual(
+    [...new Set(cases.map((item) => item.file))],
+    [prepared.probe === 'wire' ? 'wire.spec.mjs' : 'lifecycle.diagnostic.spec.mjs'],
+  );
   const receipt = {
     status: 'exact-discovery-passed-native-not-executed',
     lane: prepared.lane,

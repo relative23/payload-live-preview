@@ -1,16 +1,14 @@
 /**
  * `select` / `radio` renderer. Form controls receive option values; other
- * elements show the option labels from the field schema when the admin sent
- * one, else the values.
+ * elements show the values, since the admin sends no option labels.
  */
 
-import type { FieldRenderer, RenderContext } from '@core/types';
-import { asRecord } from '@lexical/value-shapes';
+import type { FieldRenderer } from '@core/types';
 import { isEmptyValue, safeStringify } from './utils';
 
 const selectRenderer: FieldRenderer = {
   name: 'select',
-  render(target, value, context) {
+  render(target, value) {
     const element = target.element;
     const values = isEmptyValue(value) ? [] : toValues(value);
     if (element.tagName === 'SELECT') {
@@ -22,7 +20,7 @@ const selectRenderer: FieldRenderer = {
       radio.checked = values.includes(radio.value);
       return;
     }
-    element.textContent = values.map((item) => labelFor(item, context)).join(', ');
+    element.textContent = values.join(', ');
   },
 };
 
@@ -40,17 +38,6 @@ function writeSelect(select: HTMLSelectElement, values: readonly string[]): void
     return;
   }
   select.value = values[0] ?? '';
-}
-
-function labelFor(value: string, context: RenderContext): string {
-  const options = context.schema?.['options'];
-  if (!Array.isArray(options)) return value;
-  for (const option of options) {
-    const record = asRecord(option);
-    if (record === undefined || safeStringify(record['value']) !== value) continue;
-    return typeof record['label'] === 'string' ? record['label'] : value;
-  }
-  return value;
 }
 
 export { selectRenderer };

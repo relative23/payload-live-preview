@@ -7,8 +7,6 @@
 export interface PayloadLivePreviewMessage {
   readonly type: 'payload-live-preview';
   readonly data?: Record<string, unknown>;
-  /** Sent by Payload 2.x and custom senders only. */
-  readonly fieldSchemaJSON?: readonly PayloadFieldSchema[];
   readonly globalSlug?: string;
   readonly collectionSlug?: string;
   readonly locale?: string;
@@ -43,31 +41,9 @@ export type PayloadProtocolMessage = PayloadLivePreviewMessage | PayloadDocument
 /** A validated update as events expose it. */
 export interface PayloadLivePreviewData {
   readonly fields: Record<string, unknown>;
-  readonly schema?: readonly PayloadFieldSchema[];
   readonly globalSlug?: string;
   readonly collectionSlug?: string;
   readonly locale?: string;
-}
-
-/** The subset of Payload's field schema the runtime reads; extra properties are kept opaquely. */
-export interface PayloadFieldSchema {
-  readonly name: string;
-  readonly type: PayloadFieldType;
-  readonly label?: string;
-  readonly required?: boolean;
-  readonly localized?: boolean;
-  readonly fields?: readonly PayloadFieldSchema[];
-  readonly blocks?: readonly PayloadBlockSchema[];
-  readonly relationTo?: string | readonly string[];
-  readonly hasMany?: boolean;
-  readonly admin?: { readonly condition?: PayloadFieldCondition };
-  readonly [extra: string]: unknown;
-}
-
-export interface PayloadBlockSchema {
-  readonly slug: string;
-  readonly fields: readonly PayloadFieldSchema[];
-  readonly [extra: string]: unknown;
 }
 
 /** Payload's core field types. `tabs` is a structural container; `group` flattens. */
@@ -93,6 +69,3 @@ export type PayloadFieldType =
   | 'json'
   | 'code'
   | 'ui';
-
-/** `admin.condition` is a function in source and cannot cross `postMessage`; modelled, not consumed. */
-export type PayloadFieldCondition = (data: unknown, siblingData: unknown) => boolean;

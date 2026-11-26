@@ -1,7 +1,6 @@
 /**
- * The schema as static analysis sees it: richer than the runtime's
- * `PayloadFieldSchema` (block definitions, relationship targets, hasMany) and
- * shaped for the emitter.
+ * The schema as static analysis sees it (block definitions, relationship
+ * targets, hasMany), shaped for the emitter.
  */
 
 export interface ExtractedSchema {

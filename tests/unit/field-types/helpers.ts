@@ -14,7 +14,7 @@ export function makeTarget(
 }
 
 export function emptyContext(allFields: Record<string, unknown> = {}): RenderContext {
-  return { allFields, locale: 'en-US', schema: undefined };
+  return { allFields, locale: 'en-US' };
 }
 
 /** A fresh renderer map per call; stateful renderers must not leak between tests. */

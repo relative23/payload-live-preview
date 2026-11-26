@@ -27,7 +27,6 @@ const DIRECTORY = resolve('tests/fixtures/wire-corpus');
  * policy) and a new recording has to be named here to count.
  */
 const CAPTURES = [
-  { version: '2.32.3' },
   { version: '3.85.0' },
   { version: '3.88.0' },
   { version: '3.89.0' },

@@ -1,6 +1,6 @@
 /**
- * `payload-live-preview/plugin` configures Payload 2, 3 or 4 without importing
- * any of them. It owns URL selection and root preview metadata, while
+ * `payload-live-preview/plugin` configures Payload 3 or 4 without importing
+ * either of them. It owns URL selection and root preview metadata, while
  * authentication remains an explicit server-side integration.
  */
 import { buildLivePreviewUrl, type LivePreviewUrlArgs } from './live-preview-url';
@@ -45,7 +45,7 @@ export interface LivePreviewPluginOptions {
   readonly previewParam?: string | null;
   /** Device sizes displayed by Payload's live-preview toolbar. */
   readonly breakpoints?: readonly LivePreviewBreakpoint[];
-  /** Where this plugin runs: Payload 3 and 4 sort plugins by ascending `order`, `0` when unset. Payload 2 keeps list order. */
+  /** Where this plugin runs: Payload sorts plugins by ascending `order`, `0` when unset. */
   readonly order?: number;
 }
 

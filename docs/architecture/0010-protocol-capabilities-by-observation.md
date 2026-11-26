@@ -150,3 +150,32 @@ The `DataMerger` and `DocumentSession` regressions exercise scalar updates with
 `author: null` without a GET, and a raw author ID with one schema-owned collection
 GET. These unit inputs reconstruct the installed sender codepath; they are not
 captured native document-change packets or proof of restart/reload recovery.
+
+## Addendum (2026-11-25): 3.0 refuses the peer that shows the schema signal
+
+3.0 ends Payload 2 support ([ADR 0007](0007-v2-defaults-and-renames-ledger.md#ledger),
+rows 25 and 30). The `schema-json` capability stays in the table as a signal the
+runtime recognises, and it now gates one thing: once a message showed it, the
+peer is a Payload 2 admin, the `payload-2` profile is what `inspect()` reports,
+and no update of that peer is applied. The runtime reports `LP0504` once, in
+every build and profile; a hook's session reports `unavailable` with the same
+text as its error. The refusal holds for the session, because Payload 2 sends
+the schema with its first message only and the updates after it carry none.
+
+`fieldSchemaJSON` itself is not parsed, and the message guards do not type it:
+the pipeline needs to know that it is there, not what it says.
+
+The three addenda above describe the collection GETs, the cache rules and the
+empty containers of the schema path. That path is removed: `legacy-population.ts`
+and the schema parser are gone, and every update that is applied is merged
+through the server's method-override `POST`.
+
+The alternative was to apply what could be applied: read no schema and merge
+the update like any other. A Payload 2 admin names no collection and no global,
+so the page would have shown the typed scalar values and raw ids where
+relationships are, with a notice in development only. A preview that is partly
+right without saying so is worse than one that does not move and says why.
+
+Not covered: a runtime that starts after the admin sent its schema, for example
+in a preview frame that alone was reloaded, never sees the signal and treats the
+peer as unknown.

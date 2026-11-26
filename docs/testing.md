@@ -459,10 +459,8 @@ What is proven about the Payload wire protocol, from the outside in:
 Tier 1 proves the real thing works end to end, tier 2 exhausts edge cases
 quickly, tier 3 pins the exact wire shape Payload emits, tier 4 catches
 drift the moment Payload ships it, and tier 5 does the same for a framework
-release. Per Payload version that means: 2.x is
-covered by a corpus captured from a real 2.32.3 admin, captured-message
-integration tests and `fieldSchemaJSON` typing;
-3.85.0, 3.88.0 and 3.89.0 by corpora captured from a real admin; 3.94.2 by the
+release. Per Payload version that means:
+3.85.0, 3.88.0 and 3.89.0 are covered by corpora captured from a real admin; 3.94.2 by the
 real-admin E2E on every push; 4.0.0-beta.4 and beta.6 by corpora captured from
 a real Payload 4 admin (the fixture stays on 3.x), by one measurement of the config
 plugin against a real admin and, for beta.6, by one run of the field-findings suite in
@@ -483,7 +481,7 @@ Checks run by hand on the package archive of a release, on this machine and apar
 
 ### 2.1.0 (2026-10-23)
 
-The following checks passed on 2026-10-23 on the package archive that was published as 2.1.0; the npm tarball differs from it only in the build timestamp. These are local results, separate from the CI jobs. Browser counts include Chromium, Firefox and WebKit on Linux. `examples/payload-version-lanes` runs the Payload 2.32.3 rows, with `--probe=population`, `--probe=lifecycle` or `--probe=guards` for React and Vue.
+The following checks passed on 2026-10-23 on the package archive that was published as 2.1.0; the npm tarball differs from it only in the build timestamp. These are local results, separate from the CI jobs. Browser counts include Chromium, Firefox and WebKit on Linux. `examples/payload-version-lanes` ran the Payload 2.32.3 rows, with `--probe=population`, `--probe=lifecycle` or `--probe=guards` for React and Vue, until 3.0 removed Payload 2 and that lane with it.
 
 | Version        | Checked population                                                                                                                                                                                                  | Passed cases                  |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |

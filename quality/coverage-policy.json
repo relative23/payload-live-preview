@@ -132,11 +132,6 @@
       "functions": 100,
       "branches": 100
     },
-    "src/core/legacy-population.ts": {
-      "lines": 95,
-      "functions": 100,
-      "branches": 95
-    },
     "src/core/lifecycle.ts": {
       "lines": 100,
       "functions": 100,
@@ -366,16 +361,6 @@
       "lines": 100,
       "functions": 100,
       "branches": 88
-    },
-    "src/schema/parser.ts": {
-      "lines": 95,
-      "functions": 100,
-      "branches": 95
-    },
-    "src/schema/walker.ts": {
-      "lines": 95,
-      "functions": 100,
-      "branches": 95
     },
     "src/security/csp.ts": {
       "lines": 100,

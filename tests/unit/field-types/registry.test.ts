@@ -22,7 +22,7 @@ describe('built-in field renderer assembly', () => {
       legacyRenderer.render(
         { element: document.createElement('p'), fieldName: 'title', fieldType: 'text' },
         'value',
-        { allFields: {}, locale: undefined, schema: undefined },
+        { allFields: {}, locale: undefined },
       ),
     ).toBeUndefined();
   });
@@ -118,8 +118,8 @@ describe('built-in field renderer assembly', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     try {
-      first.render(target, 'first', { allFields: {}, locale: undefined, schema: undefined });
-      second.render(target, 'second', { allFields: {}, locale: undefined, schema: undefined });
+      first.render(target, 'first', { allFields: {}, locale: undefined });
+      second.render(target, 'second', { allFields: {}, locale: undefined });
 
       expect(first).not.toBe(second);
       expect(warn).toHaveBeenCalledTimes(2);

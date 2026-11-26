@@ -11,28 +11,6 @@ const request = (id = 'A'): MergeRequest => ({ collectionSlug: 'posts', data: { 
 const mergedC = { status: 'merged', doc: { id: 'C', title: 'Newest' } };
 
 describe('merge diagnostic ownership', () => {
-  it('reports the original schema-access exception before choosing a merge protocol', async () => {
-    const error = new Error('schema unavailable');
-    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(mergedC.doc));
-    const log = vi.fn();
-    const merger = new DataMerger({ serverURL: SERVER, fetchFn, log });
-    try {
-      await expect(
-        merger.merge({
-          get schema(): MergeRequest['schema'] {
-            throw error;
-          },
-          data: {},
-        }),
-      ).resolves.toEqual({ status: 'unavailable' });
-      expect(log.mock.calls).toEqual([['merge exception', error]]);
-      expect(fetchFn).not.toHaveBeenCalled();
-      await expect(merger.merge(request('C'))).resolves.toEqual(mergedC);
-    } finally {
-      merger.destroy();
-    }
-  });
-
   it('does not diagnose an obsolete v3 fetch rejection after accepting a newer request', async () => {
     const first = deferred<Response>();
     const error = new Error('old transport failure');
@@ -78,6 +56,63 @@ describe('merge diagnostic ownership', () => {
     } finally {
       merger.destroy();
       await newer;
+    }
+  });
+});
+
+describe('supersession around a failed attempt', () => {
+  it('yields to a newer merge that the exception diagnostic starts', async () => {
+    const error = new TypeError('offline');
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockRejectedValueOnce(error)
+      .mockResolvedValue(jsonResponse(mergedC.doc));
+    let newer: Promise<MergeResult> | undefined;
+    const merger: DataMerger = new DataMerger({
+      serverURL: SERVER,
+      fetchFn,
+      log: (...args: unknown[]) => {
+        if (args[0] === 'merge exception') newer = merger.merge(request('C'));
+      },
+    });
+    try {
+      await expect(merger.merge(request('A'))).resolves.toEqual({ status: 'superseded' });
+      await expect(newer).resolves.toEqual(mergedC);
+    } finally {
+      merger.destroy();
+    }
+  });
+
+  it('does not read the request of an attempt that aborting its predecessor superseded', async () => {
+    // The first attempt's abort listener starts a third merge, so the second is
+    // obsolete before it has looked at its own request.
+    const reads = vi.fn();
+    const second: MergeRequest = {
+      get collectionSlug(): string {
+        reads();
+        return 'posts';
+      },
+      data: { id: 'B' },
+    };
+    let third: Promise<MergeResult> | undefined;
+    const fetchFn = vi.fn<typeof fetch>((_input, init) => {
+      if (fetchFn.mock.calls.length > 1) return Promise.resolve(jsonResponse(mergedC.doc));
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          third = merger.merge(request('C'));
+          reject(new DOMException('aborted', 'AbortError'));
+        });
+      });
+    });
+    const merger: DataMerger = new DataMerger({ serverURL: SERVER, fetchFn });
+    try {
+      const first = merger.merge(request('A'));
+      await expect(merger.merge(second)).resolves.toEqual({ status: 'superseded' });
+      expect(reads).not.toHaveBeenCalled();
+      await expect(first).resolves.toEqual({ status: 'superseded' });
+      await expect(third).resolves.toEqual(mergedC);
+    } finally {
+      merger.destroy();
     }
   });
 });

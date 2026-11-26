@@ -18,14 +18,11 @@ const venue = {
   url: 'https://cdn.example.com/venue.jpg',
   alt: 'Resolved caption',
 };
-const schema = [
-  { name: 'label', type: 'email' },
-  { name: 'venue', type: 'relationship', relationTo: 'venues' },
-];
+const event = { id: 'event-1', label: 'reader@example.com', venue: 'venue-1' };
 
 function populationFetch(): Mock<typeof fetch> {
   return vi.fn<typeof fetch>(() =>
-    Promise.resolve(new Response(JSON.stringify({ docs: [venue] }))),
+    Promise.resolve(new Response(JSON.stringify({ ...event, venue }))),
   );
 }
 
@@ -40,18 +37,18 @@ function start(fetchFn: typeof fetch, options: Partial<RuntimeOptions> = {}) {
 }
 
 function postRelationship(): void {
-  post(
-    { label: 'reader@example.com', venue: 'venue-1' },
-    { extra: { collectionSlug: 'events', fieldSchemaJSON: schema } },
-  );
+  post(event, { extra: { collectionSlug: 'events' } });
 }
 
 function expectPopulationRead(fetchFn: Mock<typeof fetch>): void {
   expect(fetchFn).toHaveBeenCalledOnce();
   const [input, init] = fetchFn.mock.calls[0]!;
-  expect(populationURL(input).pathname).toBe('/api/venues');
-  expect(populationURL(input).searchParams.get('where[id][in]')).toBe('venue-1');
-  expect(init).toMatchObject({ method: 'GET', credentials: 'include', redirect: 'error' });
+  expect(populationURL(input).pathname).toBe('/api/events/event-1');
+  expect(init).toMatchObject({
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'X-Payload-HTTP-Method-Override': 'GET' },
+  });
 }
 
 beforeEach(() => {

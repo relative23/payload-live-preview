@@ -70,7 +70,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31 (the runtime takes the merge deadline): paired Node24.22.1/npm12.0.2; +17/+5/+21 B; prior reserves kept.
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +22/+12/-23 B; the Brotli ceiling stays, it fell; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +790/+283/+272 B; prior reserves kept.
-  'doctor.js': { raw: 22_702, gzip: 8_823, brotli: 7_831 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+9/+2 B; prior reserves kept.
+  'doctor.js': { raw: 22_728, gzip: 8_832, brotli: 7_833 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -117,7 +118,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +22/+11/+38 B; prior reserves kept.
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +793/+277/+227 B; prior reserves kept.
   // 2026-11-24 (pll doctor --v3, the source check for the 3.0 rows): paired Node22.23.2/zlib1.3.1; +10815/+3507/+2956 B; prior reserves kept.
-  'doctor-cli.js': { raw: 65_608, gzip: 22_408, brotli: 19_956 },
+  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+9/+16 B; prior reserves kept.
+  'doctor-cli.js': { raw: 65_634, gzip: 22_417, brotli: 19_972 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
   // 2026-10-22 (the same codemod change): measured 19 958 → 20 931 / 6 964 → 7 166 / 6 240 → 6 427 (+973/+202/+187 B); same 17/12/93 B cushions.

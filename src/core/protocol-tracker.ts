@@ -1,10 +1,9 @@
 /** Tracks the announced protocol version and the capabilities seen on the wire. */
 
-import { isDevMode } from '@detection/environment';
 import {
   LIBRARY_PROTOCOL_VERSION,
   negotiateProtocol,
-  PAYLOAD_2_HINT,
+  PAYLOAD_2_REFUSED,
   type ProtocolCapability,
   type ProtocolNegotiation,
 } from './protocol-version';
@@ -24,14 +23,13 @@ export class ProtocolTracker {
     for (const capability of fresh) this.observed.add(capability);
     this.negotiation = negotiateProtocol(this.negotiation.theirs, this.observed);
     log('protocol', `observed=${fresh.join(',')}`);
-    // A byte trade like the lean profile's others: it drops the hint, not Payload 2's behaviour.
-    if (
-      !(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__) &&
-      fresh.includes('schema-json') &&
-      isDevMode()
-    ) {
-      warn(PAYLOAD_2_HINT);
-    }
+    // Said once, in every build: from here on the pipeline applies nothing of this peer.
+    if (fresh.includes('schema-json')) warn(PAYLOAD_2_REFUSED);
+  }
+
+  /** Whether the peer showed the schema only Payload 2 sends; its updates are refused (LP0504). */
+  get unsupported(): boolean {
+    return this.observed.has('schema-json');
   }
 
   applyVersion(remoteVersion: number, log: (...args: unknown[]) => void): void {

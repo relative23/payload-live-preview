@@ -389,24 +389,34 @@ describe('dataMerge option (Payload 3.x REST merging)', () => {
     expect(document.querySelector('h1')?.textContent).toBe('raw title');
     runtime.destroy();
   });
-  it('does not ask the server for a document a Payload 2.x admin populates itself', async () => {
-    // A 2.x admin posts `fieldSchemaJSON` and populated relationships; a
-    // request would only fetch what the message already carries.
+  it('applies nothing of an admin that sends fieldSchemaJSON, and asks the server nothing', async () => {
+    // Only Payload 2 sends a schema, and it sends it once: the updates after it are refused too.
     document.body.innerHTML = `<h1 data-payload-field="title">old</h1>${POPULATED}`;
-    const fetchFn = vi.fn();
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response(JSON.stringify({ id: '1', title: 'merged by the server' })));
+    const warn = vi.fn();
     const runtime = makeRuntime({
-      dataMerge: { serverURL: 'https://cms.example.com', fetchFn: fetchFn as typeof fetch },
+      dataMerge: { serverURL: 'https://cms.example.com', fetchFn },
+      warn,
     });
     runtime.start();
     fireMessage({
       type: 'payload-live-preview',
       collectionSlug: 'posts',
-      fieldSchemaJSON: [],
-      data: { id: '1', title: 'populated by the admin' },
+      fieldSchemaJSON: [{ name: 'venue', type: 'relationship', relationTo: 'venues' }],
+      data: { id: '1', title: 'typed in the admin' },
+    });
+    fireMessage({
+      type: 'payload-live-preview',
+      collectionSlug: 'posts',
+      data: { id: '1', title: 'typed again' },
     });
     await vi.advanceTimersByTimeAsync(50);
     expect(fetchFn).not.toHaveBeenCalled();
-    expect(document.querySelector('h1')?.textContent).toBe('populated by the admin');
+    expect(document.querySelector('h1')?.textContent).toBe('old');
+    expect(runtime.updateCount).toBe(0);
+    expect(warn.mock.calls.filter(([text]) => String(text).includes('LP0504'))).toHaveLength(1);
     runtime.destroy();
   });
 

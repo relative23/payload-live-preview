@@ -249,6 +249,7 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly MessageRejected: "LP0501";
     readonly TokenRejected: "LP0502";
     readonly ProtocolShapeUnknown: "LP0503";
+    readonly UnsupportedAdmin: "LP0504";
     readonly HandlerThrew: "LP0601";
     readonly TransformThrew: "LP0602";
     readonly RendererThrew: "LP0603";
@@ -956,16 +957,6 @@ export interface OwnerBindingAttributes {
     readonly 'data-payload-owner': string;
 }
 
-// @public (undocumented)
-interface PayloadBlockSchema {
-    // (undocumented)
-    readonly [extra: string]: unknown;
-    // (undocumented)
-    readonly fields: readonly PayloadFieldSchema[];
-    // (undocumented)
-    readonly slug: string;
-}
-
 // @public
 export interface PayloadDocumentEventDetail {
     // (undocumented)
@@ -981,39 +972,6 @@ export interface PayloadDocumentEventDetail {
 }
 
 // @public
-export type PayloadFieldCondition = (data: unknown, siblingData: unknown) => boolean;
-
-// @public
-export interface PayloadFieldSchema {
-    // (undocumented)
-    readonly [extra: string]: unknown;
-    // (undocumented)
-    readonly admin?: {
-        readonly condition?: PayloadFieldCondition;
-    };
-    // Warning: (ae-forgotten-export) The symbol "PayloadBlockSchema" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    readonly blocks?: readonly PayloadBlockSchema[];
-    // (undocumented)
-    readonly fields?: readonly PayloadFieldSchema[];
-    // (undocumented)
-    readonly hasMany?: boolean;
-    // (undocumented)
-    readonly label?: string;
-    // (undocumented)
-    readonly localized?: boolean;
-    // (undocumented)
-    readonly name: string;
-    // (undocumented)
-    readonly relationTo?: string | readonly string[];
-    // (undocumented)
-    readonly required?: boolean;
-    // (undocumented)
-    readonly type: PayloadFieldType;
-}
-
-// @public
 export type PayloadFieldType = 'text' | 'textarea' | 'richText' | 'email' | 'number' | 'checkbox' | 'date' | 'select' | 'radio' | 'array' | 'blocks' | 'group' | 'tabs' | 'row' | 'collapsible' | 'relationship' | 'upload' | 'point' | 'json' | 'code' | 'ui';
 
 // @public
@@ -1026,8 +984,6 @@ export interface PayloadLivePreviewData {
     readonly globalSlug?: string;
     // (undocumented)
     readonly locale?: string;
-    // (undocumented)
-    readonly schema?: readonly PayloadFieldSchema[];
 }
 
 // @public
@@ -1037,7 +993,6 @@ export interface PayloadLivePreviewMessage {
     // (undocumented)
     readonly data?: Record<string, unknown>;
     readonly externallyUpdatedRelationship?: PayloadDocumentEventDetail | null;
-    readonly fieldSchemaJSON?: readonly PayloadFieldSchema[];
     // (undocumented)
     readonly globalSlug?: string;
     // (undocumented)
@@ -1315,10 +1270,7 @@ export interface ProtocolNegotiation {
 // @public (undocumented)
 export interface ProtocolProfile {
     readonly documentEvents: boolean;
-    readonly fieldTyping: 'schema' | 'heuristic';
-    // (undocumented)
     readonly name: ProtocolProfileName;
-    readonly populatesRelationships: 'admin' | 'server';
 }
 
 // @public
@@ -1341,7 +1293,6 @@ export interface RenderContext {
     readonly renderRichText?: RichTextRenderer;
     readonly reportUnfaithful?: (target: CachedElement, reason: string) => void;
     readonly sanitizerPolicy?: SanitizerPolicyMode;
-    readonly schema: PayloadFieldSchema | undefined;
     readonly serverURL?: string;
 }
 

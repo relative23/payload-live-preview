@@ -1,6 +1,6 @@
 /** Types shared by the runtime primitives. */
 
-import type { PayloadFieldType, PayloadFieldSchema } from '@/types/payload-protocol';
+import type { PayloadFieldType } from '@/types/payload-protocol';
 import type { SanitizerPolicyMode } from '@security/sanitizer';
 import type { UpdateSource } from './strategies';
 
@@ -32,9 +32,9 @@ export interface CachedElement {
   readonly element: Element;
   /** Payload field path, e.g., `title` or `hero.subtitle`. */
   readonly fieldName: string;
-  /** Resolved from attributes and tag heuristics; the schema may override it unless explicit. */
+  /** Resolved from attributes and tag heuristics. */
   readonly fieldType: RendererKey;
-  /** Whether `data-payload-type` set the type, in which case the schema must not override it. */
+  /** Whether `data-payload-type` set the type, in which case no value shape overrides it. */
   readonly explicitFieldType?: boolean;
   /** Fields this binding depends on (`data-payload-depends`); a change in any re-applies it under `skipUnchanged`. */
   readonly dependsOn?: readonly string[];
@@ -78,8 +78,6 @@ export interface RenderContext {
   readonly allFields: Record<string, unknown>;
   /** Active locale, or `undefined` when none is established. */
   readonly locale: string | undefined;
-  /** Optional schema descriptor for the field, when available. */
-  readonly schema: PayloadFieldSchema | undefined;
   /** The project's rich-text renderer, when the client was configured with one. */
   readonly renderRichText?: RichTextRenderer;
   /**

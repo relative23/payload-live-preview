@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 562,
-    "suites": 1081,
-    "tests": 4887,
+    "files": 529,
+    "suites": 1031,
+    "tests": 4643,
     "benchmarks": 12
   },
   "groups": {
@@ -45,9 +45,9 @@
       "benchmarks": 0
     },
     "integration": {
-      "files": 26,
-      "suites": 31,
-      "tests": 120,
+      "files": 25,
+      "suites": 30,
+      "tests": 112,
       "benchmarks": 0
     },
     "real-payload": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 462,
-      "suites": 968,
-      "tests": 4465,
+      "files": 430,
+      "suites": 919,
+      "tests": 4229,
       "benchmarks": 0
     }
   },
@@ -687,13 +687,6 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/integration/schema-driven.test.ts",
-      "group": "integration",
-      "suites": 1,
-      "tests": 8,
-      "benchmarks": 0
-    },
-    {
       "path": "tests/integration/wire-corpus.test.ts",
       "group": "integration",
       "suites": 1,
@@ -869,17 +862,10 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/adapters/document-session-v2-safety.test.ts",
+      "path": "tests/unit/adapters/document-session-ownership.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/adapters/document-session-v2.test.ts",
-      "group": "unit",
-      "suites": 2,
-      "tests": 4,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -1361,8 +1347,8 @@
     {
       "path": "tests/unit/core/data-merger-diagnostic-boundaries.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 4,
+      "suites": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1382,8 +1368,8 @@
     {
       "path": "tests/unit/core/data-merger-reentrancy.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 6,
+      "suites": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1398,41 +1384,6 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/data-merger-v2-boundaries.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 6,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/data-merger-v2-ownership.test.ts",
-      "group": "unit",
-      "suites": 3,
-      "tests": 11,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/data-merger-v2-review.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 11,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/data-merger-v2-safety.test.ts",
-      "group": "unit",
-      "suites": 3,
-      "tests": 16,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/data-merger-v2.test.ts",
-      "group": "unit",
-      "suites": 2,
-      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -1639,111 +1590,6 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/core/legacy-population-abort-ownership.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 3,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-block-work.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 8,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-body.test.ts",
-      "group": "unit",
-      "suites": 2,
-      "tests": 12,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-copy.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 9,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-depth-boundaries.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 5,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-destination-boundaries.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 2,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-fields.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 11,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-output.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 5,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-plan.test.ts",
-      "group": "unit",
-      "suites": 2,
-      "tests": 18,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-rejection-boundaries.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 7,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-relation-work.test.ts",
-      "group": "unit",
-      "suites": 2,
-      "tests": 11,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-response-shapes.test.ts",
-      "group": "unit",
-      "suites": 2,
-      "tests": 5,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-shape-guards.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 3,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-stream-work.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 2,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/legacy-population-url-compatibility.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 3,
-      "benchmarks": 0
-    },
-    {
       "path": "tests/unit/core/lexical-block-preservation.test.ts",
       "group": "unit",
       "suites": 3,
@@ -1898,6 +1744,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/merge-need-locale-recovery.test.ts",
+      "group": "unit",
+      "suites": 5,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/merge-need-population-consumers.test.ts",
       "group": "unit",
       "suites": 1,
@@ -1929,7 +1782,7 @@
       "path": "tests/unit/core/merge-timeout.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 11,
+      "tests": 10,
       "benchmarks": 0
     },
     {
@@ -1950,7 +1803,7 @@
       "path": "tests/unit/core/message-bus-receive.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 27,
+      "tests": 26,
       "benchmarks": 0
     },
     {
@@ -2000,13 +1853,6 @@
       "group": "unit",
       "suites": 4,
       "tests": 8,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/message-normalization-schema.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -2083,7 +1929,7 @@
       "path": "tests/unit/core/payload-2-hint.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 5,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -2231,27 +2077,6 @@
       "group": "unit",
       "suites": 1,
       "tests": 5,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/runtime-v2-locale-population.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 2,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/runtime-v2-locale-recovery.test.ts",
-      "group": "unit",
-      "suites": 5,
-      "tests": 5,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/runtime-v2-population.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 1,
       "benchmarks": 0
     },
     {
@@ -2573,7 +2398,7 @@
       "path": "tests/unit/field-types/form-renderers.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 23,
+      "tests": 21,
       "benchmarks": 0
     },
     {
@@ -3364,7 +3189,7 @@
       "path": "tests/unit/quality/coverage-policy.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 18,
+      "tests": 20,
       "benchmarks": 0
     },
     {
@@ -3487,31 +3312,10 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/quality/payload-lane-audit.test.ts",
-      "group": "unit",
-      "suites": 2,
-      "tests": 8,
-      "benchmarks": 0
-    },
-    {
       "path": "tests/unit/quality/payload-lane-idle.test.ts",
       "group": "unit",
       "suites": 1,
       "tests": 4,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/quality/payload-lane-ledger.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 15,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/quality/payload-lane-plan.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -3666,41 +3470,6 @@
       "group": "unit",
       "suites": 3,
       "tests": 15,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/schema/parser.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 13,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/schema/schema-v2-safety.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 4,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/schema/schema-v2-tabs-linear.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 3,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/schema/schema-v2.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 2,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/schema/walker.test.ts",
-      "group": "unit",
-      "suites": 7,
-      "tests": 13,
       "benchmarks": 0
     },
     {

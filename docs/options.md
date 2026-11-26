@@ -172,7 +172,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 167 952 for authorized inline delivery. It fetches one
+  (ADR 0015), against 158 055 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -216,7 +216,7 @@ Notes on the rows that need one:
   script into; on any other response, such as `NextResponse.next()`, it keeps
   `frame-ancestors` and warns once in development.
 - `runtime` chooses which artifact the page carries. The default is the full
-  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is about 37 KiB gzip
+  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is about 35 KiB gzip
   against 48 KiB for the default inline script — it leaves out the fragment and route strategies, the keyed
   morph, the structural arrays, the item templates, the screen-reader
   announcer and auto-binding, and reports LP0104 when a page needs one of them
@@ -338,7 +338,7 @@ into the frontend runtime:
 | `fallback`     | Path for an unmapped entity or a resolver that returns `''`; `null` means no preview                                  | `'/'`       |
 | `previewParam` | Query parameter appended as `<name>=true`; keep a custom name in the adapter's `previewQueryParams`; `null` adds none | `'preview'` |
 | `breakpoints`  | Toolbar breakpoints with number or CSS-string dimensions; a supplied list replaces the root list                      | preserved   |
-| `order`        | Position among plugins in Payload 3 and 4, which run lower values first; Payload 2 ignores it                         | unset (`0`) |
+| `order`        | Position among plugins in Payload 3 and 4, which run lower values first                                               | unset (`0`) |
 
 The mapped keys are added to the existing root collection/global lists with
 stable order and no duplicates. Other root Live Preview fields are preserved.
@@ -410,7 +410,7 @@ the runtime.
 | `payload-live-preview/plugins`                       | Stable       | `PluginManager`, plugin types and the built-in plugins.                                                                                                                                                   |
 | `payload-live-preview/fragment`                      | Stable       | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                                                                                                          |
 | `payload-live-preview/server`                        | Stable       | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `previewBindingsFromLocals()`, `bind()`.                                                                |
-| `payload-live-preview/plugin`                        | Stable       | `livePreview()` configures Payload 2.32.3 or 3.x structurally: one root URL callback, merged entity lists and optional root breakpoints; no authentication or Payload import.                             |
+| `payload-live-preview/plugin`                        | Stable       | `livePreview()` configures Payload 3 or 4 structurally: one root URL callback, merged entity lists and optional root breakpoints; no authentication or Payload import.                                    |
 | `payload-live-preview/payload`                       | Stable       | The lower-level `buildLivePreviewUrl()` callback for manual or nullable `payload.config.ts` routing; imports nothing from `payload`.                                                                      |
 | `payload-live-preview/{astro,nextjs,sveltekit,nuxt}` | Stable       | One framework adapter each.                                                                                                                                                                               |
 | `payload-live-preview/nuxt-module`                   | Stable       | The Nuxt module: registers the Nitro plugin from `nuxt.config.ts`; data options, `authorizePreview` by module reference (`authorizePreviewModule`), no `shouldInject`.                                    |
@@ -475,11 +475,9 @@ still wins, `0` for none. Until then an adapter or `generateInlineScript()`
 without `mergeTimeoutMs`, and a hook without `timeoutMs`, says so once in
 development (ADR 0007 ledger, row 27).
 
-Payload 2 uses the accepted `fieldSchemaJSON` instead of a v3 merge
-target. It retains the schema for later updates that omit it, settles scalar
-values locally and populates raw relationship/upload IDs with bounded
-credentialed collection GETs. The GETs preserve locale and depth and never
-send the method-override POST ([ADR 0010](architecture/0010-protocol-capabilities-by-observation.md)).
+An update with `fieldSchemaJSON`, which only a Payload 2 admin sends, is
+refused, and so is every later update of that sender (`LP0504`,
+[ADR 0010](architecture/0010-protocol-capabilities-by-observation.md)).
 
 The DOM runtime asks only when the answer can change what the page shows. A page whose every
 binding renders a plain scalar of a top-level field, and a page with no binding,

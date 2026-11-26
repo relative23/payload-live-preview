@@ -8,45 +8,20 @@ import type { ProtocolCapability } from './protocol-version';
 export type ProtocolProfileName = 'unknown' | 'payload-2' | 'payload-3';
 
 export interface ProtocolProfile {
+  /** `payload-2` names an admin this package no longer serves: its updates are refused (LP0504). */
   readonly name: ProtocolProfileName;
-  /** Where field types come from. */
-  readonly fieldTyping: 'schema' | 'heuristic';
-  /**
-   * Legacy transport label, retained for 2.x compatibility. `admin` identifies
-   * Payload 2's schema-based path; observed messages can contain raw relation IDs,
-   * which the shared merger populates with collection GETs. `server` identifies
-   * the Payload 3 merge path. This label alone does not describe population state.
-   */
-  readonly populatesRelationships: 'admin' | 'server';
   /** Whether the peer reports document saves and relationship edits. */
   readonly documentEvents: boolean;
 }
 
-const PAYLOAD_2: ProtocolProfile = {
-  name: 'payload-2',
-  fieldTyping: 'schema',
-  populatesRelationships: 'admin',
-  documentEvents: false,
-};
-const PAYLOAD_3: ProtocolProfile = {
-  name: 'payload-3',
-  fieldTyping: 'heuristic',
-  populatesRelationships: 'server',
-  documentEvents: true,
-};
-const UNKNOWN: ProtocolProfile = {
-  name: 'unknown',
-  fieldTyping: 'heuristic',
-  populatesRelationships: 'server',
-  documentEvents: false,
-};
+const PAYLOAD_2: ProtocolProfile = { name: 'payload-2', documentEvents: false };
+const PAYLOAD_3: ProtocolProfile = { name: 'payload-3', documentEvents: true };
+const UNKNOWN: ProtocolProfile = { name: 'unknown', documentEvents: false };
 
 /**
  * `schema-json` on the wire is the Payload 2.x signature: 3.x removed
  * `fieldSchemaJSON`. Document or relationship events are 3.x-only. Until
- * either shows, the peer is unknown and treated like 3.x for merging — the
- * conservative choice, because a needless REST merge costs a request while
- * a missing one loses populated relationships.
+ * either shows, the peer is unknown. Every peer is merged through the server.
  */
 export function detectProtocolProfile(observed: ReadonlySet<ProtocolCapability>): ProtocolProfile {
   if (observed.has('schema-json')) return PAYLOAD_2;

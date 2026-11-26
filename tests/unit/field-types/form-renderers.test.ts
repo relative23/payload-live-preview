@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { formatForInput } from '@field-types/date';
-import type { PayloadFieldSchema } from '@/types/payload-protocol';
 import { emptyContext, makeTarget, rendererNamed } from './helpers';
 
 function selectWith(values: readonly string[], multiple = false): HTMLSelectElement {
@@ -13,12 +12,6 @@ function selectWith(values: readonly string[], multiple = false): HTMLSelectElem
   }
   return el;
 }
-
-const SELECT_SCHEMA: PayloadFieldSchema = {
-  name: 'f',
-  type: 'select',
-  options: [{ label: 'Alpha', value: 'a' }, { label: 'Beta', value: 'b' }, 'c'],
-};
 
 describe('select renderer', () => {
   it('updates select value', () => {
@@ -56,22 +49,6 @@ describe('select renderer', () => {
     const el = document.createElement('span');
     rendererNamed('select').render(makeTarget(el), ['a', 'b'], emptyContext());
     expect(el.textContent).toBe('a, b');
-  });
-
-  it('shows option labels from the schema in text mode', () => {
-    const el = document.createElement('span');
-    const context = { ...emptyContext(), schema: SELECT_SCHEMA };
-    rendererNamed('select').render(makeTarget(el), ['a', 'b', 'c', 'zzz'], context);
-    expect(el.textContent).toBe('Alpha, Beta, c, zzz');
-  });
-
-  it('writes option values, not labels, into form controls', () => {
-    const el = selectWith(['a', 'b']);
-    rendererNamed('select').render(makeTarget(el), 'a', {
-      ...emptyContext(),
-      schema: SELECT_SCHEMA,
-    });
-    expect(el.value).toBe('a');
   });
 });
 

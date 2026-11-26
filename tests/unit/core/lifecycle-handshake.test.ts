@@ -280,7 +280,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
     );
     runtime.destroy();
   });
-  it('keeps schema, slug, and locale metadata attached to their applied revision', async () => {
+  it('keeps slug and locale metadata attached to their applied revision', async () => {
     document.body.innerHTML = '<p data-payload-field="title">initial</p>';
     const emitter = new EventEmitter();
     const applied: unknown[] = [];
@@ -297,13 +297,11 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       enableA11y: false,
     });
     runtime.start();
-    const schema = [{ name: 'title', type: 'text' }] as const;
 
     fireMessage({
       type: 'payload-live-preview',
       globalSlug: 'homepage',
       locale: 'de',
-      fieldSchemaJSON: schema,
       data: { title: 'global' },
     });
     await vi.advanceTimersByTimeAsync(50);
@@ -316,11 +314,11 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
 
     expect(applied).toMatchObject([
       {
-        data: { fields: { title: 'global' }, schema, globalSlug: 'homepage', locale: 'de' },
+        data: { fields: { title: 'global' }, globalSlug: 'homepage', locale: 'de' },
         revision: 1,
       },
       {
-        data: { fields: { title: 'collection' }, schema, collectionSlug: 'posts', locale: 'de' },
+        data: { fields: { title: 'collection' }, collectionSlug: 'posts', locale: 'de' },
         revision: 2,
       },
     ]);

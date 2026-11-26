@@ -34,13 +34,7 @@ export type {
   RendererKey,
   RichTextRenderer,
 } from './core/types';
-export type {
-  PayloadBlockSchema,
-  PayloadFieldCondition,
-  PayloadFieldSchema,
-  PayloadFieldType,
-  PayloadLivePreviewData,
-} from './types/payload-protocol';
+export type { PayloadFieldType, PayloadLivePreviewData } from './types/payload-protocol';
 export type { ArrayPatch } from './schema/diff';
 // `CachedElement.strategyKind` is typed with it, so this entry must name it too.
 export type { UpdateSource } from './core/strategies';

@@ -11,6 +11,7 @@ import {
   matchesPolicyGlob,
   parseChangedLines,
   parseLcov,
+  parseMovedFiles,
   type CoveragePolicy,
 } from '../../../scripts/coverage-policy';
 
@@ -170,6 +171,47 @@ end_of_record
       'src/core/cache.ts.branches was lowered',
       'critical file baseline was removed: src/security/csp.ts',
     ]);
+  });
+
+  it('lets a baseline leave with a deleted file and holds a renamed file to it under its new path', () => {
+    const previous = clonePolicy();
+    const withoutCsp = clonePolicy() as {
+      criticalFiles: Record<string, { lines: number; functions: number; branches: number }>;
+    } & CoveragePolicy;
+    const csp = withoutCsp.criticalFiles['src/security/csp.ts']!;
+    delete withoutCsp.criticalFiles['src/security/csp.ts'];
+
+    // Deleted: nothing is left to hold.
+    expect(
+      findCoveragePolicyRegressions(withoutCsp, previous, new Map([['src/security/csp.ts', null]])),
+    ).toEqual([]);
+
+    // Renamed without its baseline: the removal is still a removal.
+    const renamed = new Map([['src/security/csp.ts', 'src/security/policy/csp.ts']]);
+    expect(findCoveragePolicyRegressions(withoutCsp, previous, renamed)).toEqual([
+      'critical file baseline was removed: src/security/csp.ts',
+    ]);
+
+    // Renamed with its baseline: held under the new path, and not lower.
+    withoutCsp.criticalFiles['src/security/policy/csp.ts'] = { ...csp };
+    expect(findCoveragePolicyRegressions(withoutCsp, previous, renamed)).toEqual([]);
+    withoutCsp.criticalFiles['src/security/policy/csp.ts'] = { ...csp, branches: csp.branches - 1 };
+    expect(findCoveragePolicyRegressions(withoutCsp, previous, renamed)).toEqual([
+      'src/security/policy/csp.ts.branches was lowered',
+    ]);
+  });
+
+  it('reads deletions and renames off a name-status diff and nothing else', () => {
+    expect(
+      parseMovedFiles(
+        ['D\tsrc/a.ts', 'R096\tsrc/b.ts\tsrc/x/b.ts', 'M\tsrc/c.ts', 'A\tsrc/d.ts', ''].join('\n'),
+      ),
+    ).toEqual(
+      new Map<string, string | null>([
+        ['src/a.ts', null],
+        ['src/b.ts', 'src/x/b.ts'],
+      ]),
+    );
   });
 
   it('rejects broadening the reviewed diff-coverage exclusions', () => {

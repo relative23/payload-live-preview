@@ -120,12 +120,15 @@ describe('declarations', () => {
   });
   it('derives the profile from what was observed', () => {
     expect(detectProtocolProfile(new Set()).name).toBe('unknown');
-    expect(detectProtocolProfile(new Set(['schema-json'])).name).toBe('payload-2');
-    expect(detectProtocolProfile(new Set(['schema-json'])).populatesRelationships).toBe('admin');
+    expect(detectProtocolProfile(new Set(['schema-json']))).toEqual({
+      name: 'payload-2',
+      documentEvents: false,
+    });
     expect(detectProtocolProfile(new Set(['document-events'])).name).toBe('payload-3');
-    expect(detectProtocolProfile(new Set(['relationship-events'])).populatesRelationships).toBe(
-      'server',
-    );
+    expect(detectProtocolProfile(new Set(['relationship-events']))).toEqual({
+      name: 'payload-3',
+      documentEvents: true,
+    });
   });
 });
 
@@ -148,13 +151,12 @@ describe('runtime', () => {
     expect(rt.inspect().protocol.observed).toEqual(['document-events', 'locale']);
     expect(rt.inspect().protocol.profile).toBe('payload-3');
   });
-  it('a schema on the wire marks the peer as Payload 2.x', async () => {
+  it('a schema on the wire marks the peer as Payload 2.x, and nothing of it is applied', () => {
     const rt = start();
-    const done = afterUpdate();
     post({ title: 'a' }, { fieldSchemaJSON: [{ name: 'title', type: 'text' }] });
-    await done;
     expect(rt.inspect().protocol.profile).toBe('payload-2');
     expect(rt.inspect().protocol.capabilities).toContain('schema-json');
+    expect(rt.updateCount).toBe(0);
   });
   it('an announced version keeps its grants when a capability is observed later', async () => {
     const rt = start();

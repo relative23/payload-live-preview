@@ -1,5 +1,5 @@
 /**
- * Keep Payload 2, stable 3 and current 4 pre-release testing independently repeatable.
+ * Keep stable Payload 3 and current 4 pre-release testing independently repeatable.
  * Prepare/discovery are offline and light. Installs and native probes require
  * explicit coordinator resource release, exact archives and reviewed own locks.
  */
@@ -14,7 +14,7 @@ const action = process.argv[2];
 const options = {};
 const permitted = {
   list: ['repo'],
-  prepare: ['repo', 'lane', 'tarball', 'sha256', 'out', 'surface', 'probe', 'variant'],
+  prepare: ['repo', 'lane', 'tarball', 'sha256', 'out', 'surface', 'probe'],
   discover: ['repo', 'prepared'],
   install: ['repo', 'prepared', 'resources-released'],
   probe: ['repo', 'prepared', 'lock-sha256', 'resources-released'],

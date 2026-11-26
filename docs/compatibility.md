@@ -16,23 +16,27 @@ release. The captured pre-releases pass the same protocol checks as the 3.x
 captures. As of 4.0.0-beta.6, Payload 4 needs Node 24.22.1 or later, and its
 admin Next.js 16.4 or a later 16.x release.
 
-**Payload 2.x** support ends with the next major release of this package: 3.0
-supports Payload 3.x and 4.x, and every 2.x release keeps supporting Payload 2
+**Payload 2.x** is not supported. The 2.x line of this package is the one for
+Payload 2: this release applies nothing of an admin that sends `fieldSchemaJSON`,
+which only Payload 2 does, and reports `LP0504` when it refuses
 ([ADR 0007 ledger, entry 25](architecture/0007-v2-defaults-and-renames-ledger.md#ledger),
 [Preparing for 3.0](migration.md#preparing-for-30)).
 
 The manifest declares `payload` as an optional peer,
-`^2.0.0 || ^3.0.0 || ^4.0.0-0`: npm never installs it, and a project that has
+`^3.0.0 || ^4.0.0-0`: npm never installs it, and a project that has
 Payload outside that range gets npm's `ERESOLVE` error.
 
-### What differs between Payload 2, 3 and 4
+### What differs between Payload 3 and 4
 
-|                                                | Payload 2.x                                                                                                                                              | Payload 3.x                                                           | Payload 4.x (pre-release)                                                   |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Scalar field updates                           | ✅                                                                                                                                                       | ✅                                                                    | ✅                                                                          |
-| Rich text (Lexical)                            | ✅                                                                                                                                                       | ✅                                                                    | ✅ through a fragment render (beta.4) and the client-side renderer (beta.6) |
-| Relationship / upload population               | Collection GETs from the accepted schema with `serverURL` and matching depth (relationships measured against a real 2.32.3 admin, uploads by unit tests) | ✅ with `serverURL` (REST merge)                                      | uploads ✅ with `serverURL` (beta.6); relationships not measured yet        |
-| Schema-driven field typing (`fieldSchemaJSON`) | ✅                                                                                                                                                       | — (3.x removed it; DOM heuristics + Lexical auto-detection take over) | — (as in 3.x)                                                               |
+|                                  | Payload 3.x                      | Payload 4.x (pre-release)                                                   |
+| -------------------------------- | -------------------------------- | --------------------------------------------------------------------------- |
+| Scalar field updates             | ✅                               | ✅                                                                          |
+| Rich text (Lexical)              | ✅                               | ✅ through a fragment render (beta.4) and the client-side renderer (beta.6) |
+| Relationship / upload population | ✅ with `serverURL` (REST merge) | uploads ✅ with `serverURL` (beta.6); relationships not measured yet        |
+
+Neither sends field types: a binding's type comes from the page
+(`data-payload-type`, the element) and from the shape of the value, such as a
+Lexical root.
 
 ## What runs against each version
 
@@ -41,8 +45,7 @@ Payload outside that range gets npm's `ERESOLVE` error.
 On every push:
 
 - Payload 3.94.2: every adapter's example runs against the real admin, `examples/payload-backend`, in Chromium, Firefox and WebKit.
-- Payload 2.32.3: `fieldSchemaJSON` typing in `tests/integration/schema-driven.test.ts`.
-- Payload 2.32.3, 3.85.0, 3.88.0, 3.89.0, 4.0.0-beta.4, 4.0.0-beta.6: the messages a real admin of each version sent, captured once and replayed in `tests/integration/wire-corpus.test.ts`.
+- Payload 3.85.0, 3.88.0, 3.89.0, 4.0.0-beta.4, 4.0.0-beta.6: the messages a real admin of each version sent, captured once and replayed in `tests/integration/wire-corpus.test.ts`.
 
 Every day:
 
@@ -54,11 +57,10 @@ Outside CI:
 - Payload 4.0.0-beta.6: on 2026-11-02, the 7 cases of `tests/real-payload/surface-findings.spec.ts` passed in Chromium, Firefox and WebKit against the admin fixture with beta.6 installed over it (Node 24.22.1); an upload reached an `<img>` inside a `<picture>` through the REST merge, and a Lexical edit was written by the client-side renderer, internal link included. Relationships were not part of the run.
 - Payload 4.0.0-beta.4: on 2026-10-24, in a consumer project on 2.1.0 (Next.js 16, Node 24), the config plugin type-checked against Payload's declarations and passed its config sanitizing; for six documents in two locales it built the URL a hand-written callback produced, apart from the order of the query parameters, and the locale reached the path resolvers; the `payload-session` strategy authorized against an admin with a `csrf` list once its `origin` option was set. Globals, the create screen, drafts and autosave, other plugins that write a Live Preview URL and replacing breakpoints were not part of the run.
 - Payload 4.0.0-beta.4 with Astro 7.4.2: on 2026-10-26, a 2.2 release candidate on a consumer site: typing into a title and a text line patched the preview, typing into a rich-text field updated it through 7 fragment renders that answered 200, the frame never reloaded, and all 31 messages had the shape of the captured ones. Relationships and uploads were not part of the run.
-- Payload 2.32.3: the [local release checks](testing.md#local-release-checks) drive the real admin in DOM, React and Vue previews, in frontend-only and `serverURL` modes (24 browser cases per variant), and take the React hook and the Vue composable through three lifecycle journeys (9 browser cases per variant) and seven guard journeys (21 browser cases per variant) in development builds; the Payload 2 dependency graph retains upstream audit findings.
 
 Every version in the README's framework table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-Of the 55 feature rows of `quality/compat-matrix.json`, 14 passed in the CI run the last Version PR recorded (commit `6367809`, 2026-11-24, `quality/compat-results.json`); the other 41 have no recorded result.
+Of the 54 feature rows of `quality/compat-matrix.json`, 13 passed in the CI run the last Version PR recorded (commit `6367809`, 2026-11-24, `quality/compat-results.json`); the other 41 have no recorded result.
 
 Vite 7 through 8: that is what the supported framework majors install (Astro 7 → 8, SvelteKit 3 → 8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-11-25. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 

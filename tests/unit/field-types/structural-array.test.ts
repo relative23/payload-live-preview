@@ -13,7 +13,7 @@ function target(element: Element, template: string): CachedElement {
 }
 
 function ctx(allFields: Record<string, unknown> = {}): RenderContext {
-  return { allFields, locale: 'en', schema: undefined };
+  return { allFields, locale: 'en' };
 }
 
 describe('structural-array renderer', () => {

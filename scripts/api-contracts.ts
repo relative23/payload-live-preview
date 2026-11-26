@@ -89,7 +89,8 @@ export interface ApiReportCheckOptions {
  */
 // 2026-10-31: +1, the session's `Listener`, a plain `() => void` that `createDocumentSession()` reaches from `/core`.
 // 2026-11-03: -1, the same `Listener`: `DocumentSession` is an interface whose `subscribe` spells it `() => void`.
-export const FORGOTTEN_EXPORT_BASELINE = 50;
+// 2026-11-25 (3.0): -2, `PayloadBlockSchema`, which the root and core entries reached through `PayloadFieldSchema`; both types left with Payload 2.
+export const FORGOTTEN_EXPORT_BASELINE = 48;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

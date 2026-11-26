@@ -1,8 +1,7 @@
 /**
  * List the exact prepared case set of a v3 or v4 cell with the repository's pinned test tooling.
  * No dependency consumer, compiler, database, admin or browser is started here; the installed
- * probe uses its own separate configuration and package graph. A v2 cell lists its cases through
- * the browser config of its harness (readiness.mjs), which reads its plan from lanes.json.
+ * probe uses its own separate configuration and package graph.
  */
 import { defineConfig, devices } from '@playwright/test';
 import { readFileSync } from 'node:fs';

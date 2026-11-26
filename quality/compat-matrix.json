@@ -940,44 +940,6 @@
       }
     },
     {
-      "id": "payload-plugin-types-v2",
-      "surface": "Payload plugin",
-      "feature": "packed config plugin type compatibility",
-      "version": {
-        "kind": "exact",
-        "value": "2.32.3",
-        "package": "payload",
-        "source": {
-          "kind": "script-pin",
-          "file": "scripts/check-package.ts",
-          "identifier": "PAYLOAD_PLUGIN_TYPE_VERSIONS"
-        }
-      },
-      "mode": "package-smoke",
-      "packageForm": "packed-tarball",
-      "backend": "Payload 2.32.3 package declarations",
-      "browsers": ["node"],
-      "evidence": {
-        "status": "passed",
-        "workflow": {
-          "file": "build.yml",
-          "job": "build"
-        },
-        "sources": [
-          "scripts/check-package.ts",
-          "scripts/package-smoke-types.ts",
-          "type-tests/packed/payload-plugin-v2-positive.mts.fixture"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
       "id": "payload-plugin-types-v3",
       "surface": "Payload plugin",
       "feature": "packed config plugin type compatibility",
@@ -1821,15 +1783,6 @@
       "how": "every adapter's example runs against the real admin, `examples/payload-backend`, in Chromium, Firefox and WebKit"
     },
     {
-      "version": "2.32.3",
-      "source": "tests",
-      "how": "`fieldSchemaJSON` typing in `tests/integration/schema-driven.test.ts`"
-    },
-    {
-      "version": "2.32.3",
-      "source": "corpus"
-    },
-    {
       "version": "3.85.0",
       "source": "corpus"
     },
@@ -1870,10 +1823,6 @@
     {
       "version": "4.0.0-beta.4 with Astro 7.4.2",
       "how": "on 2026-10-26, a 2.2 release candidate on a consumer site: typing into a title and a text line patched the preview, typing into a rich-text field updated it through 7 fragment renders that answered 200, the frame never reloaded, and all 31 messages had the shape of the captured ones. Relationships and uploads were not part of the run"
-    },
-    {
-      "version": "2.32.3",
-      "how": "the [local release checks](testing.md#local-release-checks) drive the real admin in DOM, React and Vue previews, in frontend-only and `serverURL` modes (24 browser cases per variant), and take the React hook and the Vue composable through three lifecycle journeys (9 browser cases per variant) and seven guard journeys (21 browser cases per variant) in development builds; the Payload 2 dependency graph retains upstream audit findings"
     }
   ],
   "vite": {

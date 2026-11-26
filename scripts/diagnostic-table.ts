@@ -74,6 +74,8 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
     'Your `validateToken` refused the token or threw — a throwing validator fails closed. Check the token the admin sends and the validator.',
   LP0503:
     "The admin at an allowed origin posted a message whose shape this runtime does not recognise — a newer Payload, a custom sender, or a genuine bug. Nothing was applied. Check that the package version matches the admin's, and report it if it does: the wire format is mirrored by hand here, and this code exists to make that drift visible rather than silent.",
+  LP0504:
+    'The admin sends `fieldSchemaJSON`, which only Payload 2 does. This release supports Payload 3 and 4, so nothing of that admin is applied from the first such message on: the page stays as the server rendered it, and a hook reports `unavailable`. Use the 2.x line of this package with Payload 2. A sender of your own that adds the field leaves it out; field types come from `data-payload-type` and the element.',
   LP0601: 'Your `on(...)` handler threw; the runtime continued. Fix the handler.',
   LP0602: 'Your transform threw; the original value was kept. Fix the transform.',
   LP0603:

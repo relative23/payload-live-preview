@@ -1,6 +1,6 @@
 /**
  * The Payload config plugin is tested as a structural transform so the same
- * runtime code covers Payload 2 and 3 without importing either package.
+ * runtime code covers Payload 3 and 4 without importing either package.
  */
 import { describe, expect, it } from 'vitest';
 import { livePreview } from '@/payload/plugin';
@@ -93,7 +93,7 @@ describe('Payload live preview config plugin', () => {
     expect(url({ data: {}, globalConfig: { slug: 'homepage' } })).toBe(`${BASE}/?preview=true`);
   });
 
-  it('uses Payload 2 documentInfo and preserves breakpoints when the plugin omits them', () => {
+  it('preserves breakpoints when the plugin omits them', () => {
     const input: TestConfig = {
       ...config(),
       admin: {
@@ -110,11 +110,8 @@ describe('Payload live preview config plugin', () => {
     const url = output.admin.livePreview.url;
     if (typeof url !== 'function') throw new Error('plugin did not install a URL callback');
 
-    expect(url({ data: {}, documentInfo: { collection: { slug: 'posts' } }, locale: 'en' })).toBe(
+    expect(url({ data: {}, collectionConfig: { slug: 'posts' }, locale: 'en' })).toBe(
       `${BASE}/journal?preview=true`,
-    );
-    expect(url({ data: {}, documentInfo: { global: { slug: 'homepage' } } })).toBe(
-      `${BASE}/?preview=true`,
     );
     expect(output.admin.livePreview.breakpoints).toEqual(input.admin.livePreview.breakpoints);
   });

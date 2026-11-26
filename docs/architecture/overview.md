@@ -207,7 +207,7 @@ went wrong without it.
 | `src/server`      | `definePreview()` and the privileged `./server` barrel                             |
 | `src/field-types` | the built-in field renderers and their registry                                    |
 | `src/lexical`     | the Lexical renderer, with the node and block registries                           |
-| `src/schema`      | `fieldSchemaJSON` validation and lookup (Payload 2.x), the array and blocks diff   |
+| `src/schema`      | the array and blocks diff                                                          |
 | `src/detection`   | frame and popup detection, trusted admin origins, the initial locale               |
 | `src/events`      | the per-instance event emitter and the event map                                   |
 | `src/payload`     | `buildLivePreviewUrl()` for `payload.config.ts`                                    |

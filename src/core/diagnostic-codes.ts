@@ -74,6 +74,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   TokenRejected: 'LP0502',
   /** A trusted origin sent a message this protocol version does not recognise. */
   ProtocolShapeUnknown: 'LP0503',
+  /** An admin sent `fieldSchemaJSON`, which only Payload 2 does; this release does not serve it, and nothing was applied. */
+  UnsupportedAdmin: 'LP0504',
 
   /** A consumer event handler threw. */
   HandlerThrew: 'LP0601',

@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MessageBus } from '@core/message-bus';
-import { buildSchemaIndex } from '@schema/walker';
 import { TRUSTED, UNTRUSTED, flushMicrotasks, makeMessage } from './message-bus-harness';
 
 describe('MessageBus — receive', () => {
@@ -115,7 +114,6 @@ describe('MessageBus — receive', () => {
   });
   it('rejects every wrongly-typed optional payload-live-preview field', () => {
     const malformedFields: readonly (readonly [string, unknown])[] = [
-      ['fieldSchemaJSON', {}],
       ['globalSlug', 42],
       ['collectionSlug', 42],
       ['locale', 123],
@@ -169,59 +167,14 @@ describe('MessageBus — receive', () => {
     window.dispatchEvent(makeMessage(message, TRUSTED));
     expect(onUpdate).toHaveBeenCalledWith(message, TRUSTED, { generation: 1, revision: 1 });
   });
-  it('normalizes malformed schema entries before exposing a message downstream', () => {
+  it('hands on a fieldSchemaJSON as it came: no schema is parsed', () => {
     const message = {
       type: 'payload-live-preview' as const,
       data: { title: 'safe' },
-      fieldSchemaJSON: [
-        null,
-        { name: '', type: 'text' },
-        { name: 'missingType' },
-        {
-          name: 'hero',
-          type: 'group',
-          fields: [false, { name: 'title', type: 'text' }],
-        },
-      ],
+      fieldSchemaJSON: [null, { name: '', type: 'text' }, { name: 'missingType' }],
     };
-
-    expect(() => {
-      window.dispatchEvent(makeMessage(message, TRUSTED));
-    }).not.toThrow();
-
-    const normalized = onUpdate.mock.calls[0]?.[0];
-    expect(normalized?.fieldSchemaJSON).toEqual([
-      {
-        name: 'hero',
-        type: 'group',
-        fields: [{ name: 'title', type: 'text' }],
-      },
-    ]);
-    expect(() => {
-      buildSchemaIndex(normalized?.fieldSchemaJSON ?? []);
-    }).not.toThrow();
-  });
-  it('contains exceptions from hostile nested schema accessors', () => {
-    const hostileSchemaEntry = Object.defineProperty({}, 'name', {
-      enumerable: true,
-      get() {
-        throw new Error('hostile schema getter');
-      },
-    });
-    const message = {
-      type: 'payload-live-preview' as const,
-      data: { title: 'safe' },
-      fieldSchemaJSON: [hostileSchemaEntry],
-    };
-
-    expect(() => {
-      window.dispatchEvent(makeMessage(message, TRUSTED));
-    }).not.toThrow();
-
-    expect(onUpdate).toHaveBeenCalledWith({ ...message, fieldSchemaJSON: [] }, TRUSTED, {
-      generation: 1,
-      revision: 1,
-    });
+    window.dispatchEvent(makeMessage(message, TRUSTED));
+    expect(onUpdate).toHaveBeenCalledWith(message, TRUSTED, { generation: 1, revision: 1 });
     expect(onInvalid).not.toHaveBeenCalled();
   });
   it('routes payload-document-event messages to onDocumentEvent', () => {

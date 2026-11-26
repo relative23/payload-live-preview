@@ -132,7 +132,6 @@ async function writePayloadPluginTypeSmoke(
   consumer: string,
   packageName: string,
   fixture: string,
-  payload2ConfigPointer: boolean,
 ): Promise<string> {
   const directory = 'payload-plugin-type-contracts';
   const typeRoot = resolve(consumer, directory);
@@ -158,16 +157,6 @@ async function writePayloadPluginTypeSmoke(
             skipLibCheck: true,
             exactOptionalPropertyTypes: true,
             noUncheckedIndexedAccess: true,
-            ...(payload2ConfigPointer
-              ? {
-                  // Payload 2 publishes this legacy pointer beside an
-                  // `exports: null` manifest that NodeNext will not traverse.
-                  baseUrl: '.',
-                  paths: {
-                    'payload/config': ['../node_modules/payload/config.d.ts'],
-                  },
-                }
-              : {}),
           },
           include: ['./positive.mts'],
         },
@@ -181,40 +170,16 @@ async function writePayloadPluginTypeSmoke(
 }
 
 export async function checkPackedPayloadPluginTypeContracts(consumers: {
-  readonly payload2: string;
   readonly payload3: string;
   readonly packageName: string;
 }): Promise<readonly string[]> {
-  const failures: string[] = [];
-  const targets = [
-    {
-      consumer: consumers.payload2,
-      fixture: 'payload-plugin-v2-positive.mts.fixture',
-      label: 'Payload 2.32.3',
-      payload2ConfigPointer: true,
-    },
-    {
-      consumer: consumers.payload3,
-      fixture: 'payload-plugin-v3-positive.mts.fixture',
-      label: 'Payload 3.89.0',
-      payload2ConfigPointer: false,
-    },
-  ] as const;
-
-  for (const target of targets) {
-    const project = await writePayloadPluginTypeSmoke(
-      target.consumer,
-      consumers.packageName,
-      target.fixture,
-      target.payload2ConfigPointer,
-    );
-    const result = typecheck(target.consumer, project);
-    if (result.status !== 0) {
-      failures.push(
-        `${target.label} packed plugin type compatibility failed:\n${detailFor(result)}`,
-      );
-    }
-  }
-
-  return failures;
+  const project = await writePayloadPluginTypeSmoke(
+    consumers.payload3,
+    consumers.packageName,
+    'payload-plugin-v3-positive.mts.fixture',
+  );
+  const result = typecheck(consumers.payload3, project);
+  return result.status === 0
+    ? []
+    : [`Payload 3.89.0 packed plugin type compatibility failed:\n${detailFor(result)}`];
 }

@@ -17,11 +17,11 @@
 import { readDocumentId } from '@core/binding-owner';
 import { DataMerger } from '@core/data-merger';
 import { MessageBus } from '@core/message-bus';
-import { PAYLOAD_2_HINT } from '@core/protocol-version';
+import { observeCapabilities, PAYLOAD_2_REFUSED } from '@core/protocol-version';
 import { isDevMode } from '@detection/environment';
 import { noticeOnce, type BundlerEnv } from '@detection/notice';
 import { OriginDetector } from '@detection/origin';
-import type { PayloadFieldSchema, PayloadLivePreviewMessage } from '@/types/payload-protocol';
+import type { PayloadLivePreviewMessage } from '@/types/payload-protocol';
 
 /**
  * `idle` — connected, nothing received yet. `live` — the newest update was
@@ -145,13 +145,11 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
   #revision = 0;
   #lastLog: readonly unknown[] = [];
   #attached = false;
-  #schema: readonly PayloadFieldSchema[] | undefined;
-  #locale: string | undefined;
   readonly #document: PreviewDocument | undefined;
   readonly #requireLocale: boolean;
   readonly #deadline: boolean;
   #warnedUnproven = false;
-  #warnedPayload2 = false;
+  #unsupported = false;
 
   constructor(initialData: T, options: DocumentSessionOptions) {
     this.#detector = new OriginDetector({
@@ -305,10 +303,20 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
   async #handle(message: PayloadLivePreviewMessage): Promise<void> {
     const data = message.data;
     if (data === undefined) return;
-    if (message.fieldSchemaJSON !== undefined && !this.#warnedPayload2 && isDevMode()) {
-      this.#warnedPayload2 = true;
-      console.warn(PAYLOAD_2_HINT);
+    // Payload 2 is not served: once its schema showed, the session takes none of the peer's updates.
+    if (!this.#unsupported && observeCapabilities(message).includes('schema-json')) {
+      this.#unsupported = true;
+      if (isDevMode()) console.warn(PAYLOAD_2_REFUSED);
+      // A merge still in flight for an earlier update must not publish over the refusal.
+      this.#revision += 1;
+      this.#publish({
+        ...this.#snapshot,
+        isLoading: false,
+        status: 'unavailable',
+        error: new Error(PAYLOAD_2_REFUSED),
+      });
     }
+    if (this.#unsupported) return;
     // Before the revision moves: an update for another document must not abort this one's merge.
     if (!this.#accepts(message, data)) return;
     const target = this.#document;
@@ -329,16 +337,12 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
       // No bundler replaced `process.env.NODE_ENV`, and this realm has no `process`.
     }
     const revision = (this.#revision += 1);
-    if (message.fieldSchemaJSON !== undefined) this.#schema = message.fieldSchemaJSON;
-    const schema = this.#schema;
-    if (message.locale !== undefined) this.#locale = message.locale;
-    const locale = schema === undefined ? message.locale : this.#locale;
+    const locale = message.locale;
     this.#publish({ ...this.#snapshot, isLoading: true });
     if (!this.#current(revision)) return;
     this.#lastLog = [];
     const result = await this.#merger.merge({
       data,
-      ...(schema === undefined ? {} : { schema }),
       ...(message.collectionSlug !== undefined ? { collectionSlug: message.collectionSlug } : {}),
       ...(message.globalSlug !== undefined ? { globalSlug: message.globalSlug } : {}),
       ...(locale !== undefined ? { locale } : {}),
