@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 530,
-    "suites": 1030,
-    "tests": 4634,
+    "files": 529,
+    "suites": 1029,
+    "tests": 4631,
     "benchmarks": 12
   },
   "groups": {
@@ -41,7 +41,7 @@
     "e2e": {
       "files": 60,
       "suites": 63,
-      "tests": 259,
+      "tests": 260,
       "benchmarks": 0
     },
     "integration": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 431,
-      "suites": 918,
-      "tests": 4220,
+      "files": 430,
+      "suites": 917,
+      "tests": 4216,
       "benchmarks": 0
     }
   },
@@ -368,7 +368,7 @@
       "path": "tests/e2e/specs/nuxt-asset-delivery.spec.ts",
       "group": "e2e",
       "suites": 1,
-      "tests": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1040,21 +1040,21 @@
       "path": "tests/unit/adapters/policy-authorization.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 30,
+      "tests": 25,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 33,
+      "tests": 35,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/preview-request.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 14,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -2259,13 +2259,6 @@
       "group": "unit",
       "suites": 2,
       "tests": 7,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/deprecation-warnings.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -3476,7 +3469,7 @@
       "path": "tests/unit/removed-options.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -3763,7 +3756,7 @@
       "path": "tests/unit/types/defaults-profile.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 6,
+      "tests": 5,
       "benchmarks": 0
     },
     {

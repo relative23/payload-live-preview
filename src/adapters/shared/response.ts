@@ -18,13 +18,12 @@ export interface HeaderSink {
 
 /** Bind an adapter's per-request hooks to `request`. */
 export function bindDecisionHooks<Req>(
-  policy: PreviewPolicy,
   options: Pick<PreviewAdapterOptions<Req>, 'authorizePreview' | 'shouldInject'>,
   request: Req,
 ): PreviewDecisionHooks {
   return {
     shouldInject: () => options.shouldInject?.(request) ?? true,
-    ...(policy.authorizes ? { authorize: () => options.authorizePreview?.(request) } : {}),
+    authorize: () => options.authorizePreview?.(request),
   };
 }
 
@@ -100,12 +99,13 @@ export function withHeaders(response: Response, apply: (headers: Headers) => voi
 }
 
 /**
- * Whether a decision changes the response. An authorized preview does even
- * with nothing injected and CSP off: its page may render drafts with the
- * verdict's headers, so it must not be cached as the public one.
+ * Whether a decision changes the response: an authorized preview does, and
+ * nothing else injects or touches the CSP. It does even with nothing injected
+ * and CSP off: its page may render drafts with the verdict's headers, so it
+ * must not be cached as the public one.
  */
 export function changesResponse(decision: PreviewDecision): boolean {
-  return decision.inject || decision.cspMode !== false || decision.authorization !== null;
+  return decision.authorization !== null;
 }
 
 /**

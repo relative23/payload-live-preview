@@ -126,7 +126,7 @@ test.describe('fragment preview (SvelteKit)', () => {
 
     expect(html).not.toContain('data-payload-fragment');
     expect(html).not.toContain('data-payload-field');
-    // This fixture runs the 2.0 defaults, so an unauthorized request is a
+    // No response changes on intent alone, so an unauthorized request is a
     // public response whole: no runtime to ask for a fragment in the first place.
     expect(html).not.toContain('__LIVE_PREVIEW_CONFIG__');
     expect(html).toContain('Hybrid preview on SvelteKit');

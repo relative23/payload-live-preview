@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import { authorizePreviewRequest } from '@security/preview-authorization';
+import { authorizeAll } from './authorize-all';
 
 /**
  * One behavioural suite for the four adapters. A harness supplies only the
@@ -59,7 +60,7 @@ async function authorized(): Promise<AuthorizedPreviewContext> {
 
 export function adapterConformance(harness: ConformanceHarness): void {
   const run = (options: Record<string, unknown>, request: ConformanceRequest) =>
-    harness.run({ allowedOrigins: [ADMIN], defaults: 'v1', ...options }, request);
+    harness.run({ allowedOrigins: [ADMIN], authorizePreview: authorizeAll, ...options }, request);
   const runDefault = (options: Record<string, unknown>, request: ConformanceRequest) =>
     harness.run({ allowedOrigins: [ADMIN], ...options }, request);
   const csp = (out: ConformanceOutcome) => out.header('content-security-policy');
@@ -76,8 +77,11 @@ export function adapterConformance(harness: ConformanceHarness): void {
       const out = await run({}, { url: INTENT });
       expect(out.body).toContain(MARKER);
     });
-    it('injects for an iframe load', async () => {
-      const out = await run({}, { url: PLAIN, headers: IFRAME });
+    it('injects for an iframe load where the project counts it as intent', async () => {
+      const out = await run(
+        { previewSignals: ['query', 'fetch-dest'] },
+        { url: PLAIN, headers: IFRAME },
+      );
       expect(out.body).toContain(MARKER);
     });
     it("injects into every HTML response with inject: 'always'", async () => {

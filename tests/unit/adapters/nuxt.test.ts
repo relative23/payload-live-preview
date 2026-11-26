@@ -13,6 +13,7 @@ import { authorizePreviewRequest } from '@security/preview-authorization';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
+import { AUTHORIZED, authorizeAll } from './authorize-all';
 
 const ADMIN = 'https://admin.example.com';
 
@@ -87,7 +88,7 @@ describe('livePreviewNitroPlugin — CSP', () => {
     // Nitro sets `event.url` to a path on some versions. A relative URL cannot
     // be parsed, so every query signal silently missed and nothing injected.
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ allowedOrigins: [ADMIN], defaults: 'v1' })(nitro.app);
+    livePreviewNitroPlugin({ allowedOrigins: [ADMIN], authorizePreview: authorizeAll })(nitro.app);
     const relative = { ...event('/reveal?preview=true'), url: '/reveal?preview=true' };
     const head = await nitro.render(relative);
     expect(head.join('')).toContain('__LIVE_PREVIEW_CONFIG__');
@@ -97,9 +98,11 @@ describe('livePreviewNitroPlugin — CSP', () => {
     // A prerender pass renders without a node response; failing the build over
     // a header nobody can set would be wrong, and so would skipping injection.
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ defaults: 'v1', inject: 'always', allowedOrigins: [ADMIN] })(
-      nitro.app,
-    );
+    livePreviewNitroPlugin({
+      authorizePreview: authorizeAll,
+      inject: 'always',
+      allowedOrigins: [ADMIN],
+    })(nitro.app);
     const head = await nitro.render({ path: '/', context: {} });
     expect(head).toHaveLength(1);
     expect(head[0]).toContain('__LIVE_PREVIEW_CONFIG__');
@@ -124,7 +127,7 @@ describe('livePreviewNitroPlugin — CSP', () => {
     }
     const res = new Res();
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ defaults: 'v1', allowedOrigins: [ADMIN] })(nitro.app);
+    livePreviewNitroPlugin({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] })(nitro.app);
     await nitro.render({
       path: '/?preview=true',
       context: {},
@@ -136,7 +139,7 @@ describe('livePreviewNitroPlugin — CSP', () => {
 
   it('joins an array-valued CSP header (several headers) and widens every policy', async () => {
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ defaults: 'v1', allowedOrigins: [ADMIN] })(nitro.app);
+    livePreviewNitroPlugin({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] })(nitro.app);
     const written: Record<string, string | string[]> = {
       'content-security-policy': ["frame-ancestors 'none'", "default-src 'self'"],
     };
@@ -148,7 +151,11 @@ describe('livePreviewNitroPlugin — CSP', () => {
 
   it('reads headers and writes CSP and cache headers on a web-shaped (edge) event', async () => {
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ defaults: 'v1', allowedOrigins: [ADMIN] })(nitro.app);
+    livePreviewNitroPlugin({
+      authorizePreview: authorizeAll,
+      allowedOrigins: [ADMIN],
+      previewSignals: ['query', 'fetch-dest'],
+    })(nitro.app);
     const res = { headers: new Headers({ 'content-security-policy': "default-src 'self'" }) };
     const ev: FakeEvent = {
       path: '/page',
@@ -191,9 +198,10 @@ describe('livePreviewNitroPlugin — the header side agrees with withCspHeader',
   ] as const;
 
   it.each(rows)('%s', async (_label, csp, existing) => {
-    const options = { defaults: 'v1' as const, allowedOrigins: [ADMIN], ...csp };
+    const options = { authorizePreview: authorizeAll, allowedOrigins: [ADMIN], ...csp };
     const policy = createPreviewPolicy(options);
-    const decision = await policy.decide(new Request('https://site.example.com/?preview=true'));
+    const intent = new Request('https://site.example.com/?preview=true');
+    const decision = await policy.decide(intent, { authorize: () => authorizeAll(intent) });
     const nonce = 'n0nce';
     const expected = withCspHeader(
       new Response('', { headers: existing }),
@@ -225,7 +233,7 @@ describe('defineLivePreviewServerHandler', () => {
   });
 
   it('exposes a fresh nonce per ordinary request', async () => {
-    const handler = defineLivePreviewServerHandler({ defaults: 'v1' });
+    const handler = defineLivePreviewServerHandler({ ...AUTHORIZED });
     const a = event();
     const b = event();
     await handler(a);
@@ -236,7 +244,7 @@ describe('defineLivePreviewServerHandler', () => {
 
   it('hands a refusal to the plugin, which injects nothing and does not authorize again', async () => {
     const authorizePreview = vi.fn(() => null);
-    const options = { defaults: 'v1' as const, allowedOrigins: [ADMIN], authorizePreview };
+    const options = { allowedOrigins: [ADMIN], authorizePreview };
     const handler = defineLivePreviewServerHandler(options);
     const nitro = fakeNitro();
     livePreviewNitroPlugin(options)(nitro.app);
@@ -249,7 +257,7 @@ describe('defineLivePreviewServerHandler', () => {
   it('injects with the nonce the handler stashed, authorizing once for both', async () => {
     const context = await authorizedContext();
     const authorizePreview = vi.fn(() => context);
-    const options = { defaults: 'v1' as const, allowedOrigins: [ADMIN], authorizePreview };
+    const options = { allowedOrigins: [ADMIN], authorizePreview };
     const handler = defineLivePreviewServerHandler(options);
     const nitro = fakeNitro();
     livePreviewNitroPlugin(options)(nitro.app);
@@ -264,7 +272,7 @@ describe('defineLivePreviewServerHandler', () => {
   });
 
   it('does not throw for an event with no context', async () => {
-    const handler = defineLivePreviewServerHandler({ defaults: 'v1' });
+    const handler = defineLivePreviewServerHandler({ ...AUTHORIZED });
     await expect(handler({ path: '/' })).resolves.toBeUndefined();
   });
 });
@@ -312,13 +320,13 @@ describe('buildLivePreviewCsp', () => {
 describe('livePreviewNitroPlugin — sparse Nitro events', () => {
   it('injects for an event that carries no context at all', async () => {
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ defaults: 'v1', inject: 'always' })(nitro.app);
+    livePreviewNitroPlugin({ ...AUTHORIZED, inject: 'always' })(nitro.app);
     expect(await nitro.render({ path: '/' })).toHaveLength(1);
   });
 
   it('falls back to the request url when the event has no path', async () => {
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ defaults: 'v1', allowedOrigins: [ADMIN] })(nitro.app);
+    livePreviewNitroPlugin({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] })(nitro.app);
     const ev: FakeEvent = { context: {}, node: { req: { url: '/?preview=true', headers: {} } } };
     expect(await nitro.render(ev)).toHaveLength(1);
   });
@@ -326,7 +334,11 @@ describe('livePreviewNitroPlugin — sparse Nitro events', () => {
   it('reads a header that arrives as a string array', async () => {
     // Node hands repeated headers over as string[]; the raw array never equals 'iframe'.
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ defaults: 'v1', allowedOrigins: [ADMIN] })(nitro.app);
+    livePreviewNitroPlugin({
+      authorizePreview: authorizeAll,
+      allowedOrigins: [ADMIN],
+      previewSignals: ['query', 'fetch-dest'],
+    })(nitro.app);
     expect(await nitro.render(event('/', { 'sec-fetch-dest': ['iframe'] }))).toHaveLength(1);
   });
 });
@@ -351,14 +363,17 @@ const SOFT_NAVIGATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('softNavigationEve
  */
 describe('what the Nuxt adapter knows about the page', () => {
   it('declares Vue hydration in the rendered tag', () => {
-    const script = renderLivePreviewScript({ allowedOrigins: [ADMIN], defaults: 'v1' });
+    const script = renderLivePreviewScript({
+      allowedOrigins: [ADMIN],
+      authorizePreview: authorizeAll,
+    });
     expect(wireConfig(script)[HYDRATION_SLOT_INDEX]).toBe('vue');
     expect(wireConfig(script)[SOFT_NAVIGATION_SLOT_INDEX]).toEqual([NAVIGATION_COMMIT_EVENT]);
   });
 
   it('declares it in what the plugin injects', async () => {
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ allowedOrigins: [ADMIN], defaults: 'v1' })(nitro.app);
+    livePreviewNitroPlugin({ allowedOrigins: [ADMIN], authorizePreview: authorizeAll })(nitro.app);
     const head = await nitro.render(event('/?preview=true'));
     expect(wireConfig(head.join(''))[HYDRATION_SLOT_INDEX]).toBe('vue');
     expect(wireConfig(head.join(''))[SOFT_NAVIGATION_SLOT_INDEX]).toEqual([
@@ -370,9 +385,11 @@ describe('what the Nuxt adapter knows about the page', () => {
     // Unlike React's commit, which is an event the fetched runtime can miss,
     // Vue leaves the app on its container; nothing has to be armed ahead.
     const nitro = fakeNitro();
-    livePreviewNitroPlugin({ allowedOrigins: [ADMIN], defaults: 'v1', delivery: 'asset' })(
-      nitro.app,
-    );
+    livePreviewNitroPlugin({
+      allowedOrigins: [ADMIN],
+      authorizePreview: authorizeAll,
+      delivery: 'asset',
+    })(nitro.app);
     const head = (await nitro.render(event('/?preview=true'))).join('');
     expect(wireConfig(head)[HYDRATION_SLOT_INDEX]).toBe('vue');
     expect(head).toContain('__LP_RUNTIME_SRC__');

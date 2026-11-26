@@ -2,7 +2,7 @@
   "sources": {
     "examples/astro-middleware/.gitignore": "c760594e89b7b78ec030eb86107c075f9d8177fa7987881c04ff6ea47d5d40cc",
     "examples/astro-middleware/.npmrc": "89570b4333de5a4920e113d299e774c671b4e83ebfe34757ad27c3960a7bd269",
-    "examples/astro-middleware/astro.config.mjs": "b1bef44a948afb22ab0c173307b9e1d7a096deda35eeffb01b41a5cab36510ae",
+    "examples/astro-middleware/astro.config.mjs": "1c7127b00cc291cd8e06485aa04d6cfc4758bfddb379fef0087bc15b26882560",
     "examples/astro-middleware/src/live-preview/authorize-session.ts": "e97b445d4d66ed3c364b023f193588485a14aae0a9933ca68b4383a75bf5d3ca",
     "examples/astro-middleware/src/live-preview/authorize.ts": "b66a9bd4b2c7d6e71c2405c8929c21dab3aafc74cd764f5b2d38c3f20f9cd91e",
     "examples/astro-middleware/src/live-preview/settings.ts": "af3f71da32b5d03ad9e3dcdc021be0e1a19367aec0fc407d9a6cbc2577795da2",

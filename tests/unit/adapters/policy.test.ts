@@ -6,10 +6,12 @@ import {
   previewIntentFor,
   normalizeCspMode,
 } from '@adapters/shared/policy';
+import { bindDecisionHooks } from '@adapters/shared/response';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
 import { buildLivePreviewCsp } from '@adapters/nuxt/adapter';
 import { generateInlineScript } from '@inline/generator';
 import { LEAN_RUNTIME } from '@/lean';
+import { AUTHORIZED, authorizeAll } from './authorize-all';
 
 /** The shared policy's decisions, pinned by name rather than through four framework fixtures. */
 
@@ -38,7 +40,7 @@ describe('previewIntentFor', () => {
     ).toBe(false);
   });
 
-  it('the broad signal set is opt-in via previewSignals or defaults: v1', () => {
+  it('the broad signal set is opt-in via previewSignals', () => {
     const broad = {
       allowedOrigins: [ADMIN],
       previewSignals: ['query', 'fetch-dest', 'referer'] as const,
@@ -52,9 +54,14 @@ describe('previewIntentFor', () => {
     expect(
       previewIntentFor(request('https://site.example.com/', { 'sec-fetch-dest': 'iframe' }), {
         allowedOrigins: [ADMIN],
-        defaults: 'v1',
       }),
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('counts nothing for the referer signal of a policy that names no origin', () => {
+    const fromAdmin = request('https://site.example.com/', { referer: `${ADMIN}/admin` });
+
+    expect(previewIntentFor(fromAdmin, { previewSignals: ['referer'] })).toBe(false);
   });
 
   it("treats inject: 'always' as intent on every request", () => {
@@ -87,7 +94,6 @@ describe('inlineScriptConfig', () => {
   // Each row is one adapter option and the key it travels under. An option the
   // adapter drops here never reaches the runtime, and nothing else notices.
   const WIRE = [
-    ['defaults', 'v1', 'defaults', 'v1'],
     [
       'allowedOrigins',
       ['https://admin.example.com'],
@@ -227,8 +233,8 @@ describe('buildPreviewCsp', () => {
     (name, extra) => {
       // `;` ends the directive and `,` the policy: the rest would become a directive of its own.
       const options = { allowedOrigins: [ADMIN], ...extra };
-      expect(() => createPreviewPolicy({ defaults: 'v1', ...options })).toThrow(new RegExp(name));
-      expect(() => createPreviewPolicy({ defaults: 'v1', ...options })).toThrow(
+      expect(() => createPreviewPolicy({ ...AUTHORIZED, ...options })).toThrow(new RegExp(name));
+      expect(() => createPreviewPolicy({ ...AUTHORIZED, ...options })).toThrow(
         'cannot carry: ";" ends a directive and "," a policy.',
       );
       expect(() => buildPreviewCsp(options, 'n0nce', '', 'full')).toThrow(new RegExp(name));
@@ -315,9 +321,12 @@ describe('injectIntoHead', () => {
 });
 
 describe('createPreviewPolicy — decisions', () => {
+  // What an adapter binds to the request before it asks for a decision.
+  const bound = { authorize: () => authorizeAll(request()) };
+
   it('decides nothing for a request without intent', async () => {
-    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
-    expect(await policy.decide(request())).toMatchObject({
+    const policy = createPreviewPolicy({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] });
+    expect(await policy.decide(request(), bound)).toMatchObject({
       isPreview: false,
       inject: false,
       cspMode: false,
@@ -327,20 +336,36 @@ describe('createPreviewPolicy — decisions', () => {
   });
 
   it('injects and manages CSP for an intent request by default', async () => {
-    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
-    expect(await policy.decide(request('https://site.example.com/?preview=true'))).toMatchObject({
+    const policy = createPreviewPolicy({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] });
+    const decision = await policy.decide(request('https://site.example.com/?preview=true'), bound);
+    expect(decision).toMatchObject({
       isPreview: true,
       inject: true,
       cspMode: 'frame-ancestors',
       exposeNonce: true,
+      outcome: 'authorized',
+    });
+    expect(decision.authorization).toMatchObject({ strategy: 'verifier', subject: 'editor' });
+  });
+
+  it('reads a binder whose options have no hook as a refusal, not as a failure', async () => {
+    // A policy does not start without a hook. Should options without one reach the binder
+    // anyway, the decision is the refusal of a hook that returned nothing.
+    const policy = createPreviewPolicy({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] });
+    const intent = request('https://site.example.com/?preview=true');
+
+    expect(await policy.decide(intent, bindDecisionHooks({}, intent))).toMatchObject({
+      isPreview: true,
       authorization: null,
-      outcome: undefined,
+      outcome: 'invalid',
+      inject: false,
     });
   });
 
   it("lets the adapter's content filter veto injection but never CSP", async () => {
-    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] });
     const decision = await policy.decide(request('https://site.example.com/?preview=true'), {
+      ...bound,
       shouldInject: () => false,
     });
     expect(decision.inject).toBe(false);
@@ -349,37 +374,44 @@ describe('createPreviewPolicy — decisions', () => {
 
   it('consults the content filter only once intent is established', async () => {
     let calls = 0;
-    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] });
     const shouldInject = (): boolean => {
       calls += 1;
       return true;
     };
-    await policy.decide(request(), { shouldInject });
+    await policy.decide(request(), { ...bound, shouldInject });
     expect(calls).toBe(0);
-    await policy.decide(request('https://site.example.com/?preview=true'), { shouldInject });
+    await policy.decide(request('https://site.example.com/?preview=true'), {
+      ...bound,
+      shouldInject,
+    });
     expect(calls).toBe(1);
   });
 
   it('honours autoInject: false while still managing CSP', async () => {
     const policy = createPreviewPolicy({
-      defaults: 'v1',
+      authorizePreview: authorizeAll,
       allowedOrigins: [ADMIN],
       autoInject: false,
     });
-    const decision = await policy.decide(request('https://site.example.com/?preview=true'));
+    const decision = await policy.decide(request('https://site.example.com/?preview=true'), bound);
     expect(decision.inject).toBe(false);
     expect(decision.cspMode).toBe('frame-ancestors');
   });
 
   it('turns CSP off entirely with manageCsp: false, even with intent', async () => {
-    const policy = createPreviewPolicy({ defaults: 'v1', manageCsp: false, inject: 'always' });
-    expect((await policy.decide(request())).cspMode).toBe(false);
+    const policy = createPreviewPolicy({
+      ...AUTHORIZED,
+      manageCsp: false,
+      inject: 'always',
+    });
+    expect((await policy.decide(request(), bound)).cspMode).toBe(false);
   });
 });
 
 describe('createPreviewPolicy — artefacts', () => {
   it('builds the script body once and stamps each tag with the nonce it is given', () => {
-    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] });
     const a = policy.scriptTag('n1');
     const b = policy.scriptTag('n2');
     expect(a).toContain('nonce="n1"');
@@ -389,12 +421,12 @@ describe('createPreviewPolicy — artefacts', () => {
   });
 
   it('issues a fresh nonce on each call', () => {
-    const policy = createPreviewPolicy({ defaults: 'v1' });
+    const policy = createPreviewPolicy({ ...AUTHORIZED });
     expect(policy.nonce()).not.toBe(policy.nonce());
   });
 
   it('routes csp() through the same builder', () => {
-    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
+    const policy = createPreviewPolicy({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] });
     expect(policy.csp('', 'n', 'frame-ancestors')).toBe(
       buildPreviewCsp({ allowedOrigins: [ADMIN] }, 'n', '', 'frame-ancestors'),
     );

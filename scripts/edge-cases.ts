@@ -1,7 +1,7 @@
 /**
  * What each adapter must do inside an edge runtime, driven through the shape a
- * real preset hands it. The v2 rows repeat every adapter under the 2.0 strict
- * defaults, where injection is gated on a verified context rather than intent.
+ * real preset hands it. Injection is gated on a verified context, so every
+ * adapter row authorizes with a signed token and is refused without one.
  */
 
 import { check, type Exports, type EdgeCase } from './edge-harness';
@@ -38,14 +38,13 @@ function hasFrameAncestors(headers: { get(name: string): string | null | undefin
 }
 
 /**
- * Strict options that pass the constructor gate: an https admin origin and a
- * real `authorizePreview`, wired to the shipped signed-token verifier so the
- * v2 path is exercised end to end rather than through a stub verdict.
+ * What every adapter needs to start: an https admin origin and a real
+ * `authorizePreview`, wired to the shipped signed-token verifier so the path
+ * is exercised end to end rather than through a stub verdict.
  */
-function strictOptions(server: Exports): Record<string, unknown> {
+function adapterOptions(server: Exports): Record<string, unknown> {
   const authorize = server['authorizePreviewRequest'] as Authorize;
   return {
-    defaults: 'v2',
     allowedOrigins: [ADMIN],
     authorizePreview: (request: Request) =>
       authorize(request, { type: 'signed-token', secret: SECRET, audience: AUDIENCE }),
@@ -197,92 +196,64 @@ export async function edgeCases(modules: EdgeModules): Promise<readonly EdgeCase
   const { nextjs, sveltekit, astro, nuxt, server, fragment, payload, plugin } = modules;
   const issue = server['issuePreviewToken'] as IssueToken;
   const token = await issue({ audience: AUDIENCE, path: '/page' }, { secret: SECRET });
-  const v1 = { defaults: 'v1', allowedOrigins: [ADMIN] };
-  const v2 = strictOptions(server);
+  const options = adapterOptions(server);
 
   return [
     {
-      name: 'Next.js middleware injects for a preview request and leaves others alone',
+      name: 'Next.js middleware injects for an authorized preview and leaves every other request alone',
       run: async () => {
-        const response = await nextjsResponse(nextjs, v1, new Request(INTENT));
-        check(injected(await response.text()), 'Next.js: no injection');
+        const response = await nextjsResponse(nextjs, options, authorizedRequest(token));
+        check(injected(await response.text()), 'Next.js: authorized request not injected');
         check(hasFrameAncestors(response.headers), 'Next.js: no CSP');
         const untouched = await nextjsResponse(
           nextjs,
-          v1,
+          options,
           new Request('https://site.example.com/'),
         );
         check((await untouched.text()) === PAGE, 'Next.js: touched a non-preview response');
+        const refused = await nextjsResponse(nextjs, options, new Request(INTENT));
+        check((await refused.text()) === PAGE, 'Next.js: injected without authorization');
       },
     },
     {
-      name: 'Next.js under v2 defaults injects only for an authorized context',
-      run: async () => {
-        const response = await nextjsResponse(nextjs, v2, authorizedRequest(token));
-        check(injected(await response.text()), 'Next.js v2: authorized request not injected');
-        const refused = await nextjsResponse(nextjs, v2, new Request(INTENT));
-        check((await refused.text()) === PAGE, 'Next.js v2: injected without authorization');
-      },
-    },
-    {
-      name: 'SvelteKit handle injects through transformPageChunk and writes the nonce to locals',
+      name: 'SvelteKit handle injects through transformPageChunk for an authorized preview and writes the nonce to locals',
       run: async () => {
         const locals: Record<string, unknown> = {};
-        const response = await sveltekitResponse(sveltekit, v1, new Request(INTENT), locals);
-        check(injected(await response.text()), 'SvelteKit: no injection');
+        const response = await sveltekitResponse(
+          sveltekit,
+          options,
+          authorizedRequest(token),
+          locals,
+        );
+        check(injected(await response.text()), 'SvelteKit: authorized request not injected');
         check(typeof locals['livePreviewNonce'] === 'string', 'SvelteKit: no nonce in locals');
+        const refused = await sveltekitResponse(sveltekit, options, new Request(INTENT), {});
+        check((await refused.text()) === PAGE, 'SvelteKit: injected without authorization');
       },
     },
     {
-      name: 'SvelteKit under v2 defaults injects only for an authorized context',
-      run: async () => {
-        const response = await sveltekitResponse(sveltekit, v2, authorizedRequest(token), {});
-        check(injected(await response.text()), 'SvelteKit v2: authorized request not injected');
-        const refused = await sveltekitResponse(sveltekit, v2, new Request(INTENT), {});
-        check((await refused.text()) === PAGE, 'SvelteKit v2: injected without authorization');
-      },
-    },
-    {
-      name: 'Astro middleware injects and hands the nonce to locals',
+      name: 'Astro middleware injects for an authorized preview and hands the nonce to locals',
       run: async () => {
         const locals: Record<string, unknown> = {};
-        const response = await astroResponse(astro, v1, new Request(INTENT), locals);
-        check(injected(await response.text()), 'Astro: no injection');
+        const response = await astroResponse(astro, options, authorizedRequest(token), locals);
+        check(injected(await response.text()), 'Astro: authorized request not injected');
         check(typeof locals['livePreviewNonce'] === 'string', 'Astro: no nonce in locals');
+        const refused = await astroResponse(astro, options, new Request(INTENT), {});
+        check((await refused.text()) === PAGE, 'Astro: injected without authorization');
       },
     },
     {
-      name: 'Astro under v2 defaults injects only for an authorized context',
+      name: 'Nuxt Nitro plugin injects for an authorized preview and sets CSP on a web-shaped h3 event',
       run: async () => {
-        const response = await astroResponse(astro, v2, authorizedRequest(token), {});
-        check(injected(await response.text()), 'Astro v2: authorized request not injected');
-        const refused = await astroResponse(astro, v2, new Request(INTENT), {});
-        check((await refused.text()) === PAGE, 'Astro v2: injected without authorization');
-      },
-    },
-    {
-      name: 'Nuxt Nitro plugin injects and sets CSP on a web-shaped h3 event',
-      run: async () => {
-        const hook = registerNitroPlugin(nuxt, v1);
-        const { event, headers } = webEvent(new Request(INTENT));
-        const head: string[] = [];
-        await hook({ head }, { event });
-        check(injected(head.join('')), 'Nuxt: no injection');
-        check(hasFrameAncestors(headers), 'Nuxt: no CSP on the web response headers');
-      },
-    },
-    {
-      name: 'Nuxt under v2 defaults injects only for an authorized context',
-      run: async () => {
-        const hook = registerNitroPlugin(nuxt, v2);
+        const hook = registerNitroPlugin(nuxt, options);
         const authorized = webEvent(authorizedRequest(token));
         const head: string[] = [];
         await hook({ head }, { event: authorized.event });
-        check(injected(head.join('')), 'Nuxt v2: authorized request not injected');
-        check(hasFrameAncestors(authorized.headers), 'Nuxt v2: no CSP');
+        check(injected(head.join('')), 'Nuxt: authorized request not injected');
+        check(hasFrameAncestors(authorized.headers), 'Nuxt: no CSP on the web response headers');
         const refusedHead: string[] = [];
         await hook({ head: refusedHead }, { event: webEvent(new Request(INTENT)).event });
-        check(refusedHead.length === 0, 'Nuxt v2: injected without authorization');
+        check(refusedHead.length === 0, 'Nuxt: injected without authorization');
       },
     },
     {

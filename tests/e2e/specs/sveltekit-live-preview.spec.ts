@@ -276,7 +276,7 @@ test.describe('sveltekit live preview — authorized preview context (ADR 0006)'
   });
 });
 
-test.describe("sveltekit live preview — eventSourcePolicy 'parent-or-opener' (defaults: 'v2')", () => {
+test.describe("sveltekit live preview — eventSourcePolicy 'parent-or-opener' (the default)", () => {
   async function previewUrl(request: Parameters<Parameters<typeof test>[2]>[0]['request']) {
     const token = await (await request.get(`${APP}/preview-token?path=/`)).text();
     return `${APP}/?preview=true&previewToken=${encodeURIComponent(token)}`;

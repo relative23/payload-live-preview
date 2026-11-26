@@ -20,7 +20,9 @@ const APP = process.env['PLP_NUXT_ORIGIN'] ?? 'http://localhost:4176';
 const RUNTIME_MARKER = 'LP0101';
 const ASSET_URL = /"(\/payload-live-preview\/runtime\.[0-9a-f]{16}\.js)"/u;
 
+/** The page as an authorized preview receives it: the fixture's session first, then the intent. */
 async function previewHtml(request: APIRequestContext): Promise<string> {
+  expect((await request.get(`${APP}/preview-session`)).status()).toBe(204);
   const response = await request.get(`${APP}/?preview=true`);
   expect(response.status()).toBe(200);
   return response.text();
@@ -55,6 +57,19 @@ test.describe('asset delivery (Nuxt)', () => {
     const response = await request.get(`${APP}/payload-live-preview/runtime.0000000000000000.js`);
 
     expect(response.status()).toBe(404);
+  });
+
+  test('intent without a session gets neither: the hook decides, not the query', async ({
+    request,
+  }) => {
+    // 3.0 has no response that changes on intent alone (ADR 0007, row 36).
+    const response = await request.get(`${APP}/?preview=true`);
+    const html = await response.text();
+
+    expect(response.status()).toBe(200);
+    expect(html).toContain('Hello from the demo');
+    expect(html).not.toMatch(ASSET_URL);
+    expect(html).not.toContain('__LIVE_PREVIEW_CONFIG__');
   });
 
   test('a page without preview intent gets neither runtime nor bootstrap', async ({ request }) => {

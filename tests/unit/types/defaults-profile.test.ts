@@ -1,67 +1,53 @@
 import { describe, expect, it } from 'vitest';
-import {
-  READINESS_ROWS,
-  V1_ADAPTER_DEFAULTS,
-  V1_RUNTIME_DEFAULTS,
-  V2_ADAPTER_DEFAULTS,
-  V2_RUNTIME_DEFAULTS,
-  adapterDefaultsFor,
-  runtimeDefaultsFor,
-} from '@/types/defaults-profile';
-import { withProfileDefaults } from '@client/config';
+import { READINESS_ROWS, V2_ADAPTER_DEFAULTS, V2_RUNTIME_DEFAULTS } from '@/types/defaults-profile';
+import { withProfileDefaults, type LivePreviewClientConfig } from '@client/config';
 
 /**
- * ADR 0007 §1: the profile is one switch that sets every readiness row that
- * has an option. This test is the mechanism that makes a forgotten row a
- * failing build rather than a 2.0 surprise: add a row to READINESS_ROWS and
- * one of the two profiles must set it.
+ * ADR 0007 §1: the defaults table sets every readiness row that has an option.
+ * This test is the mechanism that makes a forgotten row a failing build: add a
+ * row to READINESS_ROWS and one of the two halves of the table must set it.
  */
-
-describe("defaults: 'v2' covers every readiness row", () => {
-  it('assigns each row to exactly one of the adapter or runtime profiles', () => {
+describe('the defaults table covers every readiness row', () => {
+  it('assigns each row to exactly one of the adapter or runtime halves', () => {
     const rows = Object.keys(READINESS_ROWS).sort();
     const covered = [
       ...Object.keys(V2_ADAPTER_DEFAULTS),
       ...Object.keys(V2_RUNTIME_DEFAULTS),
     ].sort();
     expect(covered).toEqual(rows);
-    // No key sits in both profiles — a row lives in one place.
+    // No key sits in both halves — a row lives in one place.
     const adapterKeys = new Set(Object.keys(V2_ADAPTER_DEFAULTS));
     for (const key of Object.keys(V2_RUNTIME_DEFAULTS)) expect(adapterKeys.has(key)).toBe(false);
   });
 
-  it('differs from v1 on every row, so each row is an actual flip', () => {
-    for (const key of Object.keys(V2_ADAPTER_DEFAULTS) as (keyof typeof V2_ADAPTER_DEFAULTS)[]) {
-      expect(V2_ADAPTER_DEFAULTS[key], key).not.toEqual(V1_ADAPTER_DEFAULTS[key]);
-    }
-    for (const key of Object.keys(V2_RUNTIME_DEFAULTS) as (keyof typeof V2_RUNTIME_DEFAULTS)[]) {
-      expect(V2_RUNTIME_DEFAULTS[key], key).not.toEqual(V1_RUNTIME_DEFAULTS[key]);
-    }
+  it('holds the hardened value of every row, written out', () => {
+    // The 1.x table that `defaults: 'v1'` restored until 3.0 had the opposite in each row.
+    expect(V2_ADAPTER_DEFAULTS).toEqual({ strict: true, previewSignals: ['query'] });
+    expect(V2_RUNTIME_DEFAULTS).toEqual({
+      disableReferrerDetection: true,
+      eventSourcePolicy: 'parent-or-opener',
+      skipUnchanged: true,
+      sanitizerPolicy: 'strict',
+    });
   });
 
-  it('is frozen, so a profile cannot drift at runtime', () => {
+  it('is frozen, so the table cannot drift at runtime', () => {
     expect(Object.isFrozen(V2_ADAPTER_DEFAULTS)).toBe(true);
     expect(Object.isFrozen(V2_RUNTIME_DEFAULTS)).toBe(true);
     expect(Object.isFrozen(READINESS_ROWS)).toBe(true);
   });
-
-  it('resolves v1 only for an explicit v1, and v2 for v2 or no profile (2.0 default)', () => {
-    expect(adapterDefaultsFor('v2')).toBe(V2_ADAPTER_DEFAULTS);
-    expect(adapterDefaultsFor('v1')).toBe(V1_ADAPTER_DEFAULTS);
-    expect(adapterDefaultsFor(undefined)).toBe(V2_ADAPTER_DEFAULTS);
-    expect(runtimeDefaultsFor('v2')).toBe(V2_RUNTIME_DEFAULTS);
-    expect(runtimeDefaultsFor('v1')).toBe(V1_RUNTIME_DEFAULTS);
-    expect(runtimeDefaultsFor(undefined)).toBe(V2_RUNTIME_DEFAULTS);
-  });
 });
 
 describe('withProfileDefaults (client)', () => {
-  it('fills the runtime rows under v2 and leaves explicit options alone', () => {
-    expect(withProfileDefaults({ defaults: 'v2' })).toMatchObject({
-      skipUnchanged: true,
-      disableReferrerDetection: true,
-      eventSourcePolicy: 'parent-or-opener',
-    });
+  it('fills the runtime rows and leaves explicit options alone', () => {
+    for (const named of [{}, { defaults: 'v2' }] as const) {
+      expect(withProfileDefaults(named)).toMatchObject({
+        skipUnchanged: true,
+        disableReferrerDetection: true,
+        eventSourcePolicy: 'parent-or-opener',
+        sanitizerPolicy: 'strict',
+      });
+    }
     expect(
       withProfileDefaults({ defaults: 'v2', skipUnchanged: false, eventSourcePolicy: 'any' }),
     ).toMatchObject({
@@ -71,18 +57,13 @@ describe('withProfileDefaults (client)', () => {
     });
   });
 
-  it("fills the 1.x rows under defaults: 'v1', explicit options winning", () => {
-    expect(
-      withProfileDefaults({ allowedOrigins: ['https://admin.example.com'], defaults: 'v1' }),
-    ).toMatchObject({
-      skipUnchanged: false,
-      disableReferrerDetection: false,
-      eventSourcePolicy: 'any',
-      sanitizerPolicy: 'compat',
-    });
-    expect(withProfileDefaults({ defaults: 'v1', sanitizerPolicy: 'strict' })).toMatchObject({
-      sanitizerPolicy: 'strict',
-      skipUnchanged: false,
-    });
+  it("refuses `defaults: 'v1'`, which 3.0 removed, instead of filling other rows than it asked for", () => {
+    const removed = { allowedOrigins: ['https://admin.example.com'], defaults: 'v1' };
+
+    expect(() => withProfileDefaults(removed as LivePreviewClientConfig)).toThrow(
+      "payload-live-preview: `defaults: 'v1'` was removed in 3.0. `pll migrate` writes the 1.x " +
+        "rows it stood for into your options. Two cannot be kept: `strict: false` and 'referer' " +
+        'among the preview signals (ADR 0007, row 21).',
+    );
   });
 });

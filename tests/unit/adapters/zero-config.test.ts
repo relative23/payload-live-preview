@@ -67,12 +67,12 @@ describe('the Nuxt module', () => {
     const file = resolve(import.meta.dirname, 'legacy-nuxt-consumer.ts');
     const source = `
       import livePreviewModule, { pluginSource, type NuxtLike } from '@adapters/nuxt/module';
-      pluginSource({ defaults: 'v1' });
+      pluginSource({});
       const nuxt: NuxtLike = {
         options: { buildDir: '/app/.nuxt', build: { templates: [] } },
         hook() {},
       };
-      livePreviewModule({ defaults: 'v1' }, nuxt);
+      livePreviewModule({}, nuxt);
     `;
     // Compile the consumer against the actual source contract, so a published
     // signature change is caught without requiring a prior dist build.
@@ -93,16 +93,14 @@ describe('the Nuxt module', () => {
   }, 30_000);
 
   it('keeps the generated intent-only plugin independent of a project root', () => {
-    expect(pluginSource({ defaults: 'v1', allowedOrigins: [ADMIN] })).toBe(
-      pluginSource({ defaults: 'v1', allowedOrigins: [ADMIN] }, ROOT_DIR),
+    expect(pluginSource({ allowedOrigins: [ADMIN] })).toBe(
+      pluginSource({ allowedOrigins: [ADMIN] }, ROOT_DIR),
     );
     const { nuxt, templates, nitro, run } = fakeNuxt();
     const { rootDir: _root, ...options } = nuxt.options;
-    livePreviewModule({ defaults: 'v1', allowedOrigins: [ADMIN] }, { ...nuxt, options });
+    livePreviewModule({ allowedOrigins: [ADMIN] }, { ...nuxt, options });
     run();
-    expect(templates[0]?.getContents()).toBe(
-      pluginSource({ defaults: 'v1', allowedOrigins: [ADMIN] }),
-    );
+    expect(templates[0]?.getContents()).toBe(pluginSource({ allowedOrigins: [ADMIN] }));
     expect(nitro.handlers).toBeUndefined();
   });
 
@@ -241,7 +239,7 @@ describe('the Nuxt module', () => {
 
   it('adds no server handler to the intent-only setup, which has no decision to publish', () => {
     const { nuxt, nitro, templates, run } = fakeNuxt();
-    livePreviewModule({ defaults: 'v1', allowedOrigins: [ADMIN] }, nuxt);
+    livePreviewModule({ allowedOrigins: [ADMIN] }, nuxt);
     run();
     expect(nitro.handlers).toBeUndefined();
     expect(templates.map((template) => template.filename)).toEqual([

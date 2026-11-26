@@ -21,19 +21,16 @@ export const livePreviewOptions = {
   // splits by route; here it is the whole app, so the fragment endpoint and
   // Vue's hydration are exercised against a runtime that arrives late.
   delivery: 'asset',
-  // Staged on the 1.x profile: this fixture exercises the runtime mechanics.
-  // The v2 defaults with a real authorized context are shown by the SvelteKit
-  // fixture (defaults: 'v2' + authorizePreview) and the real-payload suites,
-  // which also run this one: with PLP_PAYLOAD_SERVER_URL set it is strict and
-  // the editor's session decides.
+  // The mock admin (`public/admin.html`) frames a page without a query, so the
+  // iframe load is the signal here beside the query.
+  previewSignals: ['query', 'fetch-dest'],
+  // No response changes on intent alone: the hook decides, by reference
+  // (ADR 0024). It reads the mock admin's session cookie, or, against a real
+  // Payload admin, the editor's own session.
+  authorizePreviewModule: './server/utils/live-preview-auth',
   // A real admin posts a relationship as an id; the runtime populates it from Payload's REST API as
   // the editor, so a binding on the populated path (`author.email`) has something to show.
   ...(process.env['PLP_PAYLOAD_SERVER_URL']
-    ? ({
-        defaults: 'v2',
-        authorizePreviewModule: './server/utils/live-preview-auth',
-        serverURL: process.env['PLP_PAYLOAD_SERVER_URL'],
-        mergeDepth: 1,
-      } as const)
-    : ({ defaults: 'v1' } as const)),
+    ? ({ serverURL: process.env['PLP_PAYLOAD_SERVER_URL'], mergeDepth: 1 } as const)
+    : {}),
 } as const;

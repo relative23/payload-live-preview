@@ -12,7 +12,8 @@ table.
 | `lexicalToHtml()` without a sanitizer document throws instead of warning     | `lexicalToHtml(content, { requireDocument: true })`, `<RichText requireDocument />`                                                                                               | pass a `document` (linkedom, jsdom) per call; the build names every render without one                                                                                                                                                                                     |
 | a partly bound group counts as covered path by path                          | `subfieldCoverage: 'declared'`                                                                                                                                                    | LP0203 names each uncovered path; declare the ones the page leaves out on purpose with `data-payload-covers`                                                                                                                                                               |
 | `setSanitizerDocument()` is removed                                          | pass `document` per call                                                                                                                                                          | `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, the `RichText` `document` prop                                                                                                                                                                 |
-| `defaults: 'v1'` is removed                                                  | `npx pll migrate ./src --write`                                                                                                                                                   | the rows it stood for become explicit options with the same values, so they can go one at a time; `pll doctor --v2` names each runtime row still at its 1.x value                                                                                                          |
+| `defaults: 'v1'` is removed                                                  | `npx pll migrate ./src --write`                                                                                                                                                   | the rows it stood for become explicit options with the same values, except `strict: false` and `'referer'` among the preview signals, which 3.0 cannot keep; `pll doctor --v2` names the rows that are left                                                                |
+| `strict: false` is removed                                                   | pass `authorizePreview` and remove the option                                                                                                                                     | no response changes on intent alone; an adapter given `strict: false` refuses to start ([authorization.md](authorization.md))                                                                                                                                              |
 | `onUnboundChange`, `isPreviewRequest()` and `adminOrigins` are removed       | `npx pll migrate ./src --write`                                                                                                                                                   | the codemods rename them: `onUnfaithfulPatch` (`'route'` is `'escalate'`), `hasPreviewIntent()`, `allowedOrigins`                                                                                                                                                          |
 | the `signed-token` replay store `{ isUsed, markUsed }` is removed            | implement `consume(id, expiresAt)`                                                                                                                                                | one check-and-record step; [security.md](security.md) has a Redis example                                                                                                                                                                                                  |
 | `new OriginDetector()` no longer trusts `document.referrer` by default       | `new OriginDetector({ enableReferrerDetection: false })`                                                                                                                          | pass `enableReferrerDetection: true` where a detector you build yourself relies on the referrer                                                                                                                                                                            |
@@ -31,12 +32,14 @@ table.
 
 On the 3.0 line these rows are done: `setSanitizerDocument()`,
 `onUnboundChange`, `isPreviewRequest()`, `adminOrigins`, the two-method replay
-store, inline delivery through `livePreviewScriptProps()`, Payload 2 and
-`fieldSchemaJSON`. A name that is gone fails the import or the type check.
+store, inline delivery through `livePreviewScriptProps()`, `defaults: 'v1'`,
+`strict: false`, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the import or the type check.
 What a JavaScript config can still pass is refused at startup with the reason
-and the codemod, in production too: `onUnboundChange` by the adapters and the
-generator, a replay store without `consume` by the first request it would
-guard, `livePreviewScriptProps()` without `delivery: 'asset'` by the call.
+and the codemod, in production too: `onUnboundChange` and `defaults: 'v1'` by
+the adapters and the generator (the profile by the client as well),
+`strict: false` by the adapters, a replay store without `consume` by the first
+request it would guard, `livePreviewScriptProps()` without `delivery: 'asset'`
+by the call.
 `adminOrigins` is the one that is not refused: it is no longer read.
 
 In 2.x each form 3.0 removes warns once per process while it runs in development,
@@ -92,7 +95,8 @@ It knows the rows a call can show:
 
 - `setSanitizerDocument()` (row 16) and `lexicalToHtml()` without a document
   (row 18).
-- `defaults: 'v1'` (row 21), which `pll migrate` then writes out.
+- `defaults: 'v1'` (row 21), which `pll migrate` then writes out, and
+  `strict: false` (row 36).
 - `new OriginDetector()` without `enableReferrerDetection` (row 22).
 - A hook or `createDocumentSession()` without `document` (row 26), and one with
   a `locale` in its document and no `requireLocale: true` (row 31).
@@ -101,7 +105,6 @@ It knows the rows a call can show:
   `serverURL` and no `mergeTimeoutMs`.
 - `livePreviewScriptProps()` without `delivery: 'asset'` (row 32) and the Astro
   integration without `mode` (row 33).
-- `strict: false`, which the ledger has no row for.
 
 It reads options that are written at the call, in a `const` of the same file,
 or in a `const` that a relative import names, and it reads both sides of a
@@ -137,12 +140,12 @@ both ways; the one for `authorizePreviewModule` says it applies to
 2.0 flips a table of defaults toward security and performance, renames a few
 APIs, and removes the 1.x names. Two tools carry the mechanical part:
 `pll migrate` rewrites the renames in your source, and `pll doctor --v2`
-audits a served page against the defaults table. `defaults: 'v1'` restores the
-1.x table on any adapter, `generateInlineScript()` or `LivePreviewClient`, so a
-site can move one row at a time; an explicit option always wins over the
-profile. 3.0 removes the profile; since 2.1 the adapters and
-`generateInlineScript()` warn about it in development
-([Preparing for 3.0](#preparing-for-30)).
+audits a served page against the defaults table. In 2.x `defaults: 'v1'`
+restored the 1.x table on any adapter, `generateInlineScript()` or
+`LivePreviewClient`, so that a site could move one row at a time. 3.0 removed
+the profile ([Preparing for 3.0](#preparing-for-30)): `pll migrate` writes its
+rows into the options, where a single option still moves one row, and the row
+"Authorization" below has no 1.x value to go back to.
 
 ### Run the tooling first
 
@@ -189,18 +192,19 @@ the final URL. The full audit is in
 
 Each row is an entry of the readiness table in
 [ADR 0007 — 2.0 defaults, migration policy, and the renames ledger](architecture/0007-v2-defaults-and-renames-ledger.md).
-`defaults: 'v1'` sets the whole left column; a single option moves one row.
+The left column is what 1.x did and what `defaults: 'v1'` restored in 2.x; a
+single option moves one row, except the first, which 3.0 fixed.
 
-| Row                | `defaults: 'v1'`                   | 2.0 default                              | Option                                  | Watch for                                                                                                                                        |
-| ------------------ | ---------------------------------- | ---------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Authorization      | response changes on intent alone   | `authorizePreview` required              | `strict`                                | a page that showed preview to anyone now needs a real editor session or token                                                                    |
-| Intent signals     | `['query','fetch-dest','referer']` | `['query']`                              | `previewSignals`                        | a flow that relied on the admin referer alone must add `?preview=true`                                                                           |
-| Referrer trust     | on                                 | off                                      | `disableReferrerDetection: true`        | same as above                                                                                                                                    |
-| Message source     | any origin-valid window            | parent/opener only                       | `eventSourcePolicy: 'parent-or-opener'` | a custom embedding that posts from another window                                                                                                |
-| Unchanged bindings | re-applied                         | skipped                                  | `skipUnchanged: true`                   | a renderer with side effects that expected every message                                                                                         |
-| Sanitizer          | `id` and every `data-*` pass       | `id`, `name` and every `data-*` stripped | `sanitizerPolicy: 'strict'`             | rich text that relies on `id` or `data-*`; a site that enforces Trusted Types also lists `payload-live-preview` in its `trusted-types` directive |
-| `allowedOrigins`   | optional                           | required, non-empty, `https:`            | set it explicitly                       | a dev-only origin left implicit                                                                                                                  |
-| `mergeDepth`       | `1`                                | required with `serverURL`                | `mergeDepth: <depth of your query>`     | populated relationships degrade to IDs when the depths differ                                                                                    |
+| Row                | 1.x                                | 2.0 default                              | Option                                        | Watch for                                                                                                                                        |
+| ------------------ | ---------------------------------- | ---------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Authorization      | response changes on intent alone   | `authorizePreview` required              | `authorizePreview`; `strict: false` until 3.0 | a page that showed preview to anyone now needs a real editor session or token                                                                    |
+| Intent signals     | `['query','fetch-dest','referer']` | `['query']`                              | `previewSignals`                              | a flow that relied on the admin referer alone must add `?preview=true`                                                                           |
+| Referrer trust     | on                                 | off                                      | `disableReferrerDetection: true`              | same as above                                                                                                                                    |
+| Message source     | any origin-valid window            | parent/opener only                       | `eventSourcePolicy: 'parent-or-opener'`       | a custom embedding that posts from another window                                                                                                |
+| Unchanged bindings | re-applied                         | skipped                                  | `skipUnchanged: true`                         | a renderer with side effects that expected every message                                                                                         |
+| Sanitizer          | `id` and every `data-*` pass       | `id`, `name` and every `data-*` stripped | `sanitizerPolicy: 'strict'`                   | rich text that relies on `id` or `data-*`; a site that enforces Trusted Types also lists `payload-live-preview` in its `trusted-types` directive |
+| `allowedOrigins`   | optional                           | required, non-empty, `https:`            | set it explicitly                             | a dev-only origin left implicit                                                                                                                  |
+| `mergeDepth`       | `1`                                | required with `serverURL`                | `mergeDepth: <depth of your query>`           | populated relationships degrade to IDs when the depths differ                                                                                    |
 
 ### Renamed, moved and removed
 

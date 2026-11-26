@@ -172,7 +172,7 @@ export function createPreviewBindings(options: PreviewBindingsOptions): PreviewB
 export type CustomRendererKey = `${string}:${string}`;
 
 // @public
-export type DefaultsProfile = 'v1' | 'v2';
+export type DefaultsProfile = 'v2';
 
 // @internal (undocumented)
 export function detectInitialLocale(): string;

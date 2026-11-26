@@ -8,7 +8,7 @@ import {
   fireUpdate,
   preparePreviewPage,
   restorePreviewPage,
-  v1Config,
+  pipelineConfig,
 } from './client-harness';
 
 beforeEach(preparePreviewPage);
@@ -17,7 +17,7 @@ afterEach(restorePreviewPage);
 describe('LivePreviewClient — lifecycle', () => {
   it('goes quiet while suspended and delivers again after resuming', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
 
     try {
       await fireUpdate({ title: 'before' });
@@ -41,7 +41,7 @@ describe('LivePreviewClient — lifecycle', () => {
     const other = 'https://staging-admin.example.com';
     // Localhost matching off: in dev mode `enumerate()` would add 24 dev ports.
     const client = new LivePreviewClient(
-      v1Config({ allowedOrigins: [TRUSTED, other], disableLocalhostMatching: true }),
+      pipelineConfig({ allowedOrigins: [TRUSTED, other], disableLocalhostMatching: true }),
     );
 
     try {
@@ -63,7 +63,7 @@ describe('LivePreviewClient — lifecycle', () => {
 
   it('keeps plugins across a suspension, unlike destroy', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
 
     try {
       await client.use({
@@ -88,7 +88,7 @@ describe('LivePreviewClient — lifecycle', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">published</h1>';
     const oldUpdate = deferred<undefined>();
     let beforeUpdate = 0;
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     client.events.on('beforeUpdate', async () => {
       beforeUpdate += 1;
       if (beforeUpdate === 1) await oldUpdate.promise;
@@ -115,7 +115,7 @@ describe('LivePreviewClient — lifecycle', () => {
 
   it('replays the last accepted document into the markup of the next route on refreshAfterNavigation()', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">published</h1>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
 
     try {
       await fireUpdate({ title: 'typed' });
@@ -132,7 +132,7 @@ describe('LivePreviewClient — lifecycle', () => {
   });
 
   it('refuses to suspend or resume a client that never started or was destroyed', async () => {
-    const client = new LivePreviewClient(v1Config({ autoStart: false }));
+    const client = new LivePreviewClient(pipelineConfig({ autoStart: false }));
     expect(client.suspend()).toBe(false);
     expect(client.resume()).toBe(false);
 
@@ -155,7 +155,7 @@ describe('LivePreviewClient — lifecycle', () => {
       }
     }
     globalThis.IntersectionObserver = FailingIntersectionObserver;
-    const client = new LivePreviewClient(v1Config({ autoStart: false }));
+    const client = new LivePreviewClient(pipelineConfig({ autoStart: false }));
 
     try {
       expect(() => client.start()).toThrow('client observer unavailable');
@@ -182,7 +182,7 @@ describe('LivePreviewClient — lifecycle', () => {
       }
     }
     globalThis.IntersectionObserver = FailingIntersectionObserver;
-    const client = new LivePreviewClient(v1Config({ autoStart: false }));
+    const client = new LivePreviewClient(pipelineConfig({ autoStart: false }));
     const startupErrors: string[] = [];
     client.events.on('error', ({ error, context }) => {
       if (context === 'startup') startupErrors.push(error.message);
@@ -212,7 +212,7 @@ describe('LivePreviewClient — lifecycle', () => {
   });
 
   it('destroy is idempotent and clears state', async () => {
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     await client.destroy();
     await client.destroy();
     expect(client.destroyed).toBe(true);
@@ -220,7 +220,7 @@ describe('LivePreviewClient — lifecycle', () => {
 
   it('shares one in-flight destroy promise across concurrent callers', async () => {
     const releaseDestroy = deferred<undefined>();
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     await client.use({
       name: 'slow-destroy',
       init: () => undefined,
@@ -251,7 +251,7 @@ describe('LivePreviewClient — lifecycle', () => {
 
   it('binds markup added since the last scan as soon as refreshCache() is called', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
 
     try {
       await fireUpdate({ title: 'first', subtitle: 'first' });
@@ -272,7 +272,7 @@ describe('LivePreviewClient — lifecycle', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const other = 'https://staging-admin.example.com';
     const client = new LivePreviewClient(
-      v1Config({
+      pipelineConfig({
         allowedOrigins: [TRUSTED, other],
         disableLocalhostMatching: true,
         heartbeatMs: 1_000,
@@ -307,7 +307,7 @@ describe('LivePreviewClient — lifecycle', () => {
 describe('initLivePreview', () => {
   it('returns a started client inside a preview frame', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
-    const client = initLivePreview(v1Config());
+    const client = initLivePreview(pipelineConfig());
 
     try {
       expect(client).toBeInstanceOf(LivePreviewClient);

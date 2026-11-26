@@ -46,16 +46,15 @@ const establishPreviewToken = defineMiddleware(async (context, next) => {
   return next();
 });
 
-// The page injects on intent and does not gate injection on authorization —
-// the real cross-origin admin shares no session with this fixture, and
-// authorization lives at the fragment endpoint instead. `strict: false`
-// keeps injection ungated (2.0's strict default would require
-// authorizePreview here); the endpoint stays strict via its own strategy.
-// The other rows are what `defaults: 'v1'` stood for, as `pll migrate`
-// wrote them out (ADR 0026).
+// No response changes on intent alone: the hook verifies the token that
+// `establishPreviewToken` put into the framed URL, on every route. The iframe
+// load counts as intent beside the query, because the bench frames some pages
+// without one. The four runtime rows are what `defaults: 'v1'` stood for until
+// 3.0 removed it, as `pll migrate` wrote them out (ADR 0026): this fixture
+// exercises the patch and fragment mechanics, not the hardened defaults.
 const COMMON = {
-  strict: false,
-  previewSignals: ['query', 'fetch-dest', 'referer'],
+  authorizePreview: (request: Request) => authorizePreviewRequest(request, strategy),
+  previewSignals: ['query', 'fetch-dest'],
   disableReferrerDetection: false,
   eventSourcePolicy: 'any',
   skipUnchanged: false,
@@ -86,23 +85,10 @@ const withRouteFallback = createLivePreviewMiddleware({
   onUnfaithfulPatch: 'escalate',
 });
 
-/**
- * `/annotated` alone: the same options plus the hook, because that page carries
- * no binding attributes of its own. `livePreviewAnnotate()` rewrote them into
- * calls against `Astro.locals.livePreviewAuthorization`, and only a middleware
- * that runs `authorizePreview` puts a verdict there.
- */
-const withAuthorization = createLivePreviewMiddleware({
-  ...COMMON,
-  fragments: { endpoint: '/payload/fragment' },
-  authorizePreview: (request) => authorizePreviewRequest(request, strategy),
-});
-
 export const onRequest = sequence(
   establishPreviewToken,
   defineMiddleware((context, next) => {
     if (context.url.pathname.startsWith('/unbound')) return withRouteFallback(context, next);
-    if (context.url.pathname.startsWith('/annotated')) return withAuthorization(context, next);
     return withFragments(context, next);
   }),
 );

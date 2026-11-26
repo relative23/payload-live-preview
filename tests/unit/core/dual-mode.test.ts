@@ -2,15 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { withProfileDefaults } from '@client/config';
-import { runtimeDefaultsFor } from '@/types/defaults-profile';
 import type { FieldRenderer } from '@core/types';
 
 /**
- * Dual-mode testing (roadmap 1.9.0): the behaviours the readiness flip
- * changes are asserted under BOTH the 1.x defaults and the v2 profile from
- * one parametrised suite, so 2.0's default flip is proven now rather than
- * discovered at release. The profile is resolved through the real
- * `withProfileDefaults`, the same path a consumer's `defaults: 'v2'` takes.
+ * The row `skipUnchanged` in both states from one parametrised suite: the
+ * default, and `false` written out, which is what 1.x did and what the
+ * removed `defaults: 'v1'` stood for. The default is resolved through the real
+ * `withProfileDefaults`, the path a client's configuration takes.
  */
 
 class IO implements IntersectionObserver {
@@ -27,9 +25,9 @@ class IO implements IntersectionObserver {
 
 const TRUSTED = 'https://admin.example.com';
 const MODES = [
-  { name: 'v1 (explicit)', defaults: 'v1' as const },
-  { name: 'v2', defaults: 'v2' as const },
-];
+  { name: 'skipUnchanged: false', skipUnchanged: false },
+  { name: 'the default', skipUnchanged: undefined },
+] as const;
 
 let emitter: EventEmitter;
 let runtime: LivePreviewRuntime | undefined;
@@ -63,10 +61,9 @@ function afterUpdate(): Promise<void> {
   });
 }
 
-/** Build a runtime with the runtime rows the profile resolves to. */
-function startFor(defaults: 'v1' | 'v2' | undefined): LivePreviewRuntime {
-  const config = withProfileDefaults({ ...(defaults !== undefined ? { defaults } : {}) });
-  const rows = runtimeDefaultsFor(defaults);
+/** Build a runtime with the row as the client resolves it. */
+function startFor(skipUnchanged: false | undefined): LivePreviewRuntime {
+  const config = withProfileDefaults(skipUnchanged === undefined ? {} : { skipUnchanged });
   runtime = new LivePreviewRuntime({
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
@@ -77,7 +74,7 @@ function startFor(defaults: 'v1' | 'v2' | undefined): LivePreviewRuntime {
     disableVisibilityGate: true,
     enableA11y: false,
     warn: () => {},
-    skipUnchanged: config.skipUnchanged ?? rows.skipUnchanged,
+    skipUnchanged: config.skipUnchanged === true,
     // Held at 'any': jsdom's window is its own parent, so 'parent-or-opener'
     // cannot be exercised here — the message-bus unit tests cover that flip
     // with a mocked parent. This suite isolates the skipUnchanged row.
@@ -98,15 +95,16 @@ afterEach(() => {
   runtime = undefined;
 });
 
-describe.each(MODES)('skipUnchanged under $name', ({ defaults }) => {
-  it(defaults === 'v2' ? 'skips an unchanged value' : 're-applies an unchanged value', async () => {
-    const rt = startFor(defaults);
+describe.each(MODES)('skipUnchanged under $name', ({ skipUnchanged }) => {
+  const skips = skipUnchanged === undefined;
+  it(skips ? 'skips an unchanged value' : 're-applies an unchanged value', async () => {
+    const rt = startFor(skipUnchanged);
     let done = afterUpdate();
     post({ title: 'same' });
     await done;
     expect(renders).toEqual(['same']);
     // Second identical message.
-    if (defaults === 'v2') {
+    if (skips) {
       post({ title: 'same' });
       // Waits for the runtime, not a fixed time: a fixed wait failed under load (PHD-15).
       await vi.waitFor(() => {

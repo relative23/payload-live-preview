@@ -45,10 +45,10 @@ export function createLivePreviewMiddleware(
       exposeNonce(context.locals, nonce);
       return next();
     }
-    if (policy.authorizes) context.locals.livePreviewRequiresAuthorization = true;
+    context.locals.livePreviewRequiresAuthorization = true;
     const decision = await policy.decide(
       context.request,
-      bindDecisionHooks(policy, options, context.request),
+      bindDecisionHooks(options, context.request),
     );
     exposeDecision(context.locals, decision, nonce);
     const response = await next();

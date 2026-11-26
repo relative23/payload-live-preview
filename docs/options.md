@@ -11,71 +11,72 @@ objects (`livePreview()`, `createLivePreviewMiddleware()`,
 (`definePreview()`). The adapters serialize what they are given into the
 inline script, so an adapter row is also an inline-script row.
 
-The defaults are the `v2` table. `defaults: 'v1'` restores every 1.x row at
-once on the client, the inline script and the adapters; an explicit option
-always wins. It is deprecated: 3.0 removes it, an adapter given it warns once
-in development, and `pll migrate` writes the rows it stands for into the
-options ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The ledger of what changed is
+The defaults are one table, and an explicit option always wins. Through 2.x
+`defaults: 'v1'` restored every 1.x row at once; 3.0 removed it. An adapter,
+the generator and the client given it refuse to start, and `pll migrate`
+writes the rows it stood for into the options, except the two 3.0 cannot keep:
+`strict: false` and `'referer'` among the preview signals
+([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)). The ledger of what changed is
 [ADR 0007 — 2.0 defaults, migration policy, and the renames ledger](architecture/0007-v2-defaults-and-renames-ledger.md).
 
-| Option                     | Client | Inline script | Adapter                                                             | Server (`definePreview`) | Default (v2)                                        | With `defaults: 'v1'`                |
-| -------------------------- | ------ | ------------- | ------------------------------------------------------------------- | ------------------------ | --------------------------------------------------- | ------------------------------------ |
-| `allowedOrigins`           | yes    | yes           | yes; `strict` needs it non-empty, `https:` in production            | —                        | `[]`                                                | same                                 |
-| `serverURL`                | yes    | yes           | yes                                                                 | yes, required            | — (no REST merge)                                   | same                                 |
-| `apiRoute`                 | yes    | yes           | yes                                                                 | yes                      | `/api`                                              | same                                 |
-| `mergeDepth`               | yes    | yes           | yes                                                                 | as `depth`, required     | — (required with `serverURL`; `0` for none)         | `1`                                  |
-| `mergeTimeoutMs`           | yes    | yes           | yes                                                                 | —                        | off                                                 | same                                 |
-| `internalLinkPattern`      | yes    | yes           | yes                                                                 | —                        | off                                                 | same                                 |
-| `mergeFetch`               | yes    | —             | —                                                                   | as `fetch`               | global `fetch`                                      | same                                 |
-| `timeoutMs`                | —      | —             | —                                                                   | yes                      | `5000` (floor `250`)                                | same                                 |
-| `onDiagnostic`             | —      | —             | —                                                                   | yes                      | —                                                   | same                                 |
-| `debug`                    | yes    | yes           | yes                                                                 | —                        | client: dev detection; inline and adapters: `false` | same                                 |
-| `debounceMs`               | yes    | yes           | yes                                                                 | —                        | `50`                                                | same                                 |
-| `heartbeatMs`              | yes    | yes           | yes                                                                 | —                        | `0` (off; the admin sends no keepalive)             | same                                 |
-| `enableA11y`               | yes    | yes           | —                                                                   | —                        | `true`                                              | same                                 |
-| `a11yLocale`               | yes    | —             | —                                                                   | —                        | detected locale                                     | same                                 |
-| `disableVisibilityGate`    | yes    | yes           | yes                                                                 | —                        | `false`                                             | same                                 |
-| `visibilityGateThreshold`  | yes    | yes           | yes                                                                 | —                        | `50` bindings                                       | same                                 |
-| `intersectionRootMargin`   | yes    | yes           | —                                                                   | —                        | `'200px'`                                           | same                                 |
-| `skipUnchanged`            | yes    | yes           | yes                                                                 | —                        | `true`                                              | `false`                              |
-| `dependencies`             | yes    | —             | —                                                                   | —                        | `{}`                                                | same                                 |
-| `revealEditedField`        | yes    | yes           | yes                                                                 | —                        | `false`                                             | same                                 |
-| `scopeBindingsByOwner`     | yes    | yes           | yes                                                                 | —                        | `false`                                             | same                                 |
-| `sanitizerPolicy`          | yes    | yes           | yes                                                                 | —                        | `'strict'`                                          | `'compat'`                           |
-| `eventSourcePolicy`        | yes    | yes           | yes                                                                 | —                        | `'parent-or-opener'`                                | `'any'`                              |
-| `disableReferrerDetection` | yes    | yes           | yes                                                                 | —                        | `true`                                              | `false`                              |
-| `disableLocalhostMatching` | yes    | yes           | yes                                                                 | —                        | `false`                                             | same                                 |
-| `strategies`               | yes    | —             | —                                                                   | —                        | — (patch only)                                      | same                                 |
-| `fragmentEndpoint`         | —      | yes           | as `fragments: { endpoint }`                                        | —                        | — (no fragment client)                              | same                                 |
-| `routeStrategy`            | —      | yes           | yes                                                                 | —                        | `false`                                             | same                                 |
-| `onUnfaithfulPatch`        | —      | yes           | yes                                                                 | —                        | `'escalate'`                                        | same                                 |
-| `autoBind`                 | yes    | yes           | yes                                                                 | —                        | `'off'`                                             | same                                 |
-| `subfieldCoverage`         | yes    | yes           | yes                                                                 | —                        | `'descendant'`                                      | same                                 |
-| `hydration`                | —      | yes           | `'manual'`; the Next.js, Nuxt and SvelteKit adapters set the others | —                        | — (start on `DOMContentLoaded`)                     | same                                 |
-| `softNavigationEvents`     | —      | yes           | set by Astro, Next.js, SvelteKit and Nuxt                           | —                        | `[]`                                                | same                                 |
-| `resolveRenderer`          | yes    | —             | —                                                                   | —                        | —                                                   | same                                 |
-| `renderRichText`           | yes    | —             | —                                                                   | —                        | built-in Lexical renderer                           | same                                 |
-| `root`                     | yes    | —             | —                                                                   | —                        | `document`                                          | same                                 |
-| `autoStart`                | yes    | —             | —                                                                   | —                        | `true`                                              | same                                 |
-| `validateToken`            | yes    | —             | —                                                                   | —                        | — (stock Payload sends no token)                    | same                                 |
-| `defaults`                 | yes    | yes           | yes                                                                 | —                        | `'v2'`                                              | `'v1'`                               |
-| `strict`                   | —      | —             | yes                                                                 | —                        | `true`                                              | `false`                              |
-| `authorizePreview`         | —      | —             | yes (not Astro's `livePreview()` or the Nuxt module)                | —                        | — (required under `strict`)                         | same                                 |
-| `authorizePreviewModule`   | —      | —             | Astro `mode: 'middleware'`, the Nuxt module                         | —                        | — (the hook by reference, ADR 0024)                 | same                                 |
-| `previewSignals`           | —      | —             | yes                                                                 | —                        | `['query']`                                         | `['query', 'fetch-dest', 'referer']` |
-| `previewQueryParams`       | —      | —             | yes                                                                 | —                        | `['preview', 'draft', 'livePreview']`               | same                                 |
-| `inject`                   | —      | —             | yes                                                                 | —                        | `'preview-only'`                                    | same                                 |
-| `autoInject`               | —      | —             | yes                                                                 | —                        | `true`                                              | same                                 |
-| `shouldInject`             | —      | —             | yes (not Astro's `livePreview()` or the Nuxt module)                | —                        | — (inject on every preview response)                | same                                 |
-| `manageCsp`                | —      | —             | yes                                                                 | —                        | `'frame-ancestors'` (`true` is an alias)            | same                                 |
-| `strictDynamic`            | —      | —             | yes                                                                 | —                        | `false`                                             | same                                 |
-| `frameAncestorsExtra`      | —      | —             | yes                                                                 | —                        | `[]`                                                | same                                 |
-| `scriptSrcExtra`           | —      | —             | yes                                                                 | —                        | `[]`                                                | same                                 |
-| `delivery`                 | —      | —             | yes (Astro uses `mode`)                                             | —                        | `'inline'`                                          | same                                 |
-| `assetPath`                | —      | —             | yes, with `delivery: 'asset'`                                       | —                        | `/payload-live-preview`                             | same                                 |
-| `mode`                     | —      | —             | Astro integration only                                              | —                        | `'inline'`                                          | same                                 |
-| `runtime`                  | —      | yes           | yes                                                                 | —                        | — (the full runtime)                                | same                                 |
-| `nonce`                    | —      | —             | render helpers only                                                 | —                        | —                                                   | same                                 |
+| Option                     | Client | Inline script | Adapter                                                             | Server (`definePreview`) | Default                                             |
+| -------------------------- | ------ | ------------- | ------------------------------------------------------------------- | ------------------------ | --------------------------------------------------- |
+| `allowedOrigins`           | yes    | yes           | yes; needed non-empty, `https:` in production                       | —                        | `[]`                                                |
+| `serverURL`                | yes    | yes           | yes                                                                 | yes, required            | — (no REST merge)                                   |
+| `apiRoute`                 | yes    | yes           | yes                                                                 | yes                      | `/api`                                              |
+| `mergeDepth`               | yes    | yes           | yes                                                                 | as `depth`, required     | — (required with `serverURL`; `0` for none)         |
+| `mergeTimeoutMs`           | yes    | yes           | yes                                                                 | —                        | off                                                 |
+| `internalLinkPattern`      | yes    | yes           | yes                                                                 | —                        | off                                                 |
+| `mergeFetch`               | yes    | —             | —                                                                   | as `fetch`               | global `fetch`                                      |
+| `timeoutMs`                | —      | —             | —                                                                   | yes                      | `5000` (floor `250`)                                |
+| `onDiagnostic`             | —      | —             | —                                                                   | yes                      | —                                                   |
+| `debug`                    | yes    | yes           | yes                                                                 | —                        | client: dev detection; inline and adapters: `false` |
+| `debounceMs`               | yes    | yes           | yes                                                                 | —                        | `50`                                                |
+| `heartbeatMs`              | yes    | yes           | yes                                                                 | —                        | `0` (off; the admin sends no keepalive)             |
+| `enableA11y`               | yes    | yes           | —                                                                   | —                        | `true`                                              |
+| `a11yLocale`               | yes    | —             | —                                                                   | —                        | detected locale                                     |
+| `disableVisibilityGate`    | yes    | yes           | yes                                                                 | —                        | `false`                                             |
+| `visibilityGateThreshold`  | yes    | yes           | yes                                                                 | —                        | `50` bindings                                       |
+| `intersectionRootMargin`   | yes    | yes           | —                                                                   | —                        | `'200px'`                                           |
+| `skipUnchanged`            | yes    | yes           | yes                                                                 | —                        | `true`                                              |
+| `dependencies`             | yes    | —             | —                                                                   | —                        | `{}`                                                |
+| `revealEditedField`        | yes    | yes           | yes                                                                 | —                        | `false`                                             |
+| `scopeBindingsByOwner`     | yes    | yes           | yes                                                                 | —                        | `false`                                             |
+| `sanitizerPolicy`          | yes    | yes           | yes                                                                 | —                        | `'strict'`                                          |
+| `eventSourcePolicy`        | yes    | yes           | yes                                                                 | —                        | `'parent-or-opener'`                                |
+| `disableReferrerDetection` | yes    | yes           | yes                                                                 | —                        | `true`                                              |
+| `disableLocalhostMatching` | yes    | yes           | yes                                                                 | —                        | `false`                                             |
+| `strategies`               | yes    | —             | —                                                                   | —                        | — (patch only)                                      |
+| `fragmentEndpoint`         | —      | yes           | as `fragments: { endpoint }`                                        | —                        | — (no fragment client)                              |
+| `routeStrategy`            | —      | yes           | yes                                                                 | —                        | `false`                                             |
+| `onUnfaithfulPatch`        | —      | yes           | yes                                                                 | —                        | `'escalate'`                                        |
+| `autoBind`                 | yes    | yes           | yes                                                                 | —                        | `'off'`                                             |
+| `subfieldCoverage`         | yes    | yes           | yes                                                                 | —                        | `'descendant'`                                      |
+| `hydration`                | —      | yes           | `'manual'`; the Next.js, Nuxt and SvelteKit adapters set the others | —                        | — (start on `DOMContentLoaded`)                     |
+| `softNavigationEvents`     | —      | yes           | set by Astro, Next.js, SvelteKit and Nuxt                           | —                        | `[]`                                                |
+| `resolveRenderer`          | yes    | —             | —                                                                   | —                        | —                                                   |
+| `renderRichText`           | yes    | —             | —                                                                   | —                        | built-in Lexical renderer                           |
+| `root`                     | yes    | —             | —                                                                   | —                        | `document`                                          |
+| `autoStart`                | yes    | —             | —                                                                   | —                        | `true`                                              |
+| `validateToken`            | yes    | —             | —                                                                   | —                        | — (stock Payload sends no token)                    |
+| `defaults`                 | yes    | yes           | yes                                                                 | —                        | `'v2'`, the only value (ADR 0007, row 21)           |
+| `strict`                   | —      | —             | yes                                                                 | —                        | `true`, the only value (ADR 0007, row 36)           |
+| `authorizePreview`         | —      | —             | yes (not Astro's `livePreview()` or the Nuxt module)                | —                        | — (required)                                        |
+| `authorizePreviewModule`   | —      | —             | Astro `mode: 'middleware'`, the Nuxt module                         | —                        | — (the hook by reference, ADR 0024)                 |
+| `previewSignals`           | —      | —             | yes                                                                 | —                        | `['query']`                                         |
+| `previewQueryParams`       | —      | —             | yes                                                                 | —                        | `['preview', 'draft', 'livePreview']`               |
+| `inject`                   | —      | —             | yes                                                                 | —                        | `'preview-only'`                                    |
+| `autoInject`               | —      | —             | yes                                                                 | —                        | `true`                                              |
+| `shouldInject`             | —      | —             | yes (not Astro's `livePreview()` or the Nuxt module)                | —                        | — (inject on every preview response)                |
+| `manageCsp`                | —      | —             | yes                                                                 | —                        | `'frame-ancestors'` (`true` is an alias)            |
+| `strictDynamic`            | —      | —             | yes                                                                 | —                        | `false`                                             |
+| `frameAncestorsExtra`      | —      | —             | yes                                                                 | —                        | `[]`                                                |
+| `scriptSrcExtra`           | —      | —             | yes                                                                 | —                        | `[]`                                                |
+| `delivery`                 | —      | —             | yes (Astro uses `mode`)                                             | —                        | `'inline'`                                          |
+| `assetPath`                | —      | —             | yes, with `delivery: 'asset'`                                       | —                        | `/payload-live-preview`                             |
+| `mode`                     | —      | —             | Astro integration only                                              | —                        | `'inline'`                                          |
+| `runtime`                  | —      | yes           | yes                                                                 | —                        | — (the full runtime)                                |
+| `nonce`                    | —      | —             | render helpers only                                                 | —                        | —                                                   |
 
 Three option objects outside these four places have options of their own.
 `useLivePreviewDocument()` from `/react` and `/vue` takes `initialData` and
@@ -103,7 +104,7 @@ fifty-five rows.
   way to show the populated document, and it needs an origin, a route and an
   explicit depth ([below](#serverurl-and-mergedepth)).
 - **May this request see a preview** — `previewSignals`, `previewQueryParams`,
-  `inject`, `authorizePreview`, `authorizePreviewModule`, `strict`. Intent is
+  `inject`, `authorizePreview`, `authorizePreviewModule`. Intent is
   client-controlled and authorization is not; both exist because collapsing
   them into one option is exactly the mistake this package is built to avoid
   ([ADR 0006](architecture/0006-authorized-preview-context.md)).
@@ -149,13 +150,14 @@ fifty-five rows.
 
 Notes on the rows that need one:
 
-- `strict` refuses when the adapter is created (when its module loads; `LivePreviewScript` creates one each time it renders, so its first render throws), not on a public response: it requires
+- An adapter that decides per request refuses an insecure configuration when it is created (when its module loads; `LivePreviewScript` creates one each time it renders, so its first render throws), not on a public response: it requires
   `authorizePreview`, non-empty `allowedOrigins` (`https:` ones in
-  production), and no `'referer'` in the resolved `previewSignals`. Astro's
-  `livePreview()` integration does not apply it in `mode: 'inline'` or
-  `'loader'`, which inject at build time and build no per-request policy;
-  `'middleware'` refuses it unless `authorizePreviewModule` names the hook
-  (below).
+  production), and no `'referer'` in the resolved `previewSignals`. 2.x called
+  this `strict` and could switch it off; 3.0 removed `strict: false`
+  (ADR 0007, row 36), refuses it at startup, and still takes `strict: true`.
+  Astro's `livePreview()` integration builds no per-request policy in
+  `mode: 'inline'` or `'loader'`, which inject at build time; `'middleware'`
+  refuses to start unless `authorizePreviewModule` names the hook (below).
 - `authorizePreview` runs on requests carrying preview intent. Only a context
   produced by `authorizePreviewRequest()` authorizes; anything else — a
   `{ authorized: true }` literal, an unfrozen copy, `null` — refuses, and a refusal
@@ -183,13 +185,13 @@ Notes on the rows that need one:
   request. `authorizePreview` and `shouldInject` are functions that would have
   to run on one, so both modes refuse them at startup, as they refuse
   `authorizePreviewModule`, and the message names where they can run. The
-  options that only describe a request (`strict`, `previewSignals`,
+  options that only describe a request (`previewSignals`,
   `previewQueryParams`, `inject` and the CSP options) are accepted and have no
   effect there, so one options object can be shared. `'middleware'` registers
   the request-time middleware from serialized options, so it cannot carry
   `authorizePreview` or `shouldInject` as functions either. It takes the hook
-  by module reference instead, `authorizePreviewModule`, and refuses the
-  `strict` default without one; register `createLivePreviewMiddleware()`
+  by module reference instead, `authorizePreviewModule`, and refuses to start
+  without one; register `createLivePreviewMiddleware()`
   yourself for `shouldInject`. The loader asset's caching and CSP are in
   [docs/deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 - `authorizePreviewModule` (Astro `mode: 'middleware'`, the Nuxt module): a
@@ -489,8 +491,7 @@ bare id never reaches the page. One consequence worth knowing: on a page that
 reads no populated value, an `afterRead` hook that rewrites a scalar no longer
 reaches the preview between saves. `mergeDepth` has no default: every
 adapter, `generateInlineScript()` and `LivePreviewClient` throw when
-`serverURL` is set without it (`0` means no population), and `defaults: 'v1'`
-restores the 1.x default of `1`. The depth must match the `depth` of the
+`serverURL` is set without it (`0` means no population). The depth must match the `depth` of the
 initial page fetch, or nested relationships that were objects on first load
 degrade to ids after the first edit. `definePreview({ serverURL, depth })`
 binds both once: where the browser reaches Payload at the same origin as your

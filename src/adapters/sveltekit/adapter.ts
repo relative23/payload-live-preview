@@ -65,7 +65,7 @@ export function livePreviewHandle(options: LivePreviewSvelteKitOptions = {}): Sv
   return async ({ event, resolve }) => {
     const request = previewRequest(event);
     const nonce = policy.nonce();
-    const decision = await policy.decide(request, bindDecisionHooks(policy, options, request));
+    const decision = await policy.decide(request, bindDecisionHooks(options, request));
     exposeDecision(event.locals, decision, nonce);
     const transform = decision.inject ? chunk(policy, nonce) : undefined;
     const response = await resolve(

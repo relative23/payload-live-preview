@@ -214,7 +214,7 @@ export type CustomRendererKey = `${string}:${string}`;
 export const debugPlugin: LivePreviewPlugin;
 
 // @public
-export type DefaultsProfile = 'v1' | 'v2';
+export type DefaultsProfile = 'v2';
 
 // @internal (undocumented)
 export function detectInitialLocale(): string;

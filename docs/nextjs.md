@@ -6,7 +6,7 @@ Next.js 15.5 and 16 are tested. The `next-matrix` job installs `next@^15` into [
 
 > A client-rendered React app is better served by the official [`@payloadcms/live-preview-react`](https://payloadcms.com/docs/live-preview/client) hook: it re-renders your real component tree, so conditional sections and custom components update with full fidelity. For React Server Components, Payload's `RefreshRouteOnSave` is the save-triggered equivalent.
 
-Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to, `SITE_ORIGIN` this site's own origin, and `PREVIEW_TOKEN_SECRET` the secret the Payload side shares for signed tokens. Under the strict default a production run needs `PUBLIC_PAYLOAD_ADMIN_ORIGIN` to be an `https:` origin: with `http://localhost:3000`, `next start` answers every route with a 500 that names the rule, while `next dev` accepts it.
+Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to, `SITE_ORIGIN` this site's own origin, and `PREVIEW_TOKEN_SECRET` the secret the Payload side shares for signed tokens. A production run needs `PUBLIC_PAYLOAD_ADMIN_ORIGIN` to be an `https:` origin: with `http://localhost:3000`, `next start` answers every route with a 500 that names the rule, while `next dev` accepts it.
 
 ## Install
 
@@ -229,7 +229,7 @@ import { authorizePreviewRequest } from 'payload-live-preview/server';
 const livePreview = createLivePreviewMiddleware({
   allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
   autoInject: false, // the layout already carries the script
-  // Required under the strict default: without the hook the adapter throws when this module loads.
+  // Required: without the hook the adapter throws when this module loads.
   authorizePreview: (request) =>
     authorizePreviewRequest(request, {
       type: 'payload-session',
@@ -246,7 +246,7 @@ On Next.js 15.5 name the file `middleware.ts` and export the function as
 `middleware`: only Next.js 16 knows the `proxy` name (15.5.28 defines the file
 name `middleware` alone, 16.3.8 both).
 
-The strict default also requires `https:` admin origins in production and no referer trust. The three strategies — `payload-session`, `signed-token`, `verifier` — and what each one binds: [authorization.md](authorization.md).
+The adapter also requires `https:` admin origins in production and no referer trust. The three strategies — `payload-session`, `signed-token`, `verifier` — and what each one binds: [authorization.md](authorization.md).
 
 ## The decision in a page
 

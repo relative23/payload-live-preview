@@ -9,9 +9,9 @@
  * path and the next few minutes. Everything else is a public response,
  * byte for byte.
  *
- * `defaults: 'v2'` implies `strict`: the handle refuses to start without the
- * hook and requires https admin origins outside development; the example
- * runs under `vite dev`, where http://localhost is allowed.
+ * The handle refuses to start without the hook and requires https admin
+ * origins outside development; the example runs under `vite dev`, where
+ * http://localhost is allowed.
  *
  * Two handles, differing in one option. Everything is delivered inline except
  * `/asset`, which carries the bootstrap and fetches the runtime from
@@ -45,10 +45,9 @@ const options = {
   // Server-rendered boundaries: /hybrid marks one, every other route has none
   // and is patched as before. Exercised by sveltekit-fragment.spec.ts.
   fragments: { endpoint: '/payload/fragment' },
-  // Every 2.0 default that exists today (ADR 0007): strict configuration,
-  // query-only intent, no referrer trust, updates only from the window that
-  // framed or opened the page, unchanged bindings skipped.
-  defaults: 'v2',
+  // The defaults (ADR 0007) apply to the rest: query-only intent, no referrer
+  // trust, updates only from the window that framed or opened the page,
+  // unchanged bindings skipped.
   // Against a real Payload admin (tests/real-payload) the editor's own session
   // reaches this site, so the documented `payload-session` strategy applies.
   authorizePreview: (request: Request) =>

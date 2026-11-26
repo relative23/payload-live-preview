@@ -93,7 +93,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+120/+186 B; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3199/-2596 B; prior reserves kept.
   // 2026-11-26 (3.0, the 2.x aliases leave, ADR 0007 rows 1, 13, 16, 19, 20, 24 and 32): paired Node24.22.3/npm12.0.2; -548/-221/-210 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 212_001, gzip: 66_444, brotli: 56_714 },
+  // 2026-11-27 (3.0, no response on intent alone: the 1.x profile and strict: false leave, ADR 0007 rows 21 and 36): paired Node24.22.3/npm12.0.2; -1240/-428/-340 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 210_761, gzip: 66_016, brotli: 56_374 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -150,7 +151,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+116/+44 B; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3187/-2628 B; prior reserves kept.
   // 2026-11-26 (3.0, the 2.x aliases leave, ADR 0007 rows 1, 13, 16, 19, 20, 24 and 32): paired Node24.22.3/npm12.0.2; -358/-133/-119 B; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 186_440, gzip: 58_457, brotli: 49_577 },
+  // 2026-11-27 (3.0, no response on intent alone: the 1.x profile and strict: false leave, ADR 0007 rows 21 and 36): paired Node24.22.3/npm12.0.2; -1053/-346/-252 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 185_387, gzip: 58_111, brotli: 49_325 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -246,7 +248,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+116/+99 B; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3184/-2593 B; prior reserves kept.
   // 2026-11-26 (3.0, the 2.x aliases leave, ADR 0007 rows 1, 13, 16, 19, 20, 24 and 32): paired Node24.22.3/npm12.0.2; -563/-256/-141 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 205_917, gzip: 64_658, brotli: 55_103 },
+  // 2026-11-27 (3.0, no response on intent alone: the 1.x profile and strict: false leave, ADR 0007 rows 21 and 36): paired Node24.22.3/npm12.0.2; -1052/-347/-342 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 204_865, gzip: 64_311, brotli: 54_761 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -384,7 +387,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+116/+34 B; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3174/-2710 B; prior reserves kept.
   // 2026-11-26 (3.0, the 2.x aliases leave, ADR 0007 rows 1, 13, 16, 19, 20, 24 and 32): paired Node24.22.3/npm12.0.2; -339/-146/-19 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 205_873, gzip: 64_676, brotli: 54_988 },
+  // 2026-11-27 (3.0, no response on intent alone: the 1.x profile and strict: false leave, ADR 0007 rows 21 and 36): paired Node24.22.3/npm12.0.2; -1046/-330/-291 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 204_827, gzip: 64_346, brotli: 54_697 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -447,5 +451,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-24 (each strict refusal names its remedy, and that the 1.x profile ends with 3.0): paired Node22.23.2/zlib1.3.1; +338/+119/+150 B; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9904/-3183/-2610 B; prior reserves kept.
   // 2026-11-26 (3.0, the 2.x aliases leave, ADR 0007 rows 1, 13, 16, 19, 20, 24 and 32): paired Node24.22.3/npm12.0.2; -338/-148/-150 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 204_956, gzip: 64_367, brotli: 54_912 },
+  // 2026-11-27 (3.0, no response on intent alone: the 1.x profile and strict: false leave, ADR 0007 rows 21 and 36): paired Node24.22.3/npm12.0.2; -1050/-332/-278 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 203_906, gzip: 64_035, brotli: 54_634 },
 };

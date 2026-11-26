@@ -197,14 +197,6 @@ describe('generateInlineScript', () => {
     expect(() =>
       generateLoaderScript({ serverURL: 'https://cms.example.com' }, { runtimeSrc: '/x.js' }),
     ).toThrow(/mergeDepth/u);
-    const v1 = generatedConfig(
-      generateInlineScript({ serverURL: 'https://cms.example.com', defaults: 'v1' }),
-    );
-    // Until Z37 this tuple had two elements — `defaults` was no wire slot, so a
-    // `'v1'` page ran the 2.0 rows. The omitted depth still falls to the runtime's 1.
-    expect(v1[1]).toBe('https://cms.example.com');
-    expect(v1[3]).toBeUndefined();
-    expect(v1.at(-1)).toBe('v1');
   });
 
   it('treats null like an omitted option', () => {
@@ -258,7 +250,6 @@ describe('generateInlineScript', () => {
     expect(slot).toBe(24);
     expect(generatedConfig(generateInlineScript())[slot]).toBe('v2');
     expect(generatedConfig(generateInlineScript({ defaults: 'v2' }))[slot]).toBe('v2');
-    expect(generatedConfig(generateInlineScript({ defaults: 'v1' }))[slot]).toBe('v1');
   });
 
   it('appends soft-navigation events without shifting the defaults slot', () => {
@@ -269,27 +260,23 @@ describe('generateInlineScript', () => {
     expect(config[25]).toEqual(['astro:page-load']);
   });
 
-  it("writes the 1.x runtime rows under `defaults: 'v1'`: the runtime's own fallbacks are the 2.0 ones", () => {
-    // Measured before Z37: `{ defaults: 'v1' }` wrote `[]`, the bytes of the
-    // 2.0 default, so the page ran the strict rows it had opted out of.
+  it('writes a row only where it was given: the runtime already defaults to the table', () => {
     const row = (config: unknown[], key: (typeof INLINE_CONFIG_KEYS)[number]): unknown =>
       config[INLINE_CONFIG_KEYS.indexOf(key)];
-    const v1 = generatedConfig(generateInlineScript({ defaults: 'v1' }));
-    expect(row(v1, 'disableReferrerDetection')).toBe(false);
-    expect(row(v1, 'skipUnchanged')).toBe(false);
-    expect(row(v1, 'eventSourcePolicy')).toBe('any');
-    expect(row(v1, 'sanitizerPolicy')).toBe('compat');
-
-    // An explicit option wins over the profile, `null` included as omitted.
-    const mixed = generatedConfig(
+    // The 1.x rows written out, as `pll migrate` writes them for the removed `defaults: 'v1'`;
+    // `null` counts as omitted.
+    const written = generatedConfig(
       generateInlineScript({
-        defaults: 'v1',
-        sanitizerPolicy: 'strict',
+        disableReferrerDetection: false,
+        eventSourcePolicy: 'any',
+        sanitizerPolicy: 'compat',
         skipUnchanged: null,
       } as unknown as InlineScriptConfig),
     );
-    expect(row(mixed, 'sanitizerPolicy')).toBe('strict');
-    expect(row(mixed, 'skipUnchanged')).toBe(false);
+    expect(row(written, 'disableReferrerDetection')).toBe(false);
+    expect(row(written, 'eventSourcePolicy')).toBe('any');
+    expect(row(written, 'sanitizerPolicy')).toBe('compat');
+    expect(row(written, 'skipUnchanged')).toBeUndefined();
 
     // The 2.0 rows stay off the wire: the runtime already defaults to them.
     expect(
@@ -310,13 +297,9 @@ describe('generateInlineScript', () => {
         { hydration: 'react' },
         { runtimeSrc: '/runtime.js' },
       ),
-      "loader, `defaults: 'v1'`": generateLoaderScript(
-        { defaults: 'v1' },
-        { runtimeSrc: '/runtime.js' },
-      ),
     };
     for (const [path, script] of Object.entries(paths)) {
-      expect(generatedConfig(script).at(-1), path).toBe(path.includes("'v1'") ? 'v1' : 'v2');
+      expect(generatedConfig(script).at(-1), path).toBe('v2');
     }
   });
 

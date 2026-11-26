@@ -5,6 +5,7 @@ import {
   NONCE_LOCALS_KEY,
   renderLivePreviewScript,
 } from '@adapters/astro/index';
+import { AUTHORIZED, authorizeAll } from './authorize-all';
 
 const ADMIN = 'https://admin.example.com';
 
@@ -23,7 +24,7 @@ function htmlResponse(html: string, status = 200): Response {
 
 describe('createLivePreviewMiddleware', () => {
   it('writes a nonce to locals on every request', async () => {
-    const middleware = createLivePreviewMiddleware({ defaults: 'v1' });
+    const middleware = createLivePreviewMiddleware({ ...AUTHORIZED });
     const ctx = plain();
     await middleware(ctx, () => Promise.resolve(htmlResponse('<html><head></head></html>')));
     expect(typeof ctx.locals[NONCE_LOCALS_KEY]).toBe('string');
@@ -31,7 +32,7 @@ describe('createLivePreviewMiddleware', () => {
   });
 
   it('skips prerendered contexts entirely (Astro 5 build-time middleware)', async () => {
-    const middleware = createLivePreviewMiddleware({ defaults: 'v1' });
+    const middleware = createLivePreviewMiddleware({ ...AUTHORIZED });
     const ctx = { ...preview(), isPrerendered: true };
     const original = htmlResponse('<html><head></head></html>');
     const response = await middleware(ctx, () => Promise.resolve(original));
@@ -51,7 +52,7 @@ describe('createLivePreviewMiddleware', () => {
 
   it('adds strict-dynamic only when explicitly requested', async () => {
     const middleware = createLivePreviewMiddleware({
-      defaults: 'v1',
+      ...AUTHORIZED,
       manageCsp: 'full',
       strictDynamic: true,
     });
@@ -62,7 +63,10 @@ describe('createLivePreviewMiddleware', () => {
   });
 
   it('parses CSP ASCII whitespace and ignores duplicate directive relaxations', async () => {
-    const middleware = createLivePreviewMiddleware({ defaults: 'v1', allowedOrigins: [ADMIN] });
+    const middleware = createLivePreviewMiddleware({
+      authorizePreview: authorizeAll,
+      allowedOrigins: [ADMIN],
+    });
     const response = await middleware(preview(), () =>
       Promise.resolve(
         new Response('<html><head></head></html>', {
@@ -80,7 +84,7 @@ describe('createLivePreviewMiddleware', () => {
   });
 
   it('skips injection for fragment responses without a <head> (server islands)', async () => {
-    const middleware = createLivePreviewMiddleware({ defaults: 'v1' });
+    const middleware = createLivePreviewMiddleware({ ...AUTHORIZED });
     const response = await middleware(preview(), () => Promise.resolve(htmlResponse('<p>x</p>')));
     const body = await response.text();
     expect(body).not.toContain('<script');
@@ -88,7 +92,10 @@ describe('createLivePreviewMiddleware', () => {
   });
 
   it.each([[304], [204]])('passes a %d response through untouched', async (status) => {
-    const middleware = createLivePreviewMiddleware({ defaults: 'v1', allowedOrigins: [ADMIN] });
+    const middleware = createLivePreviewMiddleware({
+      authorizePreview: authorizeAll,
+      allowedOrigins: [ADMIN],
+    });
     const original = new Response(null, { status, headers: { 'content-type': 'text/html' } });
     const response = await middleware(preview(), () => Promise.resolve(original));
     expect(response.status).toBe(status);
@@ -97,7 +104,7 @@ describe('createLivePreviewMiddleware', () => {
   });
 
   it('drops content-encoding and etag with content-length after injecting', async () => {
-    const middleware = createLivePreviewMiddleware({ defaults: 'v1' });
+    const middleware = createLivePreviewMiddleware({ ...AUTHORIZED });
     const response = await middleware(preview(), () =>
       Promise.resolve(
         new Response('<html><head></head></html>', {
@@ -118,7 +125,7 @@ describe('createLivePreviewMiddleware', () => {
 
   it('survives responses with immutable headers', async () => {
     const middleware = createLivePreviewMiddleware({
-      defaults: 'v1',
+      authorizePreview: authorizeAll,
       allowedOrigins: [ADMIN],
       autoInject: false,
     });

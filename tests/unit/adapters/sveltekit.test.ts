@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { livePreviewHandle } from '@adapters/sveltekit/index';
 import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
+import { AUTHORIZED, authorizeAll } from './authorize-all';
 
 /** The fake `resolve` applies `transformPageChunk` the way SvelteKit does: chunk by chunk, `|| ''`. */
 
@@ -48,7 +49,7 @@ const SOFT_NAVIGATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('softNavigationEve
 
 describe('what the SvelteKit adapter knows about the page', () => {
   it('listens for the package navigation event in injected pages', async () => {
-    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
+    const response = await livePreviewHandle({ ...AUTHORIZED, inject: 'always' })({
       event: event(),
       resolve: makeResolve([PAGE]),
     });
@@ -61,7 +62,7 @@ describe('what the SvelteKit adapter knows about the page', () => {
 
 describe('livePreviewHandle — the nonce contract', () => {
   it('writes a nonce to locals on every request, preview or not', async () => {
-    const handle = livePreviewHandle({ defaults: 'v1', allowedOrigins: [ADMIN] });
+    const handle = livePreviewHandle({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] });
     const plain = event();
     await handle({ event: plain, resolve: makeResolve([PAGE]) });
     expect(typeof plain.locals['livePreviewNonce']).toBe('string');
@@ -69,7 +70,7 @@ describe('livePreviewHandle — the nonce contract', () => {
   });
 
   it('issues a different nonce per request', async () => {
-    const handle = livePreviewHandle({ defaults: 'v1', allowedOrigins: [ADMIN] });
+    const handle = livePreviewHandle({ authorizePreview: authorizeAll, allowedOrigins: [ADMIN] });
     const a = event();
     const b = event();
     await handle({ event: a, resolve: makeResolve([PAGE]) });
@@ -80,7 +81,7 @@ describe('livePreviewHandle — the nonce contract', () => {
 
 describe('livePreviewHandle — when it injects', () => {
   it('injects exactly once when the page arrives as several chunks', async () => {
-    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
+    const response = await livePreviewHandle({ ...AUTHORIZED, inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<html><head>', '</head><body>', 'hi</body></html>']),
     });
@@ -91,7 +92,7 @@ describe('livePreviewHandle — when it injects', () => {
   });
 
   it('inserts after <meta charset> so the encoding stays inside the prescan window', async () => {
-    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
+    const response = await livePreviewHandle({ ...AUTHORIZED, inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<html><head><meta charset="utf-8" /><title>t</title></head></html>']),
     });
@@ -105,7 +106,7 @@ describe('livePreviewHandle — chunks it must leave alone', () => {
   it('returns a chunk without a <head> unchanged, never as the empty string', async () => {
     // Every streamed chunk after the first has no head; SvelteKit turns a
     // falsy return into '', which would blank the rest of the page.
-    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
+    const response = await livePreviewHandle({ ...AUTHORIZED, inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<div>fragment only</div>']),
     });
@@ -113,7 +114,7 @@ describe('livePreviewHandle — chunks it must leave alone', () => {
   });
 
   it('keeps every later chunk of a streamed page', async () => {
-    const response = await livePreviewHandle({ defaults: 'v1', inject: 'always' })({
+    const response = await livePreviewHandle({ ...AUTHORIZED, inject: 'always' })({
       event: event(),
       resolve: makeResolve(['<html><head></head>', '<body>a</body>', '</html>']),
     });
@@ -141,7 +142,7 @@ describe('livePreviewHandle — a runtime that refuses header mutation', () => {
 
   it('falls back to a fresh response instead of throwing', async () => {
     const response = await livePreviewHandle({
-      defaults: 'v1',
+      authorizePreview: authorizeAll,
       inject: 'always',
       allowedOrigins: [ADMIN],
     })({ event: event(), resolve: frozen(['<p>body</p>']) });

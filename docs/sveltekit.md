@@ -40,14 +40,14 @@ export const handle = livePreviewHandle({
   // Payload 3.x: re-fetch the populated document; mergeDepth is required with serverURL.
   serverURL: PAYLOAD_ADMIN_ORIGIN,
   mergeDepth: 1,
-  // Required under the strict default: without the hook the handle refuses to
+  // Required: without the hook the handle refuses to
   // start, and every route fails, not only the preview.
   authorizePreview: (request) =>
     authorizePreviewRequest(request, { type: 'payload-session', serverURL: PAYLOAD_URL }),
 });
 ```
 
-Compose it with `sequence()` next to other hooks; it never short-circuits the chain. `authorizePreview` runs on requests carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true` or `1`); a refusal leaves the response exactly as rendered. The strict default also requires `https:` admin origins in production and no referer trust. The three strategies and what each one binds: [authorization.md](authorization.md).
+Compose it with `sequence()` next to other hooks; it never short-circuits the chain. `authorizePreview` runs on requests carrying preview intent (the query parameter `preview`, `draft` or `livePreview` set to `true` or `1`); a refusal leaves the response exactly as rendered. The handle also requires `https:` admin origins in production and no referer trust. The three strategies and what each one binds: [authorization.md](authorization.md).
 
 ## The runtime as a cached asset
 

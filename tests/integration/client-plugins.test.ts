@@ -7,7 +7,7 @@ import {
   preparePreviewPage,
   restorePreviewPage,
   settlesWithinMicrotaskDrain,
-  v1Config,
+  pipelineConfig,
 } from './client-harness';
 
 beforeEach(preparePreviewPage);
@@ -15,7 +15,7 @@ afterEach(restorePreviewPage);
 
 describe('LivePreviewClient — what a plugin is given', () => {
   it('hands a plugin the configuration the client was built with, frozen', async () => {
-    const client = new LivePreviewClient(v1Config({ intersectionRootMargin: '64px' }));
+    const client = new LivePreviewClient(pipelineConfig({ intersectionRootMargin: '64px' }));
     let seen: Readonly<Record<string, unknown>> | undefined;
 
     try {
@@ -35,7 +35,7 @@ describe('LivePreviewClient — what a plugin is given', () => {
 
   it('reports a transform that throws as LP0602 and writes the value as it came', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const errors: {
       readonly code: unknown;
       readonly context: unknown;
@@ -70,7 +70,7 @@ describe('LivePreviewClient — what a plugin is given', () => {
 describe('LivePreviewClient — renderers from plugins', () => {
   it('ignores a custom renderer false return after a real DOM write', async () => {
     document.body.innerHTML = '<div data-payload-field="value" data-payload-type="text"></div>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     await client.use({
       name: 'boolean-returning-renderer',
       init: (context) => {
@@ -102,7 +102,7 @@ describe('LivePreviewClient — renderers from plugins', () => {
 
   it('honours a plugin renderer override', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     await client.use({
       name: 'upper',
       init: (ctx) => {
@@ -122,7 +122,7 @@ describe('LivePreviewClient — renderers from plugins', () => {
 
   it('restores the previous renderer layer and then the built-in renderer on unuse', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     try {
       await client.use({
         name: 'renderer-a',
@@ -164,7 +164,7 @@ describe('LivePreviewClient — renderers from plugins', () => {
 
   it('keeps the top renderer active when a lower renderer layer is removed', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     try {
       await client.use({
         name: 'lower-renderer',
@@ -204,7 +204,7 @@ describe('LivePreviewClient — renderers from plugins', () => {
 
 describe('LivePreviewClient — nested use and unuse from plugin hooks', () => {
   it('lets a plugin destroy hook await client.unuse for another plugin', async () => {
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const destroyStarted = deferred<undefined>();
     const calls: string[] = [];
     let nestedRemoval: Promise<void> | undefined;
@@ -238,7 +238,7 @@ describe('LivePreviewClient — nested use and unuse from plugin hooks', () => {
   });
 
   it('lets plugin init await client.unuse for its own pending registration', async () => {
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const initStarted = deferred<undefined>();
     let selfRemoval: Promise<void> | undefined;
     const registration = client.use({
@@ -259,7 +259,7 @@ describe('LivePreviewClient — nested use and unuse from plugin hooks', () => {
   });
 
   it('lets plugin init await client.use for another plugin', async () => {
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const initStarted = deferred<undefined>();
     let nestedUse: Promise<void> | undefined;
     const registration = client.use({
@@ -280,7 +280,7 @@ describe('LivePreviewClient — nested use and unuse from plugin hooks', () => {
   });
 
   it('lets plugin destroy await client.use for another plugin during unuse', async () => {
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const destroyStarted = deferred<undefined>();
     let nestedUse: Promise<void> | undefined;
     await client.use({

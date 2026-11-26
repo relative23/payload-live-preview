@@ -22,7 +22,7 @@ neither that line nor the process's command line holds its value
 ## Preview responses and caches
 
 An adapter changes a response only after preview intent held and
-`authorizePreview` — required under the `strict` default — accepted the
+`authorizePreview`, which every such adapter requires, accepted the
 request: it injects the runtime and merges `frame-ancestors` into the CSP.
 Every response it changes is sent with
 
@@ -222,13 +222,14 @@ Web Crypto (`crypto.subtle`), which edge runtimes provide.
 
 Two things behave differently where `process` does not exist:
 
-- **Development warnings are silent.** The one-time warning an adapter prints
-  when it gates on intent alone (`strict: false` without `authorizePreview`)
-  is issued only outside production, which it reads from `process.env.NODE_ENV`.
+- **Development warnings are silent.** The one-time warnings an adapter prints,
+  such as the one for a merge without a deadline, are issued only outside
+  production, which it reads from `process.env.NODE_ENV`.
   Without `process` the environment counts as production and nothing is
   printed.
-- **`strict` treats the runtime as production.** Its `https:` requirement for
-  `allowedOrigins` applies, and an `http:` origin fails at startup.
+- **The startup check treats the runtime as production.** Its `https:`
+  requirement for `allowedOrigins` applies, and an `http:` origin fails at
+  startup.
 
 On Cloudflare Workers the draft read of `definePreview()` sends
 `cache: 'no-store'`, which workerd accepts from compatibility date 2024-11-11,
@@ -395,8 +396,8 @@ major.
 A signed token is `v1.<claims>.<signature>`, with a version field inside the
 claims as well; the verifier refuses any other prefix as `invalid`. Signed
 tokens ship with 2.0, so there is no earlier token format for a 2.0 site to
-accept: an admin still on 1.x mints no token, and a 2.0 adapter under its
-`strict` default refuses the preview request and serves the public page. When
+accept: an admin still on 1.x mints no token, and the adapter refuses the
+preview request and serves the public page. When
 the two deploy separately, deploy the site first, so the verifier is never
 older than the issuer, and run `pll doctor` against a page after each deploy.
 

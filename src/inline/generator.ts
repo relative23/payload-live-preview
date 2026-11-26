@@ -3,10 +3,9 @@
  * places at most one strategy prelude ahead of it.
  */
 
-import { warnChangingDefaults, warnDeprecatedOptions } from '@/types/dev-warning';
+import { warnChangingDefaults } from '@/types/dev-warning';
 import { refuseRemovedOptions } from '@/types/removed-options';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
-import { V1_RUNTIME_DEFAULTS } from '@/types/defaults-profile';
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
 import { FRAGMENT_SOURCE } from './fragment.generated';
 import { ROUTE_SOURCE } from './route.generated';
@@ -26,7 +25,6 @@ function assertBuilt(source: string, artifact: string): void {
 
 /** The inline script body without `<script>` tags; see `wrapWithScriptTag()`. */
 export function generateInlineScript(config: InlineScriptConfig = {}): string {
-  warnDeprecatedOptions({ defaults: config.defaults });
   warnChangingDefaults(config);
   const runtime = runtimeFor(config);
   return [configStatement(config), ...strategyPrelude(config), runtime].join('\n');
@@ -85,7 +83,9 @@ function configStatement(config: InlineScriptConfig): string {
 function buildConfigLiteral(config: InlineScriptConfig): string {
   refuseRemovedOptions(config);
   assertMergeDepthExplicit(config);
-  const profile = profileSlots(config);
+  // Slot 24 names the table an empty slot belongs to, so a reader of the served page, the
+  // doctor among them, knows which generation wrote it (ADR 0007).
+  const profile: Partial<InlineScriptConfig> = { defaults: 'v2' };
   // `null` counts as omitted, and omitted slots stay empty (`[,,1]`): a JSON
   // `null` would bypass the runtime's destructuring defaults. Defaults remains
   // in its established slot 24; later rows are append-only and may be absent.
@@ -117,17 +117,6 @@ function assertSerializable(key: string, value: unknown): void {
     `[live-preview] \`${key}\` is ${String(value)}, which the inline configuration writes as null, ` +
       `so the runtime would never see it. Pass a finite number.${instead}`,
   );
-}
-
-/**
- * What the `defaults` profile puts on the wire. The runtime's own fallbacks are
- * the 2.0 rows, so `'v2'` fills nothing and `'v1'` has to write its four; the
- * profile itself goes into slot 24 either way, so a reader of the served page
- * learns which generation an empty slot belongs to (ADR 0007).
- */
-function profileSlots(config: InlineScriptConfig): Partial<InlineScriptConfig> {
-  const defaults = config.defaults ?? 'v2';
-  return defaults === 'v1' ? { ...V1_RUNTIME_DEFAULTS, defaults } : { defaults };
 }
 
 /** Where the runtime asset lives, and how the browser should verify it. */

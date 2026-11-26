@@ -87,10 +87,17 @@ export function restorePreviewPage(): void {
   vi.useRealTimers();
 }
 
-/** Pinned to v1: these tests exercise the render pipeline, not the 2.0 default flip. */
-export function v1Config(overrides: LivePreviewClientConfig = {}): LivePreviewClientConfig {
+/**
+ * The four runtime rows at their 1.x values, written out as `pll migrate` writes them since 3.0
+ * removed the profile that stood for them: these tests exercise the render pipeline, which
+ * re-applies a repeated value, keeps `id` in rich text and takes a message from jsdom's own window.
+ */
+export function pipelineConfig(overrides: LivePreviewClientConfig = {}): LivePreviewClientConfig {
   return {
-    defaults: 'v1',
+    skipUnchanged: false,
+    disableReferrerDetection: false,
+    eventSourcePolicy: 'any',
+    sanitizerPolicy: 'compat',
     allowedOrigins: [TRUSTED],
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,

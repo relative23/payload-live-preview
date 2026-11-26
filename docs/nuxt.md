@@ -49,7 +49,7 @@ with the type imported from `payload-live-preview/nuxt-module`.
 
 The options are serialized into the generated plugin, so a function cannot travel in them: `authorizePreview` travels by reference instead ([ADR 0024](architecture/0024-authorization-by-module-reference.md)). The plugin imports the module `authorizePreviewModule` names and passes its default export on, so the strict 2.0 default holds. With the reference the module also registers the server handler below, so the decision is made before the app renders and a page reads it on `event.context`, as [Read `event.context`](#read-eventcontext) shows. A path beginning with `./` is relative to the project root and an alias such as `~/` is Nuxt's own: the module writes the file either one names, with its extension, because `nuxt dev` loads the generated plugin as it stands and cannot find a TypeScript file by its bare path (the production build can). A package specifier is passed to Nitro unchanged, and a reference beginning `../` is refused. `shouldInject` has no such reference; a preview that needs it writes the plugin below by hand.
 
-Without either, the strict default refuses to start. It does the same for an `http:` admin origin in a production build (`NODE_ENV=production`): the server stops at startup and the error names the origin, while `nuxt dev` accepts it. `strict: false` then injects on client-controlled intent alone, which is not authorization: anyone who adds the query parameter receives the runtime. The deprecated `defaults: 'v1'` does the same and goes in 3.0 ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)).
+Without either, the server refuses to start. It does the same for an `http:` admin origin in a production build (`NODE_ENV=production`): the server stops at startup and the error names the origin, while `nuxt dev` accepts it. Through 2.x `strict: false` or `defaults: 'v1'` injected on client-controlled intent alone, which is not authorization: anyone who added the query parameter received the runtime. 3.0 removed both, and a module given either refuses to start ([ADR 0026](architecture/0026-deprecations-warn-before-3-0.md)).
 
 ## One options object
 
@@ -65,7 +65,7 @@ export const livePreviewOptions: LivePreviewNuxtOptions = {
   // Payload 3.x: re-fetch the populated document; mergeDepth is required with serverURL.
   serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
   mergeDepth: 1,
-  // Required under the strict default: without the hook the plugin refuses to start.
+  // Required: without the hook the plugin refuses to start.
   authorizePreview: (request) =>
     authorizePreviewRequest(request, {
       type: 'payload-session',
@@ -74,7 +74,7 @@ export const livePreviewOptions: LivePreviewNuxtOptions = {
 };
 ```
 
-The strict default also requires `https:` admin origins in production and no referer trust. The three strategies — `payload-session`, `signed-token`, `verifier` — and what each one binds: [authorization.md](authorization.md).
+The module also requires `https:` admin origins in production and no referer trust. The three strategies — `payload-session`, `signed-token`, `verifier` — and what each one binds: [authorization.md](authorization.md).
 
 ## The Nitro plugin
 
@@ -123,7 +123,7 @@ const asset = createRuntimeAssetRoute(livePreviewOptions);
 export default defineEventHandler((event) => asset(toWebRequest(event)));
 ```
 
-`nuxt.config.ts` then reads `livePreview: livePreviewOptions`; the strict default holds because `authorizePreviewModule` names the hook. A hand-written plugin takes `delivery: 'asset'` in its own options object [above](#one-options-object), and the route is handed that object. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
+`nuxt.config.ts` then reads `livePreview: livePreviewOptions`; the server starts because `authorizePreviewModule` names the hook. A hand-written plugin takes `delivery: 'asset'` in its own options object [above](#one-options-object), and the route is handed that object. The dynamic segment carries the content hash, and the handler answers that one name — a request for any other 404s rather than returning current bytes under an old name, which is what lets the response say `Cache-Control: public, max-age=31536000, immutable`.
 
 Move the route folder and set `assetPath` together if the app is not served from the site root. What a proxy must not do to the file, and why: [deployment.md](deployment.md#the-runtime-as-a-cached-asset).
 
@@ -360,7 +360,7 @@ The callback appends `?preview=true`, a preview intent that authorizes nothing. 
 
 ## Example
 
-[`examples/nuxt-payload`](../examples/nuxt-payload) — the module `payload-live-preview/nuxt-module` on Nuxt 3, with `delivery: 'asset'` and `defaults: 'v1'` against the mock admin and the strict default with `authorizePreviewModule` against a real Payload admin, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
+[`examples/nuxt-payload`](../examples/nuxt-payload) — the module `payload-live-preview/nuxt-module` on Nuxt 3, with `delivery: 'asset'` and `authorizePreviewModule`: the hook verifies the mock admin's session cookie or the route token of the framed URL, and against a real Payload admin the editor's own session, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
 
 ## When something does not update
 

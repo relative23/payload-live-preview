@@ -36,7 +36,7 @@ function makeLoaderContext(base?: string) {
 
 function setup(options: Parameters<typeof livePreview>[0], base?: string) {
   const ctx = makeLoaderContext(base);
-  livePreview({ defaults: 'v1', mode: 'loader', ...options }).hooks['astro:config:setup'](ctx);
+  livePreview({ mode: 'loader', ...options }).hooks['astro:config:setup'](ctx);
   const injected = (ctx.injectScript.mock.calls[0]?.[1] as string | undefined) ?? '';
   return { ctx, injected, urlPath: RUNTIME_PATH.exec(injected)?.[1] };
 }
@@ -134,7 +134,7 @@ describe('livePreview integration — loader mode', () => {
   it('refuses loudly when Astro cannot publish the asset', () => {
     // Without updateConfig the bootstrap would point at a URL that 404s only in a preview.
     expect(() =>
-      livePreview({ defaults: 'v1', mode: 'loader' }).hooks['astro:config:setup']({
+      livePreview({ mode: 'loader' }).hooks['astro:config:setup']({
         injectScript: vi.fn(),
       }),
     ).toThrow(/updateConfig/u);
@@ -154,7 +154,7 @@ describe('livePreview integration — loader mode', () => {
 
   it('registers no asset plugin in the default inline mode', () => {
     const ctx = makeLoaderContext();
-    livePreview({ defaults: 'v1' }).hooks['astro:config:setup'](ctx);
+    livePreview({}).hooks['astro:config:setup'](ctx);
     expect(ctx.plugins).toEqual([]);
   });
 });

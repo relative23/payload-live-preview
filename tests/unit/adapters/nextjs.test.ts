@@ -9,6 +9,7 @@ import { scriptElementProps } from '@adapters/nextjs/script-element';
 import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
 import { resetDevWarnings } from '@/types/dev-warning';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
+import { AUTHORIZED, authorizeAll } from './authorize-all';
 
 const ADMIN = 'https://admin.example.com';
 
@@ -30,7 +31,7 @@ function request(url = 'https://site.example.com/', headers: Record<string, stri
   return new Request(url, { headers });
 }
 
-const always = () => createLivePreviewMiddleware({ defaults: 'v1', inject: 'always' });
+const always = () => createLivePreviewMiddleware({ ...AUTHORIZED, inject: 'always' });
 
 /** The positional literal the runtime destructures, read back the way the generator test reads it. */
 function wireConfig(script: string): unknown[] {
@@ -198,23 +199,26 @@ describe('createLivePreviewMiddleware — responses it must not corrupt', () => 
 
   it('returns the response object itself when it changes nothing', async () => {
     const response = htmlResponse();
-    const plain = await createLivePreviewMiddleware({ defaults: 'v1' })(request(), response);
+    const plain = await createLivePreviewMiddleware({ ...AUTHORIZED })(request(), response);
     expect(plain).toBe(response);
     const untouched = await createLivePreviewMiddleware({
-      defaults: 'v1',
+      ...AUTHORIZED,
       inject: 'always',
       autoInject: false,
       manageCsp: false,
     })(request(), response);
     expect(untouched).toBe(response);
-    expect(untouched.headers.get('cache-control')).toBeNull();
+    // The body and the policy stay as they were. An authorized preview is marked private all the
+    // same: a shared cache must not keep what only an editor may see.
+    expect(untouched.headers.get('cache-control')).toBe('private, no-store');
+    expect(untouched.headers.get('content-security-policy')).toBeNull();
   });
 });
 
 describe('createLivePreviewMiddleware — the nonce', () => {
   it('never travels through a response header; the tag and script-src share one value', async () => {
     const middleware = createLivePreviewMiddleware({
-      defaults: 'v1',
+      ...AUTHORIZED,
       inject: 'always',
       manageCsp: 'full',
     });
@@ -227,7 +231,7 @@ describe('createLivePreviewMiddleware — the nonce', () => {
 
   it('ignores a nonce header an upstream response tries to smuggle in', async () => {
     const middleware = createLivePreviewMiddleware({
-      defaults: 'v1',
+      ...AUTHORIZED,
       inject: 'always',
       manageCsp: 'full',
     });
@@ -255,7 +259,7 @@ describe('createLivePreviewMiddleware — a full CSP with nothing to carry its n
 
   const full = (extra: { readonly autoInject?: boolean } = {}) =>
     createLivePreviewMiddleware({
-      defaults: 'v1',
+      authorizePreview: authorizeAll,
       inject: 'always',
       allowedOrigins: [ADMIN],
       manageCsp: 'full',
@@ -325,7 +329,7 @@ describe('createLivePreviewMiddleware — a runtime that refuses header mutation
 
   it('falls back to a fresh response instead of throwing', async () => {
     const middleware = createLivePreviewMiddleware({
-      defaults: 'v1',
+      authorizePreview: authorizeAll,
       inject: 'always',
       autoInject: false,
       allowedOrigins: [ADMIN],

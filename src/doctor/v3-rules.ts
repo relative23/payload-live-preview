@@ -20,8 +20,8 @@ export interface PackageCall {
 
 export interface V3Rule {
   readonly id: string;
-  /** The ledger row; `undefined` for an option the ledger has no row for. */
-  readonly row: number | undefined;
+  /** The ledger row. */
+  readonly row: number;
   /** What changes, as one line. */
   readonly title: string;
   /** What to write at the call. */
@@ -121,7 +121,7 @@ const RULES: readonly Rule[] = [
     row: 21,
     title: "`defaults: 'v1'`, the 1.x profile, is removed",
     remedy:
-      '`pll migrate <path> --only expand-defaults-v1 --write` writes the rows it stands for into the options.',
+      "`pll migrate <path> --only expand-defaults-v1 --write` writes the rows it stood for into the options, without `strict: false` and the 'referer' signal, which 3.0 cannot keep.",
     judge: (call) => (setup(call)?.options?.keys.get('defaults') === 'v1' ? 'changes' : undefined),
   },
   {
@@ -208,15 +208,14 @@ const RULES: readonly Rule[] = [
   },
   {
     id: 'strict-false',
-    row: undefined,
-    title:
-      '`strict: false` gates response changes on intent alone, in production too; the ledger has no row for it yet',
+    row: 36,
+    title: '`strict: false`, which gated response changes on intent alone, is removed',
     remedy: 'Remove it and pass `authorizePreview` and `allowedOrigins`.',
     judge: (call) => (setup(call)?.options?.keys.get('strict') === false ? 'changes' : undefined),
   },
 ];
 
-/** The rules in the order a report names them: by ledger row, then what has none. */
+/** The rules in the order a report names them: by ledger row. */
 export const V3_RULES: readonly V3Rule[] = RULES;
 
 /** What each rule says about one call, for the rules that say something. */

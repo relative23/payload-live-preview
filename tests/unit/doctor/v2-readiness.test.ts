@@ -40,6 +40,21 @@ const FROM_1_8_1 = Object.freeze({
   referrerOff: 'var __LIVE_PREVIEW_CONFIG__=[["https://cms.example.com"],,,,,,,,,,,true];',
 });
 
+/**
+ * What a 2.5.0 generator writes under `defaults: 'v1'`, byte for byte: the first line of
+ * `generateInlineScript()` from the published tarball (`payload-live-preview@2.5.0`,
+ * `sha512-ops4wZpql…4XN3Fw==`). 3.0 removed the profile and writes no such page; the doctor
+ * still reads one that 2.x served.
+ */
+const FROM_2_5_0_V1 = Object.freeze({
+  /** `{ allowedOrigins: ['https://cms.example.com'], defaults: 'v1' }` */
+  plain:
+    'var __LIVE_PREVIEW_CONFIG__=[["https://cms.example.com"],,,,,,,,,,,false,,,false,"any","compat",,,,,,,,"v1"];',
+  /** The same with `sanitizerPolicy: 'strict'`. */
+  sanitizerStrict:
+    'var __LIVE_PREVIEW_CONFIG__=[["https://cms.example.com"],,,,,,,,,,,false,,,false,"any","strict",,,,,,,,"v1"];',
+});
+
 describe('readInlineConfig', () => {
   it('reads what the generator writes, holes and all', () => {
     const inline = generateInlineScript({
@@ -118,33 +133,19 @@ describe('analyzeV2Readiness', () => {
     expect(findings[0]?.remedy).toContain("`sanitizerPolicy: 'compat'`");
   });
 
-  it("flags every runtime row under `defaults: 'v1'`, and names the profile as the way out", () => {
-    const direct = analyzeV2Readiness(
-      probe(generateInlineScript({ allowedOrigins: [CMS], defaults: 'v1' })),
-    );
-    const adapter = analyzeV2Readiness(
-      probe(
-        scriptElementProps({ allowedOrigins: [CMS], defaults: 'v1' }).dangerouslySetInnerHTML
-          .__html,
-      ),
-    );
-    for (const findings of [direct, adapter]) {
-      expect(findings).toHaveLength(4);
-      expect(warnings(findings)).toEqual(EVERY_ROW);
-      for (const finding of findings) {
-        expect(finding.remedy).toContain("drop `defaults: 'v1'`");
-        // ADR 0026: the profile goes in 3.0, and the codemod writes it out row by row.
-        expect(finding.remedy).toMatch(/3\.0 removes the profile.*`pll migrate`/u);
-      }
+  it("flags every runtime row of a page 2.x served under `defaults: 'v1'`, and names the profile as the way out", () => {
+    const findings = analyzeV2Readiness(probe(FROM_2_5_0_V1.plain));
+
+    expect(findings).toHaveLength(4);
+    expect(warnings(findings)).toEqual(EVERY_ROW);
+    for (const finding of findings) {
+      expect(finding.remedy).toContain("drop `defaults: 'v1'`");
+      // ADR 0026: the profile went in 3.0, and the codemod writes it out row by row.
+      expect(finding.remedy).toMatch(/3\.0 removed the profile.*`pll migrate`/u);
     }
 
-    // An explicit option still wins over the profile, and its row is not flagged.
-    const oneRowAhead = generateInlineScript({
-      allowedOrigins: [CMS],
-      defaults: 'v1',
-      sanitizerPolicy: 'strict',
-    });
-    expect(warnings(analyzeV2Readiness(probe(oneRowAhead)))).toEqual(
+    // An explicit option won over the profile, and its row is not flagged.
+    expect(warnings(analyzeV2Readiness(probe(FROM_2_5_0_V1.sanitizerStrict)))).toEqual(
       EVERY_ROW.filter((title) => title !== 'Sanitizer is in compat mode'),
     );
   });
@@ -294,7 +295,7 @@ describe('the words of each LP0709 row', () => {
         detail: `${key} is ${v1}: ${effect} The script was generated with \`defaults: 'v1'\`.`,
         remedy:
           `Set \`${key}: ${v2}\` or drop \`defaults: 'v1'\` once ${condition}. ` +
-          '3.0 removes the profile; `pll migrate` writes its rows out, so each can go on its own.',
+          '3.0 removed the profile; `pll migrate` writes its rows out, so each can go on its own.',
       })),
     );
   });

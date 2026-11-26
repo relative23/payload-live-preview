@@ -41,7 +41,7 @@ describe('migrateSource', () => {
       "definePreview({ serverURL: env.CMS, depth: 1 }).fetchGlobal({ global: 'site', authorization })",
     );
     expect(once.output).toContain(
-      "livePreview({ strict: false, previewSignals: ['query', 'fetch-dest', 'referer'], " +
+      "livePreview({ previewSignals: ['query', 'fetch-dest'], " +
         "disableReferrerDetection: false, eventSourcePolicy: 'any', skipUnchanged: false, " +
         "sanitizerPolicy: 'compat', onUnfaithfulPatch: 'escalate' })",
     );

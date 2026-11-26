@@ -7,10 +7,13 @@
  * back to parsing its raw source, choked on `import type {`, and dropped the
  * file from coverage with a warning nobody reads.
  */
+import { authorizePreviewRequest } from '@security/preview-authorization';
+
 export default {
-  // v1 so the entry builds without an authorizePreview hook (2.0 strict-default
-  // would otherwise refuse); the flip itself is covered by the policy suites.
-  defaults: 'v1',
   allowedOrigins: ['https://admin.example.com'],
   inject: 'always',
+  // The integration writes the hook into the real module from `authorizePreviewModule`;
+  // a verifier that authorizes stands in for it.
+  authorizePreview: (request: Request) =>
+    authorizePreviewRequest(request, { type: 'verifier', verify: () => ({ subject: 'editor' }) }),
 } as const;

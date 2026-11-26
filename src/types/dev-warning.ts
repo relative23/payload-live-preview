@@ -32,21 +32,6 @@ export function warnOnce(key: string, message: string): void {
 }
 
 /**
- * The deprecated option the adapters and the inline generator both accept;
- * an adapter hands it on to the generator, and the shared key keeps that to
- * one warning (ADR 0026).
- */
-export function warnDeprecatedOptions(options: { readonly defaults?: string | undefined }): void {
-  if (options.defaults === 'v1') {
-    warnOnce(
-      'defaults-v1',
-      "`defaults: 'v1'` is removed in 3.0: `pll migrate` writes the 1.x rows it stands for " +
-        'into your options, where they keep working (ADR 0026).',
-    );
-  }
-}
-
-/**
  * The adapter and generator options whose 2.x default 3.0 changes, said once
  * per process in development (ADR 0026, 2026-11-03). A browser-only client
  * hears nothing, as for the removals above.

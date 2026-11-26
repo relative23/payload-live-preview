@@ -28,7 +28,7 @@ describe('livePreview integration — inline mode', () => {
 
   it('injects the script via head-inline by default', () => {
     const injectScript = vi.fn();
-    livePreview({ defaults: 'v1', allowedOrigins: [ADMIN] }).hooks['astro:config:setup']({
+    livePreview({ allowedOrigins: [ADMIN] }).hooks['astro:config:setup']({
       injectScript,
     });
     expect(injectScript).toHaveBeenCalledOnce();
@@ -40,7 +40,7 @@ describe('livePreview integration — inline mode', () => {
 
   it('honours autoInject: false', () => {
     const injectScript = vi.fn();
-    livePreview({ defaults: 'v1', autoInject: false }).hooks['astro:config:setup']({
+    livePreview({ autoInject: false }).hooks['astro:config:setup']({
       injectScript,
     });
     expect(injectScript).not.toHaveBeenCalled();
@@ -48,9 +48,9 @@ describe('livePreview integration — inline mode', () => {
 
   it('forwards debounce, heartbeat, and debug options into the injected script', () => {
     const injectScript = vi.fn();
-    livePreview({ defaults: 'v1', debug: true, debounceMs: 250, heartbeatMs: 60_000 }).hooks[
-      'astro:config:setup'
-    ]({ injectScript });
+    livePreview({ debug: true, debounceMs: 250, heartbeatMs: 60_000 }).hooks['astro:config:setup']({
+      injectScript,
+    });
     const config = injectedConfig(injectScript.mock.calls[0]![1] as string);
     expect(config[4]).toBe(true);
     expect(config[5]).toBe(250);
@@ -59,7 +59,7 @@ describe('livePreview integration — inline mode', () => {
 
   it('forwards skipUnchanged into the trailing wire slot', () => {
     const injectScript = vi.fn();
-    livePreview({ defaults: 'v1', skipUnchanged: true }).hooks['astro:config:setup']({
+    livePreview({ skipUnchanged: true }).hooks['astro:config:setup']({
       injectScript,
     });
     expect(injectedConfig(injectScript.mock.calls[0]![1] as string)[14]).toBe(true);
@@ -76,7 +76,6 @@ describe('livePreview integration — inline mode', () => {
     expect(hook({ serverURL: 'https://cms.example.com' })).toThrow(/mergeDepth/u);
     expect(hook({ mode: 'loader', serverURL: 'https://cms.example.com' })).toThrow(/mergeDepth/u);
     expect(hook({ serverURL: 'https://cms.example.com', mergeDepth: 0 })).not.toThrow();
-    expect(hook({ defaults: 'v1', serverURL: 'https://cms.example.com' })).not.toThrow();
   });
 });
 
@@ -148,7 +147,7 @@ describe('livePreview integration — hooks that need a request', () => {
 
   it('still accepts the options that only describe a request, which a shared object may carry', () => {
     expect(
-      setup({ strict: false, previewSignals: ['query'], previewQueryParams: ['preview'] }),
+      setup({ strict: true, previewSignals: ['query'], previewQueryParams: ['preview'] }),
     ).toHaveBeenCalledOnce();
   });
 });
@@ -171,10 +170,11 @@ describe('livePreview integration — middleware mode', () => {
   it('registers the middleware entrypoint and serves options via the virtual module', () => {
     const ctx = makeSetupContext();
     livePreview({
-      defaults: 'v1',
       mode: 'middleware',
+      authorizePreviewModule: './src/authorize.ts',
       allowedOrigins: [ADMIN],
       serverURL: ADMIN,
+      mergeDepth: 1,
     }).hooks['astro:config:setup'](ctx);
 
     expect(ctx.injectScript).not.toHaveBeenCalled();
@@ -187,14 +187,12 @@ describe('livePreview integration — middleware mode', () => {
     const resolved = plugin.resolveId!('virtual:payload-live-preview/options')!;
     const moduleSource = plugin.load!(resolved)!;
     expect(moduleSource).toContain(ADMIN);
-    expect(moduleSource).toMatch(/^export default \{/);
+    expect(moduleSource).toContain('export default {');
     expect(moduleSource).not.toContain('"mode"');
   });
 
   it('rejects shouldInject in middleware mode (not serializable)', () => {
-    const integration = livePreview(
-      untyped({ defaults: 'v1', mode: 'middleware', shouldInject: () => true }),
-    );
+    const integration = livePreview(untyped({ mode: 'middleware', shouldInject: () => true }));
     expect(() => {
       integration.hooks['astro:config:setup'](makeSetupContext());
     }).toThrow(/shouldInject/);
@@ -203,8 +201,8 @@ describe('livePreview integration — middleware mode', () => {
   it('escapes </script>-breaking sequences in the serialized options', () => {
     const ctx = makeSetupContext();
     livePreview({
-      defaults: 'v1',
       mode: 'middleware',
+      authorizePreviewModule: './src/authorize.ts',
       previewQueryParams: ['x</script><script>'],
     }).hooks['astro:config:setup'](ctx);
     const plugin = ctx.plugins[0]!;
@@ -212,24 +210,41 @@ describe('livePreview integration — middleware mode', () => {
     expect(source).not.toContain('</script>');
   });
 
-  it("fails fast for mode:'middleware' under the strict default, naming the resolutions", () => {
+  it("fails fast for mode:'middleware' without a hook module, naming the resolutions", () => {
     const ctx = makeSetupContext();
     const integration = livePreview({ mode: 'middleware', allowedOrigins: [ADMIN] });
     expect(() => {
       integration.hooks['astro:config:setup'](ctx);
     }).toThrow(
-      /strict default[\s\S]*Name the module that exports it in `authorizePreviewModule` \(ADR 0024\), or register `createLivePreviewMiddleware\(\{ authorizePreview, \.\.\. \}\)` yourself in src\/middleware\.ts\. `defaults: 'v1'` \(or `strict: false`\) runs intent-only middleware instead/u,
+      /cannot carry the `authorizePreview` function the middleware requires\. Name the module that exports it in `authorizePreviewModule` \(ADR 0024\), or register `createLivePreviewMiddleware\(\{ authorizePreview, \.\.\. \}\)` yourself in src\/middleware\.ts/u,
     );
     expect(ctx.addMiddleware).not.toHaveBeenCalled();
   });
 
-  it("allows mode:'middleware' with strict: false (intent-only opt-out)", () => {
-    const ctx = makeSetupContext();
-    const integration = livePreview({ mode: 'middleware', strict: false, allowedOrigins: [ADMIN] });
-    expect(() => {
-      integration.hooks['astro:config:setup'](ctx);
-    }).not.toThrow();
-    expect(ctx.addMiddleware).toHaveBeenCalled();
+  it('refuses `strict: false` and the 1.x profile in every mode, before it registers anything', () => {
+    // 3.0 removed both (ADR 0007, rows 21 and 36). A JavaScript config can still pass them.
+    for (const mode of ['inline', 'loader', 'middleware'] as const) {
+      const ctx = makeSetupContext();
+      const withStrictOff = {
+        mode,
+        strict: false,
+        allowedOrigins: [ADMIN],
+      } as unknown as AstroOptions;
+      const withProfile = {
+        mode,
+        defaults: 'v1',
+        allowedOrigins: [ADMIN],
+      } as unknown as AstroOptions;
+
+      expect(() => {
+        livePreview(withStrictOff).hooks['astro:config:setup'](ctx);
+      }).toThrow('payload-live-preview: `strict: false` was removed in 3.0; remove the option.');
+      expect(() => {
+        livePreview(withProfile).hooks['astro:config:setup'](ctx);
+      }).toThrow("payload-live-preview: `defaults: 'v1'` was removed in 3.0.");
+      expect(ctx.addMiddleware).not.toHaveBeenCalled();
+      expect(ctx.injectScript).not.toHaveBeenCalled();
+    }
   });
 
   // ADR 0024: the hook travels by reference, so the one-line setup can stay strict.
@@ -242,7 +257,7 @@ describe('livePreview integration — middleware mode', () => {
     return plugin.load!(plugin.resolveId!('virtual:payload-live-preview/options')!)!;
   }
 
-  it('imports the hook named by authorizePreviewModule and meets the strict default with it', () => {
+  it('imports the hook named by authorizePreviewModule', () => {
     const source = optionsModule({ authorizePreviewModule: './src/live-preview/authorize.ts' });
     expect(source).toContain('import authorizePreview from "/src/live-preview/authorize.ts";');
     expect(source).toContain('authorizePreview');
