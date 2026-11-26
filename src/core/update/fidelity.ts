@@ -15,8 +15,7 @@ import type { CachedElement } from '../types';
 import { valueIdentity } from './value-identity';
 
 /**
- * `'ignore'` keeps the degraded patch, which is what 2.0 shipped under the
- * name `onUnboundChange: 'ignore'`. `'warn'` keeps it and says so (LP0411).
+ * `'ignore'` keeps the degraded patch. `'warn'` keeps it and says so (LP0411).
  * `'escalate'`, the default, asks a server to draw the region instead: the
  * fragment strategy when a boundary covers the binding, the route otherwise.
  *
@@ -24,29 +23,6 @@ import { valueIdentity } from './value-identity';
  * cannot ask a server for better markup is not helped by being told twice.
  */
 export type UnfaithfulPatchMode = 'ignore' | 'warn' | 'escalate';
-
-/**
- * Both spellings of the option; the 2.0 name stays until 3.0. Explicitly
- * `| undefined`, because one caller reads them out of the inline script's
- * positional tuple, where an omitted slot is exactly that.
- */
-export interface UnfaithfulPatchOptions {
-  readonly onUnfaithfulPatch?: UnfaithfulPatchMode | undefined;
-  readonly onUnboundChange?: 'ignore' | 'route' | undefined;
-}
-
-/**
- * The 2.0 name maps onto the new one without loss: `'route'` was this option's
- * escalation and `'ignore'` its opt-out. Only an omitted option takes the new
- * default — a project that wrote `'ignore'` down chose it, and keeps it.
- */
-export function resolveUnfaithfulPatchMode(options: UnfaithfulPatchOptions): UnfaithfulPatchMode {
-  // `'ignore'` is the only thing the old name can still say that the new
-  // default does not: its `'route'` and its absence both mean escalate now.
-  return (
-    options.onUnfaithfulPatch ?? (options.onUnboundChange === 'ignore' ? 'ignore' : 'escalate')
-  );
-}
 
 /** The value an element was last reported or handed over with, and when. */
 export interface UnfaithfulReport {

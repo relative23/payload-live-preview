@@ -12,6 +12,7 @@ import {
   V2_RUNTIME_DEFAULTS,
 } from '@/types/defaults-profile';
 import { warnChangingDefaults, warnDeprecatedOptions } from '@/types/dev-warning';
+import { refuseRemovedOptions } from '@/types/removed-options';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import type { InlineScriptConfig } from '@/types/inline-config';
 import type { PreviewSignal } from './preview-request';
@@ -32,8 +33,8 @@ export interface ResolvedPolicyOptions {
 }
 
 export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPolicyOptions {
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- read to warn about it
-  warnDeprecatedOptions({ defaults: options.defaults, onUnboundChange: options.onUnboundChange });
+  refuseRemovedOptions(options);
+  warnDeprecatedOptions({ defaults: options.defaults });
   warnChangingDefaults(options);
   const adapter = adapterDefaultsFor(options.defaults);
   const runtime = runtimeDefaultsFor(options.defaults);
@@ -118,8 +119,6 @@ export function inlineScriptConfig(
     (options.routeStrategy === true && options.fragments === undefined)
       ? { routeStrategy: options.routeStrategy }
       : {}),
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 name is carried through exactly here
-    ...(options.onUnboundChange !== undefined ? { onUnboundChange: options.onUnboundChange } : {}),
     ...(options.onUnfaithfulPatch !== undefined
       ? { onUnfaithfulPatch: options.onUnfaithfulPatch }
       : {}),

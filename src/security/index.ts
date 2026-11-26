@@ -5,8 +5,6 @@ export { isSafeUrl, isExternalHttpUrl, SAFE_URL_PROTOCOLS } from './url-validato
 export {
   sanitizeHtml,
   sanitizeHtmlWithPolicy,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the fallback slot exists to be re-exported until 3.0
-  setSanitizerDocument,
   setSanitizerPolicy,
   type SanitizerPolicyMode,
   SanitizerEnvironmentError,
@@ -43,8 +41,6 @@ export {
   type PreviewAuthorizationStrategy,
   type PreviewAuthorizationStrategyName,
   type PreviewTokenClaims,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 beta shape exists to be re-exported
-  type PreviewTokenReplayChecks,
   type PreviewTokenReplayStore,
   type PreviewTokenTransport,
   type PreviewVerifierClaims,

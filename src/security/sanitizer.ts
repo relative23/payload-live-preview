@@ -214,8 +214,8 @@ export interface SanitizeOptions {
   readonly templateMode?: boolean;
   /**
    * The DOM to parse with, for this call: an SSR document such as linkedom's
-   * or jsdom's. Wins over `setSanitizerDocument()` and over the global
-   * `document`, and two callers with two documents never share one.
+   * or jsdom's. Wins over the global `document`, and two callers with two
+   * documents never share one.
    */
   readonly document?: SanitizerDocument;
 }
@@ -295,33 +295,6 @@ export interface SanitizerDocument {
   };
 }
 
-// Held on the realm, not in this module: every package entry is its own bundle
-// with its own copy of this file, and a document supplied through the root has
-// to reach the rich text `payload-live-preview/lexical` renders.
-const DOCUMENT_SLOT: unique symbol = Symbol.for('payload-live-preview.sanitizer-document');
-
-interface DocumentSlot {
-  [DOCUMENT_SLOT]?: SanitizerDocument | undefined;
-}
-
-/**
- * Supply a `Document` for SSR, e.g. linkedom's `parseHTML(...).document`;
- * `null` clears it, for every entry. The fallback for a call that names no
- * document of its own.
- *
- * @deprecated Since 2.1 a call names its document: `sanitizeHtml(html, { document })`,
- * `lexicalToHtml(content, { document })`. The process-wide slot stays until 3.0
- * (ADR 0007 ledger).
- */
-export function setSanitizerDocument(doc: SanitizerDocument | null): void {
-  warnOnce(
-    'set-sanitizer-document',
-    '`setSanitizerDocument()` is removed in 3.0: pass the document per call, ' +
-      '`sanitizeHtml(html, { document })` or `lexicalToHtml(content, { document })` (ADR 0026).',
-  );
-  (globalThis as DocumentSlot)[DOCUMENT_SLOT] = doc ?? undefined;
-}
-
 /**
  * Sanitize `html`; malformed input is recovered by the parser first. The
  * result is a fixed point: sanitising it again changes nothing.
@@ -399,15 +372,11 @@ function serialize(fragment: ParentNode): string {
 }
 
 function resolveDocument(): SanitizerDocument | undefined {
-  if (typeof __INLINE_BUILD__ === 'undefined' || !__INLINE_BUILD__) {
-    const override = (globalThis as DocumentSlot)[DOCUMENT_SLOT];
-    if (override) return override;
-  }
   if (typeof document === 'undefined') return undefined;
   return document;
 }
 
-/** Whether a DOM is available — the global or an injected one — for callers that treat sanitizing as optional. */
+/** Whether a call that names no document has one, the global: for callers that treat sanitizing as optional. */
 export function hasSanitizerDocument(): boolean {
   return resolveDocument() !== undefined;
 }

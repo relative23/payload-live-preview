@@ -75,8 +75,6 @@ export {
   isSafeUrl,
   isExternalHttpUrl,
   sanitizeHtml,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the fallback slot exists to be re-exported until 3.0
-  setSanitizerDocument,
   setSanitizerPolicy,
   setTrustedTypesPolicy,
   trustedHtml,
@@ -110,8 +108,6 @@ export type {
   PreviewAuthorizationStrategy,
   PreviewAuthorizationStrategyName,
   PreviewTokenClaims,
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 2.0 beta shape exists to be re-exported
-  PreviewTokenReplayChecks,
   PreviewTokenReplayStore,
   PreviewTokenTransport,
   PreviewVerifierClaims,
@@ -127,8 +123,6 @@ export {
   type PreviewRequestLike,
   type PreviewRequestOptions,
 } from './adapters/shared/preview-request';
-// eslint-disable-next-line @typescript-eslint/no-deprecated -- the alias exists to be re-exported
-export { isPreviewRequest } from './adapters/shared/preview-request-legacy';
 
 // Lexical rendering — useful for SSR pre-rendering of rich text fields
 export {

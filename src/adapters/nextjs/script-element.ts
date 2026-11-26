@@ -1,9 +1,8 @@
 /**
  * What a Next `<script>` element carries for the runtime, shared by the
  * synchronous `livePreviewScriptProps()` and the `LivePreviewScript` component.
- * It lives apart so the component builds the same props without the helper's
- * deprecation notice: the component renders them only for an authorized
- * request, the helper for everyone who renders the layout.
+ * The helper builds a bootstrap only (`delivery: 'asset'`); the component may
+ * build the inline script, because it renders it only for an authorized request.
  */
 
 import { renderScriptBody } from '@adapters/shared/response';

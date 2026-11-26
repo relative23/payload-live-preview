@@ -4,9 +4,8 @@ import type { LexicalRoot } from '@lexical/types';
 
 /**
  * `lexicalToHtml(content, { document })`: the SSR document named per call,
- * so a server that renders two requests at once never shares one through the
- * process-wide slot, and a server that never calls `setSanitizerDocument()`
- * still sanitises.
+ * so a server that renders two requests at once never shares one, and a
+ * server without a global document still sanitises.
  */
 
 const content: LexicalRoot = {

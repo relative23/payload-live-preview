@@ -4,8 +4,6 @@
  * Verify with `authorizePreviewRequest()` before anything privileged.
  */
 
-import { warnOnce } from '@/types/dev-warning';
-
 /** `query`: `?preview=true`; `fetch-dest`: `Sec-Fetch-Dest: iframe`; `referer`: an admin-origin Referer. */
 export type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
 
@@ -16,8 +14,6 @@ export interface PreviewRequestOptions {
   readonly queryParams?: readonly string[];
   /** Admin origins whose Referer signals intent, e.g. `['https://cms.example.com']` — the adapters' option of the same name. */
   readonly allowedOrigins?: readonly string[];
-  /** @deprecated Use `allowedOrigins`; removed in 3.0. Ignored when `allowedOrigins` is given. */
-  readonly adminOrigins?: readonly string[];
 }
 
 const DEFAULT_QUERY_PARAMS = ['preview', 'draft', 'livePreview'] as const;
@@ -58,18 +54,7 @@ export function hasPreviewIntent(
     return true;
   }
 
-  // The 1.x spelling is honoured until 3.0; the canonical name wins when both are given.
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- the alias is read exactly here
-  const alias = options.adminOrigins;
-  if (alias !== undefined) {
-    warnOnce(
-      'admin-origins',
-      '`hasPreviewIntent({ adminOrigins })` is removed in 3.0: name the option `allowedOrigins`; ' +
-        '`pll migrate` renames it (ADR 0026).',
-    );
-  }
-  const configured = options.allowedOrigins ?? alias ?? [];
-  const adminOrigins = signals.has('referer') ? configured : [];
+  const adminOrigins = signals.has('referer') ? (options.allowedOrigins ?? []) : [];
   if (adminOrigins.length > 0) {
     const referer = request.headers.get('referer');
     if (referer !== null) {

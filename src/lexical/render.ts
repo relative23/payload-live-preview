@@ -13,9 +13,8 @@ export interface LexicalRenderOptions {
   readonly sanitize?: boolean;
   /**
    * The DOM the sanitizer parses with, for this call: an SSR document such as
-   * linkedom's or jsdom's. Without it the document `setSanitizerDocument()`
-   * supplied is used, then the global one; with neither the result is
-   * unsanitised and warns once.
+   * linkedom's or jsdom's. Without it the global one is used; with neither the
+   * result is unsanitised and warns once.
    */
   readonly document?: SanitizerDocument;
   /**

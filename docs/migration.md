@@ -29,7 +29,17 @@ table.
 | `livePreviewScriptProps()` no longer delivers inline                         | `await LivePreviewScript({ request, ...options })` in the layout, or `delivery: 'asset'`                                                                                          | the component renders nothing for a request it does not authorize; the asset delivery puts a bootstrap in the page; `renderLivePreviewScript()` stays for HTML a server builds as a string                                                                                 |
 | the Astro integration delivers through `loader` by default                   | `mode: 'loader'`                                                                                                                                                                  | the page carries a bootstrap instead of the runtime; set `mode: 'inline'` to keep the 2.x delivery                                                                                                                                                                         |
 
-Each form 3.0 removes warns once per process while it runs in development,
+On the 3.0 line these rows are done: `setSanitizerDocument()`,
+`onUnboundChange`, `isPreviewRequest()`, `adminOrigins`, the two-method replay
+store, inline delivery through `livePreviewScriptProps()`, Payload 2 and
+`fieldSchemaJSON`. A name that is gone fails the import or the type check.
+What a JavaScript config can still pass is refused at startup with the reason
+and the codemod, in production too: `onUnboundChange` by the adapters and the
+generator, a replay store without `consume` by the first request it would
+guard, `livePreviewScriptProps()` without `delivery: 'asset'` by the call.
+`adminOrigins` is the one that is not refused: it is no longer read.
+
+In 2.x each form 3.0 removes warns once per process while it runs in development,
 never in production, and names what replaces it, so the server log lists what
 is left. Since 2.4 the defaults 3.0 changes say so too, once and only where the
 project would see a difference: a detector built without
@@ -196,10 +206,10 @@ Each row is an entry of the readiness table in
 
 `pll migrate` handles the first four:
 
-- `isPreviewRequest()` → `hasPreviewIntent()` — same signature. The old name is
-  a deprecated alias, removed in 3.0, on both entries that exported it (the root
-  and `payload-live-preview/astro`), so a 1.x project compiles against 2.0
-  unchanged; the codemod renames it when you want the new one. The renamed
+- `isPreviewRequest()` → `hasPreviewIntent()` — same signature. Through 2.x the
+  old name was a deprecated alias on both entries that exported it (the root
+  and `payload-live-preview/astro`); 3.0 removed it, and the codemod renames
+  it. The renamed
   function keeps the 1.x behaviour too: without `signals` it counts all three
   signals — a preview query parameter, `Sec-Fetch-Dest: iframe` and an admin
   `Referer` — while the adapters' 2.0 default is `previewSignals: ['query']`.
@@ -207,8 +217,8 @@ Each row is an entry of the readiness table in
   `pll migrate` prints this as a note whenever it renames the function, dry run
   included; the exit code does not change.
 - `hasPreviewIntent(request, { adminOrigins })` → `{ allowedOrigins }` — the
-  name everything else uses; `adminOrigins` is a deprecated alias that is
-  removed in 3.0.
+  name everything else uses. 3.0 removed the alias `adminOrigins`: the key is
+  no longer read, so the referer signal counts nothing until it is renamed.
 - `createPreviewBindings({ authorized })` → `{ authorization }` — pass the
   context from `authorizePreviewRequest()`; the boolean is no longer accepted.
   The codemod rewrites `authorized: false` to `authorization: null`, which
@@ -221,8 +231,8 @@ Each row is an entry of the readiness table in
   on purpose. They defaulted `depth` to `1` independently of the runtime's
   `mergeDepth`, and a shim would put that mismatch back — the one thing the move
   exists to remove. They and their option types are the six names 1.8.1's root
-  entry exported and 2.0 does not; `isPreviewRequest` is still exported as the
-  alias above, and `CAPABILITY_REQUIREMENTS` was not exported by 1.8.1.
+  entry exported and 2.0 does not; `isPreviewRequest` stayed as the alias
+  above until 3.0, and `CAPABILITY_REQUIREMENTS` was not exported by 1.8.1.
 
 Not a codemod target, because TypeScript reports each of them:
 
@@ -238,12 +248,13 @@ Not a codemod target, because TypeScript reports each of them:
 - If you consume `payload-live-preview/migrate` as a library, `Codemod` no
   longer carries `apply`, so importing its types no longer drags in `ts-morph`.
 
-Reported by neither, because the old shape still compiles and still works:
+Reported by neither:
 
 - `signed-token` `replay: { isUsed, markUsed }` → `{ consume }` — one
   check-and-record step (`true` on first use) instead of a read and a write
-  that two simultaneous requests can both slip between. The two-method shape
-  is deprecated with that reason and removed in 3.0; `docs/security.md` has a
+  that two simultaneous requests can both slip between. 3.0 removed the
+  two-method shape for that reason: a store without `consume` is a
+  `PreviewConfigurationError` at the first request. `docs/security.md` has a
   Redis example.
 - A script built by hand with `generateInlineScript()` on a page a framework
   hydrates — the 1.x README's Next.js recipe — does not wait for the

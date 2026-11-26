@@ -4,7 +4,6 @@ import {
   authorizePreviewRequest,
   issuePreviewToken,
   type PreviewAuthorizationRequest,
-  type PreviewTokenReplayChecks,
   type PreviewTokenReplayStore,
   type SignedTokenStrategy,
   type SubtleCryptoLike,
@@ -255,10 +254,7 @@ describe('signed tokens at the edges of the accepted input', () => {
 });
 
 describe('signed tokens against a failing replay store', () => {
-  async function authorizeWith(
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- the 1.x shape must keep failing closed until 3.0
-    replay: PreviewTokenReplayStore | PreviewTokenReplayChecks,
-  ): Promise<string> {
+  async function authorizeWith(replay: PreviewTokenReplayStore): Promise<string> {
     const token = await issuePreviewToken(
       { audience: SITE },
       { secret: SECRET, crypto, now: () => NOW },
@@ -269,35 +265,6 @@ describe('signed tokens against a failing replay store', () => {
     });
     return result.outcome;
   }
-
-  it('refuses as unavailable when the lookup throws, never as authorized', async () => {
-    expect(
-      await authorizeWith({
-        isUsed: () => Promise.reject(new Error('store down')),
-        markUsed: () => Promise.resolve(),
-      }),
-    ).toBe('unavailable');
-  });
-
-  it('refuses as unavailable when recording the use throws', async () => {
-    // Recording is what makes the token single-use; if it cannot be recorded,
-    // authorizing would hand out a token that can be replayed.
-    expect(
-      await authorizeWith({
-        isUsed: () => Promise.resolve(false),
-        markUsed: () => Promise.reject(new Error('store down')),
-      }),
-    ).toBe('unavailable');
-  });
-
-  it('still refuses a token the store already knows', async () => {
-    expect(
-      await authorizeWith({
-        isUsed: () => Promise.resolve(true),
-        markUsed: () => Promise.resolve(),
-      }),
-    ).toBe('replayed');
-  });
 
   it('refuses as unavailable when consume throws, and as replayed when it declines', async () => {
     expect(await authorizeWith({ consume: () => Promise.reject(new Error('store down')) })).toBe(

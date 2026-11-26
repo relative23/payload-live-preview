@@ -33,14 +33,16 @@ The modules that answer them are the **trusted core**:
 | `src/core/bindings/attribute-binding.ts` |        68 | which attribute a remote value may become                   |
 | `src/security/url-validator.ts`          |        60 | which URL is safe                                           |
 | `src/security/escape.ts`                 |        48 | how text becomes escaped markup                             |
-| `src/security/sanitizer.ts`              |       530 | which tags and attributes CMS content keeps                 |
+| `src/security/sanitizer.ts`              |       499 | which tags and attributes CMS content keeps                 |
 | `src/security/trusted-types.ts`          |        87 | the policy every HTML sink goes through                     |
-| **Total**                                | **1 633** | 1 212 without blank/comment lines; 41 exported declarations |
+| **Total**                                | **1 602** | 1 196 without blank/comment lines; 40 exported declarations |
 
-Measured on 2026-11-25, for 3.0. Until then the core had a ninth module,
+Measured on 2026-11-26, for 3.0. Through 2.x the core had a ninth module,
 `legacy-population.ts`, 425 lines that planned and read the collection GETs of
 Payload 2. It left with that transport, `data-merger.ts` lost its population
-branch and `message-guards.ts` the schema parse, and the total fell from 2 146.
+branch and `message-guards.ts` the schema parse, and the total fell from 2 146
+to 1 633. `sanitizer.ts` then lost `setSanitizerDocument()` and the document it
+held for the whole process, 31 lines.
 
 The boundary is not a feeling about which files are important. A module is in
 the core because it **holds a capability**: it listens to messages, sends a
@@ -101,7 +103,9 @@ the 13 survivors listed for it. The eight modules hold 1 409 mutants; nine
 survive and are on the list, six in `message-bus.ts`, two in
 `url-validator.ts` and one in `trusted-types.ts`, which is 99.36 % detected
 (2026-11-25: the two changed modules mutated on the final source, the six
-others from the report of the last run on `main`).
+others from the report of the last run on `main`). Without
+`setSanitizerDocument()` the sanitizer has 16 mutants fewer, all detected as
+before: 1 393 mutants, the same nine survivors, 99.35 % (2026-11-26).
 
 Before `legacy-population.ts` joined, the core was eight modules, measured at
 1 202 mutants on 2026-09-11, 99.17 % killed, 10 survived and none left
@@ -135,7 +139,8 @@ the scope is 82 files and 12 114 mutants, 55 of them without coverage. For
 2.3.1 the same 82 files hold 12 657 mutants, 89.16 % detected, 48 without
 coverage (2026-11-02). The scope has since grown to 87 files. 3.0 takes three
 of them out with Payload 2: the 84 that remain hold 12 058 mutants, 88.84 %
-detected, 49 without coverage (2026-11-25). The score
+detected, 49 without coverage (2026-11-25); without the names 2.x kept as
+deprecated aliases, 12 036 mutants and 88.81 % (2026-11-26). The score
 is lower although no file detects less than before, because the 847 mutants of
 the three files that left were detected at 96 %. The four
 critical coverage cells added in 2.1 covered the population primitive, document

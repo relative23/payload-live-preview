@@ -7,7 +7,7 @@
 import { createPreviewPolicy } from '@adapters/shared/policy';
 import { applyDecision, bindDecisionHooks } from '@adapters/shared/response';
 import { exposeDecision, exposeNonce, type LivePreviewLocalsSink } from '@adapters/shared/locals';
-import type { LivePreviewAstroOptions } from './types';
+import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import { ASTRO_PAGE } from './page-facts';
 
 export {
@@ -30,9 +30,13 @@ export type LivePreviewMiddleware = (
   next: MiddlewareNext,
 ) => Promise<Response>;
 
-/** Build the middleware; it publishes the nonce, the context and the outcome on `Astro.locals`. */
+/**
+ * Build the middleware; it publishes the nonce, the context and the outcome on `Astro.locals`.
+ * It runs per request, so `authorizePreview` and `shouldInject` belong here and not on the
+ * integration's options.
+ */
 export function createLivePreviewMiddleware(
-  options: LivePreviewAstroOptions = {},
+  options: PreviewAdapterOptions = {},
 ): LivePreviewMiddleware {
   const policy = createPreviewPolicy(options, ASTRO_PAGE);
   return async (context, next) => {

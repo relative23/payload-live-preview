@@ -104,9 +104,6 @@ export interface SanitizerDocument {
     };
 }
 
-// @public @deprecated
-export function setSanitizerDocument(doc: SanitizerDocument | null): void;
-
 // @internal
 export const TextFormat: {
     readonly BOLD: 1;

@@ -59,7 +59,6 @@ function afterUpdates(sources: readonly string[]): Promise<void> {
 function start(
   route?: RouteStrategy,
   extra: {
-    onUnboundChange?: 'ignore' | 'route';
     onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
     scopeBindingsByOwner?: boolean;
     warn?: (...args: unknown[]) => void;
@@ -286,11 +285,10 @@ describe('route strategy', () => {
  * The unbound change — the guarantee that this package is never worse than a
  * framework hook that re-renders everything. A field the page does not bind
  * cannot be patched; without this the edit is simply lost until the next
- * navigation. 2.0 asked for it with `onUnboundChange: 'route'`; since Z3 it is
- * what `onUnfaithfulPatch` does unless it is told otherwise, and the old name
- * still decides when it is given.
+ * navigation. It is what `onUnfaithfulPatch` does unless it is told otherwise;
+ * these cases ask for it by name.
  */
-describe('onUnboundChange', () => {
+describe('an unbound change escalates to the route', () => {
   // The shared fixture binds `title` inside <head>, which `resolveStrategy`
   // already calls route-bound. These tests are about the other reason to
   // refresh, so the head binding goes away: `footer` is the bound field here
@@ -322,7 +320,7 @@ describe('onUnboundChange', () => {
 
   it('refreshes the route when a revision changes a field nothing binds', async () => {
     const route = passiveRoute();
-    const rt = start(route, { onUnboundChange: 'route' });
+    const rt = start(route, { onUnfaithfulPatch: 'escalate' });
     await connect(route);
     const done = afterUpdates(['route']);
     post({ footer: 'Old', headline: 'nothing binds this' });
@@ -336,7 +334,7 @@ describe('onUnboundChange', () => {
     // The page was just rendered from that document, so a refresh would only
     // fetch what is already on screen — once per connection, for every visitor.
     const route = passiveRoute();
-    start(route, { onUnboundChange: 'route' });
+    start(route, { onUnfaithfulPatch: 'escalate' });
     const done = afterUpdates(['patch']);
     post({ footer: 'Old', headline: 'nothing binds this' });
     await done;
@@ -345,7 +343,7 @@ describe('onUnboundChange', () => {
 
   it('leaves a revision that only touches bound fields to the patch path', async () => {
     const route = passiveRoute();
-    start(route, { onUnboundChange: 'route' });
+    start(route, { onUnfaithfulPatch: 'escalate' });
     await connect(route);
     const done = afterUpdates(['patch']);
     post({ footer: 'Patched' });
@@ -376,7 +374,7 @@ describe('onUnboundChange', () => {
 
   it('never counts the document fields Payload sends with every update', async () => {
     const route = passiveRoute();
-    start(route, { onUnboundChange: 'route' });
+    start(route, { onUnfaithfulPatch: 'escalate' });
     await connect(route);
     const done = afterUpdates(['patch']);
     post({ footer: 'Patched', id: 7, updatedAt: '2026-09-06T00:00:00.000Z', _status: 'draft' });
@@ -386,7 +384,7 @@ describe('onUnboundChange', () => {
 
   it('refreshes once for a revision, however many fields are unbound', async () => {
     const route = passiveRoute();
-    const rt = start(route, { onUnboundChange: 'route' });
+    const rt = start(route, { onUnfaithfulPatch: 'escalate' });
     await connect(route);
     const done = afterUpdates(['route']);
     post({ footer: 'Old', headline: 'one', subheadline: 'two', kicker: 'three' });
@@ -398,7 +396,7 @@ describe('onUnboundChange', () => {
   it('does nothing without a route strategy to run, and says so once (LP0808)', async () => {
     const warnings: string[] = [];
     const rt = start(undefined, {
-      onUnboundChange: 'route',
+      onUnfaithfulPatch: 'escalate',
       warn: (...args) => {
         warnings.push(String(args[0]));
       },
@@ -448,7 +446,7 @@ describe('onUnboundChange', () => {
   });
 
   it('reports canEscalate once a route strategy is there', () => {
-    const rt = start(fakeRoute(), { onUnboundChange: 'route' });
+    const rt = start(fakeRoute(), { onUnfaithfulPatch: 'escalate' });
     expect(rt.inspect().fidelity.canEscalate).toBe(true);
   });
 });
@@ -524,7 +522,7 @@ describe('the route brake', () => {
   async function refuseTheSecond(
     route: RouteStrategy & { refreshes: number },
   ): Promise<LivePreviewRuntime> {
-    const rt = start(route, { onUnboundChange: 'route' });
+    const rt = start(route, { onUnfaithfulPatch: 'escalate' });
     const connected = afterUpdates(['patch']);
     post({ footer: 'Old' });
     await connected;

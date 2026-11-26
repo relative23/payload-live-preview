@@ -54,13 +54,6 @@ export interface InlineScriptConfig {
    */
   readonly routeStrategy?: boolean | 'after-save';
   /**
-   * The 2.0 name for `onUnfaithfulPatch`, kept until 3.0. `'route'` means
-   * `'escalate'`, `'ignore'` means `'ignore'`.
-   *
-   * @deprecated Renamed to `onUnfaithfulPatch`.
-   */
-  readonly onUnboundChange?: 'ignore' | 'route';
-  /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn. `'escalate'` (the default) hands the region to the
    * fragment strategy when a boundary covers it and to the route otherwise, so
@@ -152,6 +145,12 @@ export interface RuntimeArtifact {
   readonly integrity: string;
 }
 
+/**
+ * A slot whose option 3.0 removed. It keeps its place and stays empty: a slot's number means the
+ * same in every version, which is what lets `pll doctor` read a page another version served.
+ */
+export type RetiredInlineKey = 'onUnboundChange';
+
 /** Keys that travel in the wire tuple, in slot order. */
 export const INLINE_CONFIG_KEYS = [
   'allowedOrigins',
@@ -183,4 +182,4 @@ export const INLINE_CONFIG_KEYS = [
   'subfieldCoverage',
   'mergeTimeoutMs',
   'internalLinkPattern',
-] as const satisfies readonly Exclude<keyof InlineScriptConfig, 'runtime'>[];
+] as const satisfies readonly (Exclude<keyof InlineScriptConfig, 'runtime'> | RetiredInlineKey)[];

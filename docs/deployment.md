@@ -61,7 +61,7 @@ By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. The current
 Next.js fixture's delivery is a 1 344-byte `<script>` element in the page
-against 158 055 bytes for authorized inline delivery: about one per cent,
+against 157 965 bytes for authorized inline delivery: about one per cent,
 and more than the Astro row below
 because a Next page's bootstrap also arms the wait for React's first commit
 before it fetches ([ADR 0015](architecture/0015-first-write-after-hydration.md)). On Next it is the second step down, not the first: a layout
@@ -118,28 +118,27 @@ preview intent. What that case pins to the byte is the delivery's overhead: the
 `<script>` element, tag included, minus the runtime it embeds. The runtime is
 gated on its own (`INLINE_BUDGET` in `scripts/bundle-budgets.ts`) and grows
 with the package. The Bytes column is calculated from the pinned delivery
-overhead, plus the current 143 746-byte runtime artifact in the two rows that
+overhead, plus the current 143 656-byte runtime artifact in the two rows that
 carry it. These are uncompressed bytes for the directly emitted script
 element. The Next.js rows also count its escaped copy in the RSC flight payload,
 whose encoding adds bytes; "twice" counts the two occurrences.
 
-| Setup                                                    | A public visitor receives | Bytes          | Why                                                                               |
-| -------------------------------------------------------- | ------------------------- | -------------- | --------------------------------------------------------------------------------- |
-| SvelteKit handle, Nuxt Nitro plugin, Astro middleware    | nothing                   | 0              | something ran for the request, saw no intent, and injected neither                |
-| Next.js, `await LivePreviewScript(…)` in the root layout | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all     |
-| Next.js, `delivery: 'asset'`                             | the bootstrap             | 1 344, twice   | the root layout renders for everyone; what it renders is the bootstrap            |
-| Astro static build, `mode: 'loader'`                     | the bootstrap             | 792            | a static page has no request to decide for, so the check happens in the browser   |
-| Astro static build, `mode: 'inline'`                     | the whole runtime         | 143 902        | nothing decides and nothing is deferred                                           |
-| Next.js, `livePreviewScriptProps()` in the root layout   | the whole runtime         | 158 055, twice | a synchronous helper cannot await a verdict, so it builds the script for everyone |
+| Setup                                                          | A public visitor receives | Bytes          | Why                                                                             |
+| -------------------------------------------------------------- | ------------------------- | -------------- | ------------------------------------------------------------------------------- |
+| SvelteKit handle, Nuxt Nitro plugin, Astro middleware          | nothing                   | 0              | something ran for the request, saw no intent, and injected neither              |
+| Next.js, `await LivePreviewScript(…)` in the root layout       | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all   |
+| Next.js, `delivery: 'asset'`                                   | the bootstrap             | 1 344, twice   | the root layout renders for everyone; what it renders is the bootstrap          |
+| Astro static build, `mode: 'loader'`                           | the bootstrap             | 792            | a static page has no request to decide for, so the check happens in the browser |
+| Astro static build, `mode: 'inline'`                           | the whole runtime         | 143 812        | nothing decides and nothing is deferred                                         |
+| Next.js, `await LivePreviewScript(…)` for an authorized editor | the whole runtime         | 157 965, twice | not a public visitor: what the preview it authorized carries, for comparison    |
 
-The last row is the one exception to "no cookie, no preview intent": no fixture
-serves it to the public any longer, because the Next example moved to the second
-row. What is measured there now is the same layout answering an _authorized_
-editor — same helper, same bytes, one request apart from the zero above it. It
-stays in the table because a synchronous helper in a root layout is what most
-Next projects have today, and this is what it costs them. That is also the shape
-of the win: the component did not make the delivery cheaper, it stopped the
-public paying for it.
+The last row is the one exception to "no cookie, no preview intent": it is the
+same layout answering an _authorized_ editor, one request apart from the zero in
+the second row. Through 2.x a root layout that spread `livePreviewScriptProps()`
+handed these bytes to every visitor; 3.0 removed inline delivery from that
+helper (ADR 0007, row 32), so no way is left to pay them for the public by
+accident. That is also the shape of the win: the component did not make the
+delivery cheaper, it stopped the public paying for it.
 
 The bootstrap in either row that carries it checks whether the page is framed
 or opened by an admin, and outside a preview it fetches nothing. The Next one is
@@ -165,8 +164,7 @@ table.
 Three ways to move a row up:
 
 - **A Next.js layout or page**: await `LivePreviewScript` from
-  `payload-live-preview/nextjs` instead of spreading
-  `livePreviewScriptProps()`. It is an async server component, so it can await
+  `payload-live-preview/nextjs`. It is an async server component, so it can await
   the authorization verdict and render nothing — not a bootstrap, nothing — for
   a request that is not an authorized preview. It is the only way a Next page
   reaches the top row, because it is the only one that can decline to render

@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is held on purpose until 3.0 */
 import { describe, expect, it } from 'vitest';
 import { LivePreviewScript } from '@adapters/nextjs/index';
-import { livePreviewScriptProps } from '@adapters/nextjs/adapter';
+import { scriptElementProps } from '@adapters/nextjs/script-element';
 import { authorizePreviewRequest } from '@security/preview-authorization';
 
 /**
@@ -12,9 +11,9 @@ import { authorizePreviewRequest } from '@security/preview-authorization';
  * preview: no session, no intent, no editor.
  *
  * The cause is not the runtime's size but where it is rendered. A root layout
- * renders for every visitor, and the two helpers a layout had until now —
- * `livePreviewScriptProps()` and `renderLivePreviewScript()` — are synchronous
- * and decide nothing: they build the script, whoever is asking.
+ * renders for every visitor, and the two helpers a layout had until 3.0 —
+ * `livePreviewScriptProps()` with inline delivery and `renderLivePreviewScript()` —
+ * are synchronous and decide nothing: they build the script, whoever is asking.
  *
  * `<LivePreviewScript />` is an async server component, so it can await the
  * authorization verdict before it renders anything at all. These tests hold
@@ -74,7 +73,7 @@ describe('LivePreviewScript', () => {
     // The synchronous helper stays the reference: this component decides who
     // gets the script, not what is in it.
     expect(elementOf(rendered).props.dangerouslySetInnerHTML.__html).toBe(
-      livePreviewScriptProps(options).dangerouslySetInnerHTML.__html,
+      scriptElementProps(options).dangerouslySetInnerHTML.__html,
     );
   });
 

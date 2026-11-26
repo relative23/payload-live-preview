@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is held on purpose until 3.0 */
 import { runInNewContext } from 'node:vm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -6,6 +5,7 @@ import {
   livePreviewScriptProps,
   renderLivePreviewScript,
 } from '@adapters/nextjs/index';
+import { scriptElementProps } from '@adapters/nextjs/script-element';
 import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
 import { resetDevWarnings } from '@/types/dev-warning';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
@@ -52,7 +52,7 @@ const SOFT_NAVIGATION_SLOT_INDEX = INLINE_CONFIG_KEYS.indexOf('softNavigationEve
  */
 describe('what the Next adapter knows about the page', () => {
   it('declares React hydration in the script props and the rendered tag', () => {
-    const props = livePreviewScriptProps({ allowedOrigins: [ADMIN] });
+    const props = scriptElementProps({ allowedOrigins: [ADMIN] });
     expect(wireConfig(props.dangerouslySetInnerHTML.__html)[HYDRATION_SLOT_INDEX]).toBe('react');
     expect(wireConfig(props.dangerouslySetInnerHTML.__html)[SOFT_NAVIGATION_SLOT_INDEX]).toEqual([
       NAVIGATION_COMMIT_EVENT,
@@ -87,9 +87,9 @@ describe('what the Next adapter knows about the page', () => {
  * Next layout needs the element's props, not its markup — `renderLivePreviewScript`
  * is for HTML a server assembles by hand.
  */
-describe('livePreviewScriptProps', () => {
+describe('the script element a Next page carries', () => {
   it('spreads onto a script element and carries the same body as the tag', () => {
-    const props = livePreviewScriptProps({ allowedOrigins: [ADMIN] });
+    const props = scriptElementProps({ allowedOrigins: [ADMIN] });
     const body = props.dangerouslySetInnerHTML.__html;
 
     expect(body).toContain('__LIVE_PREVIEW_CONFIG__');
@@ -100,15 +100,15 @@ describe('livePreviewScriptProps', () => {
   it('puts the nonce in a prop, where the framework sets it as an attribute', () => {
     // Not inside the body: a nonce written into the string would be markup the
     // renderer escapes, and Next's own CSP handling reads the attribute.
-    const props = livePreviewScriptProps({ allowedOrigins: [ADMIN], nonce: 'abc123' });
+    const props = scriptElementProps({ allowedOrigins: [ADMIN], nonce: 'abc123' });
 
     expect(props.nonce).toBe('abc123');
     expect(props.dangerouslySetInnerHTML.__html).not.toContain('abc123');
-    expect(livePreviewScriptProps({ allowedOrigins: [ADMIN] }).nonce).toBeUndefined();
+    expect(scriptElementProps({ allowedOrigins: [ADMIN] }).nonce).toBeUndefined();
   });
 
   it('escapes a closing tag inside a configured value, so the script cannot end early', () => {
-    const props = livePreviewScriptProps({ allowedOrigins: [ADMIN], apiRoute: '</script><b>' });
+    const props = scriptElementProps({ allowedOrigins: [ADMIN], apiRoute: '</script><b>' });
 
     expect(props.dangerouslySetInnerHTML.__html).not.toContain('</script>');
   });
@@ -116,7 +116,7 @@ describe('livePreviewScriptProps', () => {
   it('carries the fragment prelude when the layout names an endpoint', () => {
     // The option used to live on the Astro adapter alone, so a Next.js page
     // could not point the runtime at its own route handler.
-    const props = livePreviewScriptProps({
+    const props = scriptElementProps({
       allowedOrigins: [ADMIN],
       fragments: { endpoint: '/payload/fragment' },
     });
@@ -127,9 +127,7 @@ describe('livePreviewScriptProps', () => {
   });
 
   it('refuses a nonce that is not nonce-shaped', () => {
-    expect(() => livePreviewScriptProps({ allowedOrigins: [ADMIN], nonce: 'a"b' })).toThrow(
-      RangeError,
-    );
+    expect(() => scriptElementProps({ allowedOrigins: [ADMIN], nonce: 'a"b' })).toThrow(RangeError);
   });
 });
 

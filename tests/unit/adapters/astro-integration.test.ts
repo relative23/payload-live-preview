@@ -14,6 +14,13 @@ function injectedConfig(script: string): unknown[] {
   return evaluated;
 }
 
+// `authorizePreview` and `shouldInject` left the integration's options type in 3.0 (ADR 0007,
+// row 24). A JavaScript config can still pass them, and that is what the cases below hand over.
+type AstroOptions = NonNullable<Parameters<typeof livePreview>[0]>;
+const untyped = (
+  options: AstroOptions & { authorizePreview?: unknown; shouldInject?: unknown },
+): AstroOptions => options;
+
 describe('livePreview integration — inline mode', () => {
   it('returns an integration with the expected name', () => {
     expect(livePreview().name).toBe('payload-live-preview');
@@ -85,13 +92,23 @@ describe('livePreview integration — hooks that need a request', () => {
   const authorize = (): null => null;
   const decide = (): boolean => false;
 
+  it('has no place for them in its type', () => {
+    // @ts-expect-error -- `authorizePreview` left LivePreviewAstroOptions in 3.0
+    const withHook: AstroOptions = { authorizePreview: authorize };
+    // @ts-expect-error -- `shouldInject` left LivePreviewAstroOptions in 3.0
+    const withDecision: AstroOptions = { shouldInject: decide };
+
+    expect(() => setup(withHook)).toThrow(/authorizePreview/u);
+    expect(() => setup(withDecision)).toThrow(/shouldInject/u);
+  });
+
   it.each([
     ['inline', undefined],
     ['inline', 'inline' as const],
     ['loader', 'loader' as const],
   ])('refuses authorizePreview in %s delivery, naming where it can run (mode %s)', (name, mode) => {
     expect(() =>
-      setup({ ...(mode === undefined ? {} : { mode }), authorizePreview: authorize }),
+      setup(untyped({ ...(mode === undefined ? {} : { mode }), authorizePreview: authorize })),
     ).toThrow(
       `payload-live-preview: \`authorizePreview\` cannot be used with mode '${name}' — inline and ` +
         'loader delivery run no server hook, so the function would never be called. Use mode ' +
@@ -104,7 +121,9 @@ describe('livePreview integration — hooks that need a request', () => {
     ['inline', undefined],
     ['loader', 'loader' as const],
   ])('refuses shouldInject in %s delivery, naming where it can run (mode %s)', (name, mode) => {
-    expect(() => setup({ ...(mode === undefined ? {} : { mode }), shouldInject: decide })).toThrow(
+    expect(() =>
+      setup(untyped({ ...(mode === undefined ? {} : { mode }), shouldInject: decide })),
+    ).toThrow(
       `payload-live-preview: \`shouldInject\` cannot be used with mode '${name}' — inline and ` +
         'loader delivery decide once, at build time, for every page, so the function would never ' +
         "be called. Use mode 'middleware' with `previewQueryParams` or `previewSignals`, or " +
@@ -115,14 +134,14 @@ describe('livePreview integration — hooks that need a request', () => {
   it('refuses them before it injects anything, and with autoInject: false too', () => {
     const injectScript = vi.fn();
     expect(() =>
-      livePreview({ autoInject: false, authorizePreview: authorize }).hooks['astro:config:setup']({
-        injectScript,
-      }),
+      livePreview(untyped({ autoInject: false, authorizePreview: authorize })).hooks[
+        'astro:config:setup'
+      ]({ injectScript }),
     ).toThrow(/authorizePreview/u);
     expect(() =>
-      livePreview({ autoInject: false, shouldInject: decide }).hooks['astro:config:setup']({
-        injectScript,
-      }),
+      livePreview(untyped({ autoInject: false, shouldInject: decide })).hooks['astro:config:setup'](
+        { injectScript },
+      ),
     ).toThrow(/shouldInject/u);
     expect(injectScript).not.toHaveBeenCalled();
   });
@@ -173,11 +192,9 @@ describe('livePreview integration — middleware mode', () => {
   });
 
   it('rejects shouldInject in middleware mode (not serializable)', () => {
-    const integration = livePreview({
-      defaults: 'v1',
-      mode: 'middleware',
-      shouldInject: () => true,
-    });
+    const integration = livePreview(
+      untyped({ defaults: 'v1', mode: 'middleware', shouldInject: () => true }),
+    );
     expect(() => {
       integration.hooks['astro:config:setup'](makeSetupContext());
     }).toThrow(/shouldInject/);
@@ -258,7 +275,9 @@ describe('livePreview integration — middleware mode', () => {
 
   it('refuses the hook itself and the reference together', () => {
     expect(() =>
-      optionsModule({ authorizePreviewModule: './src/authorize.ts', authorizePreview: () => null }),
+      optionsModule(
+        untyped({ authorizePreviewModule: './src/authorize.ts', authorizePreview: () => null }),
+      ),
     ).toThrow(/authorizePreview/u);
   });
 });

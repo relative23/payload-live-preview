@@ -21,8 +21,7 @@ remains through the 2.x line as the staged-migration escape hatch.
 
 2026-09-14 (2.0.1): entry 1 was not removed. `isPreviewRequest` is exported from
 the root entry and from `./astro` as a deprecated alias of `hasPreviewIntent`
-until 3.0 (`src/adapters/shared/preview-request-legacy.ts`), as the ledger row
-says.
+until 3.0, as the ledger row says. 3.0 removed it with its module.
 
 ### 1. `defaults: 'v2'` is one switch
 
@@ -109,6 +108,35 @@ of 3.x, and Payload 4.0.0-beta.12 asks for `^24.22.3 || >=26.13.1` itself.
 official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
+
+2026-11-26 (3.0): rows 1, 13, 16, 19, 20, 24 and 32 are carried out. The names
+are gone from the code and from the types: `isPreviewRequest()` and its module,
+`adminOrigins`, `setSanitizerDocument()` and its slot on the realm,
+`onUnboundChange`, the replay store with `isUsed` and `markUsed`,
+`authorizePreview` and `shouldInject` on `LivePreviewAstroOptions`, and inline
+delivery through `livePreviewScriptProps()`.
+
+A type does not reach a JavaScript config, so each row also says what happens
+to a value that still arrives. The rule: where leaving it out of account would
+run the site with other behaviour than it asked for, the server side refuses
+it at startup, in production too, and names the codemod or the replacement.
+
+- `onUnboundChange` (19): the adapters and the generator throw. Its slot 20 in
+  the inline tuple keeps its number and stays empty, and the runtime reads
+  nothing from it; the direct runtime option is no longer read either.
+- A replay store without `consume` (20): a `PreviewConfigurationError` at the
+  first request, before a token is read. Without the check such a store would
+  refuse every token as `unavailable` and never say why.
+- `livePreviewScriptProps()` without `delivery: 'asset'` (32): the call throws.
+- `authorizePreview` and `shouldInject` on the Astro integration (24): refused
+  at startup as since 2.1. `createLivePreviewMiddleware()` takes
+  `PreviewAdapterOptions`, which has both, because it runs per request.
+- `adminOrigins` (13) is not refused: the key is no longer read, which leaves
+  the referer signal without an origin and so counts fewer requests as intent,
+  never more.
+- `isPreviewRequest()` (1) and `setSanitizerDocument()` (16) fail the import.
+  The realm slot of row 16 is no longer read, so a 2.x copy of the package in
+  the same process cannot hand its document to a 3.0 call.
 
 2026-11-25 (3.0): rows 25 and 30 are carried out. An admin that sends
 `fieldSchemaJSON` is a Payload 2 admin, and its updates are refused: from the

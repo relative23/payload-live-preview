@@ -1069,9 +1069,6 @@ export type SanitizerPolicyMode = 'compat' | 'strict';
 // @internal
 export function setCspCrypto(crypto: WebCryptoLike | null): void;
 
-// @public @deprecated
-export function setSanitizerDocument(doc: SanitizerDocument | null): void;
-
 // @public (undocumented)
 export interface StrategyHandlers {
     // (undocumented)

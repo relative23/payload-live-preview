@@ -4,10 +4,10 @@
 
 ```ts
 
-import { a } from '../../middleware-Bpa4WfwG.js';
+import { L } from '../../middleware-B1R_M84Q.js';
 
 // @public
-export const onRequest: a;
+export const onRequest: L;
 
 // (No @packageDocumentation comment for this package)
 

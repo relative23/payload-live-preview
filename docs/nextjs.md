@@ -33,11 +33,11 @@ nothing for everybody would score zero on the first measurement too. The third
 is what that same credential is charged: the helper builds the same bytes
 either way, and the only question the component answers is who receives them.
 
-| Way                                                       | A public visitor receives | Pick it when                                                                  |
-| --------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
-| `await LivePreviewScript(…)`, an async server component   | nothing                   | the default: the render can await an authorization verdict                    |
-| `livePreviewScriptProps()` with `delivery: 'asset'`       | a bootstrap               | the script is built once at module scope and the page has no verdict to await |
-| `livePreviewScriptProps()` or `renderLivePreviewScript()` | the whole runtime         | HTML a server assembles as a string; the helper is deprecated for this        |
+| Way                                                     | A public visitor receives | Pick it when                                                                  |
+| ------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| `await LivePreviewScript(…)`, an async server component | nothing                   | the default: the render can await an authorization verdict                    |
+| `livePreviewScriptProps()` with `delivery: 'asset'`     | a bootstrap               | the script is built once at module scope and the page has no verdict to await |
+| `renderLivePreviewScript()`                             | the whole runtime         | HTML a server assembles as a string                                           |
 
 ## Nothing for a public visitor
 
@@ -185,53 +185,19 @@ Move the route file and set `assetPath` together if the app is not served from t
 
 ## The script in the root layout
 
-`livePreviewScriptProps()` builds the same `<script>` the component renders,
-for whoever is asking:
+Until 3.0 `livePreviewScriptProps()` could also build the whole script, for
+whoever was asking. A root layout that spread it shipped the runtime to every
+visitor, twice with React's flight payload, because a synchronous helper cannot
+wait for a verdict. 3.0 removed that form (ADR 0007, row 32): the helper builds
+the bootstrap of `delivery: 'asset'` and refuses a call without it. A layout
+that wants the script inline awaits `LivePreviewScript`, which renders nothing
+for a request it does not authorize (`tests/fixtures/delivery-budgets.ts` holds
+a public request at 0). What each choice costs a visitor, measured per
+framework: [deployment.md](deployment.md#what-a-public-visitor-pays).
 
-```tsx
-// app/layout.tsx
-import type { ReactNode } from 'react';
-import { livePreviewScriptProps } from 'payload-live-preview/nextjs';
-
-const previewScript = livePreviewScriptProps({
-  allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
-  // Payload 3.x: re-fetch the populated document; mergeDepth is required with serverURL.
-  serverURL: process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN!,
-  mergeDepth: 1,
-});
-
-export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <script {...previewScript} />
-      </head>
-      <body>{children}</body>
-    </html>
-  );
-}
-```
-
-Compute the props once at module scope, as above: the configuration does not
-change per request, and the script body is the same bytes every time.
-
-This form is deprecated since 2.4: 3.0 removes inline delivery from the helper
-(ADR 0007, row 32). In development it says so once per process and names the
-bytes it put into the page. With `delivery: 'asset'` the helper stays.
-
-The script stays inert outside the admin's preview iframe, but written this
-way it ships to everyone: `livePreviewScriptProps()` is synchronous, so it
-cannot wait for a verdict and does not try. Next renders the script twice, once
-into the HTML and once more into the RSC flight payload, so while the example's
-layout was written like this the runtime was most of what an anonymous visitor
-received (the byte counts are in the table of
-[deployment.md](deployment.md#what-a-public-visitor-pays)). The
-same request carries no script element and no extra byte when the layout awaits
-`LivePreviewScript` (`tests/fixtures/delivery-budgets.ts` holds both at 0). That
-component is the version of this layout that waits; `delivery: 'asset'` above is the
-version that keeps the module-scope props and replaces the runtime with the
-bootstrap. What each choice costs a visitor, measured per framework:
-[deployment.md](deployment.md#what-a-public-visitor-pays).
+Compute the props once at module scope, as in the asset example above: the
+configuration does not change per request, and the bootstrap is the same bytes
+every time.
 
 `livePreviewScriptProps()` takes a `nonce` for a CSP you manage yourself, and puts it where the framework expects it — a prop, not markup inside the body. `renderLivePreviewScript()` returns the complete `<script>` tag instead, for HTML a server assembles as a string; JSX cannot render that.
 

@@ -73,45 +73,31 @@ async function withCarriedNonce(
 export type { LivePreviewScriptProps } from './script-element';
 
 /**
- * Props for the `<script>` in `app/layout.tsx`, with `delivery: 'asset'`: the
- * page carries a bootstrap that fetches the runtime only in a preview context.
+ * Props for the `<script>` in `app/layout.tsx`: a bootstrap that fetches the
+ * runtime only in a preview context.
  *
  * ```tsx
  * <script {...livePreviewScriptProps({ ...livePreviewOptions, delivery: 'asset' })} />
  * ```
+ *
+ * Inline delivery left this helper in 3.0 (ADR 0007, row 32). A synchronous
+ * helper cannot await an authorization verdict, so a root layout that rendered
+ * it handed the whole runtime to every visitor, twice with React's flight
+ * payload. `await LivePreviewScript({ request, ...options })` renders nothing
+ * for a request the policy does not authorize.
  */
 export function livePreviewScriptProps(
   options: LivePreviewNextOptions & { readonly delivery: 'asset'; readonly nonce?: string },
-): LivePreviewScriptProps;
-/**
- * Props for a `<script>` that carries the whole runtime. A synchronous helper
- * cannot await an authorization verdict, so a root layout that renders it
- * hands the runtime to every visitor, twice with React's flight payload.
- *
- * @deprecated 3.0 removes inline delivery from this helper (ADR 0007, row 32). Render
- * `await LivePreviewScript({ request, ...options })` from this entry instead, which renders
- * nothing for a request the policy does not authorize, or pass `delivery: 'asset'`;
- * `renderLivePreviewScript()` stays for HTML a server builds as a string.
- */
-export function livePreviewScriptProps(
-  options?: LivePreviewNextOptions & { readonly nonce?: string },
-): LivePreviewScriptProps;
-export function livePreviewScriptProps(
-  options: LivePreviewNextOptions & { readonly nonce?: string } = {},
 ): LivePreviewScriptProps {
-  const props = scriptElementProps(options);
-  if (options.delivery !== 'asset') {
-    const bytes = new TextEncoder().encode(props.dangerouslySetInnerHTML.__html).length;
-    warnOnce(
-      'next-script-props',
-      `\`livePreviewScriptProps()\` put ${String(bytes)} bytes of runtime into this page, and ` +
-        "React's flight payload carries them a second time; in a root layout every visitor gets " +
-        'both. 3.0 removes inline delivery from it: `await LivePreviewScript({ request, ...options })` ' +
-        "renders nothing for a request it does not authorize, and `delivery: 'asset'` a bootstrap " +
-        '(ADR 0007, row 32).',
+  // A JavaScript caller can still leave `delivery` out, or the options altogether.
+  if ((options as { readonly delivery?: unknown } | undefined)?.delivery !== 'asset') {
+    throw new Error(
+      "payload-live-preview: `livePreviewScriptProps()` needs `delivery: 'asset'` since 3.0. " +
+        'For an inline script render `await LivePreviewScript({ request, ...options })`, which ' +
+        'renders nothing for a request it does not authorize (ADR 0007, row 32).',
     );
   }
-  return props;
+  return scriptElementProps(options);
 }
 
 /**

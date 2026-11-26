@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-deprecated -- inline delivery through livePreviewScriptProps() is held on purpose until 3.0 */
 import { describe, expect, it } from 'vitest';
 import { createRuntimeAssetRoute } from '@adapters/nextjs/asset-route';
 import { createRuntimeAssetRoute as sveltekitAssetRoute } from '@adapters/sveltekit/asset-route';
 import { createRuntimeAssetRoute as nuxtAssetRoute } from '@adapters/nuxt/asset-route';
 import { livePreviewScriptProps } from '@adapters/nextjs/adapter';
+import { scriptElementProps } from '@adapters/nextjs/script-element';
 import {
   ASSET_CACHE_CONTROL,
   DEFAULT_ASSET_PATH,
@@ -130,7 +130,7 @@ describe('serving it', () => {
 
 describe('what the page carries', () => {
   it('carries the runtime itself by default', () => {
-    const { __html } = livePreviewScriptProps(base).dangerouslySetInnerHTML;
+    const { __html } = scriptElementProps(base).dangerouslySetInnerHTML;
 
     expect(__html).toContain(RUNTIME_SOURCE);
   });

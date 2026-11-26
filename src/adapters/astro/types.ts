@@ -2,7 +2,15 @@
 
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 
-export interface LivePreviewAstroOptions extends PreviewAdapterOptions {
+/**
+ * `authorizePreview` and `shouldInject` are not among the integration's options: it decides at
+ * build time or serializes what it was given, so a function meant to run per request never would.
+ * A JavaScript config that passes one is refused at startup.
+ */
+export interface LivePreviewAstroOptions extends Omit<
+  PreviewAdapterOptions,
+  'authorizePreview' | 'shouldInject'
+> {
   /**
    * How the integration registers. `'inline'` (default) bakes the runtime into
    * every page and `'loader'` publishes it as a hashed asset and injects a

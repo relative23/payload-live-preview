@@ -89,14 +89,6 @@ export interface RuntimeOptions {
    */
   readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
   /**
-   * The 2.0 name for the same decision, kept until 3.0. `'route'` means
-   * `onUnfaithfulPatch: 'escalate'`, `'ignore'` means `'ignore'`.
-   *
-   * @deprecated Renamed to `onUnfaithfulPatch`, which also covers the patches
-   * that fail for reasons other than a missing binding.
-   */
-  readonly onUnboundChange?: 'ignore' | 'route';
-  /**
    * Fields whose change re-applies other bindings: `{ price: ['priceLabel'] }`.
    * Merged with what the markup declares via `data-payload-depends`.
    */
