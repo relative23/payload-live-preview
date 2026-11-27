@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 529,
-    "suites": 1027,
-    "tests": 4644,
+    "files": 530,
+    "suites": 1030,
+    "tests": 4649,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 432,
-      "suites": 918,
-      "tests": 4237,
+      "files": 433,
+      "suites": 921,
+      "tests": 4242,
       "benchmarks": 0
     }
   },
@@ -2342,7 +2342,7 @@
       "path": "tests/unit/doctor/v3-readiness.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 23,
+      "tests": 24,
       "benchmarks": 0
     },
     {
@@ -2693,6 +2693,13 @@
       "group": "unit",
       "suites": 3,
       "tests": 13,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/move-payload-entry.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {

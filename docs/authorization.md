@@ -42,7 +42,7 @@ wherever it points. The draft reads refuse one too, so `serverURL` is the
 origin Payload answers on, scheme included.
 Payload side: the ordinary preview URL from `livePreview()` in
 `payload-live-preview/plugin`, or from the lower-level `buildLivePreviewUrl()`
-in `payload-live-preview/payload`; the cookie travels with the iframe request
+of the same entry; the cookie travels with the iframe request
 when it reaches the site at all. Site side, on any adapter:
 
 ```ts
@@ -119,7 +119,7 @@ Payload 3 side — mint it into the preview URL:
 
 ```ts
 // payload.config.ts (Payload 3; this callback must remain server-side)
-import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { buildLivePreviewUrl } from 'payload-live-preview/plugin';
 import { issuePreviewToken } from 'payload-live-preview/server';
 
 const toPreviewUrl = buildLivePreviewUrl({ baseUrl: process.env.FRONTEND_URL!, collections: { … } });

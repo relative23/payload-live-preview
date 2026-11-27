@@ -46,7 +46,7 @@ describe('published subpath classification', () => {
   });
 
   it('refuses a table entry the package no longer exports', () => {
-    const shrunk = PUBLISHED.filter((key) => key !== './doctor');
-    expect(() => classifyPublishedEntries(shrunk)).toThrow(/no longer exports: \.\/doctor/u);
+    const shrunk = PUBLISHED.filter((key) => key !== './fragment');
+    expect(() => classifyPublishedEntries(shrunk)).toThrow(/no longer exports: \.\/fragment/u);
   });
 });

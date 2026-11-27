@@ -7,7 +7,7 @@ import {
 import { onRequest } from 'payload-live-preview/astro/middleware-entry';
 import { createLivePreviewMiddleware as createNextMiddleware } from 'payload-live-preview/nextjs';
 import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';
-import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { buildLivePreviewUrl } from 'payload-live-preview/plugin';
 import { livePreview as payloadLivePreview } from 'payload-live-preview/plugin';
 import { livePreviewHandle } from 'payload-live-preview/sveltekit';
 

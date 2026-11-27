@@ -1,5 +1,5 @@
 import { bind, type FieldRenderer, type LivePreviewClient } from 'payload-live-preview';
-import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { buildLivePreviewUrl } from 'payload-live-preview/plugin';
 import { livePreview as payloadLivePreview } from 'payload-live-preview/plugin';
 
 declare const client: LivePreviewClient;

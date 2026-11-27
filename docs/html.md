@@ -105,7 +105,7 @@ export default buildConfig({
 });
 ```
 
-The callback appends `?preview=true`, a preview intent that authorizes nothing. Breakpoints, merge rules and conflicts are in [payload.md](payload.md). A document without a route that should show no preview, another plugin that already sets the Live Preview URL, or a signed token in the URL need the lower-level `buildLivePreviewUrl()` from `payload-live-preview/payload` instead ([payload.md](payload.md), [authorization.md](authorization.md#signed-token)).
+The callback appends `?preview=true`, a preview intent that authorizes nothing. Breakpoints, merge rules and conflicts are in [payload.md](payload.md). A document without a route that should show no preview, another plugin that already sets the Live Preview URL, or a signed token in the URL need the lower-level `buildLivePreviewUrl()` from `payload-live-preview/plugin` instead ([payload.md](payload.md), [authorization.md](authorization.md#signed-token)).
 
 ## Examples
 

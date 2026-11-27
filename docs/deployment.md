@@ -213,7 +213,7 @@ is whatever the last hop in front of the site lets through.
 ## Edge runtimes
 
 The adapter entries (`payload-live-preview/astro`, `/nextjs`, `/sveltekit`,
-`/nuxt`), `payload-live-preview/server`, `/fragment`, `/payload` and `/plugin`
+`/nuxt`), `payload-live-preview/server`, `/fragment` and `/plugin`
 run in a Web-platform-only context: no `process`, no `Buffer`, no `node:` module. That
 is executed, not declared — the package build loads every one of those entries
 into such a context and drives a preview request through it. Signed tokens use
@@ -364,8 +364,8 @@ back to the raw values, and relationship fields show IDs.
 
 ## Upgrading a monorepo
 
-The Payload side imports `payload-live-preview/plugin` (`livePreview()`) or
-`payload-live-preview/payload` (`buildLivePreviewUrl`) and, where it mints
+The Payload side imports `payload-live-preview/plugin` (`livePreview()` or
+`buildLivePreviewUrl()`) and, where it mints
 signed tokens (Payload 3), `issuePreviewToken`; the site imports the adapter,
 `authorizePreviewRequest` and `payload-live-preview/server`. Keep both on one version of the package —
 one entry in one lockfile is the simplest way — and at least on the same

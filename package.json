@@ -116,28 +116,6 @@
         "default": "./dist/annotate.js"
       }
     },
-    "./doctor": {
-      "import": {
-        "types": "./dist/doctor.d.ts",
-        "default": "./dist/doctor.js"
-      }
-    },
-    "./migrate": {
-      "import": {
-        "types": "./dist/migrate.d.ts",
-        "default": "./dist/migrate.js"
-      }
-    },
-    "./payload": {
-      "import": {
-        "types": "./dist/payload.d.ts",
-        "default": "./dist/payload.js"
-      },
-      "require": {
-        "types": "./dist/payload.d.cts",
-        "default": "./dist/payload.cjs"
-      }
-    },
     "./plugin": {
       "import": {
         "types": "./dist/plugin.d.ts",

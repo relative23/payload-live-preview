@@ -20,7 +20,6 @@ async function main(): Promise<void> {
     nuxt: await loadModule(context, 'dist/adapters/nuxt/index.js'),
     server: await loadModule(context, 'dist/server.js'),
     fragment: await loadModule(context, 'dist/fragment.js'),
-    payload: await loadModule(context, 'dist/payload.js'),
     plugin: await loadModule(context, 'dist/plugin.js'),
   };
   await runEdgeCases(await edgeCases(modules));

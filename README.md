@@ -58,7 +58,7 @@ Node >=24.0.0; the unit and integration suites run on Node 24, 26.
 npm install payload-live-preview
 ```
 
-The root `payload-live-preview` carries the client, the inline script generator, the renderers and four of the five built-in plugins; the unbound-fields overlay and `PluginManager` are on `payload-live-preview/plugins`. `payload-live-preview/plugin` configures Payload's root Live Preview panel, while `/payload` keeps the lower-level URL builder. `payload-live-preview/astro`, `/nextjs`, `/sveltekit` and `/nuxt` hold one framework adapter each; `/nuxt-module` registers the Nuxt one from `nuxt.config.ts` and takes `authorizePreview` by module reference, `authorizePreviewModule` ([docs/nuxt.md](docs/nuxt.md)). `payload-live-preview/server` is the privileged surface for server code: `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()` and `createPreviewBindings()`. Every focused entry is listed in [docs/options.md](docs/options.md).
+The root `payload-live-preview` carries the client, the inline script generator, the renderers and four of the five built-in plugins; the unbound-fields overlay and `PluginManager` are on `payload-live-preview/plugins`. `payload-live-preview/plugin` configures Payload's root Live Preview panel and also exports the lower-level URL builder, `buildLivePreviewUrl()`. `payload-live-preview/astro`, `/nextjs`, `/sveltekit` and `/nuxt` hold one framework adapter each; `/nuxt-module` registers the Nuxt one from `nuxt.config.ts` and takes `authorizePreview` by module reference, `authorizePreviewModule` ([docs/nuxt.md](docs/nuxt.md)). `payload-live-preview/server` is the privileged surface for server code: `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()` and `createPreviewBindings()`. Every focused entry is listed in [docs/options.md](docs/options.md).
 
 ## Configure Payload
 
@@ -114,7 +114,7 @@ outside CI ([docs/compatibility.md](docs/compatibility.md#what-runs-against-each
 Use the lower-level callback when another plugin owns the surrounding config:
 
 ```ts
-import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { buildLivePreviewUrl } from 'payload-live-preview/plugin';
 
 export default buildConfig({
   admin: {

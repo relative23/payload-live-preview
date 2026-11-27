@@ -5,6 +5,33 @@
 ```ts
 
 // @public
+export function buildLivePreviewUrl(options: BuildLivePreviewUrlOptions): (args: LivePreviewUrlArgs) => string;
+
+// @public (undocumented)
+export function buildLivePreviewUrl(options: BuildLivePreviewUrlNullableOptions): (args: LivePreviewUrlArgs) => string | null;
+
+// @public
+export interface BuildLivePreviewUrlNullableOptions {
+    // (undocumented)
+    readonly baseUrl: string;
+    // (undocumented)
+    readonly collections?: Readonly<Record<string, NullablePathResolver>>;
+    readonly fallback?: string | null;
+    // (undocumented)
+    readonly globals?: Readonly<Record<string, NullablePathResolver>>;
+    readonly previewParam?: string | null;
+}
+
+// @public (undocumented)
+export interface BuildLivePreviewUrlOptions {
+    readonly baseUrl: string;
+    readonly collections?: Readonly<Record<string, PathResolver>>;
+    readonly fallback?: string;
+    readonly globals?: Readonly<Record<string, PathResolver>>;
+    readonly previewParam?: string | null;
+}
+
+// @public
 export function livePreview(options: LivePreviewPluginOptions): (<TConfig extends object>(config: TConfig) => TConfig) & {
     readonly slug: string;
     readonly order?: number;
@@ -37,6 +64,40 @@ export interface LivePreviewPluginOptions {
     }) => string | null)>>;
     readonly order?: number;
     readonly previewParam?: string | null;
+}
+
+// @public
+export interface LivePreviewUrlArgs {
+    // (undocumented)
+    readonly [extra: string]: unknown;
+    // (undocumented)
+    readonly collectionConfig?: {
+        readonly slug: string;
+    };
+    // (undocumented)
+    readonly data: Record<string, unknown>;
+    // (undocumented)
+    readonly globalConfig?: {
+        readonly slug: string;
+    };
+    // (undocumented)
+    readonly locale?: string | {
+        readonly code?: string | null;
+        readonly [extra: string]: unknown;
+    };
+}
+
+// @public
+export type NullablePathResolver = string | null | ((context: PathResolverContext) => string | null);
+
+// @public (undocumented)
+export type PathResolver = string | ((context: PathResolverContext) => string);
+
+// @public
+export interface PathResolverContext {
+    // (undocumented)
+    readonly data: Record<string, unknown>;
+    readonly locale: string | undefined;
 }
 
 // (No @packageDocumentation comment for this package)

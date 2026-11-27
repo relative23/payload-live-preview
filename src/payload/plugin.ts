@@ -5,6 +5,18 @@
  */
 import { buildLivePreviewUrl, type LivePreviewUrlArgs } from './live-preview-url';
 
+// The lower-level callback, for a config that routes by hand or has documents without a
+// preview. Until 3.0 it had an entry of its own, `/payload` (ADR 0007, row 41).
+export {
+  buildLivePreviewUrl,
+  type BuildLivePreviewUrlNullableOptions,
+  type BuildLivePreviewUrlOptions,
+  type LivePreviewUrlArgs,
+  type NullablePathResolver,
+  type PathResolver,
+  type PathResolverContext,
+} from './live-preview-url';
+
 export interface LivePreviewBreakpoint {
   readonly name: string;
   readonly label: string;

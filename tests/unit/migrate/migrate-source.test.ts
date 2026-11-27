@@ -5,6 +5,7 @@ import { CODEMODS, importsThisPackage, migrateSource } from '@migrate/index';
 const EVERYTHING = [
   "import { isPreviewRequest, createPreviewBindings, fetchPreviewGlobal } from 'payload-live-preview';",
   "import { livePreview } from 'payload-live-preview/astro';",
+  "import { buildLivePreviewUrl } from 'payload-live-preview/payload';",
   'export async function load({ request }) {',
   '  const preview = isPreviewRequest(request, { adminOrigins: [env.ADMIN] });',
   '  const bindings = createPreviewBindings({ authorized: preview });',
@@ -35,6 +36,9 @@ describe('migrateSource', () => {
   it('runs every codemod in order and is idempotent', () => {
     const once = migrateSource(EVERYTHING);
     expect(once.edits.map((e) => e.codemod)).toEqual(CODEMODS.map((c) => c.id));
+    expect(once.output).toContain(
+      "import { buildLivePreviewUrl } from 'payload-live-preview/plugin';",
+    );
     expect(once.output).toContain('hasPreviewIntent(request, { allowedOrigins: [env.ADMIN] })');
     expect(once.output).toContain('authorization: preview');
     expect(once.output).toContain(
