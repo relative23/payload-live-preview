@@ -22,7 +22,7 @@ import type { RuntimeOptions } from './runtime-options';
 import { RuntimeState, type RuntimeDeps } from './runtime-state';
 import { isDocumentRoot, readDocumentBody, startWhenReady, type StartupHost } from './startup';
 import { ConnectionState, HeartbeatTimer } from './state';
-import { onlyWhileLent } from '../strategies/route-refresh';
+import { onlyWhileLent, routeIsLentOnly } from '../strategies/lent-route';
 import type { CachedElement } from '../types';
 import { UpdatePipeline } from '../update/update-pipeline';
 import { UpdateScheduler } from '../update/update-scheduler';
@@ -54,6 +54,7 @@ export class LivePreviewRuntime {
     const root = options.root ?? (typeof document !== 'undefined' ? document : undefined);
     // Name the missing option here instead of failing at the first DOM read in start().
     if (root === undefined) throw new Error('LivePreviewRuntime: no document; pass options.root');
+    const lentOnly = routeIsLentOnly(options.routeLentOnly, options.hydration);
     // Bindings inside a hydrated island are the island's business (ADR 0008 §4).
     const cache = new ElementCache({ filter: (element) => !isInsideIsland(element) });
     const observers = new ObserverManager(
@@ -156,7 +157,7 @@ export class LivePreviewRuntime {
       renderRichText: options.renderRichText,
       internalLinkPattern: options.internalLinkPattern,
       routeAfterSave: options.routeAfterSave === true,
-      routeLentOnly: options.routeLentOnly === true,
+      routeLentOnly: lentOnly,
       sanitizerPolicy: options.sanitizerPolicy ?? V2_RUNTIME_DEFAULTS.sanitizerPolicy,
       root,
       readyTargets:
@@ -180,7 +181,7 @@ export class LivePreviewRuntime {
       lockedOrigin: options.lockedOrigin ?? ((): undefined => undefined),
       skipUnchanged: options.skipUnchanged ?? V2_RUNTIME_DEFAULTS.skipUnchanged,
       dependencies: options.dependencies ?? {},
-      strategies: onlyWhileLent(options.strategies ?? {}, options.routeLentOnly === true),
+      strategies: onlyWhileLent(options.strategies ?? {}, lentOnly),
       revealEditedField: options.revealEditedField ?? V2_RUNTIME_DEFAULTS.revealEditedField,
       onUnfaithfulPatch: options.onUnfaithfulPatch ?? V2_RUNTIME_DEFAULTS.onUnfaithfulPatch,
       autoBind: options.autoBind ?? V2_RUNTIME_DEFAULTS.autoBind,

@@ -160,6 +160,8 @@ Since 3.0 the handle carries the route strategy without being asked, as
 after Payload reports a save, a change no patch can show refreshes the route
 through `invalidateAll()`, and only through it. The call below is what lends it
 to the runtime; a page without it is left as it is, and LP0808 says so once.
+An explicit `routeStrategy: true` or `'after-save'` goes the same way since 3.0
+(ADR 0007, row 47): on a page SvelteKit hydrates no route is fetched and morphed.
 
 The handle arms preview responses for the package's navigation event; the
 browser half is `livePreviewNavigation()` from

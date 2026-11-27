@@ -177,6 +177,34 @@ describe('pll doctor --v3: adapter options (rows 21, 27, 32, 33 and strict: fals
     ]);
   });
 
+  it('lists a hydrated page that asks for a route strategy or a fragment endpoint itself (row 47)', async () => {
+    const report = await check({
+      'src/layout.tsx': [
+        "import { LivePreviewScript } from 'payload-live-preview/nextjs';",
+        'await LivePreviewScript({ request, routeStrategy: true });',
+        "await LivePreviewScript({ request, routeStrategy: 'after-save' });",
+        "await LivePreviewScript({ request, fragments: { endpoint: '/payload/fragment' } });",
+        "await LivePreviewScript({ request, routeStrategy: 'router' });",
+        'await LivePreviewScript({ request, routeStrategy: false });',
+        'await LivePreviewScript({ request, routeStrategy: chosen });',
+      ].join('\n'),
+      // Astro has no hydration owner: its route strategy keeps the fetch and morph.
+      'src/middleware.ts': [
+        "import { createLivePreviewMiddleware } from 'payload-live-preview/astro';",
+        'export const onRequest = createLivePreviewMiddleware({ routeStrategy: true });',
+      ].join('\n'),
+    });
+
+    expect(places(report, 'route-hydrated')).toEqual([
+      'layout.tsx:2',
+      'layout.tsx:3',
+      'layout.tsx:4',
+    ]);
+    expect(formatV3Readiness(report)).toContain(
+      "Row 47: On a Next.js, SvelteKit or Nuxt page, `routeStrategy: true`, `'after-save'` and the route of a fragment endpoint refresh through the router alone",
+    );
+  });
+
   it('lists the lean runtime where an integration or the generator is given it (row 37)', async () => {
     const report = await check({
       'src/preview.config.ts': [

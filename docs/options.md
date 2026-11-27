@@ -174,7 +174,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 157 921 for authorized inline delivery. It fetches one
+  (ADR 0015), against 157 968 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -234,6 +234,15 @@ true`.
   none is not fetched and morphed, and LP0808 says what to render. `false`
   turns it off. The script `livePreviewScriptProps()` builds goes to every
   visitor and carries a route strategy only where the option asks for one.
+- On a page a framework hydrates (`hydration: 'react'`, `'vue'` or
+  `'sveltekit'`, which the Next.js, Nuxt and SvelteKit adapters set), every
+  route strategy refreshes through the lent refresh alone, `true`,
+  `'after-save'` and the one a fragment endpoint brings included: the
+  framework's reconciler owns that DOM, and a morph of fetched HTML also takes
+  away what the browser's own code put under `<body>` (ADR 0007, row 47).
+  `true` and `'after-save'` keep deciding when the route is refreshed. A page
+  without a hydration owner, as Astro and plain HTML serve it, and one with
+  `hydration: 'manual'` keep the fetch and morph.
 - `routeStrategy` puts the route strategy alone ahead of the runtime, for a page
   that wants a route refresh without a fragment endpoint. `fragmentEndpoint`
   implies it and the two are never emitted together, because the fragment

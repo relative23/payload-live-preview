@@ -9,7 +9,8 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { onlyWhileLent, registerRouteRefresh } from '@core/strategies/route-refresh';
+import { onlyWhileLent } from '@core/strategies/lent-route';
+import { registerRouteRefresh } from '@core/strategies/route-refresh';
 import type { RouteOutcome, RouteStrategy } from '@core/strategies/strategies';
 import type { LivePreviewRuntime } from '@core/session/lifecycle';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';

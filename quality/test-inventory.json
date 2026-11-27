@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 534,
-    "suites": 1038,
-    "tests": 4668,
+    "suites": 1039,
+    "tests": 4672,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 437,
-      "suites": 929,
-      "tests": 4261,
+      "suites": 930,
+      "tests": 4265,
       "benchmarks": 0
     }
   },
@@ -1522,8 +1522,8 @@
     {
       "path": "tests/unit/core/inline-slots-route-and-coverage.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 4,
+      "suites": 3,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -2342,7 +2342,7 @@
       "path": "tests/unit/doctor/v3-readiness.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 24,
+      "tests": 25,
       "benchmarks": 0
     },
     {

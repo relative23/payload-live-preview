@@ -115,6 +115,8 @@ export interface PreviewAdapterOptions<Req = Request> {
    * (Next.js), `livePreviewNavigation()` (SvelteKit) and the Nuxt module do: a page that
    * lent none is not fetched and morphed. Default: `'router'` in the Next.js, SvelteKit
    * and Nuxt adapters where no `fragments` endpoint is set (ADR 0007, row 40), else `false`.
+   * In those three adapters `true` and `'after-save'` refresh through the lent refresh
+   * alone as well: they decide when, and no longer fetch and morph (row 47).
    */
   readonly routeStrategy?: boolean | 'after-save' | 'router';
   /**

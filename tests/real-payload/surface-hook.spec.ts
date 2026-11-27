@@ -131,7 +131,7 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
         .toBe(true);
       expect((await routeState()).locked).toBe('http://localhost:3001');
     }
-    const partialBefore = SURFACE === 'nextjs-hook' ? await routePartial() : undefined;
+    const before = SURFACE === 'nextjs-hook' ? await routeState() : undefined;
     const asked = waitForPopulation(page);
     await page.locator('#field-author').click();
     await page.getByRole('option', { name: 'e2e@example.com' }).click();
@@ -140,12 +140,22 @@ test.describe(`real Payload admin → ${SURFACE}`, () => {
     const response = await asked;
     expect(response.status()).toBe(200);
     await expect(preview.getByTestId('author')).toHaveText('e2e@example.com', { timeout: 15_000 });
-    if (partialBefore !== undefined) {
-      // The parallel runtime's later route morph must preserve the hook's committed DOM.
-      await expect.poll(routePartial).toBeGreaterThan(partialBefore);
-      await expect(preview.getByTestId('author')).toHaveText('e2e@example.com', {
-        timeout: 15_000,
-      });
+    if (before !== undefined) {
+      // Until 3.0 the parallel runtime fetched the route and morphed it in here, over the
+      // hook's committed DOM. On a page React hydrates it now refreshes a route through a lent
+      // refresh alone (ADR 0007, row 47), and this page lends none: once it has settled the
+      // author's revision, it has rendered no route, and the hook's DOM is as the hook left it.
+      await expect
+        .poll(async () => {
+          const state = await routeState();
+          return (
+            state.accepted > before.accepted &&
+            state.completed + state.superseded === state.accepted
+          );
+        })
+        .toBe(true);
+      expect(await routePartial()).toBe(before.partial);
+      await expect(preview.getByTestId('author')).toHaveText('e2e@example.com');
     }
     await expect(preview.getByTestId('status')).toHaveText('live');
     await expect(preview.getByTestId('error')).toHaveCount(0);

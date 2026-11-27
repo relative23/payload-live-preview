@@ -197,7 +197,9 @@ Since 2.4 the module registers a client plugin of its own; a project that loads
 adapter also carries the route strategy without being asked, as
 `routeStrategy: 'router'`, where neither `routeStrategy` nor `fragments` is set:
 after Payload reports a save, a change no patch can show refreshes the route
-through the plugin, and only through it. The plugin does two things:
+through the plugin, and only through it. An explicit `routeStrategy: true` or
+`'after-save'` goes the same way since 3.0 (ADR 0007, row 47): on a page Vue
+hydrates no route is fetched and morphed. The plugin does two things:
 
 - It lends the route strategy `refreshNuxtData()`, so an unbound or conditional
   field is shown by Nuxt re-running the page's `useAsyncData` and `useFetch`
