@@ -230,3 +230,10 @@ now writes the referrer row as `enableReferrerDetection: true` and leaves it
 out where the literal still sets the row under its old name. These three had no
 warning in 2.x: the names were not deprecated there, so the startup refusal is
 the first a JavaScript config hears of it.
+
+**3.0 sets the deadline (2026-11-27).** Row 27 takes the value measured above,
+10 000 ms, for the runtime, the client and the hooks. Its two notices, the
+server's `merge-deadline` and the hook's `hook-deadline`, are gone, and so is
+the notice registry on the page: no default is left that 3.0 still announces.
+The test that held a production build free of the notice text went with them,
+`tests/unit/adapters/dev-notices-production-build.test.ts`.

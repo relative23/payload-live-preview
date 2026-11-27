@@ -6,16 +6,17 @@ import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { buildBuiltinRenderers } from '@field-types/index';
 
 /**
- * A Payload 3 merge request that never answers, held for ten simulated
- * minutes. Fragment renders and route refreshes have deadlines of their own;
- * the REST merge has none, and docs/options.md says so. These cases pin what
- * each consumer of DataMerger shows by then, so a deadline added later changes
- * them on purpose.
+ * A Payload 3 merge request that never answers. Since 3.0 the hook and the
+ * runtime give their merger a deadline of ten seconds (ADR 0007, row 27):
+ * these cases hold what each shows one millisecond before it and at it, and
+ * that `0` keeps the wait 2.x had, here held for ten simulated minutes. The
+ * merger itself has no deadline of its own.
  */
 
 const ADMIN = 'https://admin.example.com';
 const SERVER = 'https://cms.example.com';
 const TEN_MINUTES = 10 * 60_000;
+const DEADLINE = 10_000;
 
 class IO implements IntersectionObserver {
   readonly root: Element | Document | null = null;
@@ -65,7 +66,8 @@ describe('a merge request that never answers', () => {
     merger.destroy();
   });
 
-  it('keeps the hook session loading, on its first document and without an error', async () => {
+  /** A hook session on its first document, with one update whose merge hangs. */
+  function hookSession(timeoutMs?: number) {
     const { fetchFn } = hangingFetch();
     const session = createDocumentSession(
       { id: '1', title: 'From the server' },
@@ -75,6 +77,7 @@ describe('a merge request that never answers', () => {
         allowedOrigins: [ADMIN],
         eventSourcePolicy: 'any',
         fetchFn,
+        ...(timeoutMs === undefined ? {} : { timeoutMs }),
       },
     );
     const stop = session.subscribe(() => {});
@@ -89,19 +92,44 @@ describe('a merge request that never answers', () => {
         },
       }),
     );
-    await vi.advanceTimersByTimeAsync(TEN_MINUTES);
-    const { isLoading, status, revision, data, error } = session.getSnapshot();
-    expect({ isLoading, status, revision, title: data.title, error }).toEqual({
-      isLoading: true,
-      status: 'idle',
+    const shown = () => {
+      const { isLoading, status, revision, data, error } = session.getSnapshot();
+      return { isLoading, status, revision, title: data.title, error: error?.message };
+    };
+    return { shown, stop };
+  }
+  const LOADING = {
+    isLoading: true,
+    status: 'idle',
+    revision: 0,
+    title: 'From the server',
+    error: undefined,
+  };
+
+  it("ends the hook session's wait at ten seconds without being told to, on its first document", async () => {
+    const { shown, stop } = hookSession();
+    await vi.advanceTimersByTimeAsync(DEADLINE - 1);
+    expect(shown()).toEqual(LOADING);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(shown()).toEqual({
+      isLoading: false,
+      status: 'unavailable',
       revision: 0,
       title: 'From the server',
-      error: undefined,
+      error: 'live preview: the server did not answer within 10000 ms',
     });
     stop();
   });
 
-  it('leaves the DOM runtime on a pending revision with its text unwritten', async () => {
+  it('keeps the hook session loading under `timeoutMs: 0`, without an error', async () => {
+    const { shown, stop } = hookSession(0);
+    await vi.advanceTimersByTimeAsync(TEN_MINUTES);
+    expect(shown()).toEqual(LOADING);
+    stop();
+  });
+
+  /** A DOM runtime with one update whose merge hangs. */
+  function domRuntime(timeoutMs?: number) {
     document.body.innerHTML = `
       <h1 data-payload-field="title">From the server</h1>
       <span data-payload-field="author" data-payload-type="relationship">Ada</span>`;
@@ -122,7 +150,7 @@ describe('a merge request that never answers', () => {
       enableVisibilityGate: false,
       enableA11y: false,
       warn: () => {},
-      dataMerge: { serverURL: SERVER, fetchFn },
+      dataMerge: { serverURL: SERVER, fetchFn, ...(timeoutMs === undefined ? {} : { timeoutMs }) },
     });
     runtime.start();
     window.dispatchEvent(
@@ -135,23 +163,51 @@ describe('a merge request that never answers', () => {
         },
       }),
     );
-    await vi.advanceTimersByTimeAsync(TEN_MINUTES);
-    const { revisions } = runtime.inspect();
-    expect({
-      title: document.querySelector('h1')?.textContent,
-      reported: states,
-      accepted: revisions.accepted,
-      completed: revisions.completed,
-      active: revisions.active,
-      display: revisions.display?.state,
-    }).toEqual({
-      title: 'From the server',
-      reported: [],
+    const shown = () => {
+      const { revisions } = runtime.inspect();
+      return {
+        title: document.querySelector('h1')?.textContent,
+        author: document.querySelector('span')?.textContent,
+        reported: [...states],
+        accepted: revisions.accepted,
+        completed: revisions.completed,
+        display: revisions.display?.state,
+        shortfalls: revisions.display?.shortfalls,
+      };
+    };
+    return { runtime, shown };
+  }
+  const PENDING = {
+    title: 'From the server',
+    author: 'Ada',
+    reported: [],
+    accepted: 1,
+    completed: 0,
+    display: 'pending',
+    shortfalls: [],
+  };
+
+  it('writes the raw values into the DOM once ten seconds are over, and says the merge fell short', async () => {
+    const { runtime, shown } = domRuntime();
+    await vi.advanceTimersByTimeAsync(DEADLINE - 1);
+    expect(shown()).toEqual(PENDING);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(shown()).toEqual({
+      title: 'Typed',
+      author: '7',
+      reported: ['partial'],
       accepted: 1,
-      completed: 0,
-      active: 1,
-      display: 'pending',
+      completed: 1,
+      display: 'partial',
+      shortfalls: [{ kind: 'merge' }],
     });
+    runtime.destroy();
+  });
+
+  it('leaves the DOM runtime on a pending revision with its text unwritten under `timeoutMs: 0`', async () => {
+    const { runtime, shown } = domRuntime(0);
+    await vi.advanceTimersByTimeAsync(TEN_MINUTES);
+    expect(shown()).toEqual(PENDING);
     runtime.destroy();
   });
 });

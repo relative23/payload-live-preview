@@ -7,6 +7,8 @@
 
 import type { EventSourcePolicy } from './defaults-profile';
 
+/** The deadline of a merge request; a hook spells the option `timeoutMs`. `0` is none. */
+export const mergeTimeoutMs = 10_000;
 export const debounceMs = 50;
 export const heartbeatMs = 0;
 export const enableA11y = true;

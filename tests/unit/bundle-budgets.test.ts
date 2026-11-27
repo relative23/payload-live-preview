@@ -49,9 +49,9 @@ describe('release bundle budgets', () => {
     // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25):
     // -9897/-3150/-2788 default, -9686/-3104/-2672 lean, -9897/-3463/-2714 route,
     // -9897/-3418/-2708 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 143_091, gzip: 45_162, brotli: 39_808 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 151_718, gzip: 47_721, brotli: 41_776 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 157_303, gzip: 49_643, brotli: 43_594 });
+    expect(INLINE_BUDGET).toEqual({ raw: 143_123, gzip: 45_175, brotli: 39_752 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 151_750, gzip: 47_735, brotli: 41_771 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 157_335, gzip: 49_658, brotli: 43_626 });
   });
 
   it('keeps the route prelude the cheaper of the two strategy preludes', () => {

@@ -168,7 +168,8 @@
 // 2026-11-27 (3.0, the switches say what they turn on, ADR 0007 row 38): paired Node24.22.3/npm12.0.2; -4/0/+13 B; prior reserves kept.
 // 2026-11-27 (3.0, a rebound binding is written again): paired Node24.22.3/npm12.0.2; +40/+11/+92 B; prior reserves kept.
 // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -227/-90/-161 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 157_303, gzip: 49_643, brotli: 43_594 } as const;
+// 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +32/+15/+32 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 157_335, gzip: 49_658, brotli: 43_626 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -359,4 +360,8 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 157_303, gzip: 49_643, brotli: 43_5
 // 2026-11-27 (3.0, the defaults are written once): the rows of entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.3/npm12.0.2, each row by its delta with its reserve kept): `core.cjs` -394/-71/-48; `core.js` -396/-72/-39; `index.cjs` -629/-135/-71; `index.js` -629/-165/-420; `server.cjs` +30/+4/+5; `server.js` +30/+6/+4.
 // 2026-11-27 (3.0, the defaults are written once): the rows of tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired Node24.22.3/npm12.0.2, each row by its delta with its reserve kept): `initLivePreview` from `payload-live-preview` -79; `generateInlineScript` from `payload-live-preview` -75; `initLivePreview` from `payload-live-preview/core` -84; `createLivePreviewMiddleware` from `payload-live-preview/nextjs` -76; `useLivePreviewDocument` from `payload-live-preview/react` -4; `useLivePreviewDocument` from `payload-live-preview/vue` -2.
 // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -227/-82/-51 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 151_718, gzip: 47_721, brotli: 41_776 } as const;
+// 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): the rows of bundle-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.3/npm12.0.2, each row by its delta with its reserve kept): `INLINE_BUDGET` +32/+13/-56.
+// 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): the rows of entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.3/npm12.0.2, each row by its delta with its reserve kept): `core.cjs` -371/-128/-96; `core.js` -371/-123/-69; `index.cjs` -165/-89/-93; `index.js` -165/-73/-41.
+// 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): the rows of tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired Node24.22.3/npm12.0.2, each row by its delta with its reserve kept): `lexicalToHtml` from `payload-live-preview` +11; `initLivePreview` from `payload-live-preview` +21; `generateInlineScript` from `payload-live-preview` -213; `initLivePreview` from `payload-live-preview/core` +24; `createLivePreviewMiddleware` from `payload-live-preview/nextjs` -94; `useLivePreviewDocument` from `payload-live-preview/react` -15; `useLivePreviewDocument` from `payload-live-preview/vue` -11.
+// 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +32/+14/-5 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 151_750, gzip: 47_735, brotli: 41_771 } as const;

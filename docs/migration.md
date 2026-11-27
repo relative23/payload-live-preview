@@ -25,7 +25,7 @@ table.
 | an update with `fieldSchemaJSON` is refused (`LP0504`)                       | a sender of your own leaves the field out; set `data-payload-type` on a binding that took its type from the schema, and a custom renderer reads `allFields`, not `context.schema` | only a Payload 2 admin sends the field; the schema types (`PayloadFieldSchema` and its two companions), `RenderContext.schema`, the option labels of the `select` renderer and the `fieldTyping` and `populatesRelationships` labels of `ProtocolProfile` are gone with it |
 | a hook has to name its document                                              | `document: { collection, id }` or `{ global }` on `useLivePreviewDocument()`                                                                                                      | a hook without `document` does not start; with it, a second hook on the page stops showing the first one's document. `document: 'any'` follows whichever document the admin sends, as every hook did in 2.x                                                                |
 | a hook with a `locale` leaves alone an update that names no locale           | `requireLocale: true` on the hook in 2.4 and 2.5; Payload 3 and 4 name the admin's locale in every update when the config has localization                                        | where the admin sends updates without a locale, leave `locale` out of `document`; `requireLocale: false` is refused                                                                                                                                                        |
-| a merge has a default deadline, proposed at 10 s                             | `mergeTimeoutMs` in the runtime, `timeoutMs` on a hook                                                                                                                            | a stalled Payload API shows up as a reported failure, not as an update that never arrives; set a higher value where the server answers slowly, or `0` for none                                                                                                             |
+| a merge has a deadline of 10 s by default                                    | `mergeTimeoutMs` in the runtime, `timeoutMs` on a hook                                                                                                                            | a stalled Payload API shows up as a reported failure, not as an update that never arrives; set a higher value where the server answers slowly, or `0` for none                                                                                                             |
 | Node 24 or newer                                                             | run the build and the server on Node 24                                                                                                                                           | Node 20 reached end of life on 2026-04-30 and Node 22 follows on 2027-04-30; 2.x runs on Node 20 to 26                                                                                                                                                                     |
 | the `payload` peer range drops `^2`                                          | nothing, beyond the Payload 2 row above                                                                                                                                           | 3.0 takes Payload 3 and 4, and Payload 5 arrives in a 3.x minor.                                                                                                                                                                                                           |
 | Astro 7.2.8 or newer                                                         | update Astro; the peer range is `>=7.2.8 <8.0.0`                                                                                                                                  | Astro 4 to 6 get no releases any more and carry a critical advisory that is patched only in 7.2.8; 2.x keeps its range for a project that stays on them                                                                                                                    |
@@ -39,8 +39,9 @@ store, inline delivery through `livePreviewScriptProps()`, `defaults: 'v1'`,
 an update naming none, `lexicalToHtml()` returning unsanitised markup where it
 has no document, a detector that trusts a referrer without being asked to,
 Astro's inline delivery as the default, a partly bound group covered by its one
-bound path, a route refresh without a promise taken as committed, the lean
-runtime, the three `disable…` switches, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
+bound path, a route refresh without a promise taken as committed, a merge
+without a deadline, the lean runtime, the three `disable…` switches, Payload 2
+and `fieldSchemaJSON`. A name that is gone fails the
 import or the type check.
 What a JavaScript config can still pass is refused at startup with the reason
 and the codemod, in production too: `onUnboundChange` and `defaults: 'v1'` by
@@ -93,7 +94,7 @@ Row 26: A hook without `document` merges every update an allowed admin sends; 3.
   app/hook/HookPreview.tsx:16
   Name the document the page rendered: `document: { collection, id }` or `{ global }`.
 
-Row 27: A merge without a deadline gets a default one
+Row 27: A merge without a deadline gets one of 10 000 ms
   app/hook/HookPreview.tsx:16
   app/layout.tsx:68
   Set `mergeTimeoutMs` (`timeoutMs` on a hook) to the deadline you want, or to `0` to keep none.

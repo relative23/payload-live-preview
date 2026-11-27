@@ -6,7 +6,6 @@
 
 import type { generateInlineScript } from '@inline/generator';
 import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
-import { warnChangingDefaults } from '@/types/dev-warning';
 import { refuseRemovedOptions } from '@/types/removed-options';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import type { InlineScriptConfig } from '@/types/inline-config';
@@ -28,7 +27,6 @@ export interface ResolvedPolicyOptions {
 
 export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPolicyOptions {
   refuseRemovedOptions(options);
-  warnChangingDefaults(options);
   // The runtime's own fallbacks are the same table, so only what was given travels.
   return {
     previewSignals: options.previewSignals ?? V2_ADAPTER_DEFAULTS.previewSignals,

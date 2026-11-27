@@ -135,6 +135,7 @@ export class LivePreviewRuntime {
       sourcePolicy: options.eventSourcePolicy ?? V2_RUNTIME_DEFAULTS.eventSourcePolicy,
     });
     const merge = options.dataMerge;
+    const timeoutMs = merge?.timeoutMs ?? V2_RUNTIME_DEFAULTS.mergeTimeoutMs;
     this.deps = {
       emitter,
       cache,
@@ -169,7 +170,7 @@ export class LivePreviewRuntime {
       warn,
       a11y: createA11y(options),
       serverURL: merge?.serverURL,
-      merger: merge === undefined ? null : new DataMerger({ ...merge, log }),
+      merger: merge === undefined ? null : new DataMerger({ ...merge, timeoutMs, log }),
       mergeWindowMs: options.debounceMs ?? V2_RUNTIME_DEFAULTS.debounceMs,
       scopeBindingsByOwner:
         options.scopeBindingsByOwner ?? V2_RUNTIME_DEFAULTS.scopeBindingsByOwner,

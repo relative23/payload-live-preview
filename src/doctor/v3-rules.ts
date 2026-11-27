@@ -149,7 +149,7 @@ const RULES: readonly Rule[] = [
   {
     id: 'merge-deadline',
     row: 27,
-    title: 'A merge without a deadline gets a default one',
+    title: 'A merge without a deadline gets one of 10 000 ms',
     remedy:
       'Set `mergeTimeoutMs` (`timeoutMs` on a hook) to the deadline you want, or to `0` to keep none.',
     judge: (call) => {

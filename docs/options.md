@@ -25,7 +25,7 @@ writes the rows it stood for into the options, except the two 3.0 cannot keep:
 | `serverURL`               | yes    | yes           | yes                                                                 | yes, required            | — (no REST merge)                                   |
 | `apiRoute`                | yes    | yes           | yes                                                                 | yes                      | `'/api'`                                            |
 | `mergeDepth`              | yes    | yes           | yes                                                                 | as `depth`, required     | — (required with `serverURL`; `0` for none)         |
-| `mergeTimeoutMs`          | yes    | yes           | yes                                                                 | —                        | off                                                 |
+| `mergeTimeoutMs`          | yes    | yes           | yes                                                                 | —                        | `10000` ms (`0` for none)                           |
 | `internalLinkPattern`     | yes    | yes           | yes                                                                 | —                        | off                                                 |
 | `mergeFetch`              | yes    | —             | —                                                                   | as `fetch`               | global `fetch`                                      |
 | `timeoutMs`               | —      | —             | —                                                                   | yes                      | `5000` (floor `250`)                                |
@@ -174,7 +174,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 157 260 for authorized inline delivery. It fetches one
+  (ADR 0015), against 157 292 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -440,23 +440,23 @@ update through the Payload REST API (`POST` with
 request the official client makes) and renders the populated document; on
 failure it renders the raw values.
 
-The merge request has no deadline unless you set one. A fragment render gives up
-after 5 seconds and a route refresh after 8, but without a deadline a merge that
-never answers leaves its update unshown: after ten minutes the DOM runtime still
+The merge request has a deadline of ten seconds unless you set another:
+`mergeTimeoutMs` for the DOM runtime, `timeoutMs` on a hook. When it passes, the
+merge is aborted and an answer that comes later is not read. The runtime then
+renders the raw values and reports the shortfall, as it does for a merge the
+server refused; a hook reports `unavailable` and keeps the last good document
+(`tests/unit/core/merge-timeout.test.ts`). A fragment render gives up after 5
+seconds and a route refresh after 8.
+
+`0` removes the deadline, which is what 2.x did by default. A merge that never
+answers then leaves its update unshown: after ten minutes the DOM runtime still
 shows what it showed before, with `inspect().revisions.display` at `pending`, and
 a hook still has `isLoading: true` and `status: 'idle'` with no `error`
-(`tests/unit/core/merge-without-deadline.test.ts`). A slow or stalled Payload
-API then shows up as an update that never arrives, not as a failure.
-`mergeTimeoutMs` sets a deadline for the DOM runtime and a hook's `timeoutMs` for
-a hook: when it passes, the merge is aborted and an answer that comes later is not
-read. The runtime then renders the raw values and reports the shortfall, as it
-does for a merge the server refused; a hook reports `unavailable` and keeps the
-last good document (`tests/unit/core/merge-timeout.test.ts`). Both are off by
-default in 2.x; 3.0 gives them a default deadline, proposed at 10 000 ms from a
-measurement against Payload 3.92.1 (ADR 0026, 2026-11-03), and an explicit value
-still wins, `0` for none. Until then an adapter or `generateInlineScript()`
-without `mergeTimeoutMs`, and a hook without `timeoutMs`, says so once in
-development (ADR 0007 ledger, row 27).
+(`tests/unit/core/merge-deadline.test.ts`), so a stalled Payload API shows up as
+an update that never arrives, not as a failure. The default of 10 000 ms is about
+seven times the slowest request of a measurement against Payload 3.92.1 (ADR
+0026, 2026-11-03); a CMS that answers more slowly than that needs a higher value
+(ADR 0007 ledger, row 27).
 
 An update with `fieldSchemaJSON`, which only a Payload 2 admin sends, is
 refused, and so is every later update of that sender (`LP0504`,
