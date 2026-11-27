@@ -147,7 +147,7 @@ CI (2026-11-26), without the mode that gated on intent 11 973 at 88.86 %, with
 hooks that name their document 11 957 at 88.85 %, with a detector that trusts
 no referrer unasked 11 936 at 88.83 %, with groups covered path by path
 11 911 at 88.83 %, and with a route refresh that returns a promise 11 912 at
-88.83 % (2026-11-27). The four
+88.83 %, measured whole in CI (2026-11-27). The four
 critical coverage cells added in 2.1 covered the population primitive, document
 session, parser and walker; three of them left with Payload 2 in 3.0, and the Coverage job holds the session's floors (95 % of lines and
 branches, every function) on every push, like every other critical file.
