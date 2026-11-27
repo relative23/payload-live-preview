@@ -13,7 +13,7 @@ import { livePreview } from 'payload-live-preview/astro';
 // (tests/real-payload, target astro-session): the editor's own session decides
 // instead of the token the mock admin mints, only the admin's origin may send
 // updates, and the runtime populates a relationship from the admin's REST API.
-// The strict default holds in both setups.
+// The hook decides in both setups.
 const serverURL = process.env['PLP_PAYLOAD_SERVER_URL'] ?? '';
 const realAdmin = serverURL === '' ? undefined : { serverURL, origin: new URL(serverURL).origin };
 
@@ -25,9 +25,8 @@ export default defineConfig({
     livePreview({
       mode: 'middleware',
       // The integration serializes its options into the build, so the hook
-      // travels by module reference (ADR 0024) and the strict 2.0 default
-      // holds: a preview needs the token the mock admin mints, or against a
-      // real admin the editor's session.
+      // travels by module reference (ADR 0024): a preview needs the token
+      // the mock admin mints, or against a real admin the editor's session.
       authorizePreviewModule:
         realAdmin === undefined
           ? './src/live-preview/authorize.ts'

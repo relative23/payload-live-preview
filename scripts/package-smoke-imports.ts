@@ -75,7 +75,9 @@ export async function writeVirtualModuleLoader(consumer: string): Promise<string
     loader,
     [
       'const VIRTUAL_OPTIONS = "virtual:payload-live-preview/options";',
-      'const VIRTUAL_URL = "data:text/javascript,export default {defaults:\\"v1\\"};";',
+      // The entry builds its middleware when it loads, and a middleware needs the admin's origin
+      // and a hook to start. Nothing is requested here, so the hook only has to be one.
+      'const VIRTUAL_URL = "data:text/javascript,export default {allowedOrigins:[\\"https://admin.example.com\\"],authorizePreview(){return null}};";',
       // `./nextjs/client` imports the App Router hooks, which only a Next build
       // resolves for it; the smoke loads the entry, not Next.
       'const NEXT_NAVIGATION_URL = "data:text/javascript,export const useRouter=()=>({refresh(){}});export const usePathname=()=>null;export const useSearchParams=()=>null;";',

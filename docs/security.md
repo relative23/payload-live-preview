@@ -50,18 +50,19 @@ The controls keep deliberately narrow responsibilities:
 | `shouldInject`                                  | Filter script insertion by route/content                                             | Authorization; it does not suppress adapter CSP handling     |
 | `draft` / privileged fetch headers              | Select and authenticate a Payload data request                                       | Verifying the frontend request that chose them               |
 
-`strict` is the default: an adapter that decides per request
+No response changes on intent alone: an adapter that decides per request
 (`createLivePreviewMiddleware()`, `livePreviewHandle()`,
 `defineLivePreviewServerHandler()`, `livePreviewNitroPlugin()`, and Next.js's
 `LivePreviewScript` on its first render) refuses to start without
 `authorizePreview`, without non-empty `allowedOrigins`, with an origin that is not `https:` (in production), or with `'referer'` among
-the resolved `previewSignals`, which the `'v1'` signal set includes. Astro's
+the `previewSignals`. Astro's
 `livePreview()` integration in its default `mode: 'inline'` and in `'loader'`
 injects at build time and checks none of this; its `'middleware'` mode takes
 the hook by module reference (`authorizePreviewModule`, ADR 0024) and refuses
-the strict default without one. `strict: false` restores the 1.x intent-only
-behavior, with a one-time development warning, for a staged migration; so does
-the deprecated `defaults: 'v1'`, which 3.0 removes.
+to start without one. 2.x called this `strict` and had two ways around it for a
+staged migration, `strict: false` and `defaults: 'v1'`, which restored the 1.x
+behaviour of gating on intent. 3.0 removed both (ADR 0007, rows 36 and 21): an
+adapter given either refuses to start and names what to do.
 
 When verification fails or is unavailable the adapters serve the ordinary
 published response unchanged. An authorized response, and any other response
@@ -111,14 +112,14 @@ Inbound `postMessage` events are dropped unless `event.origin` matches one of:
 - An explicit origin from `allowedOrigins`. The browser runtime reads no
   environment variable — read `PUBLIC_PAYLOAD_ADMIN_ORIGIN` on the server and
   pass the value in.
-- The captured `document.referrer` origin — **only as a zero-config fallback when no explicit origins are configured**, and only with `disableReferrerDetection: false` (`defaults: 'v1'`). The referrer names whoever actually framed the page, so it must never widen an explicitly pinned allow-list; the detector enforces this.
+- The captured `document.referrer` origin — **only as a zero-config fallback when no explicit origins are configured**, and only with `disableReferrerDetection: false`. The referrer names whoever actually framed the page, so it must never widen an explicitly pinned allow-list; the detector enforces this.
 - A localhost pattern (`/^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i`) — only in development.
 
 After the first accepted data-bearing update, the detector **locks** to that exact origin (the inline runtime and `LivePreviewClient`; the React and Vue hooks keep accepting every allowed origin). Subsequent messages from any other origin (including ones in the original allow-list) are dropped.
 
 ⚠️ **Referrer-fallback mode:** when no explicit origins are configured, referrer detection is on and dev-mode matching is off, the referrer is the only trust source — any site that embeds the preview page in an iframe could then post (sanitized) updates into it. The inline bootstrap logs a console warning (`LP0102`) in this configuration; programmatic clients can inspect their configuration and provide their own diagnostics. Mitigations: set explicit `allowedOrigins`, and serve a `frame-ancestors` CSP so only the admin may frame the page (the adapters do this by default on intent-matched responses; use the authorization boundary above when that response change is protected).
 
-Note on intent detection and CSP: under the default `previewSignals: ['query']` only a query parameter counts as intent (`preview`, `draft` or `livePreview`, or the parameters `previewQueryParams` names instead, with the value `true` or `1`); with `defaults: 'v1'` an iframe destination and an admin referer count too, so **any** iframe-destined request then gets the merged `frame-ancestors 'self' <admin-origins>` policy. Foreign origins remain blocked from framing; the relaxation versus a site-wide `frame-ancestors 'none'` is that `'self'` and the admin origins become allowed on those responses — and only after `authorizePreview` accepted the request under `strict`. Disable with `manageCsp: false` if you need `'none'` unconditionally.
+Note on intent detection and CSP: under the default `previewSignals: ['query']` only a query parameter counts as intent (`preview`, `draft` or `livePreview`, or the parameters `previewQueryParams` names instead, with the value `true` or `1`); with `'fetch-dest'` among the signals an iframe destination counts too, and an iframe-destined request then gets the merged `frame-ancestors 'self' <admin-origins>` policy once `authorizePreview` accepted it. Foreign origins remain blocked from framing; the relaxation versus a site-wide `frame-ancestors 'none'` is that `'self'` and the admin origins become allowed on those responses — and only after `authorizePreview` accepted the request. Disable with `manageCsp: false` if you need `'none'` unconditionally.
 
 ## Message-shape validation
 
@@ -185,7 +186,7 @@ never add a binding), and strips other `data-*` too, unless a direct
 `sanitizeHtml()` call lists them in `allowedDataAttributes`; the runtime's own
 writes and `lexicalToHtml()` list none. Those checks run before the extension allow-lists,
 so `additionalAllowedAttributes` cannot re-admit them. `'compat'`
-(`defaults: 'v1'`, or `setSanitizerPolicy('compat')`) keeps `id` and every
+(`sanitizerPolicy: 'compat'`, or `setSanitizerPolicy('compat')`) keeps `id` and every
 `data-*`. Every sanitizer case in the property suite runs under both
 policies, and since 2.0.6 an XSS corpus (118 vectors then, 143 now) and an aimed
 fuzz run under `strict`, `compat` and the item-template options against an oracle that

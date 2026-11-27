@@ -37,7 +37,7 @@ export function createPreviewFocusReporter(resolveTarget: () => FocusReportTarge
 export type CustomRendererKey = `${string}:${string}`;
 
 // @public
-export type DefaultsProfile = 'v1' | 'v2';
+export type DefaultsProfile = 'v2';
 
 // @public
 export const DIAGNOSTIC_CODES: Readonly<{

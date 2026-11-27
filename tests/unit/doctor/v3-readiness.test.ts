@@ -133,6 +133,12 @@ describe('pll doctor --v3: adapter options (rows 21, 27, 32, 33 and strict: fals
 
     expect(places(report, 'strict-false')).toEqual(['middleware.ts:2']);
     expect(places(report, 'defaults-v1')).toEqual(['middleware.ts:2']);
+    // Each is a ledger row since 3.0 removed it, and the report names it by that row.
+    const text = formatV3Readiness(report);
+    expect(text).toContain(
+      'Row 36: `strict: false`, which gated response changes on intent alone, is removed',
+    );
+    expect(text).toContain("Row 21: `defaults: 'v1'`, the 1.x profile, is removed");
   });
 
   it('lists the Astro integration without a mode, and only the Astro one', async () => {

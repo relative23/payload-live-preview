@@ -9,6 +9,7 @@ import { generateInlineScript, generateLoaderScript } from '@inline/generator';
 import { loaderAsset } from './loader-asset';
 import { hookImportLines, refuseOutsideReference } from '@adapters/shared/hook-reference';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
+import { refuseRemovedOptions } from '@/types/removed-options';
 import type { LivePreviewAstroOptions } from './types';
 import { ASTRO_PAGE } from './page-facts';
 import { isDevelopmentProcess, warnOnce } from '@/types/dev-warning';
@@ -179,6 +180,9 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
         }
       },
       'astro:config:setup': (ctx): void => {
+        // Before the mode decides anything: the middleware mode serializes its options and
+        // would meet a removed one only on the first request.
+        refuseRemovedOptions(options);
         if (options.mode === 'middleware') {
           setupMiddlewareMode(ctx, options);
           return;
@@ -310,17 +314,14 @@ function setupMiddlewareMode(ctx: AstroConfigSetupContext, options: LivePreviewA
   }
   const reference = options.authorizePreviewModule;
   if (reference !== undefined) refuseOutsideReference(reference);
-  // Strict needs `authorizePreview`, which cannot serialize: refuse here rather
+  // The middleware needs `authorizePreview`, which cannot serialize: refuse here rather
   // than build cleanly and fail on every preview request.
-  const willBeStrict = options.strict ?? options.defaults !== 'v1';
-  if (willBeStrict && reference === undefined) {
+  if (reference === undefined) {
     throw new Error(
-      "payload-live-preview: mode 'middleware' cannot satisfy the 2.0 strict default — it " +
-        'serializes its options into the build, so it cannot carry the `authorizePreview` ' +
-        'function strict mode requires. Name the module that exports it in ' +
-        '`authorizePreviewModule` (ADR 0024), or register ' +
-        '`createLivePreviewMiddleware({ authorizePreview, ... })` yourself in src/middleware.ts. ' +
-        "`defaults: 'v1'` (or `strict: false`) runs intent-only middleware instead " +
+      "payload-live-preview: mode 'middleware' serializes its options into the build, so it " +
+        'cannot carry the `authorizePreview` function the middleware requires. Name the module ' +
+        'that exports it in `authorizePreviewModule` (ADR 0024), or register ' +
+        '`createLivePreviewMiddleware({ authorizePreview, ... })` yourself in src/middleware.ts ' +
         '(ADR 0006 explains why intent is not authorization).',
     );
   }
@@ -328,13 +329,10 @@ function setupMiddlewareMode(ctx: AstroConfigSetupContext, options: LivePreviewA
   const { mode: _mode, authorizePreviewModule: _reference, ...serializable } = options;
   const json = JSON.stringify(serializable).replace(/</g, '\\u003C');
   // Vite resolves a root-relative path against the project root.
-  const optionsModule =
-    reference === undefined
-      ? `export default ${json};`
-      : [
-          ...hookImportLines(reference.startsWith('./') ? reference.slice(1) : reference),
-          `export default { ...${json}, authorizePreview };`,
-        ].join('\n');
+  const optionsModule = [
+    ...hookImportLines(reference.startsWith('./') ? reference.slice(1) : reference),
+    `export default { ...${json}, authorizePreview };`,
+  ].join('\n');
 
   ctx.updateConfig({
     vite: {

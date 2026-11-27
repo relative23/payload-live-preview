@@ -139,10 +139,12 @@ the scope is 82 files and 12 114 mutants, 55 of them without coverage. For
 2.3.1 the same 82 files hold 12 657 mutants, 89.16 % detected, 48 without
 coverage (2026-11-02). The scope has since grown to 87 files. 3.0 takes three
 of them out with Payload 2: the 84 that remain hold 12 058 mutants, 88.84 %
-detected, 49 without coverage (2026-11-25); without the names 2.x kept as
-deprecated aliases, 12 036 mutants and 88.81 % (2026-11-26). The score
+detected, 49 without coverage (2026-11-25). The score
 is lower although no file detects less than before, because the 847 mutants of
-the three files that left were detected at 96 %. The four
+the three files that left were detected at 96 %. Without the names 2.x kept as
+deprecated aliases the scope holds 12 036 mutants at 88.82 %, measured whole in
+CI (2026-11-26), and without the mode that gated on intent 11 973 at 88.86 %
+(2026-11-27). The four
 critical coverage cells added in 2.1 covered the population primitive, document
 session, parser and walker; three of them left with Payload 2 in 3.0, and the Coverage job holds the session's floors (95 % of lines and
 branches, every function) on every push, like every other critical file.

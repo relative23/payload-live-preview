@@ -41,11 +41,7 @@ export class LivePreviewClient {
   constructor(rawConfig: LivePreviewClientConfig = {}) {
     const config = withProfileDefaults(rawConfig);
     const serverURL = config.serverURL ?? '';
-    assertMergeDepthExplicit({
-      defaults: rawConfig.defaults,
-      serverURL,
-      mergeDepth: config.mergeDepth,
-    });
+    assertMergeDepthExplicit({ serverURL, mergeDepth: config.mergeDepth });
     const debug = config.debug ?? isDevMode();
     this.#log = debug
       ? (...args): void => {

@@ -206,7 +206,7 @@ const where = (place: V3Place): string => `${place.file}:${String(place.line)}`;
 export function formatV3Readiness(report: V3Report): string {
   const lines = [`pll doctor --v3 — what 3.0 changes in ${report.root} (ADR 0007)`, ''];
   for (const { rule, places } of report.rows) {
-    lines.push(rule.row === undefined ? rule.title : `Row ${String(rule.row)}: ${rule.title}`);
+    lines.push(`Row ${String(rule.row)}: ${rule.title}`);
     for (const place of places) lines.push(`  ${where(place)}`);
     lines.push(`  ${rule.remedy}`, '');
   }

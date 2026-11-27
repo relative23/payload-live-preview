@@ -87,7 +87,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0607:
     "The page declared `hydration: 'react'` (the Next.js adapter does), `'vue'` (the Nuxt adapter does), `'sveltekit'` (the SvelteKit handle does) or `'manual'` and, within five seconds, React committed no tree holding a binding, Vue mounted no app around one, SvelteKit's root did not mount (its `#svelte-announcer` never appeared), or the page did not call `markHydrated()`, so the runtime started as it would on a static page; a hydration that completes later regenerates the tree, or repairs it, and reverts the first write, once. Usually the client bundle failed to load or was very slow — check the network panel. On a page nothing hydrates, drop the option from `generateInlineScript()`. `inspect().hydration.state` reads `timed-out`.",
   LP0701:
-    'Expected on a correctly configured deployment when the audit sends no credentials: under the strict default a preview request without them gets no runtime. Pass what an editor\'s browser sends — `--header "Cookie: payload-token=$PAYLOAD_TOKEN"` or a signed token as `?previewToken=$PREVIEW_TOKEN`, from environment variables — to audit the authorized response. If it persists, check the adapter\'s `inject` mode and `previewSignals`; if you start the client yourself, this line is expected.',
+    'Expected on a correctly configured deployment when the audit sends no credentials: a preview request without them gets no runtime. Pass what an editor\'s browser sends — `--header "Cookie: payload-token=$PAYLOAD_TOKEN"` or a signed token as `?previewToken=$PREVIEW_TOKEN`, from environment variables — to audit the authorized response. If it persists, check the adapter\'s `inject` mode and `previewSignals`; if you start the client yourself, this line is expected.',
   LP0702:
     'Let the adapter manage CSP, or add the admin origin to your own `frame-ancestors`. As an error the served policy does not admit `--admin`: add that origin to `allowedOrigins`.',
   LP0703:
@@ -103,7 +103,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0708:
     'Point the audit at a route that renders an HTML document. Redirects are reported, not followed, so probe the final URL; a redirect to a login needs credentials: pass `--header "Cookie: payload-token=$PAYLOAD_TOKEN"` or a signed token as `?previewToken=$PREVIEW_TOKEN`, from environment variables.',
   LP0709:
-    "A runtime row is at its 1.x value — set explicitly, by `defaults: 'v1'`, or read from a script older than 2.0.0-rc.1 that does not name its defaults (an `info` line says so). The finding says which, and what to change.",
+    "A runtime row is at its 1.x value — set explicitly, by `defaults: 'v1'` on a page 2.x served, or read from a script older than 2.0.0-rc.1 that does not name its defaults (an `info` line says so). The finding says which, and what to change.",
   LP0710:
     "Correct for `inject: 'always'`. Under `'preview-only'` it means every request counts as intent: check `previewSignals` and `previewQueryParams`.",
   LP0711:

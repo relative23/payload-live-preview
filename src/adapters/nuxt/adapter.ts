@@ -134,7 +134,7 @@ async function decideFor(
   const stashed = context[DECISION_CONTEXT_KEY] as StashedDecision | undefined;
   if (stashed !== undefined) return stashed;
   const request = toPreviewRequestLike(event);
-  const decision = await policy.decide(request, bindDecisionHooks(policy, options, request));
+  const decision = await policy.decide(request, bindDecisionHooks(options, request));
   const result: StashedDecision = { decision, nonce: policy.nonce() };
   context[DECISION_CONTEXT_KEY] = result;
   exposeDecision(context, decision, result.nonce);

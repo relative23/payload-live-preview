@@ -206,9 +206,8 @@ is a series of requests that one deadline covers together. The value is set
 before 3.0; 2.x keeps no default.
 
 **3.0 removes what warned (2026-11-26).** The forms this record names are gone
-on the 3.0 line, except `defaults: 'v1'`, which still runs and still warns
-there until it is removed in its own change. A removed form does not warn any
-more. Where a JavaScript config can still pass it and ignoring it would change
+on the 3.0 line; `defaults: 'v1'` followed on 2026-11-27 with `strict: false`.
+A removed form does not warn any more. Where a JavaScript config can still pass it and ignoring it would change
 what the site does, it is refused at startup with the same sentence the warning
 gave, as an error: ADR 0007 has the list under the same date. The keys of the
 removed warnings are no longer written to the realm.

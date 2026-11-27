@@ -13,7 +13,7 @@ export interface InlineScriptConfig {
   readonly serverURL?: string;
   /** REST route prefix used with `serverURL`. Default `/api`. */
   readonly apiRoute?: string;
-  /** Population depth used with `serverURL`. Required with `serverURL` unless `defaults: 'v1'`. */
+  /** Population depth used with `serverURL`. Required with `serverURL`. */
   readonly mergeDepth?: number;
   /** Verbose console logging. Default `false`. */
   readonly debug?: boolean;
@@ -29,19 +29,19 @@ export interface InlineScriptConfig {
   readonly visibilityGateThreshold?: number;
   /** `rootMargin` of the IntersectionObserver. Default `'200px'`. */
   readonly intersectionRootMargin?: string;
-  /** Ignore `document.referrer` as an origin source. Default `true`; `defaults: 'v1'` sets `false`. */
+  /** Ignore `document.referrer` as an origin source. Default `true`. */
   readonly disableReferrerDetection?: boolean;
   /** Disable the dev-mode localhost matcher (any port on `localhost`/`127.0.0.1`). Default `false`. */
   readonly disableLocalhostMatching?: boolean;
   /** Update only bindings under a matching `data-payload-owner`. Default `false`. */
   readonly scopeBindingsByOwner?: boolean;
-  /** Skip bindings whose value did not change. Default `true`; `defaults: 'v1'` sets `false`. */
+  /** Skip bindings whose value did not change. Default `true`. */
   readonly skipUnchanged?: boolean;
   /** Scroll the preview to the field being edited. Default `false`. */
   readonly revealEditedField?: boolean;
-  /** Which windows may post updates. Default `'parent-or-opener'`; `defaults: 'v1'` sets `'any'`. */
+  /** Which windows may post updates. Default `'parent-or-opener'`. */
   readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
-  /** Sanitizer policy for rich text and HTML writes. Default `'strict'`; `defaults: 'v1'` sets `'compat'`. */
+  /** Sanitizer policy for rich text and HTML writes. Default `'strict'`. */
   readonly sanitizerPolicy?: 'compat' | 'strict';
   /** Same-origin path of a fragment endpoint; the script then carries the fragment client ahead of the runtime (ADR 0011). */
   readonly fragmentEndpoint?: string;

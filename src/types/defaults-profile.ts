@@ -1,17 +1,17 @@
 /**
- * The two defaults profiles, row by row. 2.0 ships `v2`; `defaults: 'v1'` opts
- * back into the 1.x table for a staged migration. Each row belongs to exactly
- * one side — the adapter's request decision or the browser runtime — and a
- * test asserts the profile assigns every readiness row that has an option, so
- * a row added later cannot be forgotten. See ADR 0007.
+ * The defaults, row by row. 3.0 has one profile: `defaults: 'v1'`, the 1.x
+ * table that 2.x kept for a staged migration, is removed (ADR 0007, row 21).
+ * Each row belongs to exactly one side — the adapter's request decision or
+ * the browser runtime — and a test asserts the table assigns every readiness
+ * row that has an option, so a row added later cannot be forgotten.
  *
  * It lives in the leaf `types` domain, like `merge-depth.ts`, because the
- * inline generator resolves the profile too, and the generator is server-side
+ * inline generator reads the table too, and the generator is server-side
  * code that may not reach the browser runtime in `core`.
  */
 
-/** `'v2'` is the 2.0 default; `'v1'` is the 1.x table. */
-export type DefaultsProfile = 'v1' | 'v2';
+/** The one profile. The option stays so that a configuration which names it keeps working. */
+export type DefaultsProfile = 'v2';
 
 /** How the runtime decides which windows may post updates. */
 export type EventSourcePolicy = 'any' | 'parent-or-opener';
@@ -51,25 +51,3 @@ export const V2_RUNTIME_DEFAULTS: RuntimeProfileDefaults = Object.freeze({
   skipUnchanged: true,
   sanitizerPolicy: 'strict',
 });
-
-/** The 1.x table, spelled out so the profiles compare row by row. */
-export const V1_ADAPTER_DEFAULTS: AdapterProfileDefaults = Object.freeze({
-  strict: false,
-  previewSignals: Object.freeze(['query', 'fetch-dest', 'referer'] as const),
-});
-
-export const V1_RUNTIME_DEFAULTS: RuntimeProfileDefaults = Object.freeze({
-  disableReferrerDetection: false,
-  eventSourcePolicy: 'any',
-  skipUnchanged: false,
-  sanitizerPolicy: 'compat',
-});
-
-/** Only an explicit `'v1'` opts out; everything else gets the hardened rows. */
-export function adapterDefaultsFor(profile: DefaultsProfile | undefined): AdapterProfileDefaults {
-  return profile === 'v1' ? V1_ADAPTER_DEFAULTS : V2_ADAPTER_DEFAULTS;
-}
-
-export function runtimeDefaultsFor(profile: DefaultsProfile | undefined): RuntimeProfileDefaults {
-  return profile === 'v1' ? V1_RUNTIME_DEFAULTS : V2_RUNTIME_DEFAULTS;
-}

@@ -116,7 +116,7 @@ export async function LivePreviewScript(
   const { request, nonce, ...options } = props;
   const policy = createPreviewPolicy(options);
   const resolved = await request;
-  const decision = await policy.decide(resolved, bindDecisionHooks(policy, options, resolved));
+  const decision = await policy.decide(resolved, bindDecisionHooks(options, resolved));
   if (!decision.inject) return null;
   const createElement = await loadCreateElement();
   return createElement(

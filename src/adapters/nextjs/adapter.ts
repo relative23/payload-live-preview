@@ -36,7 +36,7 @@ export function createLivePreviewMiddleware(
 ): (request: Request, response: Response) => Promise<Response> {
   const policy = createPreviewPolicy(options, REACT_PAGE);
   return async (request, response) => {
-    const decision = await policy.decide(request, bindDecisionHooks(policy, options, request));
+    const decision = await policy.decide(request, bindDecisionHooks(options, request));
     if (!decision.isPreview) return response;
     return decision.cspMode === 'full'
       ? withCarriedNonce(response, policy, decision)

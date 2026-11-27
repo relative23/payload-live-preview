@@ -134,9 +134,12 @@ test.describe('fragment preview (Nuxt)', () => {
     expect(stats.rendered).toBe(0);
   });
 
-  test('intent alone gets the runtime but never a server render', async ({ page }) => {
-    // The page is a preview because it says so; the endpoint verifies a signed
-    // token instead, so a framed page without one is patched and never rendered.
+  test('a session without a route token gets the runtime but never a server render', async ({
+    page,
+  }) => {
+    // The page is a preview for the fixture's session cookie; the endpoint verifies the signed
+    // token of the framed URL instead, so a framed page without one is patched and never rendered.
+    expect((await page.request.get(`${APP}/preview-session`)).status()).toBe(204);
     const frame = await open(page, '?unauthorized=1');
 
     await post(page, { title: 'Patched only', subtitle: 'Must not appear', body: 'x y' }, OWNER);

@@ -151,12 +151,7 @@ describe('decide — with an authorizePreview hook', () => {
     expect(decision.exposeNonce).toBe(true);
   });
 
-  it('reports whether a hook is configured so adapters can bind it', () => {
-    expect(createPreviewPolicy(options).authorizes).toBe(true);
-    expect(createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] }).authorizes).toBe(false);
-  });
-
-  it('under the default profile an iframe fetch destination alone is not intent', async () => {
+  it('an iframe fetch destination alone is not intent', async () => {
     const policy = createPreviewPolicy(options);
     const framed = new Request('https://site.example.com/', {
       headers: { 'sec-fetch-dest': 'iframe' },
@@ -166,34 +161,17 @@ describe('decide — with an authorizePreview hook', () => {
   });
 });
 
-describe("decide — without a hook (defaults: 'v1')", () => {
-  it('keeps gating on intent and exposes the nonce, and says so once per process', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const policy = createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
-    createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
-    // The profile's own deprecation (ADR 0026) and the merge deadline 3.0
-    // adds (ADR 0007, row 27) are the other two lines.
-    const intentOnly = warn.mock.calls.filter(([message]) =>
-      String(message).includes('authorizePreview'),
-    );
-    expect(intentOnly).toHaveLength(1);
-    expect(warn).toHaveBeenCalledTimes(3);
-    const decision = await policy.decide(request(INTENT));
-    expect(decision).toMatchObject({
-      isPreview: true,
-      authorization: null,
-      outcome: undefined,
-      inject: true,
-      cspMode: 'frame-ancestors',
-      exposeNonce: true,
-    });
-  });
+describe('a policy needs a hook', () => {
+  it('does not start without one, in production or outside it, and names the way to one', () => {
+    const refusal =
+      'payload-live-preview: strict mode requires `authorizePreview` — response changes must be ' +
+      'gated on a verified context, not on intent (ADR 0006). Pass a hook that returns ' +
+      '`authorizePreviewRequest(request, strategy)` from `payload-live-preview/server` ' +
+      '(docs/authorization.md).';
 
-  it('does not warn in production', () => {
+    expect(() => createPreviewPolicy({ allowedOrigins: [ADMIN] })).toThrow(refusal);
     process.env['NODE_ENV'] = 'production';
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    createPreviewPolicy({ defaults: 'v1', allowedOrigins: [ADMIN] });
-    expect(warn).not.toHaveBeenCalled();
+    expect(() => createPreviewPolicy({ allowedOrigins: [ADMIN] })).toThrow(refusal);
   });
 
   it('does not warn when a hook and a merge deadline are configured', () => {
@@ -208,27 +186,6 @@ describe("decide — without a hook (defaults: 'v1')", () => {
 });
 
 describe('strict', () => {
-  it('names the way out, because every rule here is new in 2.0', () => {
-    // The process that stops is one that worked on 1.x. A rule without an exit
-    // leaves an upgrader to discover that a staged path exists at all.
-    const messages = [
-      () => createPreviewPolicy({ strict: true, allowedOrigins: [ADMIN] }),
-      () => createPreviewPolicy({ strict: true, authorizePreview: () => null }),
-    ].map((build) => {
-      try {
-        build();
-        return '';
-      } catch (error) {
-        return (error as Error).message;
-      }
-    });
-
-    for (const message of messages) {
-      expect(message).toContain("defaults: 'v1'");
-      expect(message).toContain('docs/migration.md');
-    }
-  });
-
   const hook = () => null;
 
   it('refuses to start without authorizePreview', () => {
@@ -243,9 +200,7 @@ describe('strict', () => {
     );
   });
 
-  it('says what to do about each refusal, and that the 1.x profile ends with 3.0', () => {
-    // `defaults: 'v1'` is a staged path that 3.0 removes, so the message that
-    // stops a process names the fix for the rule it states as well.
+  it('says what to do about each refusal', () => {
     const refusal = (build: () => unknown): string => {
       try {
         build();
@@ -266,19 +221,14 @@ describe('strict', () => {
     );
 
     // In full: a message is a row of literals, and one that nothing reads can go blank unnoticed.
-    const staged =
-      " New in 2.0; `defaults: 'v1'` keeps the 1.x table while you migrate, until 3.0 removes it (docs/migration.md).";
     expect(withoutHook).toBe(
-      'payload-live-preview: strict mode requires `authorizePreview` — response changes must be gated on a verified context, not on intent (ADR 0006). Pass a hook that returns `authorizePreviewRequest(request, strategy)` from `payload-live-preview/server` (docs/authorization.md).' +
-        staged,
+      'payload-live-preview: strict mode requires `authorizePreview` — response changes must be gated on a verified context, not on intent (ADR 0006). Pass a hook that returns `authorizePreviewRequest(request, strategy)` from `payload-live-preview/server` (docs/authorization.md).',
     );
     expect(withoutOrigins).toBe(
-      "payload-live-preview: strict mode requires explicit, non-empty `allowedOrigins`. Name the origin of the Payload admin, as in `allowedOrigins: ['https://cms.example.com']`." +
-        staged,
+      "payload-live-preview: strict mode requires explicit, non-empty `allowedOrigins`. Name the origin of the Payload admin, as in `allowedOrigins: ['https://cms.example.com']`.",
     );
     expect(plainOrigin).toBe(
-      'payload-live-preview: strict mode requires https admin origins in production; got "http://admin.local". Name the https origin of the admin; http passes only where `NODE_ENV` is not `production`.' +
-        staged,
+      'payload-live-preview: strict mode requires https admin origins in production; got "http://admin.local". Name the https origin of the admin; http passes only where `NODE_ENV` is not `production`.',
     );
   });
 
@@ -355,18 +305,10 @@ describe('strict', () => {
         allowedOrigins: [ADMIN],
         previewSignals: ['query', 'referer'],
       }),
-    ).toThrow(/referer/);
-  });
-
-  it("refuses the referrer trust the 'v1' profile fills in, unless the signals are narrowed", () => {
-    const base = {
-      strict: true,
-      defaults: 'v1',
-      authorizePreview: hook,
-      allowedOrigins: [ADMIN],
-    } as const;
-    expect(() => createPreviewPolicy(base)).toThrow(/referer/);
-    expect(() => createPreviewPolicy({ ...base, previewSignals: ['query'] })).not.toThrow();
+    ).toThrow(
+      "payload-live-preview: strict mode disables referrer trust; remove 'referer' from " +
+        '`previewSignals`.',
+    );
   });
 
   it('starts with a complete configuration and does not warn', () => {
@@ -383,45 +325,26 @@ describe('strict', () => {
   });
 });
 
-describe('profiles and runtime rows', () => {
-  it('the default profile is strict and query-only, and writes no override rows', () => {
+describe('the defaults table and the runtime rows', () => {
+  it('counts the query alone as intent and writes no row the runtime already has', () => {
     const options = { authorizePreview: () => null, allowedOrigins: [ADMIN] } as const;
-    expect(resolvePolicyOptions(options)).toEqual({ strict: true, previewSignals: ['query'] });
+    expect(resolvePolicyOptions(options)).toEqual({ previewSignals: ['query'] });
     expect(inlineScriptConfig(options)).toEqual({ allowedOrigins: [ADMIN] });
     expect(inlineScriptConfig({})).toEqual({});
   });
 
-  it('lets explicit options win over the profile', () => {
+  it('lets explicit options win over the table', () => {
     const resolved = resolvePolicyOptions({
       defaults: 'v2',
-      strict: false,
+      strict: true,
       previewSignals: ['query', 'fetch-dest'],
       skipUnchanged: false,
     });
-    expect(resolved.strict).toBe(false);
     expect(resolved.previewSignals).toEqual(['query', 'fetch-dest']);
     expect(resolved.skipUnchanged).toBe(false);
   });
 
-  it("an explicit 'v1' writes the override rows the v2 runtime would not use", () => {
-    expect(inlineScriptConfig({ defaults: 'v1' })).toEqual({
-      // Carried through so the generator accepts an omitted `mergeDepth`; it
-      // is not a wire slot.
-      defaults: 'v1',
-      skipUnchanged: false,
-      disableReferrerDetection: false,
-      eventSourcePolicy: 'any',
-      sanitizerPolicy: 'compat',
-    });
-    expect(resolvePolicyOptions({ defaults: 'v1' }).strict).toBe(false);
-    expect(resolvePolicyOptions({ defaults: 'v1' }).previewSignals).toEqual([
-      'query',
-      'fetch-dest',
-      'referer',
-    ]);
-  });
-
-  it('forwards the individual runtime rows without downgrading the whole profile', () => {
+  it('forwards the individual runtime rows', () => {
     expect(
       inlineScriptConfig({
         eventSourcePolicy: 'any',
@@ -433,15 +356,13 @@ describe('profiles and runtime rows', () => {
       disableReferrerDetection: false,
       disableLocalhostMatching: true,
     });
-    expect(
-      inlineScriptConfig({ defaults: 'v1', eventSourcePolicy: 'parent-or-opener' }),
-    ).toMatchObject({ eventSourcePolicy: 'parent-or-opener', disableReferrerDetection: false });
   });
 
   it('serverURL without mergeDepth is refused at construction and in the inline config', () => {
     const base = { authorizePreview: () => null, allowedOrigins: [ADMIN] };
     expect(() => createPreviewPolicy({ ...base, serverURL: 'https://cms.example.com' })).toThrow(
-      /mergeDepth/,
+      'payload-live-preview: `serverURL` needs an explicit `mergeDepth` — choose the population ' +
+        'depth deliberately (0 for none; ADR 0007, entry 10).',
     );
     expect(() => inlineScriptConfig({ serverURL: 'https://cms.example.com' })).toThrow(
       /mergeDepth/,
@@ -449,15 +370,12 @@ describe('profiles and runtime rows', () => {
     expect(() =>
       createPreviewPolicy({ ...base, serverURL: 'https://cms.example.com', mergeDepth: 0 }),
     ).not.toThrow();
-    expect(() =>
-      inlineScriptConfig({ defaults: 'v1', serverURL: 'https://cms.example.com' }),
-    ).not.toThrow();
-    // The generator repeats the check, so the profile has to reach it too.
+    // The generator repeats the check.
     expect(() =>
       createPreviewPolicy({
         ...base,
-        defaults: 'v1',
         serverURL: 'https://cms.example.com',
+        mergeDepth: 0,
       }).scriptTag('n0nce'),
     ).not.toThrow();
   });

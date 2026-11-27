@@ -6,7 +6,12 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LivePreviewClient } from '@client/index';
-import { fireUpdate, preparePreviewPage, restorePreviewPage, v1Config } from './client-harness';
+import {
+  fireUpdate,
+  preparePreviewPage,
+  restorePreviewPage,
+  pipelineConfig,
+} from './client-harness';
 
 beforeEach(preparePreviewPage);
 afterEach(restorePreviewPage);
@@ -22,7 +27,7 @@ async function unboundAfterSiblingEdit(client: LivePreviewClient): Promise<reado
 describe('LivePreviewClient — subfieldCoverage', () => {
   it("reports an edited unbound sibling under 'declared'", async () => {
     document.body.innerHTML = GROUP;
-    const client = new LivePreviewClient(v1Config({ subfieldCoverage: 'declared' }));
+    const client = new LivePreviewClient(pipelineConfig({ subfieldCoverage: 'declared' }));
     try {
       expect(await unboundAfterSiblingEdit(client)).toContain('hero.description');
     } finally {
@@ -32,7 +37,7 @@ describe('LivePreviewClient — subfieldCoverage', () => {
 
   it('keeps the descendant rule when the option is not given', async () => {
     document.body.innerHTML = GROUP;
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     try {
       expect(await unboundAfterSiblingEdit(client)).not.toContain('hero.description');
     } finally {

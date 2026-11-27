@@ -1,15 +1,16 @@
 /**
- * `LivePreviewClient` configuration. Defaults are the 2.0 rows; `defaults: 'v1'`
- * restores the 1.x values named per option (ADR 0007).
+ * `LivePreviewClient` configuration. The defaults are one table since 3.0
+ * removed `defaults: 'v1'` (ADR 0007, row 21).
  */
 
 import type { CachedElement, FieldRenderer, RendererKey, RichTextRenderer } from '@core/types';
 import type { StrategyHandlers } from '@core/strategies/strategies';
 import {
-  runtimeDefaultsFor,
+  V2_RUNTIME_DEFAULTS,
   type DefaultsProfile,
   type EventSourcePolicy,
 } from '@/types/defaults-profile';
+import { refuseRemovedProfile } from '@/types/removed-options';
 
 export interface LivePreviewClientConfig {
   /** Explicit trusted admin origins. */
@@ -18,7 +19,7 @@ export interface LivePreviewClientConfig {
   readonly serverURL?: string;
   /** REST route prefix used with `serverURL`. Default `/api`. */
   readonly apiRoute?: string;
-  /** Population depth used with `serverURL`. Required with it; `defaults: 'v1'` falls back to `1`. */
+  /** Population depth used with `serverURL`. Required with it. */
   readonly mergeDepth?: number;
   /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */
   readonly mergeTimeoutMs?: number;
@@ -38,7 +39,7 @@ export interface LivePreviewClientConfig {
   readonly intersectionRootMargin?: string;
   /** Update only bindings under a matching `data-payload-owner`; an unowned binding is then never updated. Default `false`. */
   readonly scopeBindingsByOwner?: boolean;
-  /** Skip a binding whose value did not change. Default `true`; `defaults: 'v1'` sets `false`. */
+  /** Skip a binding whose value did not change. Default `true`. */
   readonly skipUnchanged?: boolean;
   /** Scroll the preview to the field being edited when its value changes. Default `false`. */
   readonly revealEditedField?: boolean;
@@ -77,19 +78,19 @@ export interface LivePreviewClientConfig {
   ) => FieldRenderer | undefined;
   /** The project's rich-text renderer, shared with SSR. Its output is sanitized. */
   readonly renderRichText?: RichTextRenderer;
-  /** Ignore `document.referrer` as an origin source. Default `true`; `defaults: 'v1'` sets `false`. */
+  /** Ignore `document.referrer` as an origin source. Default `true`. */
   readonly disableReferrerDetection?: boolean;
   /** Disable the dev-mode localhost matcher. Default `false`. */
   readonly disableLocalhostMatching?: boolean;
-  /** Which windows may post updates. Default `'parent-or-opener'`; `defaults: 'v1'` sets `'any'`. */
+  /** Which windows may post updates. Default `'parent-or-opener'`. */
   readonly eventSourcePolicy?: EventSourcePolicy;
   /**
    * Sanitizer policy for this client's rich text and HTML writes. Default
-   * `'strict'`; `defaults: 'v1'` sets `'compat'`. Per instance: it leaves the
+   * `'strict'`. Per instance: it leaves the
    * process default that `setSanitizerPolicy()` sets for direct `sanitizeHtml()` calls alone.
    */
   readonly sanitizerPolicy?: 'compat' | 'strict';
-  /** `'v2'` (default) is the 2.0 table; `'v1'` restores every 1.x row at once. Explicit options win. */
+  /** `'v2'` is the one table since 3.0 removed `'v1'`; the option is left for a configuration that names it. */
   readonly defaults?: DefaultsProfile;
   /** Start the runtime in the constructor. Default `true`. */
   readonly autoStart?: boolean;
@@ -100,12 +101,12 @@ export interface LivePreviewClientConfig {
   ) => boolean | Promise<boolean>;
 }
 
-/** The configuration with the `defaults` profile applied: explicit options win, `'v1'` changes nothing. */
+/** The configuration with the defaults table applied: explicit options win. */
 export function withProfileDefaults(config: LivePreviewClientConfig): LivePreviewClientConfig {
-  // `'v1'` fills the rows too: the runtime's own fallbacks are the 2.0 values
-  // since the default flip, so leaving the config alone would hand a v1 client
-  // the strict sanitizer and `skipUnchanged` it opted out of.
-  const rows = runtimeDefaultsFor(config.defaults);
+  refuseRemovedProfile(config);
+  // The bare runtime's own fallbacks are older than the table for three of these rows, so the
+  // client fills every one it was not given.
+  const rows = V2_RUNTIME_DEFAULTS;
   return {
     ...config,
     skipUnchanged: config.skipUnchanged ?? rows.skipUnchanged,

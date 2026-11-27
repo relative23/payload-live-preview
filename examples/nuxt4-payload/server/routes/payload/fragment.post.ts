@@ -3,9 +3,9 @@
  * a `Request` → `Response` function, so the H3 event is converted once here and
  * this package needs no `h3` dependency of its own.
  *
- * The page itself is authorized by intent in this fixture (`defaults: 'v1'`),
- * but the endpoint never is: it verifies the signed token in the framed URL,
- * because rendering a draft is not something intent may decide (ADR 0006).
+ * The page is authorized by the session cookie of this fixture's mock admin;
+ * the endpoint verifies the signed token in the framed URL, which is bound to
+ * the route it renders for (ADR 0006).
  */
 import { createFragmentEndpoint } from 'payload-live-preview/nuxt';
 import Hero from '../../../app/components/Hero.vue';

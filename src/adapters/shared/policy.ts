@@ -13,11 +13,11 @@ import {
 import type { PreviewAuthorizationOutcome } from '@security/preview-verdict';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
+import { refuseRemovedOptions } from '@/types/removed-options';
 import { wrapWithScriptTag } from '@inline/generator';
 // Delivery is decided in one place; the policy caches whatever that produced.
 import { renderScriptBody } from './response';
 import { hasPreviewIntent, type PreviewRequestLike } from './preview-request';
-import { warnOnce } from '@/types/dev-warning';
 import { runAuthorizeHook, type BoundAuthorizeHook } from './authorize-hook';
 import { resolvePolicyOptions, type PageFacts, type PreviewPolicyOptions } from './policy-options';
 import { assertStrictConfiguration } from './strict';
@@ -46,7 +46,7 @@ export function previewIntentFor(
       ...(options.previewQueryParams !== undefined
         ? { queryParams: options.previewQueryParams }
         : {}),
-      ...(signals !== undefined ? { signals } : {}),
+      signals,
       allowedOrigins: options.allowedOrigins ?? [],
     })
   );
@@ -99,7 +99,7 @@ export interface PreviewDecision {
   readonly isPreview: boolean;
   /** The verified context, or `null` when there was no hook or it refused. */
   readonly authorization: AuthorizedPreviewContext | null;
-  /** The hook's verdict, or `undefined` when no hook ran (no intent, or none configured). */
+  /** The hook's verdict, or `undefined` when no hook ran: a request without intent. */
   readonly outcome: PreviewAuthorizationOutcome | undefined;
   /** Intent, authorization, `autoInject` and the adapter's content filter all agreed. */
   readonly inject: boolean;
@@ -131,8 +131,6 @@ export interface PreviewPolicy {
   csp(existing: string, nonce: string, mode: Exclude<CspMode, false>): string;
   /** A fresh nonce. */
   nonce(): string;
-  /** Whether `authorizePreview` is configured; `decide()` then requires the bound hook. */
-  readonly authorizes: boolean;
 }
 
 const NONE: PreviewDecision = Object.freeze({
@@ -148,20 +146,11 @@ export function createPreviewPolicy(
   options: PreviewPolicyOptions,
   facts: PageFacts = {},
 ): PreviewPolicy {
-  const resolved = resolvePolicyOptions(options);
+  // First, so that a removed option is named before a rule it used to switch off.
+  refuseRemovedOptions(options);
   assertMergeDepthExplicit(options);
   assertCspSources(options);
-  const authorizes = typeof options.authorizePreview === 'function';
-  if (resolved.strict) {
-    assertStrictConfiguration(options);
-  } else if (!authorizes) {
-    warnOnce(
-      'intent-only-preview',
-      'preview responses are gated on client-controlled intent only. Configure `authorizePreview` ' +
-        '(see authorizePreviewRequest) before production; `strict: true` enforces it. ' +
-        'ADR 0006 explains why intent is not authorization.',
-    );
-  }
+  assertStrictConfiguration(options);
   const cspMode = normalizeCspMode(options.manageCsp);
   const autoInject = options.autoInject ?? true;
   let body: string | undefined;
@@ -170,9 +159,8 @@ export function createPreviewPolicy(
     return body;
   };
   return {
-    authorizes,
     async decide(request, hooks = {}) {
-      if (authorizes && hooks.authorize === undefined) {
+      if (hooks.authorize === undefined) {
         throw new Error(
           'payload-live-preview: `authorizePreview` is configured but decide() was called ' +
             'without an `authorize` hook; bind the hook to the request (bindDecisionHooks).',
@@ -180,27 +168,21 @@ export function createPreviewPolicy(
       }
       const isPreview = previewIntentFor(request, options);
       if (!isPreview) return NONE;
-      let authorization: AuthorizedPreviewContext | null = null;
-      let outcome: PreviewAuthorizationOutcome | undefined;
-      if (hooks.authorize !== undefined) {
-        const verdict = await runAuthorizeHook(hooks.authorize);
-        outcome = verdict.outcome;
-        if (!verdict.authorized) {
-          return {
-            isPreview,
-            authorization: null,
-            outcome,
-            inject: false,
-            cspMode: false,
-            exposeNonce: false,
-          };
-        }
-        authorization = verdict.context;
+      const verdict = await runAuthorizeHook(hooks.authorize);
+      if (!verdict.authorized) {
+        return {
+          isPreview,
+          authorization: null,
+          outcome: verdict.outcome,
+          inject: false,
+          cspMode: false,
+          exposeNonce: false,
+        };
       }
       return {
         isPreview,
-        authorization,
-        outcome,
+        authorization: verdict.context,
+        outcome: verdict.outcome,
         inject: autoInject && (hooks.shouldInject?.() ?? true),
         cspMode,
         exposeNonce: true,

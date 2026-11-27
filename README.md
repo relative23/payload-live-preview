@@ -231,7 +231,7 @@ export const handle = livePreviewHandle({
   // Payload 3.x: re-fetch the populated document; mergeDepth is required with serverURL.
   serverURL: adminOrigin,
   mergeDepth: 1,
-  // Required under the strict default: without the hook the handle refuses to
+  // Required: without the hook the handle refuses to
   // start, and every route fails, not only the preview.
   authorizePreview: (request) =>
     authorizePreviewRequest(request, { type: 'payload-session', serverURL: env.PAYLOAD_URL ?? '' }),
@@ -404,7 +404,7 @@ Full details in [docs/security.md](docs/security.md). Report vulnerabilities per
 - **Nothing updates.** Run `__livePreview.inspect()` in the preview iframe's console first — the handle exists once the injected runtime has started inside a preview frame; a page that starts `LivePreviewClient` itself calls `client.inspect()`. It names the cause in most cases. The common ones: the admin origin is missing from `allowedOrigins`, the page is not inside an iframe, the bound element does not exist (an empty field needs an anchor).
 - **Relationship fields show IDs.** Set `serverURL` with `mergeDepth`; Payload 3.x posts unpopulated form values.
 - **The preview iframe refuses to load.** The host sets `X-Frame-Options` or a restrictive `frame-ancestors`. The adapters merge `frame-ancestors` on authorized preview responses, and browsers frame by that directive alone; an `X-Frame-Options: DENY` from a proxy still blocks a preview response that has none, so it must go there.
-- **The adapter refuses the configuration.** The strict default needs `authorizePreview`, a non-empty `allowedOrigins` (`https:` in production) and no referer trust; the deprecated `defaults: 'v1'` stages a migration one row at a time, and `pll migrate` writes out the rows it stands for.
+- **The adapter refuses the configuration.** An adapter that decides per request needs `authorizePreview`, a non-empty `allowedOrigins` (`https:` in production) and no referer trust. 3.0 removed the two ways around that, `strict: false` and `defaults: 'v1'`; `pll migrate` writes out the rows the profile stood for.
 
 `inspect()` readings, `pll doctor` and every diagnostic code: [docs/troubleshooting.md](docs/troubleshooting.md). `pll doctor` sends its preview request with `?preview=true`; a preview behind `authorizePreview` is audited with an editor's credential. A signed token goes in the URL as `?previewToken=$PREVIEW_TOKEN`, which the visitor request drops; `--header "x-preview-token: $PREVIEW_TOKEN"` works only where the token strategy sets `transport: { kind: 'header' }`; a Payload session is `--header "Cookie: payload-token=$PAYLOAD_TOKEN"`. Keep the credential in an environment variable and run `node_modules/.bin/pll`, not `npx pll`, which prints the whole command line.
 

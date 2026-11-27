@@ -92,7 +92,7 @@ A path beginning with `./` is relative to the project root; a package specifier 
 
 #### Intent-only delivery is not authorization
 
-With `strict: false` (or the deprecated `defaults: 'v1'`) and no hook, the middleware injects on preview intent alone: the query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`), `Sec-Fetch-Dest: iframe` through `previewSignals`, and under `'v1'` the admin referer. All of them are client-controlled, so anyone who adds the parameter receives the runtime. Use it for a local demo, not for drafts.
+Preview intent alone changes no response. The signals are the query parameter (`preview`, `draft` or `livePreview` set to `true` or `1`) and, through `previewSignals`, `Sec-Fetch-Dest: iframe`; all of them are client-controlled, so they only decide whether the hook runs. Through 2.x `strict: false` or `defaults: 'v1'` let a middleware without a hook inject on intent; 3.0 removed both (ADR 0007, rows 36 and 21), and a middleware given either refuses to start.
 
 ## 3. Mark what should update
 
@@ -174,7 +174,7 @@ Use `buildLivePreviewUrl` from `payload-live-preview/payload` instead when anoth
 
 Live preview patches the DOM after the page loads; the initial server render is still yours. Draft reads need a server-side authorization decision. `hasPreviewIntent()` only detects intent: anyone can add the query parameter or load a page in an iframe.
 
-The middleware makes that decision through `authorizePreview`. The hook runs only on requests carrying preview intent, and a refusal leaves the response exactly as rendered: no runtime, no CSP change, no nonce in `Astro.locals`. The verified context is published as `Astro.locals.livePreviewAuthorization` and the hook's outcome (`'authorized'`, `'expired'`, `'missing-credential'`, …) as `Astro.locals.livePreviewAuthorizationOutcome`. A response the middleware changed is sent with `Cache-Control: private, no-store`. The strict default refuses a configuration instead of serving it. `astro dev` and `astro build` stop when the integration in `mode: 'middleware'` names no hook (`authorizePreviewModule`). The other rules, and a hand-composed `createLivePreviewMiddleware()` without `authorizePreview`, are checked when Astro loads the middleware, which is with the first request: with no explicit `allowedOrigins`, with an `http:` admin origin under `NODE_ENV=production`, or with referer trust, the server starts and every request answers with a 500 that names the rule, so no runtime is ever served. The deprecated `defaults: 'v1'` opts back into the earlier behavior for a staged migration.
+The middleware makes that decision through `authorizePreview`. The hook runs only on requests carrying preview intent, and a refusal leaves the response exactly as rendered: no runtime, no CSP change, no nonce in `Astro.locals`. The verified context is published as `Astro.locals.livePreviewAuthorization` and the hook's outcome (`'authorized'`, `'expired'`, `'missing-credential'`, …) as `Astro.locals.livePreviewAuthorizationOutcome`. A response the middleware changed is sent with `Cache-Control: private, no-store`. The middleware refuses an insecure configuration instead of serving it. `astro dev` and `astro build` stop when the integration in `mode: 'middleware'` names no hook (`authorizePreviewModule`). The other rules, and a hand-composed `createLivePreviewMiddleware()` without `authorizePreview`, are checked when Astro loads the middleware, which is with the first request: with no explicit `allowedOrigins`, with an `http:` admin origin under `NODE_ENV=production`, or with referer trust, the server starts and every request answers with a 500 that names the rule, so no runtime is ever served. The deprecated `defaults: 'v1'` opts back into the earlier behavior for a staged migration.
 
 ```ts
 // src/middleware.ts
@@ -269,14 +269,14 @@ With Astro's `<ClientRouter />` no bridge is needed: the integration declares `a
 
 - **Empty fields need an anchor.** If you render a binding only when the field is non-empty, editing a previously-empty field has nowhere to land. Render the node unconditionally (`<div data-payload-field="subtitle">{subtitle ?? ''}</div>`) or use `PreviewBoundary`.
 - **Client islands.** Bind fields in server-rendered regions. A hydrated island that re-renders a bound node overwrites the live patch; mark its root with `data-payload-island` so the runtime never patches or morphs into it. Native `<astro-island>` roots are also boundaries. While Astro keeps their `ssr` marker, the runtime holds the current snapshot and sends it after hydration removes the marker ([renderers.md](renderers.md#islands)). An island inside a fragment hydrates from the build's own modules and takes later revisions through Astro's props handoff; its container needs `resolve: resolveIslandModule` ([hybrid.md](hybrid.md#first-use-astro-resources), ADR 0021). Only React islands with `client:load` are measured there.
-- **`Referrer-Policy: no-referrer`** on the admin removes the referrer fallback of origin detection. That fallback is on only with `disableReferrerDetection: false` (the `defaults: 'v1'` profile), so under the 2.x defaults the header changes nothing. Set `allowedOrigins` explicitly either way (you already do).
+- **`Referrer-Policy: no-referrer`** on the admin removes the referrer fallback of origin detection. That fallback is on only with `disableReferrerDetection: false`, so under the defaults the header changes nothing. Set `allowedOrigins` explicitly either way (you already do).
 - **`serverURL` credentials.** Browser-side REST merging uses `credentials: 'include'`; Payload still has to authorize that request. The initial server-side draft read forwards only the credentials the verified context carries.
 
 ## Working examples
 
 - [`examples/astro-payload`](../examples/astro-payload) — the integration in `mode: 'loader'`, the fastest way to see the whole flow.
 - [`examples/astro-inline`](../examples/astro-inline) and [`examples/astro-middleware`](../examples/astro-middleware) — the same page in the other two modes.
-- [`examples/astro-hybrid`](../examples/astro-hybrid) — server-rendered fragments behind a hand-composed middleware that mints a preview token and injects on intent (`strict: false`); the fragment endpoint verifies that token with the `signed-token` strategy.
+- [`examples/astro-hybrid`](../examples/astro-hybrid) — server-rendered fragments behind a hand-composed middleware that mints a preview token for the framed URL; the middleware and the fragment endpoint verify that token with the `signed-token` strategy.
 
 ## Next
 

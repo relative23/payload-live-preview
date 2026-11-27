@@ -9,11 +9,7 @@
  * 1.x or 2.0.0-beta.0 — and is read as 1.x, with a line that says so.
  */
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
-import {
-  V1_RUNTIME_DEFAULTS,
-  V2_RUNTIME_DEFAULTS,
-  type RuntimeProfileDefaults,
-} from '@/types/defaults-profile';
+import { V2_RUNTIME_DEFAULTS, type RuntimeProfileDefaults } from '@/types/defaults-profile';
 import type { DoctorFinding, DoctorProbe } from './types';
 
 const CONFIG_NAME = '__LIVE_PREVIEW_CONFIG__';
@@ -72,6 +68,18 @@ const ROWS: readonly ReadinessRow[] = [
     condition: 'no renderer relies on running again for a value that did not change',
   },
 ];
+
+/**
+ * What a script runs with that names the 1.x table or no table at all: a page 2.x generated
+ * under `defaults: 'v1'`, or one 1.x generated. 3.0 generates neither, and the doctor still
+ * reads both.
+ */
+const ONE_X_RUNTIME_ROWS: RuntimeProfileDefaults = Object.freeze({
+  disableReferrerDetection: false,
+  eventSourcePolicy: 'any',
+  skipUnchanged: false,
+  sanitizerPolicy: 'compat',
+});
 
 /** Where a row's value came from, which decides what the reader can change. */
 type Origin = 'profile' | 'explicit' | 'unmarked';
@@ -229,7 +237,7 @@ function remedyFor(origin: Origin, row: ReadinessRow, value: unknown): string {
   switch (origin) {
     case 'profile':
       return (
-        `Set ${wanted} or drop \`defaults: 'v1'\` once ${row.condition}. 3.0 removes the ` +
+        `Set ${wanted} or drop \`defaults: 'v1'\` once ${row.condition}. 3.0 removed the ` +
         'profile; `pll migrate` writes its rows out, so each can go on its own.'
       );
     case 'explicit':
@@ -277,7 +285,7 @@ export function analyzeV2Readiness(probe: DoctorProbe): readonly DoctorFinding[]
     return [unknownGeneration(marker)];
   }
   const generation = marker ?? (config.source === 'element' ? 'v2' : undefined);
-  const fallback = generation === 'v2' ? V2_RUNTIME_DEFAULTS : V1_RUNTIME_DEFAULTS;
+  const fallback = generation === 'v2' ? V2_RUNTIME_DEFAULTS : ONE_X_RUNTIME_ROWS;
   const findings = ROWS.flatMap((row) => {
     const slot = config.value(row.key);
     const value = slot ?? fallback[row.key];

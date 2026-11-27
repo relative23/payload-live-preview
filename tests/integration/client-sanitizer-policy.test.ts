@@ -6,7 +6,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LivePreviewClient } from '@client/index';
 import { sanitizeHtml, setSanitizerPolicy } from '@security/sanitizer';
-import { fireUpdate, preparePreviewPage, restorePreviewPage, v1Config } from './client-harness';
+import {
+  fireUpdate,
+  preparePreviewPage,
+  restorePreviewPage,
+  pipelineConfig,
+} from './client-harness';
 
 beforeEach(() => {
   preparePreviewPage();
@@ -37,7 +42,7 @@ describe('LivePreviewClient — sanitizer policy per instance', () => {
     // The runtime's own fallback is strict since the 2.0 flip; the profile has
     // to fill the row, or opting out of 2.0 would still sanitise like 2.0.
     const [a] = mountRoots('html');
-    const client = new LivePreviewClient(v1Config({ root: a }));
+    const client = new LivePreviewClient(pipelineConfig({ root: a }));
     try {
       await fireUpdate({ body: CLOBBER });
       expect(rendered(a)).toBe(CLOBBER);
@@ -50,8 +55,8 @@ describe('LivePreviewClient — sanitizer policy per instance', () => {
     '%s: each client sanitises with its own policy',
     async (type) => {
       const [a, b] = mountRoots(type);
-      const compat = new LivePreviewClient(v1Config({ root: a, sanitizerPolicy: 'compat' }));
-      const strict = new LivePreviewClient(v1Config({ root: b, sanitizerPolicy: 'strict' }));
+      const compat = new LivePreviewClient(pipelineConfig({ root: a, sanitizerPolicy: 'compat' }));
+      const strict = new LivePreviewClient(pipelineConfig({ root: b, sanitizerPolicy: 'strict' }));
       try {
         await fireUpdate({ body: CLOBBER });
         expect(rendered(a)).toBe(CLOBBER);
@@ -65,12 +70,12 @@ describe('LivePreviewClient — sanitizer policy per instance', () => {
 
   it('constructing a second client does not change the first', async () => {
     const [a, b] = mountRoots('html');
-    const compat = new LivePreviewClient(v1Config({ root: a, sanitizerPolicy: 'compat' }));
+    const compat = new LivePreviewClient(pipelineConfig({ root: a, sanitizerPolicy: 'compat' }));
     let strict: LivePreviewClient | undefined;
     try {
       await fireUpdate({ body: CLOBBER });
       expect(rendered(a)).toBe(CLOBBER);
-      strict = new LivePreviewClient(v1Config({ root: b, sanitizerPolicy: 'strict' }));
+      strict = new LivePreviewClient(pipelineConfig({ root: b, sanitizerPolicy: 'strict' }));
       await fireUpdate({ body: '<p id="hero">again</p>' });
       expect(rendered(a)).toBe('<p id="hero">again</p>');
       expect(rendered(b)).toBe('<p>again</p>');
@@ -82,7 +87,7 @@ describe('LivePreviewClient — sanitizer policy per instance', () => {
 
   it('leaves the process default alone for direct sanitizeHtml() callers', async () => {
     const [a] = mountRoots('html');
-    const compat = new LivePreviewClient(v1Config({ root: a, sanitizerPolicy: 'compat' }));
+    const compat = new LivePreviewClient(pipelineConfig({ root: a, sanitizerPolicy: 'compat' }));
     try {
       await fireUpdate({ body: CLOBBER });
       expect(rendered(a)).toBe(CLOBBER);

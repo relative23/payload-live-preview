@@ -6,7 +6,7 @@ import {
   fireUpdate,
   preparePreviewPage,
   restorePreviewPage,
-  v1Config,
+  pipelineConfig,
 } from './client-harness';
 
 beforeEach(preparePreviewPage);
@@ -17,7 +17,7 @@ describe('LivePreviewClient — transforms', () => {
     document.body.innerHTML =
       '<p data-payload-field="title">old</p>' +
       '<span data-payload-field="label" data-payload-attribute="data-label"></span>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     try {
       await client.use({
         name: 'transform-both-paths',
@@ -56,7 +56,11 @@ describe('LivePreviewClient — transforms', () => {
       }),
     );
     const client = new LivePreviewClient(
-      v1Config({ serverURL: 'https://cms.example.com', mergeFetch: mergeFetch as typeof fetch }),
+      pipelineConfig({
+        serverURL: 'https://cms.example.com',
+        mergeDepth: 1,
+        mergeFetch: mergeFetch as typeof fetch,
+      }),
     );
     let seenValue: unknown;
     let seenAllFields: Record<string, unknown> | undefined;
@@ -92,7 +96,7 @@ describe('LivePreviewClient — transforms', () => {
   it('does not let a transform bypass URL validation on an attribute binding', async () => {
     document.body.innerHTML =
       '<a data-payload-field="destination" data-payload-attribute="href" href="/initial">link</a>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     try {
       await client.use({
         name: 'unsafe-url-transform',
@@ -115,7 +119,7 @@ describe('LivePreviewClient — transforms', () => {
     if (element === null) throw new Error('binding missing');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const client = new LivePreviewClient(
-      v1Config({ disableVisibilityGate: false, visibilityGateThreshold: 0 }),
+      pipelineConfig({ disableVisibilityGate: false, visibilityGateThreshold: 0 }),
     );
     try {
       await fireUpdate({ title: 'first' });
@@ -146,7 +150,7 @@ describe('LivePreviewClient — transforms', () => {
     const element = document.querySelector('p');
     if (element === null) throw new Error('binding missing');
     const client = new LivePreviewClient(
-      v1Config({ disableVisibilityGate: false, visibilityGateThreshold: 0 }),
+      pipelineConfig({ disableVisibilityGate: false, visibilityGateThreshold: 0 }),
     );
     try {
       await fireUpdate({ title: 'revision value' });
@@ -173,7 +177,7 @@ describe('LivePreviewClient — transforms', () => {
       '<p data-payload-field="second">initial second</p>';
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const transforms: string[] = [];
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     try {
       await client.use({
         name: 'reentrant-transform',
@@ -229,7 +233,7 @@ describe('LivePreviewClient — transforms', () => {
   it('reports throwing and thenable transforms and applies the original value', async () => {
     document.body.innerHTML =
       '<p data-payload-field="throws">old</p><p data-payload-field="async">old</p>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const errors: { error: Error; context: string }[] = [];
     client.events.on('error', (event) => {
       errors.push(event);

@@ -1,7 +1,6 @@
 /**
  * The options every framework adapter shares. Each adapter's public interface
- * extends this with its request type, so the JSDoc lives here once. Defaults
- * are the 2.0 table; `defaults: 'v1'` values are noted where they differ.
+ * extends this with its request type, so the JSDoc lives here once.
  */
 
 import type { DefaultsProfile, EventSourcePolicy } from '@/types/defaults-profile';
@@ -29,7 +28,7 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly serverURL?: string;
   /** REST API route prefix used with `serverURL`. Default `/api`. */
   readonly apiRoute?: string;
-  /** Population depth for `serverURL` re-fetches, required with it (`0` for none); `defaults: 'v1'` falls back to `1`. */
+  /** Population depth for `serverURL` re-fetches, required with it (`0` for none). */
   readonly mergeDepth?: number;
   /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */
   readonly mergeTimeoutMs?: number;
@@ -47,7 +46,7 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly inject?: 'preview-only' | 'always';
   /** Query parameters (value `true` or `1`) that signal intent. Default `['preview', 'draft', 'livePreview']`. */
   readonly previewQueryParams?: readonly string[];
-  /** Client-controlled signals that count as intent. Default `['query']`; `defaults: 'v1'` restores all three, `strict` refuses `'referer'`. */
+  /** Client-controlled signals that count as intent. Default `['query']`; `'referer'` is refused at startup. */
   readonly previewSignals?: readonly PreviewSignal[];
   /**
    * Route or content filter for script injection only. Not authorization,
@@ -80,7 +79,7 @@ export interface PreviewAdapterOptions<Req = Request> {
    * or `disableVisibilityGate`.
    */
   readonly visibilityGateThreshold?: number;
-  /** Skip bindings whose value did not change. Default `true`; `defaults: 'v1'` restores `false`. */
+  /** Skip bindings whose value did not change. Default `true`. */
   readonly skipUnchanged?: boolean;
   /** Scroll the preview to the field being edited. Default `false`. */
   readonly revealEditedField?: boolean;
@@ -148,11 +147,11 @@ export interface PreviewAdapterOptions<Req = Request> {
    * declaration; an uncovered one is an unbound change.
    */
   readonly subfieldCoverage?: 'descendant' | 'declared';
-  /** Sanitizer for rich text and HTML writes. Default `'strict'`; `defaults: 'v1'` restores `'compat'`. */
+  /** Sanitizer for rich text and HTML writes. Default `'strict'`. */
   readonly sanitizerPolicy?: 'compat' | 'strict';
-  /** Which windows may post updates. Default `'parent-or-opener'`; `defaults: 'v1'` restores `'any'`. */
+  /** Which windows may post updates. Default `'parent-or-opener'`. */
   readonly eventSourcePolicy?: EventSourcePolicy;
-  /** Ignore `document.referrer` for origin detection. Default `true`; `defaults: 'v1'` restores `false`. */
+  /** Ignore `document.referrer` for origin detection. Default `true`. */
   readonly disableReferrerDetection?: boolean;
   /** Turn off the dev-mode `localhost` origin matcher. Default `false`. */
   readonly disableLocalhostMatching?: boolean;
@@ -166,8 +165,13 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly authorizePreview?: (
     request: Req,
   ) => PreviewAuthorizationHookResult | Promise<PreviewAuthorizationHookResult>;
-  /** Refuse insecure configuration at startup: `authorizePreview`, non-empty `allowedOrigins` (`https:` in production), no `'referer'` signal. Default `true`; `defaults: 'v1'` restores `false`. */
-  readonly strict?: boolean;
-  /** `'v2'` (default) is the 2.0 table, `'v1'` stages a migration on the 1.x one; explicit options win. See ADR 0007. */
+  /**
+   * An adapter refuses insecure configuration at startup: it needs `authorizePreview`, non-empty
+   * `allowedOrigins` (`https:` in production) and no `'referer'` signal. 2.x could switch that off
+   * with `strict: false`; 3.0 cannot (ADR 0007, row 36), and the option is left for a
+   * configuration that says `true`.
+   */
+  readonly strict?: true;
+  /** `'v2'` is the one table since 3.0 removed `'v1'` (ADR 0007, row 21); the option is left for a configuration that names it. */
   readonly defaults?: DefaultsProfile;
 }

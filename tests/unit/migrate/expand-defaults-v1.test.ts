@@ -7,7 +7,7 @@ const ONLY = { only: ['expand-defaults-v1'] };
 const ASTRO = "import { livePreview } from 'payload-live-preview/astro';\n";
 const ROOT = "import { generateInlineScript, LivePreviewClient } from 'payload-live-preview';\n";
 const ADAPTER_ROWS =
-  "strict: false, previewSignals: ['query', 'fetch-dest', 'referer'], disableReferrerDetection: false, " +
+  "previewSignals: ['query', 'fetch-dest'], disableReferrerDetection: false, " +
   "eventSourcePolicy: 'any', skipUnchanged: false, sanitizerPolicy: 'compat'";
 const RUNTIME_ROWS =
   "disableReferrerDetection: false, eventSourcePolicy: 'any', skipUnchanged: false, sanitizerPolicy: 'compat'";
@@ -32,12 +32,12 @@ describe('expand-defaults-v1: the rows the profile stood for, in the source', ()
     [
       'a row the options already set, which keeps its value',
       `${ASTRO}livePreview({ skipUnchanged: true, defaults: 'v1', mergeDepth: 2, serverURL: url });\n`,
-      `${ASTRO}livePreview({ skipUnchanged: true, strict: false, previewSignals: ['query', 'fetch-dest', 'referer'], disableReferrerDetection: false, eventSourcePolicy: 'any', sanitizerPolicy: 'compat', mergeDepth: 2, serverURL: url });\n`,
+      `${ASTRO}livePreview({ skipUnchanged: true, previewSignals: ['query', 'fetch-dest'], disableReferrerDetection: false, eventSourcePolicy: 'any', sanitizerPolicy: 'compat', mergeDepth: 2, serverURL: url });\n`,
     ],
     [
       'a shared object on its own lines, which the calls spread',
       "import { createLivePreviewMiddleware } from 'payload-live-preview/astro';\nconst COMMON = {\n  defaults: 'v1',\n  debug: true,\n} as const;\nexport const a = createLivePreviewMiddleware({ ...COMMON, fragments });\nexport const b = createLivePreviewMiddleware({ ...COMMON, routeStrategy: true });\n",
-      "import { createLivePreviewMiddleware } from 'payload-live-preview/astro';\nconst COMMON = {\n  strict: false,\n  previewSignals: ['query', 'fetch-dest', 'referer'],\n  disableReferrerDetection: false,\n  eventSourcePolicy: 'any',\n  skipUnchanged: false,\n  sanitizerPolicy: 'compat',\n  debug: true,\n} as const;\nexport const a = createLivePreviewMiddleware({ ...COMMON, fragments });\nexport const b = createLivePreviewMiddleware({ ...COMMON, routeStrategy: true });\n",
+      "import { createLivePreviewMiddleware } from 'payload-live-preview/astro';\nconst COMMON = {\n  previewSignals: ['query', 'fetch-dest'],\n  disableReferrerDetection: false,\n  eventSourcePolicy: 'any',\n  skipUnchanged: false,\n  sanitizerPolicy: 'compat',\n  debug: true,\n} as const;\nexport const a = createLivePreviewMiddleware({ ...COMMON, fragments });\nexport const b = createLivePreviewMiddleware({ ...COMMON, routeStrategy: true });\n",
     ],
   ])('%s', (_label, src, expected) => {
     const { output, conflicts } = migrateSource(src, ONLY);

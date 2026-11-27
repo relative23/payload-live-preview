@@ -1,8 +1,10 @@
 /**
- * Ledger entry 21: `defaults: 'v1'` → the rows it stands for, as explicit
- * options. The rows keep every value the profile gave, so nothing changes at
- * run time; they only move into the source, where a reviewer and
- * `pll doctor --v2` see each one (ADR 0026).
+ * Ledger entry 21: `defaults: 'v1'` → the rows it stood for, as explicit
+ * options, where a reviewer and `pll doctor --v2` see each one (ADR 0026).
+ * The rows keep the value the profile gave, with two exceptions that 3.0
+ * cannot keep: `strict: false`, which it removed (entry 36), is not written,
+ * and the preview signals are written without `'referer'`, which an adapter
+ * refuses at startup.
  */
 import type { Node, ObjectLiteralElementLike, ObjectLiteralExpression } from 'ts-morph';
 import { loadTsMorph, propertyKey } from '../ast';
@@ -18,13 +20,9 @@ import type { CodemodImplementation, CodemodConflict, TextEdit } from '../types'
 const ID = 'expand-defaults-v1';
 const KEY = 'defaults';
 
-/** The 1.x rows (`src/types/defaults-profile.ts`), in source form; `Q` is the file's quote. */
+/** The 1.x rows 3.0 can keep, in source form; `q` is the file's quote. */
 const REQUEST_ROWS: readonly (readonly [string, (q: string) => string])[] = [
-  ['strict', () => 'false'],
-  [
-    'previewSignals',
-    (q) => `[${[`${q}query${q}`, `${q}fetch-dest${q}`, `${q}referer${q}`].join(', ')}]`,
-  ],
+  ['previewSignals', (q) => `[${[`${q}query${q}`, `${q}fetch-dest${q}`].join(', ')}]`],
 ];
 const RUNTIME_ROWS: readonly (readonly [string, (q: string) => string])[] = [
   ['disableReferrerDetection', () => 'false'],
@@ -44,7 +42,9 @@ export const expandDefaultsV1: CodemodImplementation = {
   summary: "`defaults: 'v1'` → the 1.x rows as explicit options",
   ledgerEntry: 21,
   notice:
-    "The rows keep the 1.x values `defaults: 'v1'` gave; `pll doctor --v2` names each one to drop once the page is ready for 2.0's.",
+    "The rows keep the 1.x values `defaults: 'v1'` gave, except two that 3.0 cannot keep: `strict: false` " +
+    'is not written, so an adapter needs `authorizePreview` (docs/authorization.md), and `previewSignals` ' +
+    "is written without 'referer'. `pll doctor --v2` names each of the other rows to drop once the page is ready for the default.",
   apply(script) {
     const { Node } = loadTsMorph();
     const edits: TextEdit[] = [];

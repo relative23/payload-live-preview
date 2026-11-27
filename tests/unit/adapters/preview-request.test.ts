@@ -130,6 +130,19 @@ describe('hasPreviewIntent — allowedOrigins is the one name for the admin orig
     expect(hasPreviewIntent(fromAdmin(), { ...options, signals: ['referer'] })).toBe(expected);
   });
 
+  it('counts nothing for the referer signal where no origin is named', () => {
+    expect(hasPreviewIntent(fromAdmin(), { signals: ['referer'] })).toBe(false);
+    expect(hasPreviewIntent(fromAdmin(), { signals: ['referer'], allowedOrigins: [] })).toBe(false);
+  });
+
+  it('counts nothing for the referer signal where the request names no referer', () => {
+    const withoutReferer = new Request('https://x.test/p');
+
+    expect(hasPreviewIntent(withoutReferer, { signals: ['referer'], allowedOrigins: [CMS] })).toBe(
+      false,
+    );
+  });
+
   it('does not read the 1.x key adminOrigins, which 3.0 removed (ADR 0007, row 13)', () => {
     const removed = { adminOrigins: [CMS] } as PreviewRequestOptions;
 

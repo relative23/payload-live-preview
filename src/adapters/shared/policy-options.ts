@@ -1,17 +1,12 @@
 /**
- * The options the policy reads, and what they resolve to: the `defaults`
- * profile fills what an adapter left unset, and the inline-script config
- * carries only what was given so the runtime's own defaults stay the single
- * source of them.
+ * The options the policy reads, and what they resolve to: the defaults table
+ * fills what an adapter left unset, and the inline-script config carries only
+ * what was given so the runtime's own defaults stay the single source of them.
  */
 
 import type { generateInlineScript } from '@inline/generator';
-import {
-  adapterDefaultsFor,
-  runtimeDefaultsFor,
-  V2_RUNTIME_DEFAULTS,
-} from '@/types/defaults-profile';
-import { warnChangingDefaults, warnDeprecatedOptions } from '@/types/dev-warning';
+import { V2_ADAPTER_DEFAULTS } from '@/types/defaults-profile';
+import { warnChangingDefaults } from '@/types/dev-warning';
 import { refuseRemovedOptions } from '@/types/removed-options';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import type { InlineScriptConfig } from '@/types/inline-config';
@@ -21,10 +16,9 @@ import type { PreviewAdapterOptions } from './options';
 /** The structural subset of any adapter's options the policy reads; hooks are bound per request. */
 export type PreviewPolicyOptions = PreviewAdapterOptions<never>;
 
-/** The options after the `defaults` profile: explicit options win, the profile fills the rest. */
+/** The options after the defaults table: explicit options win, the table fills the rest. */
 export interface ResolvedPolicyOptions {
-  readonly strict: boolean;
-  readonly previewSignals: readonly PreviewSignal[] | undefined;
+  readonly previewSignals: readonly PreviewSignal[];
   readonly skipUnchanged: boolean | undefined;
   readonly disableReferrerDetection: boolean | undefined;
   readonly disableLocalhostMatching: boolean | undefined;
@@ -34,25 +28,15 @@ export interface ResolvedPolicyOptions {
 
 export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPolicyOptions {
   refuseRemovedOptions(options);
-  warnDeprecatedOptions({ defaults: options.defaults });
   warnChangingDefaults(options);
-  const adapter = adapterDefaultsFor(options.defaults);
-  const runtime = runtimeDefaultsFor(options.defaults);
-  // The inline runtime already defaults to the v2 rows, so only a differing
-  // profile — an explicit `defaults: 'v1'` — needs a row on the wire.
-  const runtimeRow = <K extends keyof typeof V2_RUNTIME_DEFAULTS>(
-    key: K,
-  ): (typeof V2_RUNTIME_DEFAULTS)[K] | undefined =>
-    runtime[key] !== V2_RUNTIME_DEFAULTS[key] ? runtime[key] : undefined;
+  // The runtime's own fallbacks are the same table, so only what was given travels.
   return {
-    strict: options.strict ?? adapter.strict,
-    previewSignals: options.previewSignals ?? adapter.previewSignals,
-    skipUnchanged: options.skipUnchanged ?? runtimeRow('skipUnchanged'),
-    disableReferrerDetection:
-      options.disableReferrerDetection ?? runtimeRow('disableReferrerDetection'),
+    previewSignals: options.previewSignals ?? V2_ADAPTER_DEFAULTS.previewSignals,
+    skipUnchanged: options.skipUnchanged,
+    disableReferrerDetection: options.disableReferrerDetection,
     disableLocalhostMatching: options.disableLocalhostMatching,
-    eventSourcePolicy: options.eventSourcePolicy ?? runtimeRow('eventSourcePolicy'),
-    sanitizerPolicy: options.sanitizerPolicy ?? runtimeRow('sanitizerPolicy'),
+    eventSourcePolicy: options.eventSourcePolicy,
+    sanitizerPolicy: options.sanitizerPolicy,
   };
 }
 
@@ -71,9 +55,6 @@ export function inlineScriptConfig(
   assertMergeDepthExplicit(options);
   const resolved = resolvePolicyOptions(options);
   return {
-    // The generator names it in slot 24 and, under `'v1'`, reads an
-    // omitted `mergeDepth` as deliberate.
-    ...(options.defaults !== undefined ? { defaults: options.defaults } : {}),
     ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
     ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
     ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),

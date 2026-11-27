@@ -5,7 +5,7 @@ import {
   fireUpdate,
   preparePreviewPage,
   restorePreviewPage,
-  v1Config,
+  pipelineConfig,
 } from './client-harness';
 
 beforeEach(preparePreviewPage);
@@ -14,7 +14,7 @@ afterEach(restorePreviewPage);
 describe('LivePreviewClient — end-to-end', () => {
   it('boots, connects, and renders a text update', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     fireMessage({ type: 'payload-live-preview', data: { title: 'new title' } });
     await vi.advanceTimersByTimeAsync(50);
     expect(document.querySelector('h1')?.textContent).toBe('new title');
@@ -28,7 +28,7 @@ describe('LivePreviewClient — end-to-end', () => {
     const debug = vi.spyOn(console, 'debug').mockImplementation(() => {
       throw new Error('console unavailable');
     });
-    const client = new LivePreviewClient(v1Config({ debug: true }));
+    const client = new LivePreviewClient(pipelineConfig({ debug: true }));
     try {
       await fireUpdate({ title: 'new title' });
 
@@ -55,7 +55,7 @@ describe('LivePreviewClient — end-to-end', () => {
 
       debug.mockClear();
       const configured = new LivePreviewClient(
-        v1Config({ debug: true, disableLocalhostMatching: true, autoStart: false }),
+        pipelineConfig({ debug: true, disableLocalhostMatching: true, autoStart: false }),
       );
       await configured.destroy();
       expect(namesTheOption()).toBe(false);
@@ -67,7 +67,7 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('renders Lexical rich text into a richText field', async () => {
     document.body.innerHTML = '<div data-payload-field="body" data-payload-richtext></div>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     fireMessage({
       type: 'payload-live-preview',
       data: {
@@ -93,7 +93,7 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('rejects updates from untrusted origins', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     fireMessage(
       { type: 'payload-live-preview', data: { title: 'evil' } },
       'https://evil.example.com',
@@ -106,7 +106,7 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('renders an image field', async () => {
     document.body.innerHTML = '<img data-payload-field="hero" alt="">';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     fireMessage({
       type: 'payload-live-preview',
       data: { hero: { url: 'https://cdn.example.com/x.jpg', alt: 'a' } },
@@ -121,7 +121,7 @@ describe('LivePreviewClient — end-to-end', () => {
   it('emits lifecycle events to consumer subscribers', async () => {
     document.body.innerHTML = '<p data-payload-field="title">x</p>';
     const seen: string[] = [];
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const push = (name: string) => () => {
       seen.push(name);
     };
@@ -137,8 +137,8 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('per-instance isolation — destroying one does not affect another', async () => {
     document.body.innerHTML = '<p data-payload-field="a">x</p><p data-payload-field="b">y</p>';
-    const c1 = new LivePreviewClient(v1Config());
-    const c2 = new LivePreviewClient(v1Config());
+    const c1 = new LivePreviewClient(pipelineConfig());
+    const c2 = new LivePreviewClient(pipelineConfig());
     const seen1: string[] = [];
     const seen2: string[] = [];
     c1.events.on('connect', () => {
@@ -156,8 +156,8 @@ describe('LivePreviewClient — end-to-end', () => {
 
   it('keeps the shared accessibility region alive for a surviving client', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
-    const c1 = new LivePreviewClient(v1Config());
-    const c2 = new LivePreviewClient(v1Config());
+    const c1 = new LivePreviewClient(pipelineConfig());
+    const c2 = new LivePreviewClient(pipelineConfig());
 
     try {
       await fireUpdate({ title: 'first' });

@@ -12,7 +12,7 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
 
 const APP = 'http://localhost:4183';
 
-test.describe('the Astro middleware setup under the strict default', () => {
+test.describe('the Astro middleware setup with its hook module', () => {
   test('an authorized frame receives the runtime, and an update lands', async ({ page }) => {
     await page.goto(`${APP}/admin`);
     const frame = await waitForPreviewFrame(page, 'previewToken=');

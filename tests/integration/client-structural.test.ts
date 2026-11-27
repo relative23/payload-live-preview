@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LivePreviewClient } from '@client/index';
-import { fireUpdate, preparePreviewPage, restorePreviewPage, v1Config } from './client-harness';
+import {
+  fireUpdate,
+  preparePreviewPage,
+  restorePreviewPage,
+  pipelineConfig,
+} from './client-harness';
 
 beforeEach(preparePreviewPage);
 afterEach(restorePreviewPage);
@@ -16,7 +21,7 @@ describe('LivePreviewClient — structural updates and no-ops', () => {
       return { finished: Promise.resolve() };
     });
     Reflect.set(document, 'startViewTransition', startViewTransition);
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     let domAtAfterUpdate: string | undefined;
     client.events.on('afterUpdate', () => {
       domAtAfterUpdate = document.querySelector('ul')?.textContent ?? undefined;
@@ -50,7 +55,7 @@ describe('LivePreviewClient — structural updates and no-ops', () => {
     ],
   ])('does not emit afterUpdate for a structural %s no-op', async (_label, templateAttribute) => {
     document.body.innerHTML = `<ul data-payload-field="items" data-payload-structural${templateAttribute}></ul>`;
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const afterUpdate = vi.fn();
     client.events.on('afterUpdate', afterUpdate);
 
@@ -69,7 +74,7 @@ describe('LivePreviewClient — structural updates and no-ops', () => {
       '<ul data-payload-field="items" data-payload-structural ' +
       'data-payload-array-template="<script>{{label}}</script>">' +
       '<li data-payload-key="old">server state</li></ul>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const afterUpdate = vi.fn();
     client.events.on('afterUpdate', afterUpdate);
 
@@ -90,7 +95,7 @@ describe('LivePreviewClient — structural updates and no-ops', () => {
     document.body.innerHTML =
       '<ul data-payload-field="items" data-payload-structural ' +
       'data-payload-array-template="<li>{{label}}</li>"></ul>';
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const afterUpdate = vi.fn();
     client.events.on('afterUpdate', afterUpdate);
     const items = [{ id: 'a', label: 'applied once' }];
@@ -127,7 +132,7 @@ describe('LivePreviewClient — structural updates and no-ops', () => {
     },
   ])('does not emit afterUpdate for $label', async ({ markup, value }) => {
     document.body.innerHTML = markup;
-    const client = new LivePreviewClient(v1Config());
+    const client = new LivePreviewClient(pipelineConfig());
     const afterUpdate = vi.fn();
     client.events.on('afterUpdate', afterUpdate);
 
@@ -147,7 +152,7 @@ describe('LivePreviewClient — structural updates and no-ops', () => {
     'the %s renderer clears the stale src for an unsafe URL and reports that write',
     async (type, value) => {
       document.body.innerHTML = `<img data-payload-field="value" data-payload-type="${type}" src="/before.jpg">`;
-      const client = new LivePreviewClient(v1Config());
+      const client = new LivePreviewClient(pipelineConfig());
       const afterUpdate = vi.fn();
       client.events.on('afterUpdate', afterUpdate);
 

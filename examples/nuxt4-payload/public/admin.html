@@ -113,7 +113,11 @@
       // `?target=` picks an entry; the framed route never comes from the query.
       const ROUTES = ['/', '/navigation', '/reveal'];
       const requested = new URLSearchParams(window.location.search).get('target');
-      iframe.src = ROUTES.find((route) => route === requested) ?? ROUTES[0];
+      // The preview's session first: the site's hook verifies its cookie on every framed request.
+      // A real admin gets its token from Payload instead.
+      fetch('/preview-session', { credentials: 'same-origin' }).then(() => {
+        iframe.src = ROUTES.find((route) => route === requested) ?? ROUTES[0];
+      });
       const fixtureNow = new Date();
 
       function buildData() {
