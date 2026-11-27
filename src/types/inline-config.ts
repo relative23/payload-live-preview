@@ -103,10 +103,11 @@ export interface InlineScriptConfig {
    */
   readonly softNavigationEvents?: readonly string[];
   /**
-   * How a group counts as covered (ADR 0022). `'descendant'`, the 2.x default:
-   * one bound path inside it covers all of it. `'declared'`: each changed path
-   * inside such a group needs its own binding or a `data-payload-covers`
-   * declaration; an uncovered one is an unbound change.
+   * How a group counts as covered (ADR 0022). `'declared'`, the default since
+   * 3.0: each changed path inside a group needs its own binding or a
+   * `data-payload-covers` declaration; an uncovered one is an unbound change.
+   * `'descendant'`, the 2.x default: one bound path inside a group covers all
+   * of it.
    */
   readonly subfieldCoverage?: 'descendant' | 'declared';
   /** Milliseconds the `serverURL` merge may wait before the update shows its raw values. Off by default. */

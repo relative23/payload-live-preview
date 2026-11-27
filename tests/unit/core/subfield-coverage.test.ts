@@ -59,12 +59,23 @@ async function send(fields: Record<string, unknown>, globalSlug?: string): Promi
   await vi.advanceTimersByTimeAsync(50);
 }
 
-describe('the default: one bound descendant covers the group', () => {
+describe("subfieldCoverage: 'descendant', the 2.x default: one bound descendant covers the group", () => {
   it('does not escalate an edit of an unbound sibling', async () => {
-    const { runtime, refresh } = start(PAGE);
+    const { runtime, refresh } = start(PAGE, { subfieldCoverage: 'descendant' });
     await send({ hero: HERO });
     await send({ hero: { ...HERO, description: 'Edited description' } });
     expect(refresh).not.toHaveBeenCalled();
+    runtime.destroy();
+  });
+});
+
+describe('the default since 3.0 (ADR 0007, row 17)', () => {
+  it('is the declared rule: an edit of an unbound sibling asks for the route', async () => {
+    const { runtime, refresh } = start(PAGE);
+    await send({ hero: HERO });
+    await send({ hero: { ...HERO, description: 'Edited description' } });
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(runtime.inspect().fidelity.fields).toEqual(['hero.description']);
     runtime.destroy();
   });
 });

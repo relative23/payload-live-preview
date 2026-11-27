@@ -36,7 +36,8 @@ store, inline delivery through `livePreviewScriptProps()`, `defaults: 'v1'`,
 `strict: false`, a hook without `document`, a hook with a `locale` that merged
 an update naming none, `lexicalToHtml()` returning unsanitised markup where it
 has no document, a detector that trusts a referrer without being asked to,
-Astro's inline delivery as the default, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
+Astro's inline delivery as the default, a partly bound group covered by its one
+bound path, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
 import or the type check.
 What a JavaScript config can still pass is refused at startup with the reason
 and the codemod, in production too: `onUnboundChange` and `defaults: 'v1'` by
@@ -62,8 +63,8 @@ their text, and a page that loads the module without a bundler hears none of
 them; the server rows speak once per process. The rows that change a surface or a range instead (the
 route refresh, the `@internal` names, the Node and Payload ranges) say nothing
 at run time, except that `LP0810` names a refresh that returns no promise,
-under `debug`. `LP0204`
-says once in development that a page relies on the sub-field coverage default. A Payload 2 admin is refused with `LP0504`, which
+under `debug`. A page that relied on the sub-field coverage default was told so
+once in development, by a code that left with that default in 3.0. A Payload 2 admin is refused with `LP0504`, which
 the runtime prints once in every build, when the first update with `fieldSchemaJSON` arrives;
 a hook reports it as its state. The first row is the one that also warns in production. The first three rows are not mechanical rewrites: whether a call site
 has a DOM, or which fields a page shows on purpose, is a fact about the

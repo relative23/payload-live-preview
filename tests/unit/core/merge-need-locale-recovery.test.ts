@@ -7,6 +7,16 @@ import { post, startRuntime, TRUSTED } from '../../helpers/runtime';
 
 const raw = { author: 'A' };
 
+/**
+ * A page that shows the author's name, for the cases that switch the author from A to B. Under
+ * the declared rule, the default since 3.0, the id of the document that came with the switch is a
+ * changed path of its own, so the page says that it accounts for it; without the cover a recovered
+ * revision would be `partial` for that reason and hide what these cases are about.
+ */
+const SWITCHED_AUTHOR_PAGE =
+  '<h1 data-payload-field="title">Initial title</h1>' +
+  '<p data-payload-field="author.name" data-payload-covers="author.id">Initial author</p>';
+
 /** Every update names its document, as the admin of Payload 3 and 4 does. */
 function send(fields: Record<string, unknown>, extra: Record<string, unknown> = {}): void {
   post({ id: '1', ...fields }, { extra: { collectionSlug: 'posts', ...extra } });
@@ -156,8 +166,7 @@ describe('population after a same-locale relationship refusal', () => {
   ] as const)(
     'retries unchanged B after A succeeded and B failed (%s locale, %s refusal, restart: %s)',
     async (locale, fault, restart) => {
-      document.body.innerHTML =
-        '<h1 data-payload-field="title">Initial title</h1><p data-payload-field="author.name">Initial author</p>';
+      document.body.innerHTML = SWITCHED_AUTHOR_PAGE;
       const fetchFn = vi.fn<typeof fetch>().mockImplementationOnce(merged('Ada A'));
       if (fault === 'http') {
         fetchFn.mockResolvedValueOnce(new Response('Access denied', { status: 403 }));
@@ -236,8 +245,7 @@ describe('population behind shared trailing merge results', () => {
     'keeps B unresolved after leading and shared trailing refusal (%s locale, %s refusal)',
     async (locale, fault) => {
       vi.useFakeTimers();
-      document.body.innerHTML =
-        '<h1 data-payload-field="title">Initial title</h1><p data-payload-field="author.name">Initial author</p>';
+      document.body.innerHTML = SWITCHED_AUTHOR_PAGE;
       const fetchFn = vi.fn<typeof fetch>().mockImplementationOnce(merged('Ada A'));
       for (let index = 0; index < 2; index += 1) {
         if (fault === 'http') {

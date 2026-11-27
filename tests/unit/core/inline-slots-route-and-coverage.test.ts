@@ -83,22 +83,24 @@ describe('the routeStrategy slot', () => {
 });
 
 describe('the subfieldCoverage slot', () => {
-  const warned = (spy: MockInstance<typeof console.warn>): string[] =>
-    spy.mock.calls.map((call) => String(call[0])).filter((line) => line.includes('LP0204'));
+  // The page binds `hero.title`; `hero.kicker` is the sibling no binding names.
+  const named = (spy: MockInstance<typeof console.warn>): string[] =>
+    spy.mock.calls.map((call) => String(call[0])).filter((line) => line.includes('hero.kicker'));
 
-  it('leaves the choice open when empty, and LP0204 says so', async () => {
+  it('is the declared rule when empty: the uncovered sibling is named (ADR 0007, row 17)', async () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const stop = start({});
     await send({ hero: { title: 'T', kicker: 'x' } });
-    expect(warned(spy)).toHaveLength(1);
+    expect(named(spy)).toHaveLength(1);
+    expect(named(spy)[0]).toContain('LP0203: field "hero.kicker" has a value and no');
     stop();
   });
 
-  it('counts as a choice when set', async () => {
+  it("carries `'descendant'`, where the bound title covers its group", async () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const stop = start({ subfieldCoverage: 'descendant' });
     await send({ hero: { title: 'T', kicker: 'x' } });
-    expect(warned(spy)).toEqual([]);
+    expect(named(spy)).toEqual([]);
     stop();
   });
 });

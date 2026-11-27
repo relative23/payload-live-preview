@@ -69,12 +69,14 @@ test.describe('real Payload admin → the field findings', () => {
       .toMatch(/LP0412: "status" showed "Coming soon", the patch wrote "soon"/u);
   });
 
-  test('a page on the coverage default hears what 3.0 changes for its group', async ({ page }) => {
+  test('a page hears which path of a partly bound group nothing shows', async ({ page }) => {
+    // The page binds `seo.title`. Under the declared rule, the default since 3.0, the
+    // description beside it is a path of its own, and the page is told that nothing shows it.
     const session = await open(page);
-    await typeTitle(page, 'Before the coverage warning');
+    await typeTitle(page, 'Before the coverage finding');
     await expect
       .poll(() => session.lines.join('\n'))
-      .toMatch(/LP0204: no binding names "(?:rows|seo\.description)"/u);
+      .toMatch(/LP0203: field "seo\.description" has a value and no/u);
   });
 
   test('an edit inside closed details opens them', async ({ page }) => {

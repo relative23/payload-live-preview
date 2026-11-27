@@ -20,7 +20,7 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 529,
+    "files": 528,
     "suites": 1028,
     "tests": 4631,
     "benchmarks": 12
@@ -47,7 +47,7 @@
     "integration": {
       "files": 25,
       "suites": 30,
-      "tests": 112,
+      "tests": 113,
       "benchmarks": 0
     },
     "real-payload": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 430,
+      "files": 429,
       "suites": 916,
-      "tests": 4216,
+      "tests": 4215,
       "benchmarks": 0
     }
   },
@@ -550,7 +550,7 @@
       "path": "tests/integration/client-subfield-coverage.test.ts",
       "group": "integration",
       "suites": 1,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -1331,13 +1331,6 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/core/coverage-default-warning.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 5,
-      "benchmarks": 0
-    },
-    {
       "path": "tests/unit/core/data-merger-can-merge.test.ts",
       "group": "unit",
       "suites": 1,
@@ -1425,7 +1418,7 @@
       "path": "tests/unit/core/edits-the-page-cannot-show.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 15,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -1677,7 +1670,7 @@
       "path": "tests/unit/core/lifecycle-orphan-fields.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 18,
+      "tests": 19,
       "benchmarks": 0
     },
     {
@@ -2159,8 +2152,8 @@
     {
       "path": "tests/unit/core/subfield-coverage.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 14,
+      "suites": 5,
+      "tests": 15,
       "benchmarks": 0
     },
     {
@@ -2874,7 +2867,7 @@
       "path": "tests/unit/plugins/unbound-fields-overlay.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 15,
+      "tests": 16,
       "benchmarks": 0
     },
     {

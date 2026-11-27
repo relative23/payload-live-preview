@@ -34,13 +34,14 @@ const ownersRoute = generateInlineScript({
   scopeBindingsByOwner: true,
   routeStrategy: true,
 });
-// A partly bound group, once per coverage mode (`subfield-coverage.spec.ts`).
-const groupsDeclared = generateInlineScript({
+// A partly bound group, once per coverage mode (`subfield-coverage.spec.ts`): the declared
+// rule is the default since 3.0, so the first page names no mode.
+const groupsDeclared = generateInlineScript({ ...options, routeStrategy: true });
+const groupsDescendant = generateInlineScript({
   ...options,
   routeStrategy: true,
-  subfieldCoverage: 'declared',
+  subfieldCoverage: 'descendant',
 });
-const groupsDescendant = generateInlineScript({ ...options, routeStrategy: true });
 // The route strategy and an island: how completely the page shows a revision
 // (`revision-display.spec.ts`).
 const revisionDisplay = generateInlineScript({ ...options, routeStrategy: true });

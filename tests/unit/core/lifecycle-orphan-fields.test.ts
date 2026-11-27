@@ -247,7 +247,11 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
  * the runtime has bound dotted paths all along.
  */
 describe('LivePreviewRuntime — the orphan-field diagnostic, one level down', () => {
-  function setupRuntime(html: string, warn: (...args: unknown[]) => void): LivePreviewRuntime {
+  function setupRuntime(
+    html: string,
+    warn: (...args: unknown[]) => void,
+    subfieldCoverage?: 'descendant',
+  ): LivePreviewRuntime {
     document.body.innerHTML = html;
     const runtime = new LivePreviewRuntime({
       renderers: { text: textRenderer() },
@@ -258,6 +262,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic, one level down', (
       heartbeatMs: 10 * 60_000,
       disableVisibilityGate: true,
       warn,
+      ...(subfieldCoverage === undefined ? {} : { subfieldCoverage }),
     });
     runtime.start();
     return runtime;
@@ -285,22 +290,36 @@ describe('LivePreviewRuntime — the orphan-field diagnostic, one level down', (
     runtime.destroy();
   });
 
-  it('stays silent about a group the page addresses through a dotted binding', async () => {
+  const PARTLY_BOUND =
+    '<h1 data-payload-field="title">old</h1><b data-payload-field="admission.priceTo">x</b>';
+  const partlyBound = {
+    type: 'payload-live-preview',
+    data: { title: 'new', admission: { priceFrom: 4200, priceTo: 5000 } },
+  };
+
+  it("stays silent under 'descendant' about a group the page addresses through a dotted binding", async () => {
     const warn = vi.fn();
-    const runtime = setupRuntime(
-      '<h1 data-payload-field="title">old</h1><b data-payload-field="admission.priceTo">x</b>',
-      warn,
-    );
-    fireMessage({
-      type: 'payload-live-preview',
-      data: { title: 'new', admission: { priceFrom: 4200, priceTo: 5000 } },
-    });
+    const runtime = setupRuntime(PARTLY_BOUND, warn, 'descendant');
+    fireMessage(partlyBound);
     await vi.advanceTimersByTimeAsync(50);
 
     // The whole point of the restraint: `onUnfaithfulPatch` reads the same
     // predicate and calls this group addressable, so the diagnostic may not
-    // call it unbound. LP0204 may name it: it says that the binding covers the rest.
+    // call it unbound.
     expect(joinLog(warn)).not.toMatch(/LP020[13][^\n]*admission/u);
+    runtime.destroy();
+  });
+
+  it('names the path beside the bound one under the default, the declared rule (row 17)', async () => {
+    const warn = vi.fn();
+    const runtime = setupRuntime(PARTLY_BOUND, warn);
+    fireMessage(partlyBound);
+    await vi.advanceTimersByTimeAsync(50);
+
+    // `onUnfaithfulPatch` calls `admission.priceFrom` unbound here as well, so both agree again.
+    const output = joinLog(warn);
+    expect(output).toContain('LP0203: field "admission.priceFrom"');
+    expect(output).not.toContain('field "admission.priceTo"');
     runtime.destroy();
   });
 
