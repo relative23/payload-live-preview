@@ -72,8 +72,9 @@ const BUTTON_STYLE =
 
 /**
  * The document this update named, minus everything the page can already show
- * or declares with `data-payload-covers`. Under `subfieldCoverage: 'declared'`
- * the uncovered paths inside partly bound groups are listed too (ADR 0022).
+ * or declares with `data-payload-covers`. Under `subfieldCoverage: 'declared'`,
+ * the default, the uncovered paths inside partly bound groups are listed too
+ * (ADR 0022).
  * @internal
  */
 export function unboundFieldNames(
@@ -81,7 +82,7 @@ export function unboundFieldNames(
   boundNames: Iterable<string>,
   locale?: string,
   coverPaths: readonly string[] = [],
-  subfieldCoverage: 'descendant' | 'declared' = 'descendant',
+  subfieldCoverage: 'descendant' | 'declared' = 'declared',
 ): readonly string[] {
   const bound = [...boundNames];
   const addressable = createNameAddressability(bound, locale, coverPaths);
@@ -260,7 +261,7 @@ export function createUnboundFieldsOverlayPlugin(
       const overlay = mountOverlay(root, POSITIONS[options.position ?? 'bottom-right']);
       if (overlay === null) return;
       ctx.registerCleanup?.(overlay.destroy);
-      const mode = ctx.getConfig()['subfieldCoverage'] === 'declared' ? 'declared' : 'descendant';
+      const mode = ctx.getConfig()['subfieldCoverage'] === 'descendant' ? 'descendant' : 'declared';
       const rendering = (ctx.getConfig()['strategies'] ?? {}) as ServerRendering;
       ctx.events.on('afterUpdate', (e) => {
         const names = unboundFieldNames(

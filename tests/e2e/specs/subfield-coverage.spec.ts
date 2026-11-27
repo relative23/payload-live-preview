@@ -5,8 +5,10 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * ADR 0022 in a browser. `examples/pure-html` bakes the same partly bound
  * group into two pages with the route strategy: `hero.eyebrow` is bound,
  * `hero.note` covered with `data-payload-covers`, `hero.description` shown by
- * nothing. Under `subfieldCoverage: 'declared'` only the description's edit
- * asks for the route; under the default, one bound child covers the group.
+ * nothing. Under the declared rule, the default since 3.0 and what the first
+ * page runs on without naming it, only the description's edit asks for the
+ * route; under `subfieldCoverage: 'descendant'`, one bound child covers the
+ * group.
  */
 
 const APP = 'http://localhost:4180';
@@ -34,7 +36,7 @@ async function settle(page: Page): Promise<void> {
   await page.waitForTimeout(300);
 }
 
-test.describe("subfieldCoverage: 'declared'", () => {
+test.describe("subfieldCoverage: 'declared', the default", () => {
   test('an edit of the unbound sibling asks for the route', async ({ page }) => {
     const { refreshes } = await open(page, '/groups-declared.html');
 
@@ -63,7 +65,7 @@ test.describe("subfieldCoverage: 'declared'", () => {
   });
 });
 
-test.describe('the default coverage', () => {
+test.describe("subfieldCoverage: 'descendant'", () => {
   test('one bound child covers the group, so the unbound sibling asks for nothing', async ({
     page,
   }) => {

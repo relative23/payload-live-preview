@@ -28,7 +28,6 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly UnboundField: "LP0203";
-    readonly CoverageDefaultChanges: "LP0204";
     readonly VisibilityGateDeferred: "LP0301";
     readonly UnsafeAttributeWrite: "LP0401";
     readonly TextTargetHasChildren: "LP0402";

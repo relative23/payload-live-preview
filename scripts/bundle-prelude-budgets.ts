@@ -162,7 +162,8 @@
 // 2026-11-26 (3.0, the 2.x aliases leave, ADR 0007 rows 1, 13, 16, 19, 20, 24 and 32): paired Node24.22.3/npm12.0.2; -90/-49/-36 B; prior reserves kept.
 // 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; -31/-16/-5 B; prior reserves kept.
 // 2026-11-27 (3.0, the detector trusts no referrer unasked and Astro delivers through the loader, ADR 0007 rows 22 and 33): paired Node24.22.3/npm12.0.2; +1/+1/+83 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 157_978, gzip: 49_932, brotli: 43_895 } as const;
+// 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -496/-214/-242 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 157_482, gzip: 49_718, brotli: 43_653 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -311,4 +312,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 157_978, gzip: 49_932, brotli: 43_8
 // 2026-11-26 (3.0, the 2.x aliases leave, ADR 0007 rows 1, 13, 16, 19, 20, 24 and 32): paired Node24.22.3/npm12.0.2; -90/-43/-49 B; prior reserves kept.
 // 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; -31/-17/-17 B; prior reserves kept.
 // 2026-11-27 (3.0, the detector trusts no referrer unasked and Astro delivers through the loader, ADR 0007 rows 22 and 33): paired Node24.22.3/npm12.0.2; +1/+1/-21 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 152_393, gzip: 47_997, brotli: 41_951 } as const;
+// 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -496/-215/-144 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 151_897, gzip: 47_782, brotli: 41_807 } as const;

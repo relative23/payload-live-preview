@@ -126,13 +126,23 @@ describe('a row that moved', () => {
   const a = { id: 'a', title: 'A' };
   const b = { id: 'b', title: 'B' };
 
-  it('hands its bindings over, since the rest of the row stayed behind', async () => {
-    const { route, runtime } = start(LIST);
-    await send({ items: [a, b] }, { items: [b, a] });
-    expect(route.refreshes).toBe(1);
-    expect(runtime.inspect().fidelity.fields).toEqual(['items.0.title', 'items.1.title']);
-    runtime.destroy();
-  });
+  it.each([
+    // Under the declared rule, the default, each row's id is a changed path nothing covers as well.
+    [undefined, ['items.0.id', 'items.0.title', 'items.1.id', 'items.1.title']],
+    ['descendant' as const, ['items.0.title', 'items.1.title']],
+  ])(
+    'hands its bindings over, since the rest of the row stayed behind (subfieldCoverage: %s)',
+    async (subfieldCoverage, fields) => {
+      const { route, runtime } = start(
+        LIST,
+        subfieldCoverage === undefined ? {} : { subfieldCoverage },
+      );
+      await send({ items: [a, b] }, { items: [b, a] });
+      expect(route.refreshes).toBe(1);
+      expect(runtime.inspect().fidelity.fields).toEqual(fields);
+      runtime.destroy();
+    },
+  );
 
   it('notices rows of equal text, which leave every write unchanged', async () => {
     const { route, runtime } = start(LIST);
@@ -165,12 +175,25 @@ describe('a row that moved', () => {
   });
 
   it('does not take the rows of the next page for a move', async () => {
-    const { route, runtime } = start(LIST);
+    const { route, runtime } = start(LIST, { subfieldCoverage: 'descendant' });
     await send({ items: [a, b] });
     runtime.navigationCommit();
     await vi.advanceTimersByTimeAsync(1_200);
     await send({ items: [b, a] });
     expect(route.refreshes).toBe(0);
+    runtime.destroy();
+  });
+
+  it('asks for the route after a navigation under the declared rule, which compares the messages', async () => {
+    // No ledger of the new page says that a row moved. The two messages do: the ids of both
+    // rows changed, and nothing on the page covers them.
+    const { route, runtime } = start(LIST);
+    await send({ items: [a, b] });
+    runtime.navigationCommit();
+    await vi.advanceTimersByTimeAsync(1_200);
+    await send({ items: [b, a] });
+    expect(route.refreshes).toBe(1);
+    expect(runtime.inspect().fidelity.fields).toEqual(['items.0.id', 'items.1.id']);
     runtime.destroy();
   });
 

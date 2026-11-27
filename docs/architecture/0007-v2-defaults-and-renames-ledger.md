@@ -110,6 +110,16 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
+2026-11-27 (3.0): row 17 is carried out. A page that sets no
+`subfieldCoverage` runs on `'declared'`: each changed path inside a partly
+bound group needs a binding or a `data-payload-covers` declaration, and
+`'descendant'` is the 2.x rule under its name. The development notice that
+announced the change leaves the registry with its code. Measured before the flip: the nine example
+fixtures and seven real-admin targets on Payload 3.94.2 behave as before,
+except the page that held the old default. What a site meets first is the
+`id` of an array row or of a related document, a changed path like the others
+when a row moves or a relationship switches.
+
 2026-11-27 (3.0): rows 22 and 33 are carried out. `new OriginDetector()`
 trusts the origin of `document.referrer` only where `enableReferrerDetection:
 true` asks for it; the runtime, the client and the hooks passed the option

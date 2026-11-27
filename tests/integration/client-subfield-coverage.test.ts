@@ -35,9 +35,19 @@ describe('LivePreviewClient — subfieldCoverage', () => {
     }
   });
 
-  it('keeps the descendant rule when the option is not given', async () => {
+  it('reports it as well when the option is not given (ADR 0007, row 17)', async () => {
     document.body.innerHTML = GROUP;
     const client = new LivePreviewClient(pipelineConfig());
+    try {
+      expect(await unboundAfterSiblingEdit(client)).toContain('hero.description');
+    } finally {
+      await client.destroy();
+    }
+  });
+
+  it("keeps the 2.x rule under 'descendant': the bound sibling covers the group", async () => {
+    document.body.innerHTML = GROUP;
+    const client = new LivePreviewClient(pipelineConfig({ subfieldCoverage: 'descendant' }));
     try {
       expect(await unboundAfterSiblingEdit(client)).not.toContain('hero.description');
     } finally {

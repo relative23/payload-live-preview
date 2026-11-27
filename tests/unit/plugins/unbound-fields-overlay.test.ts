@@ -213,18 +213,24 @@ describe('the unbound-fields overlay', () => {
     expect(panelText()).toContain('pricing');
   });
 
-  it("lists the uncovered path inside a partly bound group under subfieldCoverage: 'declared'", async () => {
+  it.each([{ subfieldCoverage: 'declared' }, {}])(
+    'lists the uncovered path inside a partly bound group under the declared rule, the default (%j)',
+    async (coverage) => {
+      document.body.innerHTML = '<p data-payload-field="hero.eyebrow">e</p>';
+      const hero = { eyebrow: 'e', description: 'd' };
+      const declared = manager({ debug: true, ...coverage });
+      await declared.manager.register(createUnboundFieldsOverlayPlugin());
+      await update(declared.events, { hero });
+      expect(panelText()).toContain('hero.description');
+      expect(panelText()).not.toContain('hero.eyebrow');
+      await declared.manager.destroyAll();
+    },
+  );
+
+  it("lists nothing of a partly bound group under subfieldCoverage: 'descendant'", async () => {
     document.body.innerHTML = '<p data-payload-field="hero.eyebrow">e</p>';
     const hero = { eyebrow: 'e', description: 'd' };
-    const declared = manager({ debug: true, subfieldCoverage: 'declared' });
-    await declared.manager.register(createUnboundFieldsOverlayPlugin());
-    await update(declared.events, { hero });
-    expect(panelText()).toContain('hero.description');
-    expect(panelText()).not.toContain('hero.eyebrow');
-    await declared.manager.destroyAll();
-
-    document.body.innerHTML = '<p data-payload-field="hero.eyebrow">e</p>';
-    const descendant = manager({ debug: true });
+    const descendant = manager({ debug: true, subfieldCoverage: 'descendant' });
     await descendant.manager.register(createUnboundFieldsOverlayPlugin());
     await update(descendant.events, { hero });
     expect(panelText()).not.toContain('hero');

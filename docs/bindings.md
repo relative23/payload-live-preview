@@ -403,18 +403,24 @@ collection. Enforcement is the `scopeBindingsByOwner` option
 
 The diff that decides what an edit changed names top-level fields, while a
 binding usually names a path inside one: `hero.eyebrow` for the group `hero`.
-By default one bound path covers the whole group, so an edit of
-`hero.description` on a page that binds only `hero.eyebrow` is neither
-reported nor sent to a server render.
+The runtime asks path by path (ADR 0022; `subfieldCoverage: 'declared'`, the
+default since 3.0). Inside a group the page reaches only below the top level,
+each changed path needs a binding of its own, a binding on the path above it,
+or a declaration; an uncovered one is an unbound change: LP0203 and
+`inspect().fidelity.fields` name it (`hero.description`), and
+`onUnfaithfulPatch` decides whether the route is refreshed for it. An upload or
+relationship counts as unchanged when only its population differs: the admin
+posts its id, and a merge with the server (`serverURL`) answers with the
+document.
 
-`subfieldCoverage: 'declared'` asks path by path instead (ADR 0022). Inside a
-group the page reaches only below the top level, each changed path needs a
-binding of its own, a binding on the path above it, or a declaration; an
-uncovered one is an unbound change: LP0203 and `inspect().fidelity.fields`
-name it (`hero.description`), and `onUnfaithfulPatch` decides whether the
-route is refreshed for it. An upload or relationship counts as unchanged when
-only its population differs: the admin posts its id, and a merge with the
-server (`serverURL`) answers with the document.
+The `id` of an array row or of a related document is a path like the others.
+When a row moves, or a relationship switches to another document, a page that
+binds `rows.0.label` or `author.name` and covers nothing else is told that
+`rows.0.id` or `author.id` changed with nothing to show it.
+
+`subfieldCoverage: 'descendant'` is the 2.x rule: one bound path covers the
+whole group, so an edit of `hero.description` on a page that binds only
+`hero.eyebrow` is neither reported nor sent to a server render.
 
 A page that shows part of a document on purpose says so with
 `data-payload-covers`: field paths it accounts for, and everything below them.

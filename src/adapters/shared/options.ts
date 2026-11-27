@@ -141,10 +141,11 @@ export interface PreviewAdapterOptions<Req = Request> {
   /** Patch only the bindings of the document an update names (`data-payload-owner`). Default `false`. */
   readonly scopeBindingsByOwner?: boolean;
   /**
-   * How a group counts as covered (ADR 0022). `'descendant'` (default): one
-   * bound path inside it covers all of it. `'declared'`: each changed path
-   * inside such a group needs its own binding or a `data-payload-covers`
-   * declaration; an uncovered one is an unbound change.
+   * How a group counts as covered (ADR 0022). `'declared'` (default since 3.0):
+   * each changed path inside a group needs its own binding or a
+   * `data-payload-covers` declaration; an uncovered one is an unbound change.
+   * `'descendant'`, the 2.x default: one bound path inside a group covers all
+   * of it.
    */
   readonly subfieldCoverage?: 'descendant' | 'declared';
   /** Sanitizer for rich text and HTML writes. Default `'strict'`. */

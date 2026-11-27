@@ -730,9 +730,9 @@ layout, route params, global providers. A binding there — anything in
 `<head>`, or an element marked `data-payload-strategy="route"` (with
 `data-payload-depends` naming its fields) — makes the revision a **route
 refresh** when one of those fields changed. A path inside a field
-(`meta.title`, `layout.1.note`) changes with its field; under
-`subfieldCoverage: 'declared'`, which keeps the previous message, only when the
-value at the path does. In a refresh the runtime fetches the current URL again
+(`meta.title`, `layout.1.note`) changes when the value at the path does; under
+`subfieldCoverage: 'descendant'`, which keeps no previous message, it changes
+with its field. In a refresh the runtime fetches the current URL again
 (same cookies and query, header `x-payload-live-preview: route`), syncs `<title>`, `<meta>`
 and the canonical link, morphs `<body>` in place (islands, `data-payload-owned`
 subtrees, editable content and custom elements without `data-payload-morph` are

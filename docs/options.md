@@ -51,7 +51,7 @@ writes the rows it stood for into the options, except the two 3.0 cannot keep:
 | `routeStrategy`            | —      | yes           | yes                                                                 | —                        | `false`                                             |
 | `onUnfaithfulPatch`        | —      | yes           | yes                                                                 | —                        | `'escalate'`                                        |
 | `autoBind`                 | yes    | yes           | yes                                                                 | —                        | `'off'`                                             |
-| `subfieldCoverage`         | yes    | yes           | yes                                                                 | —                        | `'descendant'`                                      |
+| `subfieldCoverage`         | yes    | yes           | yes                                                                 | —                        | `'declared'`                                        |
 | `hydration`                | —      | yes           | `'manual'`; the Next.js, Nuxt and SvelteKit adapters set the others | —                        | — (start on `DOMContentLoaded`)                     |
 | `softNavigationEvents`     | —      | yes           | set by Astro, Next.js, SvelteKit and Nuxt                           | —                        | `[]`                                                |
 | `resolveRenderer`          | yes    | —             | —                                                                   | —                        | —                                                   |
@@ -129,8 +129,9 @@ fifty-five rows.
   cannot be done per keystroke
   ([overview](architecture/overview.md#the-five-objects)); `autoBind` is how a
   page with no `data-payload-field` at all gets its bindings;
-  `subfieldCoverage: 'declared'` makes an edit inside a partly bound group
-  count as unbound unless the page binds or covers that path
+  `subfieldCoverage` says whether an edit inside a partly bound group counts
+  as unbound unless the page binds or covers that path (`'declared'`, the
+  default) or is covered by the bound path beside it (`'descendant'`)
   ([bindings](bindings.md#what-a-page-accounts-for),
   [ADR 0022](architecture/0022-subfield-coverage-is-declared.md)).
 - **What the page does with a value** — `sanitizerPolicy`, `resolveRenderer`,
@@ -173,7 +174,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 157 935 for authorized inline delivery. It fetches one
+  (ADR 0015), against 157 439 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the

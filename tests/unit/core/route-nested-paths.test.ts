@@ -184,23 +184,26 @@ describe('a route binding on a path inside a field', () => {
 });
 
 describe('an edit elsewhere in the same field', () => {
-  it("leaves the route alone under 'declared', which compares the path", async () => {
+  it.each(['declared', undefined] as const)(
+    "leaves the route alone under 'declared', the default, which compares the path (%s)",
+    async (coverage) => {
+      document.body.innerHTML = BLOCKS;
+      const { route, fetch } = servedRoute();
+      start(route, coverage);
+      await send({ layout: layout('Saved note') });
+      fetch.mockClear();
+
+      await send({ layout: layout('Saved note', 'Menu of the day') });
+
+      expect(document.querySelector('h2')?.textContent).toBe('Menu of the day');
+      expect(fetch).not.toHaveBeenCalled();
+    },
+  );
+
+  it("refreshes under 'descendant', which keeps no previous message to compare", async () => {
     document.body.innerHTML = BLOCKS;
     const { route, fetch } = servedRoute();
-    start(route, 'declared');
-    await send({ layout: layout('Saved note') });
-    fetch.mockClear();
-
-    await send({ layout: layout('Saved note', 'Menu of the day') });
-
-    expect(document.querySelector('h2')?.textContent).toBe('Menu of the day');
-    expect(fetch).not.toHaveBeenCalled();
-  });
-
-  it('refreshes under the default, which keeps no previous message to compare', async () => {
-    document.body.innerHTML = BLOCKS;
-    const { route, fetch } = servedRoute();
-    start(route);
+    start(route, 'descendant');
     await send({ layout: layout('Saved note') });
     fetch.mockClear();
 

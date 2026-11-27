@@ -138,3 +138,12 @@ a route refresh for a keystroke in a kicker). Two values that are equal but for
 a document standing where the other holds its id now count as one. LP0203 reads
 the message's own values, so it names the upload rather than the fields of its
 document. `tests/unit/core/declared-coverage-population.test.ts` pins both.
+
+## Addendum (2026-11-27): the default is `'declared'`
+
+3.0 makes the flip the consequences above announce (ADR 0007, row 17).
+`'descendant'` stays as the 2.x rule under its name, and the development
+notice of 2.4 leaves with the default it named. A page that sets neither the option nor a cover now
+meets the rule of section 2 as it is: the `id` of an array row or of a related
+document is a changed path too, so a moved row or a switched relationship is
+reported on a page that binds into it and covers nothing else.
