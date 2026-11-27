@@ -137,7 +137,9 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
           ? undefined
           : definedOnly({ serverURL, apiRoute, depth: mergeDepth, timeoutMs: mergeTimeoutMs }),
       internalLinkPattern,
-      routeAfterSave: routeStrategy === 'after-save' ? true : undefined,
+      routeAfterSave:
+        routeStrategy === 'after-save' || routeStrategy === 'router' ? true : undefined,
+      routeLentOnly: routeStrategy === 'router' ? true : undefined,
       debounceMs,
       heartbeatMs,
       intersectionRootMargin,

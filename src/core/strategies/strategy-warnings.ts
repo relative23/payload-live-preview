@@ -52,6 +52,13 @@ export function warnEscalationUnavailable(
   state.warnedEscalationUnavailable = true;
   const shortfall = `[live-preview] LP0808: onUnfaithfulPatch: 'escalate' has nowhere to go: ${String(count)} field(s) fell short`;
   const warnInstead = "or onUnfaithfulPatch: 'warn' to keep the patch and say so.";
+  if (deps.routeLentOnly) {
+    deps.warn(
+      `${shortfall} and the page lent no route refresh: render LivePreviewNavigation (Next.js) ` +
+        `or call livePreviewNavigation() (SvelteKit), ${warnInstead}`,
+    );
+    return;
+  }
   deps.warn(
     deps.strategies.fragment === undefined
       ? `${shortfall} and no route or fragment strategy is configured. Set routeStrategy: true or fragments: { endpoint }, ${warnInstead}`

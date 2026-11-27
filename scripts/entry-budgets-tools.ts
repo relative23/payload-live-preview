@@ -77,7 +77,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, the switches say what they turn on, ADR 0007 row 38): paired Node24.22.3/npm12.0.2; +474/+151/+125 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +888/+343/+305 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +29/+9/+23 B; prior reserves kept.
-  'doctor.js': { raw: 24_056, gzip: 9_305, brotli: 8_274 },
+  // 2026-11-27 (3.0, ADR 0007 row 40: the route belongs to the router): paired Node24.22.3/npm12.0.2; +33/+18/+15 B; prior reserves kept.
+  'doctor.js': { raw: 24_089, gzip: 9_323, brotli: 8_289 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -132,7 +133,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, the switches say what they turn on, ADR 0007 row 38): paired Node24.22.3/npm12.0.2; +1662/+431/+353 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +881/+387/+347 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +32/+16/+39 B; prior reserves kept.
-  'doctor-cli.js': { raw: 68_703, gzip: 23_400, brotli: 20_848 },
+  // 2026-11-27 (3.0, ADR 0007 row 40: the route belongs to the router): paired Node24.22.3/npm12.0.2; +748/+297/+190 B; prior reserves kept.
+  'doctor-cli.js': { raw: 69_451, gzip: 23_697, brotli: 21_038 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
   // 2026-10-22 (the same codemod change): measured 19 958 → 20 931 / 6 964 → 7 166 / 6 240 → 6 427 (+973/+202/+187 B); same 17/12/93 B cushions.

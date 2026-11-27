@@ -170,13 +170,43 @@ describe('inlineScriptConfig', () => {
     ).toEqual({ fragmentEndpoint: '/payload/fragment' });
   });
 
+  it("hands the route of a page a framework hydrates to that framework's router (ADR 0007, row 40)", () => {
+    for (const hydration of ['react', 'vue', 'sveltekit'] as const) {
+      expect(inlineScriptConfig({}, { hydration })).toMatchObject({ routeStrategy: 'router' });
+    }
+    // What the project chose stands: no strategy, another one, or a fragment endpoint, whose
+    // prelude carries the route with the 2.x timing.
+    expect(inlineScriptConfig({ routeStrategy: false }, { hydration: 'react' })).toEqual({
+      hydration: 'react',
+    });
+    expect(inlineScriptConfig({ routeStrategy: true }, { hydration: 'react' })).toMatchObject({
+      routeStrategy: true,
+    });
+    expect(inlineScriptConfig({ fragments: { endpoint: '/f' } }, { hydration: 'react' })).toEqual({
+      hydration: 'react',
+      fragmentEndpoint: '/f',
+    });
+    // Asked for by name it travels beside a fragment endpoint, as `'after-save'` does.
+    expect(
+      inlineScriptConfig({ routeStrategy: 'router', fragments: { endpoint: '/f' } }),
+    ).toMatchObject({ routeStrategy: 'router', fragmentEndpoint: '/f' });
+    // A page nothing hydrates, Astro's, has no router to hand it to.
+    expect(
+      inlineScriptConfig({}, { softNavigationEvents: ['astro:page-load'] }),
+    ).not.toHaveProperty('routeStrategy');
+  });
+
   it('carries what the adapter knows about the page beside what the project configured', () => {
     // ADR 0015: the framework that hydrates the page is a fact the adapter
     // states, never an option a project sets, so it arrives on its own.
-    expect(inlineScriptConfig({}, { hydration: 'react' })).toEqual({ hydration: 'react' });
+    expect(inlineScriptConfig({}, { hydration: 'react' })).toEqual({
+      hydration: 'react',
+      routeStrategy: 'router',
+    });
     // A page this adapter cannot read says so itself, over what the adapter assumes.
     expect(inlineScriptConfig({ hydration: 'manual' }, { hydration: 'react' })).toEqual({
       hydration: 'manual',
+      routeStrategy: 'router',
     });
     expect(inlineScriptConfig({ hydration: 'manual' })).toEqual({ hydration: 'manual' });
     expect(inlineScriptConfig({}, { softNavigationEvents: ['framework:navigated'] })).toEqual({

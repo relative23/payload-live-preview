@@ -29,7 +29,7 @@ export function generateInlineScript(config: InlineScriptConfig = {}): string {
 }
 
 function hasRouteStrategy(config: InlineScriptConfig): boolean {
-  return config.routeStrategy === true || config.routeStrategy === 'after-save';
+  return config.routeStrategy !== undefined && config.routeStrategy !== false;
 }
 
 /**

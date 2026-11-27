@@ -89,6 +89,7 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 37  | 3.0 (decided 2026-11-24)           | removal | the lean runtime: `LEAN_RUNTIME` from the `/lean` entry and the `runtime` option, a second artifact of about 36 KiB gzip against 44 that leaves out the strategies, the keyed morph, structural arrays, item templates, the announcer and auto-binding                       | one runtime. The entry, the option, `RuntimeArtifact` and the diagnostic for a feature it left out are gone. Fewer bytes for a visitor come from delivering the runtime as an asset, where a page carries a bootstrap of a few hundred bytes: `delivery: 'asset'`, and Astro's `mode: 'loader'`, the default since row 33 | `pll doctor --v3` names a `runtime` option                | none: delete the import and the option; the build fails on the import until then                                                                                                                                                                                                                                                              |
 | 38  | 3.0 (decided 2026-11-24)           | rename  | `disableVisibilityGate`, `disableReferrerDetection` and `disableLocalhostMatching`: three switches named by what they turn off                                                                                                                                               | `enableVisibilityGate` (default `true`), `enableReferrerDetection` (default `false`) and `enableLocalhostMatching` (default `true`), each with the value turned round, as the hooks and `OriginDetector` already spell the origin switches. An adapter, the generator or the client given an old name refuses to start    | —                                                         | `rename-disable-switches` rewrites a literal `true` or `false`; any other value, a JSX attribute, or both names at once is a conflict                                                                                                                                                                                                         |
 | 39  | 3.0 (decided 2026-11-27)           | default | a hook session (`useLivePreviewDocument()`, `createDocumentSession()`) takes an update from every allowed origin for as long as it listens                                                                                                                                   | it listens to the origin whose update it accepted first, as the inline runtime and `LivePreviewClient` do; another allowed origin is refused until the last subscriber leaves                                                                                                                                             | —                                                         | none: nothing to set; a page that two admins drive in turn is opened from the one that edits                                                                                                                                                                                                                                                  |
+| 40  | 3.0 (decided 2026-11-27)           | default | no route strategy in an adapter unless `routeStrategy` or `fragments` asks for one, so `onUnfaithfulPatch: 'escalate'`, the default, has nowhere to go                                                                                                                       | `routeStrategy: 'router'` in the Next.js, SvelteKit and Nuxt adapters: after a save, the route is refreshed through the router refresh the page lent, and never fetched and morphed. Astro, the generator and the bootstrap of `livePreviewScriptProps()` keep none                                                       | `pll doctor --v3` names a page without either option      | none: render `LivePreviewNavigation` (Next.js) or call `livePreviewNavigation()` (SvelteKit), which the guides describe since 2.4; the Nuxt module lends the refresh itself. `routeStrategy: false` keeps none                                                                                                                                |
 
 2026-09-16 (2.0.1): row 5's "outside local dev" names an exception the runtime
 does not have. `disableReferrerDetection` is `true` everywhere under `'v2'`;
@@ -187,6 +188,31 @@ document to sanitise with, as `sanitizeHtml()` always did. `requireDocument:
 false` is the 2.x behaviour under its name, the markup as rendered with one
 warning, and `sanitize: false` still says that the caller sanitises itself. A
 browser has a document, so nothing changes there.
+
+2026-11-27 (3.0): row 40 is new and carried out. `onUnfaithfulPatch:
+'escalate'` has been the default since 2.0 and did nothing on a page with no
+strategy. The Next.js, SvelteKit and Nuxt adapters now carry the route
+strategy for a script an authorized request receives, as a new value,
+`'router'`: the route is refreshed after Payload reports the save, through the
+route refresh the page lent, and through nothing else.
+
+- The value exists because of a measurement. Against the real admin (Payload
+  3.94.2, Chromium), the Next.js 16 and SvelteKit 3 example pages, which lend
+  no refresh, took an unbound change by fetching the route and morphing it in,
+  without an error. On the Next.js page the morph removed
+  `<next-route-announcer>`, the router's own element, from the body. A default
+  must not do that to a page that asked for nothing, so a page that lent no
+  refresh is left as it is and `LP0808` names what to render. `true` and
+  `'after-save'` keep the morph where nothing was lent, as 2.x documents it.
+- It applies where neither `routeStrategy` nor `fragments` is set. A fragment
+  endpoint carries the route strategy already and keeps its 2.x timing.
+- `livePreviewScriptProps()` builds a bootstrap every visitor receives, so the
+  default stops there: the prelude would have taken it from about 1.3 kB to
+  about 10. Astro pages are not hydrated as a whole and keep no default.
+- The cost is the route prelude on a preview page an editor loads, about 8.6
+  kB raw and 2.6 kB gzip.
+- Reading field types from the Payload config at build time, asked in the same
+  question, is left for a 3.x minor.
 
 2026-11-27 (3.0): row 39 is new and carried out. A hook session locks onto
 the origin of the first update it accepts for its document and releases the

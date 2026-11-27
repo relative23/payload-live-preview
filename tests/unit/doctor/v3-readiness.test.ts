@@ -105,19 +105,57 @@ describe('pll doctor --v3: adapter options (rows 21, 27, 32, 33 and strict: fals
     });
     expect(places(merging, 'merge-deadline')).toEqual(['hooks.server.ts:2']);
 
-    // Without `serverURL` the runtime has no merger, so no merge waits for anything.
+    // Without `serverURL` the runtime has no merger, so no merge waits for anything. Both name
+    // their route strategy, which row 40 would list otherwise.
     expect(
-      rules(await check({ 'src/hooks.server.ts': handle('{ allowedOrigins: [ADMIN] }') })),
+      rules(
+        await check({
+          'src/hooks.server.ts': handle('{ allowedOrigins: [ADMIN], routeStrategy: false }'),
+        }),
+      ),
     ).toEqual([]);
     expect(
       rules(
         await check({
           'src/hooks.server.ts': handle(
-            "{ serverURL: 'https://cms.example.com', mergeTimeoutMs: 0 }",
+            "{ serverURL: 'https://cms.example.com', mergeTimeoutMs: 0, routeStrategy: false }",
           ),
         }),
       ),
     ).toEqual([]);
+  });
+
+  it('lists a page a framework hydrates that names neither a route strategy nor fragments (row 40)', async () => {
+    const files = {
+      'src/hooks.server.ts': [
+        "import { livePreviewHandle } from 'payload-live-preview/sveltekit';",
+        'export const handle = livePreviewHandle({ allowedOrigins: [ADMIN] });',
+      ].join('\n'),
+      'src/layout.tsx': [
+        "import { LivePreviewScript } from 'payload-live-preview/nextjs';",
+        'await LivePreviewScript({ request, allowedOrigins: [ADMIN] });',
+        "await LivePreviewScript({ request, routeStrategy: 'after-save' });",
+        "await LivePreviewScript({ request, fragments: { endpoint: '/payload/fragment' } });",
+      ].join('\n'),
+      'src/plugin.ts': [
+        "import { livePreviewNitroPlugin } from 'payload-live-preview/nuxt';",
+        'export default livePreviewNitroPlugin({ allowedOrigins: [ADMIN], routeStrategy: false });',
+      ].join('\n'),
+      // The bootstrap every visitor receives and Astro's integration keep no default strategy.
+      'src/asset.tsx': [
+        "import { livePreviewScriptProps } from 'payload-live-preview/nextjs';",
+        "livePreviewScriptProps({ delivery: 'asset' });",
+      ].join('\n'),
+      'src/astro.config.ts': [
+        "import { livePreview } from 'payload-live-preview/astro';",
+        "livePreview({ mode: 'loader' });",
+      ].join('\n'),
+    };
+
+    expect(places(await check(files), 'route-router')).toEqual([
+      'hooks.server.ts:2',
+      'layout.tsx:2',
+    ]);
   });
 
   it('lists the lean runtime where an integration or the generator is given it (row 37)', async () => {

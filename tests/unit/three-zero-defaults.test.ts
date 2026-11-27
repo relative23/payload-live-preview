@@ -40,6 +40,24 @@ describe('livePreviewScriptProps() without inline delivery (row 32)', () => {
     expect(said()).toEqual([]);
   });
 
+  it('keeps the route strategy out of that bootstrap, which every visitor receives, unless asked', () => {
+    // Row 40 hands the route of a hydrated page to the router by default. This helper's script
+    // is rendered for everyone, so the default stops here; what a project asks for travels.
+    const config = (html: string): string => /^var __LIVE_PREVIEW_CONFIG__=.*$/mu.exec(html)![0];
+    const plain = livePreviewScriptProps({ ...options, delivery: 'asset' });
+    const asked = livePreviewScriptProps({
+      ...options,
+      delivery: 'asset',
+      routeStrategy: 'router',
+    });
+
+    expect(config(plain.dangerouslySetInnerHTML.__html)).not.toContain('"router"');
+    expect(config(asked.dangerouslySetInnerHTML.__html)).toContain('"router"');
+    expect(asked.dangerouslySetInnerHTML.__html.length).toBeGreaterThan(
+      plain.dangerouslySetInnerHTML.__html.length + 5_000,
+    );
+  });
+
   it('has no inline delivery in its type', () => {
     // @ts-expect-error -- the options need `delivery: 'asset'` since 3.0
     expect(() => livePreviewScriptProps(options)).toThrow(refusal);

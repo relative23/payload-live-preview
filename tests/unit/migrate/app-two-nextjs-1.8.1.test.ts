@@ -158,6 +158,8 @@ describe('app two: the Next.js fixture at v1.8.1, upgraded to 2.0', () => {
         generateInlineScript({
           ...(after as InlineScriptConfig),
           softNavigationEvents: [NEXT_NAVIGATION_EVENT],
+          // Since 3.0 the adapter hands the route to the router as well (ADR 0007, row 40).
+          routeStrategy: 'router',
         }),
       ),
     );

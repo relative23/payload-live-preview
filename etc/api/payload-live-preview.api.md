@@ -512,7 +512,7 @@ export interface InlineScriptConfig {
     readonly mergeTimeoutMs?: number;
     readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
     readonly revealEditedField?: boolean;
-    readonly routeStrategy?: boolean | 'after-save';
+    readonly routeStrategy?: boolean | 'after-save' | 'router';
     readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;

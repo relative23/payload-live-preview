@@ -168,6 +168,7 @@ describe('generateInlineScript', () => {
   it("carries the route prelude for routeStrategy: 'after-save', and not without a strategy", () => {
     // The prelude's own bytes, not the global's name: the runtime names that global as well.
     expect(generateInlineScript({ routeStrategy: 'after-save' })).toContain(ROUTE_SOURCE);
+    expect(generateInlineScript({ routeStrategy: 'router' })).toContain(ROUTE_SOURCE);
     expect(generateInlineScript({ routeStrategy: false })).not.toContain(ROUTE_SOURCE);
     expect(generateInlineScript()).not.toContain(ROUTE_SOURCE);
   });

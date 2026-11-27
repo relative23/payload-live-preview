@@ -585,7 +585,7 @@
 // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: the entry rows in entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.1/npm12.0.2; a component that fell is left where it was): `core.cjs` +4817 / +1500 / +1319, `core.js` +4808 / +1529 / +1291, `index.cjs` +1828 / +565 / +390, `index.js` +1828 / +558 / +315, `server.cjs` +303 / +68 / +58, `server.js` +303 / +65 / +56.
 // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +673/+225/+196 B; prior reserves kept.
 // 2026-10-31 (gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired, same epoch): initLivePreview from root +255, generateInlineScript from root +253, initLivePreview from core +242, createLivePreviewMiddleware from nextjs +254, LEAN_RUNTIME from lean +38.
-export const INLINE_BUDGET = { raw: 143_197, gzip: 45_194, brotli: 39_848 } as const;
+export const INLINE_BUDGET = { raw: 143_752, gzip: 45_414, brotli: 39_949 } as const;
 
 // The two prelude profiles, each the runtime plus a prelude that moves on its own,
 // keep their budgets and their log in bundle-prelude-budgets.ts: this log reached

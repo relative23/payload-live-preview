@@ -30,6 +30,7 @@ describe('the defaults table covers every readiness row', () => {
       manageCsp: 'frame-ancestors',
       strictDynamic: false,
       assetPath: '/payload-live-preview',
+      routeStrategy: 'router',
     });
     expect({ ...V2_RUNTIME_DEFAULTS }).toEqual({
       mergeTimeoutMs: 10_000,

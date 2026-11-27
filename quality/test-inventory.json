@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 528,
-    "suites": 1026,
-    "tests": 4635,
+    "files": 529,
+    "suites": 1027,
+    "tests": 4644,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 431,
-      "suites": 917,
-      "tests": 4228,
+      "files": 432,
+      "suites": 918,
+      "tests": 4237,
       "benchmarks": 0
     }
   },
@@ -1033,7 +1033,7 @@
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 34,
+      "tests": 35,
       "benchmarks": 0
     },
     {
@@ -1523,7 +1523,7 @@
       "path": "tests/unit/core/inline-slots-route-and-coverage.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -2052,6 +2052,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/route-router-only.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/route-strategy.test.ts",
       "group": "unit",
       "suites": 4,
@@ -2335,7 +2342,7 @@
       "path": "tests/unit/doctor/v3-readiness.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 22,
+      "tests": 23,
       "benchmarks": 0
     },
     {
@@ -3735,7 +3742,7 @@
       "path": "tests/unit/three-zero-defaults.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {
