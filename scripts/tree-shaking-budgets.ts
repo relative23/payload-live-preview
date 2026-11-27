@@ -50,25 +50,21 @@ export interface Fixture {
  * generator embeds whole and cannot shake. Raised again the same day for
  * `data-payload-format`.
  *
- * 2026-09-06: the numbers are Vite 7's, because that is the newest major the
- * repository's own dev tooling accepts (`@codspeed/vitest-plugin` peers below
- * 8) — the record and the reason live in `quality/compat-matrix.json`.
+ * 2026-11-27: the numbers are Vite 8's (8.4.0, Rolldown 1.3.4, the minifier Vite
+ * picks by default), the bundler Astro 7, SvelteKit 3 and Nuxt 4 install. From
+ * 2026-09-06 they were Vite 7's with esbuild as the minifier, because
+ * `@codspeed/vitest-plugin` accepted no newer major. Paired on one tree, each
+ * row moved by its measured difference and kept its reserve: nine fell
+ * (`initLivePreview` from the root by 1 348 B gzip) and three rose (`escapeHtml`
+ * from the root +9, the generator +385, the Next.js middleware +333). In the
+ * first row Rolldown keeps a top-level `Object.freeze({...})` nobody reads,
+ * which Rollup dropped.
  *
- * Vite 8 was measured before that constraint surfaced, and the measurement is
- * worth keeping: it bundles with Rolldown instead of Rollup, which is less
- * precise at dropping unused declarations out of a bundled module —
- * `escapeHtml` from the barrel came out at 2 378 B against Rollup's 220, and
- * `payload-live-preview/plugins` about a fifth larger. Consumers on Astro 7 or
- * Nuxt get that bundler, so the difference is theirs, not ours; the focused
- * entries were within a few percent either way.
- *
- * One thing did not survive the move unassisted, and its fix is still in
- * place. The runtime source is emitted as chunks joined at load
- * (scripts/serialize-source.ts), and Rolldown would not prove that call pure:
- * importing `escapeHtml` from the barrel came out at 32 512 B gzip — the whole
- * package — until the expression was annotated `\/* @__PURE__ *\/`. Rollup drops
- * it either way, so the annotation costs nothing here and is what keeps the
- * barrel shakeable for a consumer on 8.
+ * The runtime source is emitted as chunks joined at load
+ * (scripts/serialize-source.ts), and Rolldown does not prove that call pure:
+ * importing `escapeHtml` from the barrel came out at 32 512 B gzip, the whole
+ * package, until the expression was annotated `\/* @__PURE__ *\/`. The
+ * annotation is what keeps the barrel shakeable, and the first row holds it.
  *
  * 2026-09-06 (LP0409): the two Lexical rows rise ~350 B gzip. The renderer
  * writes sanitized HTML, so it pulls the sanitizer, and the sanitizer now
@@ -415,7 +411,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'escapeHtml',
     use: 'export const out = escapeHtml(String(Date.now()));',
-    gzip: 214,
+    gzip: 223,
     why: 'a pure helper from the root barrel: the barrel itself costs nothing',
   },
   {
@@ -425,7 +421,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_990,
+    gzip: 5_937,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
@@ -451,7 +447,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 54_352,
+    gzip: 53_004,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -476,7 +472,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 53_203,
+    gzip: 53_588,
     why: 'the generator carries the inline runtime source and nothing of the client',
   },
   {
@@ -502,7 +498,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 54_363,
+    gzip: 53_014,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -511,7 +507,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_985,
+    gzip: 5_932,
     why: 'the Lexical renderer from its focused entry',
   },
   {
@@ -519,7 +515,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_580,
+    gzip: 1_516,
     why: 'the keyed morph alone, without the array renderer',
   },
   {
@@ -550,7 +546,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 58_939,
+    gzip: 59_272,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
@@ -560,7 +556,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 6_481,
+    gzip: 6_367,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
@@ -571,7 +567,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 6_384,
+    gzip: 6_256,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {
@@ -579,7 +575,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/plugins',
     symbol: 'PluginManager',
     use: 'export const out = PluginManager;',
-    gzip: 3_389,
+    gzip: 3_333,
     why: 'the plugin manager without the built-in plugins',
   },
   {
@@ -587,7 +583,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/plugin',
     symbol: 'livePreview',
     use: "export const out = livePreview({ baseUrl: 'https://site.example.com', fallback: '/' });",
-    gzip: 1_222,
+    gzip: 1_196,
     why: 'the Payload config transform and URL builder, without Payload itself',
   },
 ];

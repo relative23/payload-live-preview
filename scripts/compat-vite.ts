@@ -98,8 +98,9 @@ export function peerCoverageProblems(
 }
 
 /**
- * Three ways the record and the repository can disagree, each one a way the
- * 2026-09-06 drift could recur.
+ * The ways the record and the repository can disagree. The first three are
+ * ways the 2026-09-06 drift could recur; the fourth is the reason recorded
+ * that day outliving its cause, as it did until 2026-11-27.
  */
 export function viteProblems(facts: ViteFacts): readonly string[] {
   const problems: string[] = [];
@@ -121,6 +122,11 @@ export function viteProblems(facts: ViteFacts): readonly string[] {
     problems.push(
       `Vite: devDependencies.vite is \`${facts.dev}\` but ${brings} installs Vite ${String(span.max)}; ` +
         'raise it, or record why not in `vite.devBelowNewest`',
+    );
+  } else if (devMajor === span.max && facts.devBelowNewest !== undefined) {
+    problems.push(
+      `Vite: devDependencies.vite is \`${facts.dev}\`, the newest recorded major, and \`vite.devBelowNewest\` ` +
+        'still gives a reason for staying below it; remove the reason',
     );
   }
 

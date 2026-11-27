@@ -159,27 +159,27 @@ cases measured 0.425 / 0.455 ms and 0.357 / 0.361 ms.
 ## Tree shaking — what one import costs
 
 `npm run test:treeshake` (`scripts/check-tree-shaking.ts`): a one-line consumer
-imports one symbol, Vite bundles it against the built package resolved through
+imports one symbol, Vite 8 bundles it against the built package resolved through
 `node_modules` (so `exports` and `sideEffects` apply as after `npm install`),
-minified, gzip level 9. Each row is held to the gzip ceiling in the table,
+with the minifier Vite picks by default, gzip level 9. Each row is held to the gzip ceiling in the table,
 which is `TREE_SHAKING_FIXTURES` in `scripts/tree-shaking-budgets.ts`; a row
 more than 2 % under its ceiling is reported, so the ceiling stays close to the
 size.
 
 | Consumer imports                                                 | gzip ceiling |
 | ---------------------------------------------------------------- | ------------ |
-| `escapeHtml` from `payload-live-preview`                         | 214 B        |
-| `lexicalToHtml` from `payload-live-preview`                      | 5,701 B      |
-| `initLivePreview` from `payload-live-preview`                    | 55,745 B     |
-| `generateInlineScript` from `payload-live-preview`               | 53,382 B     |
-| `initLivePreview` from `payload-live-preview/core`               | 55,726 B     |
-| `lexicalToHtml` from `payload-live-preview/lexical`              | 5,840 B      |
-| `morphElement` from `payload-live-preview/structural`            | 1,581 B      |
-| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 58,812 B     |
-| `useLivePreviewDocument` from `payload-live-preview/react`       | 8,603 B      |
-| `useLivePreviewDocument` from `payload-live-preview/vue`         | 8,585 B      |
-| `PluginManager` from `payload-live-preview/plugins`              | 3,373 B      |
-| `livePreview` from `payload-live-preview/plugin`                 | 1,228 B      |
+| `escapeHtml` from `payload-live-preview`                         | 223 B        |
+| `lexicalToHtml` from `payload-live-preview`                      | 5,937 B      |
+| `initLivePreview` from `payload-live-preview`                    | 53,004 B     |
+| `generateInlineScript` from `payload-live-preview`               | 53,588 B     |
+| `initLivePreview` from `payload-live-preview/core`               | 53,014 B     |
+| `lexicalToHtml` from `payload-live-preview/lexical`              | 5,932 B      |
+| `morphElement` from `payload-live-preview/structural`            | 1,516 B      |
+| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 59,272 B     |
+| `useLivePreviewDocument` from `payload-live-preview/react`       | 6,367 B      |
+| `useLivePreviewDocument` from `payload-live-preview/vue`         | 6,256 B      |
+| `PluginManager` from `payload-live-preview/plugins`              | 3,333 B      |
+| `livePreview` from `payload-live-preview/plugin`                 | 1,196 B      |
 
 Before this gate existed, every row was 64 KB gzip: the root barrel
 did not tree-shake at all. Three causes, all fixed in the same change:

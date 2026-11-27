@@ -63,6 +63,15 @@ describe('what compat:check refuses', () => {
     ).toEqual([]);
   });
 
+  it('refuses a reason for staying below the newest major once the devDependency is on it', () => {
+    const problems = viteProblems(
+      facts({ dev: '^8.4.0', devBelowNewest: 'a dev plugin peers below 8' }),
+    );
+
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('remove the reason');
+  });
+
   it('refuses a devDependency outside the span whatever the reason says', () => {
     const problems = viteProblems(
       facts({

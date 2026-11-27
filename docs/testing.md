@@ -659,15 +659,15 @@ floors 3.3 and 18. The job runs Chromium only.
 ## Tree-shaking gate
 
 The root barrel tree-shakes, and that is measured rather than declared:
-`npm run test:treeshake` bundles one-symbol consumers with Vite against the
+`npm run test:treeshake` bundles one-symbol consumers with Vite 8 against the
 built package, resolved through `node_modules` so `exports` and `sideEffects`
 apply as after `npm install`, and holds each to a gzip budget. Importing
-`escapeHtml` from the root is held to 214 B, `lexicalToHtml` to 5,701 B,
-`initLivePreview` to 55,745 B (the client with its built-in renderers, Lexical
-included), `generateInlineScript` to 53,382 B (the inline runtime source and
+`escapeHtml` from the root is held to 223 B, `lexicalToHtml` to 5,937 B,
+`initLivePreview` to 53,004 B (the client with its built-in renderers, Lexical
+included), `generateInlineScript` to 53,588 B (the inline runtime source and
 nothing of the client). The focused entries give a bundler less to look
 through; the bytes barely move — `initLivePreview` from `./core` is held to
-55,726 B, `lexicalToHtml` from `./lexical` to 5,840 B. The budgets are
+53,014 B, `lexicalToHtml` from `./lexical` to 5,932 B. The budgets are
 `TREE_SHAKING_FIXTURES` in `scripts/tree-shaking-budgets.ts`, with the reason
 each one moved; the first measurement, and why the barrel did not tree-shake
 before it, are in
