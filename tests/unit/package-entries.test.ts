@@ -102,7 +102,6 @@ describe('package entries', () => {
     expect(Object.keys(STANDALONE_ENTRIES).sort()).toEqual([
       'client',
       'fragment',
-      'lean',
       'lexical',
       'plugins',
       'server',

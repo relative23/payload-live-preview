@@ -44,8 +44,6 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0102: 'Any framing site is trusted. Set `allowedOrigins` and serve a `frame-ancestors` CSP.',
   LP0103:
     "The plugin's `compat` range does not include this runtime version, so it was not registered. Upgrade the plugin or the package until the ranges meet.",
-  LP0104:
-    'The page was delivered with `runtime: LEAN_RUNTIME`, and that runtime does not carry the feature the markup asks for — the elements stay as the server rendered them. Drop the option for the full runtime, or remove the markup that needs it.',
   LP0201:
     'Render the binding anchor unconditionally so an edit to an initially empty field has somewhere to land; `data-payload-boundary` keeps a hidden anchor for it.',
   LP0203:

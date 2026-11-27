@@ -117,3 +117,8 @@ of it to the app's own installation (ADR 0032, addendum).
   cannot check is whether an entry _earns_ its place; that stays a review
   question, and adding an entry is the one topology change this record asks to
   be argued rather than merely tested.
+
+2026-11-27 (3.0): the `./lean` entry and its artifact are removed (ADR 0007,
+row 37). The package builds one runtime; `INLINE_LEAN_BUDGET` and the generated
+file that was committed for the entry leave with it, and no generated file is
+committed any more.

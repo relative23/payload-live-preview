@@ -574,13 +574,14 @@ describe('workspace package-lock identity contract', () => {
     }
   });
 
-  it('runs the metadata sync and rebuilds the committed runtime after Changesets versions the package', () => {
+  it('runs the metadata sync after Changesets versions the package', () => {
+    // Until 3.0 it rebuilt the runtime too: one generated file was committed and carried the version.
     const manifest = readJson(resolve(ROOT, 'package.json')) as {
       scripts?: Record<string, string>;
     };
 
     expect(manifest.scripts?.['version']).toBe(
-      'changeset version && tsx scripts/sync-lockfile-metadata.ts && npm run build:runtime',
+      'changeset version && tsx scripts/sync-lockfile-metadata.ts',
     );
   });
 });

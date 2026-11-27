@@ -7,10 +7,9 @@ to its failure mode.
 
 ## Local commands
 
-After `npm ci`, generate the inline runtime files once. Five of the six are
-gitignored; `runtime-lean.generated.ts` is committed, and
-[CONTRIBUTING](../CONTRIBUTING.md#the-single-source-runtime) says why and which
-gate keeps it current:
+After `npm ci`, generate the inline runtime files once. They are build outputs
+and gitignored
+([CONTRIBUTING](../CONTRIBUTING.md#the-single-source-runtime)):
 
 ```sh
 npm run build:runtime

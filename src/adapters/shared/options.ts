@@ -7,7 +7,6 @@ import type { DefaultsProfile, EventSourcePolicy } from '@/types/defaults-profil
 import type { PreviewAuthorization } from '@security/preview-verdict';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
 import type { PreviewSignal } from './preview-request';
-import type { RuntimeArtifact } from '@/types/inline-config';
 
 /**
  * What `authorizePreview` may resolve to; anything that is not a context
@@ -99,14 +98,6 @@ export interface PreviewAdapterOptions<Req = Request> {
    * root, so the bootstrap requests the path the framework actually routes.
    */
   readonly assetPath?: string;
-  /**
-   * A runtime artifact to inject instead of the full one — `LEAN_RUNTIME` from
-   * `payload-live-preview/lean`, which is several KB gzip smaller (measured in
-   * docs/options.md) and reports
-   * LP0104 when a page needs a feature it left out (docs/options.md). Importing
-   * it is what puts those bytes in your build; the default costs nothing.
-   */
-  readonly runtime?: RuntimeArtifact;
   /**
    * Server-rendered fragment boundaries (ADR 0011): the same-origin path of
    * the route exporting `createFragmentEndpoint()`. The runtime then renders

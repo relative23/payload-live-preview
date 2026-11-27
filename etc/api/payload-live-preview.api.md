@@ -227,7 +227,6 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly NoTrustedOrigin: "LP0101";
     readonly ReferrerOnlyTrust: "LP0102";
     readonly PluginIncompatible: "LP0103";
-    readonly ProfileFeatureOmitted: "LP0104";
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly UnboundField: "LP0203";
@@ -514,7 +513,6 @@ export interface InlineScriptConfig {
     readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
     readonly revealEditedField?: boolean;
     readonly routeStrategy?: boolean | 'after-save';
-    readonly runtime?: RuntimeArtifact;
     readonly sanitizerPolicy?: 'compat' | 'strict';
     readonly scopeBindingsByOwner?: boolean;
     readonly serverURL?: string;
@@ -1357,16 +1355,6 @@ export interface RouteStrategy {
     readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>, context?: RoutePlanContext) => boolean;
     // (undocumented)
     readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
-}
-
-// @public
-export interface RuntimeArtifact {
-    readonly contentHash: string;
-    readonly integrity: string;
-    // (undocumented)
-    readonly profile: 'lean';
-    // (undocumented)
-    readonly source: string;
 }
 
 // @public (undocumented)

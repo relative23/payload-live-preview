@@ -14,6 +14,7 @@ table.
 | `setSanitizerDocument()` is removed                                          | pass `document` per call                                                                                                                                                          | `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, the `RichText` `document` prop                                                                                                                                                                 |
 | `defaults: 'v1'` is removed                                                  | `npx pll migrate ./src --write`                                                                                                                                                   | the rows it stood for become explicit options with the same values, except `strict: false` and `'referer'` among the preview signals, which 3.0 cannot keep; `pll doctor --v2` names the rows that are left                                                                |
 | `strict: false` is removed                                                   | pass `authorizePreview` and remove the option                                                                                                                                     | no response changes on intent alone; an adapter given `strict: false` refuses to start ([authorization.md](authorization.md))                                                                                                                                              |
+| the lean runtime (`LEAN_RUNTIME` and the `runtime` option) is removed        | delete the import and the option                                                                                                                                                  | one runtime; for fewer bytes on a visitor's page deliver it as an asset (`delivery: 'asset'`, Astro's `mode: 'loader'`)                                                                                                                                                    |
 | `onUnboundChange`, `isPreviewRequest()` and `adminOrigins` are removed       | `npx pll migrate ./src --write`                                                                                                                                                   | the codemods rename them: `onUnfaithfulPatch` (`'route'` is `'escalate'`), `hasPreviewIntent()`, `allowedOrigins`                                                                                                                                                          |
 | the `signed-token` replay store `{ isUsed, markUsed }` is removed            | implement `consume(id, expiresAt)`                                                                                                                                                | one check-and-record step; [security.md](security.md) has a Redis example                                                                                                                                                                                                  |
 | `new OriginDetector()` no longer trusts `document.referrer` by default       | `new OriginDetector({ enableReferrerDetection: false })`                                                                                                                          | pass `enableReferrerDetection: true` where a detector you build yourself relies on the referrer                                                                                                                                                                            |
@@ -37,8 +38,8 @@ store, inline delivery through `livePreviewScriptProps()`, `defaults: 'v1'`,
 an update naming none, `lexicalToHtml()` returning unsanitised markup where it
 has no document, a detector that trusts a referrer without being asked to,
 Astro's inline delivery as the default, a partly bound group covered by its one
-bound path, a route refresh without a promise taken as committed, Payload 2 and
-`fieldSchemaJSON`. A name that is gone fails the
+bound path, a route refresh without a promise taken as committed, the lean
+runtime, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
 import or the type check.
 What a JavaScript config can still pass is refused at startup with the reason
 and the codemod, in production too: `onUnboundChange` and `defaults: 'v1'` by
@@ -112,6 +113,8 @@ It knows the rows a call can show:
   `serverURL` and no `mergeTimeoutMs`.
 - `livePreviewScriptProps()` without `delivery: 'asset'` (row 32) and the Astro
   integration without `mode` (row 33).
+- An integration, an adapter or `generateInlineScript()` given `runtime`, the
+  lean artifact (row 37).
 
 It reads options that are written at the call, in a `const` of the same file,
 or in a `const` that a relative import names, and it reads both sides of a

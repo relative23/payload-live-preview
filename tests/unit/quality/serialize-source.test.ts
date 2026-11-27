@@ -15,7 +15,6 @@ import { serializeSource } from '../../../scripts/serialize-source';
 const ROOT = resolve(import.meta.dirname, '../../..');
 const GENERATED = [
   'runtime.generated.ts',
-  'runtime-lean.generated.ts',
   'loader.generated.ts',
   'fragment.generated.ts',
   'route.generated.ts',

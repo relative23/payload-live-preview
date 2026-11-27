@@ -13,7 +13,6 @@ import { type MessageRevision, sameRevision } from '../protocol/message-bus';
 import { reportMovedRow } from './moved-rows';
 import { NavigationReplay } from '../strategies/navigation-replay';
 import { diagnoseOrphanFields } from './orphan-diagnostics';
-import { reportOmittedFeature } from '../session/profile';
 import { observeCapabilities } from '../protocol/protocol-version';
 import { owesForceRender } from '../protocol/relationship-tracker';
 import { revealBinding } from '../bindings/reveal';
@@ -25,10 +24,6 @@ import {
 } from '../session/runtime-state';
 import { resolveStrategy } from '../strategies/strategies';
 import { StrategyRunner } from '../strategies/strategy-runner';
-import {
-  createLeanStrategyRunner,
-  type StrategyRunnerLike,
-} from '../strategies/strategy-runner-lean';
 import { transformForBinding } from './transform-value';
 import { ownerKeysForUpdate } from './update-owner';
 import type { FlushStats, ScheduledUpdate } from './update-scheduler';
@@ -39,7 +34,7 @@ const NOTHING_CHANGED: ReadonlySet<string> = new Set();
 const MERGE_FAILED = { kind: 'merge' } as const;
 
 export class UpdatePipeline {
-  private readonly strategies: StrategyRunnerLike;
+  private readonly strategies: StrategyRunner;
   private readonly navigationReplay: NavigationReplay;
 
   constructor(
@@ -49,24 +44,20 @@ export class UpdatePipeline {
   ) {
     state.changes.keepValues = deps.subfieldCoverage === 'declared';
     state.display.host = runtimeDisplayHost(deps, state);
-    // Esbuild folds this choice; the lean branch drops the server-rendering strategies.
-    this.strategies =
-      typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__
-        ? createLeanStrategyRunner(deps, state)
-        : new StrategyRunner(deps, state, {
-            reapply: (transaction, data) => {
-              this.scheduleAllFields(transaction, data);
-            },
-            transform: (target, value, allFields, isCurrent) =>
-              transformForBinding(deps, target, value, allFields, isCurrent),
-            rebuildCache,
-            restoreGuesses: (transaction, data) => {
-              this.restoreGuesses(transaction, data);
-            },
-            revealPending: (transaction) => {
-              this.revealPending(transaction);
-            },
-          });
+    this.strategies = new StrategyRunner(deps, state, {
+      reapply: (transaction, data) => {
+        this.scheduleAllFields(transaction, data);
+      },
+      transform: (target, value, allFields, isCurrent) =>
+        transformForBinding(deps, target, value, allFields, isCurrent),
+      rebuildCache,
+      restoreGuesses: (transaction, data) => {
+        this.restoreGuesses(transaction, data);
+      },
+      revealPending: (transaction) => {
+        this.revealPending(transaction);
+      },
+    });
     this.navigationReplay = new NavigationReplay(deps, state, {
       schedule: (transaction, data, elements) => {
         this.scheduleAllFields(transaction, data, elements);
@@ -256,16 +247,11 @@ export class UpdatePipeline {
     const { deps, state } = this;
     if (!state.isCurrent(transaction)) return;
     if (state.changes.isBaseline && !refined && deps.autoBind !== 'off') {
-      // Once, on the message that describes what the server rendered (ADR 0014
-      // §1). The lean profile leaves the search out; esbuild folds the branch.
-      if (typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__) {
-        reportOmittedFeature('auto-binding');
-      } else {
-        const scope = ownerKeysForUpdate(deps, state, transaction, data.fields);
-        adoptUniqueBindings(deps, state, data.fields, transaction.locale, scope, () =>
-          state.isCurrent(transaction),
-        );
-      }
+      // Once, on the message that describes what the server rendered (ADR 0014 §1).
+      const scope = ownerKeysForUpdate(deps, state, transaction, data.fields);
+      adoptUniqueBindings(deps, state, data.fields, transaction.locale, scope, () =>
+        state.isCurrent(transaction),
+      );
       if (!state.isCurrent(transaction)) return;
     }
     const dependencies = mergeDependencyMaps(deps.dependencies, deps.cache.dependencyMap());
@@ -492,16 +478,10 @@ export class UpdatePipeline {
   private restoreGuesses(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
     const { deps, state } = this;
     if (deps.autoBind === 'off' || state.autoBindGuesses === null) return;
-    // Nothing reaches this in the lean build, which renders no route and no
-    // fragment. A folded branch, not an early return: esbuild drops the branch
-    // before linking and a statement after `return` only after it, and the
-    // search's module was in the lean artifact until the guard took this shape.
-    if (!(typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__)) {
-      const scope = ownerKeysForUpdate(deps, state, transaction, data.fields);
-      restoreUniqueBindings(deps, state, data.fields, transaction.locale, scope, () =>
-        state.isCurrent(transaction),
-      );
-    }
+    const scope = ownerKeysForUpdate(deps, state, transaction, data.fields);
+    restoreUniqueBindings(deps, state, data.fields, transaction.locale, scope, () =>
+      state.isCurrent(transaction),
+    );
   }
 
   /** Scheduler callback after every flush, including one that applied nothing. */

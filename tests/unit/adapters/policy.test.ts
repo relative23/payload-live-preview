@@ -10,7 +10,6 @@ import { bindDecisionHooks } from '@adapters/shared/response';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
 import { buildLivePreviewCsp } from '@adapters/nuxt/adapter';
 import { generateInlineScript } from '@inline/generator';
-import { LEAN_RUNTIME } from '@/lean';
 import { AUTHORIZED, authorizeAll } from './authorize-all';
 
 /** The shared policy's decisions, pinned by name rather than through four framework fixtures. */
@@ -169,11 +168,6 @@ describe('inlineScriptConfig', () => {
     expect(
       inlineScriptConfig({ routeStrategy: true, fragments: { endpoint: '/payload/fragment' } }),
     ).toEqual({ fragmentEndpoint: '/payload/fragment' });
-  });
-
-  it('hands the generator the runtime artifact it was given, unserialized', () => {
-    // Not a wire slot: it decides which bytes are emitted, not how they behave.
-    expect(inlineScriptConfig({ runtime: LEAN_RUNTIME })).toEqual({ runtime: LEAN_RUNTIME });
   });
 
   it('carries what the adapter knows about the page beside what the project configured', () => {

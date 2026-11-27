@@ -5,7 +5,6 @@
  * case empties one module, so the guard ahead of it has run and passed.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LEAN_RUNTIME } from '@/lean';
 
 async function generatorWithout(module: string, name: string) {
   vi.resetModules();
@@ -63,13 +62,6 @@ describe('a generator whose sources were never built', () => {
     const react = await generatorWithout('@inline/loader-react.generated', 'LOADER_REACT_SOURCE');
     expect(() => react.generateLoaderScript({ hydration: 'react' }, target)).toThrow(
       unbuilt('loader-react.generated.ts'),
-    );
-  });
-
-  it('names an imported runtime artifact by its profile', async () => {
-    const { generateInlineScript } = await import('@inline/generator');
-    expect(() => generateInlineScript({ runtime: { ...LEAN_RUNTIME, source: '' } })).toThrow(
-      unbuilt('the lean runtime'),
     );
   });
 });

@@ -30,9 +30,8 @@ export interface RuntimeAssetRoute {
 
 /**
  * Takes the adapter's own options so the one object can be passed to both
- * halves: only `assetPath` and `runtime` are read, but those two are exactly
- * what the page and the route have to agree on, and `runtime: LEAN_RUNTIME`
- * means the page asks for that artifact's hash.
+ * halves: only `assetPath` is read, which is what the page and the route have
+ * to agree on.
  */
 export function createRuntimeAssetRoute(options: LivePreviewNextOptions = {}): RuntimeAssetRoute {
   return { GET: (request) => runtimeAssetResponse(request.url, options) };

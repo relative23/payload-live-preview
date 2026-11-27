@@ -114,36 +114,6 @@ export interface InlineScriptConfig {
   readonly mergeTimeoutMs?: number;
   /** The route of a Lexical internal link with no `url` of its own, as `/{locale}/{slug}/`. */
   readonly internalLinkPattern?: string;
-  /**
-   * A runtime artifact to embed instead of the full one — today only
-   * `LEAN_RUNTIME` from `payload-live-preview/lean`, which leaves out the
-   * strategies, the keyed morph, the structural arrays, the item templates, the
-   * announcer and auto-binding (about 7 KB gzip less on the page) and reports
-   * LP0104 when a page needs one of them.
-   *
-   * It is an imported value rather than a `profile: 'lean'` string on purpose:
-   * a second artifact behind a string option would sit in every build that can
-   * reach the generator; measured, it grew each adapter entry by the artifact's
-   * whole size. This way the bytes follow the import.
-   *
-   * Not serialized: it decides which bytes are emitted, not how they behave.
-   */
-  readonly runtime?: RuntimeArtifact;
-}
-
-/**
- * A runtime build this package produces. `source` is the IIFE the page runs;
- * the two digests describe the same bytes as a servable asset, so asset
- * delivery can hash-name and SRI-verify whichever artifact was chosen without
- * hashing anything at request time.
- */
-export interface RuntimeArtifact {
-  readonly profile: 'lean';
-  readonly source: string;
-  /** Short content hash, for the asset's file name. */
-  readonly contentHash: string;
-  /** `sha384-…`, for the bootstrap's `integrity` attribute. */
-  readonly integrity: string;
 }
 
 /**

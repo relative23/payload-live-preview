@@ -174,7 +174,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 157 471 for authorized inline delivery. It fetches one
+  (ADR 0015), against 157 451 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
@@ -217,23 +217,6 @@ Notes on the rows that need one:
   middleware writes that `script-src` only into a response it injects the
   script into; on any other response, such as `NextResponse.next()`, it keeps
   `frame-ancestors` and warns once in development.
-- `runtime` chooses which artifact the page carries. The default is the full
-  one; `LEAN_RUNTIME` from `payload-live-preview/lean` is about 35 KiB gzip
-  against 48 KiB for the default inline script — it leaves out the fragment and route strategies, the keyed
-  morph, the structural arrays, the item templates, the screen-reader
-  announcer and auto-binding, and reports LP0104 when a page needs one of them
-  rather than doing nothing. It is an import rather than a string option so the second artifact
-  lands only in builds that ask for it:
-
-  ```ts
-  import { LEAN_RUNTIME } from 'payload-live-preview/lean';
-
-  livePreview({ runtime: LEAN_RUNTIME, allowedOrigins: [ADMIN] });
-  ```
-
-  The strategies and the lean runtime exclude each other, and the generator says
-  so rather than emitting a prelude with nothing to talk to.
-
 - `fragmentEndpoint` / `fragments` put the fragment client ahead of the runtime
   in the injected script. Every adapter takes `fragments`: the option names a
   same-origin path the runtime posts to, and which framework serves that path
@@ -373,7 +356,7 @@ in the route when a page needs the authorization.
 
 The root import does not carry every export. These live only in a focused
 entry: `livePreview()` in `/plugin`, `definePreview()` in `/server`,
-`buildLivePreviewUrl()` in `/payload`, `LEAN_RUNTIME` in `/lean`, `createFragmentStrategy()` and
+`buildLivePreviewUrl()` in `/payload`, `createFragmentStrategy()` and
 `createRouteStrategy()` in `/fragment`, `PluginManager` and
 `createUnboundFieldsOverlayPlugin()` in `/plugins`, `registerLexicalNode()` and
 `registerDefaultBlocks()` in `/lexical`, and the structural renderer and keyed
@@ -417,7 +400,6 @@ the runtime.
 | `payload-live-preview/nuxt-module`                   | Stable       | The Nuxt module: registers the Nitro plugin from `nuxt.config.ts`; data options, `authorizePreview` by module reference (`authorizePreviewModule`), no `shouldInject`.                                    |
 | `payload-live-preview/react`                         | Stable       | `useLivePreviewDocument()`: the merged document as a hook, and `LivePreviewRouteRefresh`, which lends the runtime the router's refresh (needs `react`).                                                   |
 | `payload-live-preview/vue`                           | Stable       | The same as a composable (needs `vue`).                                                                                                                                                                   |
-| `payload-live-preview/lean`                          | Experimental | `LEAN_RUNTIME`: the smaller runtime artifact, as a value for the `runtime` option. Passing it is stable; the artifact's fields (`RuntimeArtifact`) may gain one in a minor.                               |
 | `payload-live-preview/annotate`                      | Experimental | `livePreviewAnnotate()`: the build-time annotator as a Vite plugin (`@beta`). No `ts-morph`.                                                                                                              |
 | `payload-live-preview/astro/RichText.astro`          | Stable       | The `RichText` component.                                                                                                                                                                                 |
 | `payload-live-preview/astro/PreviewBoundary.astro`   | Stable       | The `PreviewBoundary` component.                                                                                                                                                                          |

@@ -23,7 +23,7 @@ import { post, waitForPreviewFrame, waitForStarted } from '../helpers/preview';
  * The existing pure-HTML example is deliberately convenient for contributors
  * and resolves the package through a workspace link. This fixture proves the
  * release shape separately: an isolated consumer installs only the exact npm
- * archive and writes static pages from its root and lean entries.
+ * archive and writes static pages from its root entry.
  */
 
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -190,14 +190,17 @@ async function createFixture(): Promise<PackedHtmlFixture> {
       import { mkdir, writeFile } from 'node:fs/promises';
       import { resolve } from 'node:path';
       import { generateInlineScript, wrapWithScriptTag } from 'payload-live-preview';
-      import { LEAN_RUNTIME } from 'payload-live-preview/lean';
 
       const origin = process.argv[2];
       const nonce = process.argv[3];
       const dist = resolve('site');
       const options = { allowedOrigins: [origin], debug: true, debounceMs: 0 };
       const full = generateInlineScript(options);
-      const lean = generateInlineScript({ ...options, runtime: LEAN_RUNTIME });
+      // 3.0 has one runtime: the entry of the lean one is not in the archive (ADR 0007, row 37).
+      const leanEntry = await import('payload-live-preview/lean').then(
+        () => 'resolved',
+        (error) => error.code,
+      );
       // A page served from localhost counts as development and trusts any
       // localhost origin (docs/security.md); this one opts out, as a page on a
       // production host is anyway.
@@ -218,7 +221,7 @@ async function createFixture(): Promise<PackedHtmlFixture> {
         blockedProbe + '</head><body>' + body + '</body></html>';
       const admin = '<!doctype html><html><body>' +
         '<iframe data-testid="preview-frame" title="Live preview"></iframe>' +
-        '<script>const pages=["/full.html","/lean.html","/nonce.html","/hash.html","/hash-wrong.html","/strict.html","/route.html"];' +
+        '<script>const pages=["/full.html","/nonce.html","/hash.html","/hash-wrong.html","/strict.html","/route.html"];' +
         'const requested=new URLSearchParams(location.search).get("target");' +
         'document.querySelector("iframe").src=pages.includes(requested)?requested:pages[0];</script>' +
         '</body></html>';
@@ -227,7 +230,6 @@ async function createFixture(): Promise<PackedHtmlFixture> {
       await Promise.all([
         writeFile(resolve(dist, 'admin.html'), admin),
         writeFile(resolve(dist, 'full.html'), page(full)),
-        writeFile(resolve(dist, 'lean.html'), page(lean)),
         writeFile(
           resolve(dist, 'nonce.html'),
           page(full, nonce, '<script>globalThis.__h20UnnoncedScriptRan=true</script>'),
@@ -255,7 +257,7 @@ async function createFixture(): Promise<PackedHtmlFixture> {
           resolve(dist, 'build.json'),
           JSON.stringify({
             fullBytes: Buffer.byteLength(full),
-            leanBytes: Buffer.byteLength(lean),
+            leanEntry,
             fullHash: createHash('sha256').update(full).digest('base64'),
           }),
         ),
@@ -304,21 +306,20 @@ test.describe('plain HTML from the exact package archive', () => {
     await rm(root, { recursive: true, force: true });
   });
 
-  test('installs without framework peers and generates distinct full and lean pages', async ({
+  test('installs without framework peers, generates the page, and has no lean entry to import', async ({
     request,
   }) => {
     if (fixture === undefined) throw new Error('packed fixture is unavailable');
     const response = await request.get(`${fixture.origin}/build.json`);
     expect(response.ok()).toBe(true);
-    const measurements = (await response.json()) as { fullBytes: number; leanBytes: number };
-    expect(measurements.leanBytes).toBeLessThan(measurements.fullBytes);
+    const measurements = (await response.json()) as { fullBytes: number; leanEntry: string };
+    expect(measurements.fullBytes).toBeGreaterThan(100_000);
+    expect(measurements.leanEntry).toBe('ERR_PACKAGE_PATH_NOT_EXPORTED');
     expect(fixture.archive.name).toBe('payload-live-preview');
     expect(fixture.archive.sha256).toMatch(/^[0-9a-f]{64}$/u);
   });
 
-  test('patches an initially empty scalar and distinguishes full structural support from lean', async ({
-    page,
-  }) => {
+  test('patches an initially empty scalar and renders a structural array', async ({ page }) => {
     const full = await open(page, '/full.html');
     await post(page, {
       subtitle: 'filled without server rendering',
@@ -326,15 +327,6 @@ test.describe('plain HTML from the exact package archive', () => {
     });
     await expect(full.getByTestId('subtitle')).toHaveText('filled without server rendering');
     await expect(full.getByTestId('tags').locator('li')).toHaveCount(3);
-
-    const messages: string[] = [];
-    page.on('console', (message) => messages.push(message.text()));
-    const lean = await open(page, '/lean.html');
-    await post(page, { subtitle: 'lean scalar', tags: ['one', 'two', 'three'] });
-    await expect(lean.getByTestId('subtitle')).toHaveText('lean scalar');
-    await expect(lean.getByTestId('tags').locator('li')).toHaveCount(1);
-    await expect.poll(() => messages.join('\n')).toContain('LP0104');
-    expect(messages.join('\n')).toContain('structural arrays');
   });
 
   test('runs the nonce-bearing runtime while the browser blocks an unnonced script', async ({
@@ -373,14 +365,10 @@ test.describe('plain HTML from the exact package archive', () => {
     expect(await blocked.evaluate(() => Reflect.has(globalThis, '__livePreview'))).toBe(false);
   });
 
-  test('renders Lexical rich text in the full and the lean profile', async ({ page }) => {
+  test('renders Lexical rich text', async ({ page }) => {
     const full = await open(page, '/full.html');
     await post(page, { content: RICH_TEXT });
     await expect(full.getByTestId('content').locator('p')).toHaveText('Rich from the admin');
-
-    const lean = await open(page, '/lean.html');
-    await post(page, { content: RICH_TEXT });
-    await expect(lean.getByTestId('content').locator('p')).toHaveText('Rich from the admin');
   });
 
   test('on a page served from localhost, trusts a localhost parent, as development', async ({

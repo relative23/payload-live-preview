@@ -10,7 +10,6 @@
  * Router and in SvelteKit both.
  */
 import { runtimeAsset } from '@adapters/shared/runtime-asset';
-import type { RuntimeArtifact } from '@/types/inline-config';
 
 // Not `_astro/`: Astro's bundler empties and rewrites that directory.
 const ASSET_DIR = '_payload-live-preview';
@@ -26,13 +25,12 @@ export interface LoaderAsset {
   readonly source: string;
 }
 
-/** Describe the asset for this build; deterministic per package version and artifact. */
-export function loaderAsset(base = '/', runtime?: RuntimeArtifact): LoaderAsset {
+/** Describe the asset for this build; deterministic per package version. */
+export function loaderAsset(base = '/'): LoaderAsset {
   // `base` may carry slashes at either end; normalise to exactly one between segments.
   const prefix = base.replace(/^\/+|\/+$/gu, '');
   const asset = runtimeAsset({
     assetPath: prefix === '' ? `/${ASSET_DIR}` : `/${prefix}/${ASSET_DIR}`,
-    ...(runtime !== undefined ? { runtime } : {}),
   });
   return {
     fileName: `${ASSET_DIR}/${asset.fileName}`,

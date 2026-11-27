@@ -1,9 +1,8 @@
 /**
  * The warnings about a page's strategies, kept apart from the runner that
- * usually issues them: the lean profile has no runner (see ./profile) and still
- * owes a page the first two, because they describe the markup, not the strategy
- * machinery. LP0808 says the configuration names no strategy at all, and LP0809
- * that a fragment's Astro island cannot start on this page.
+ * issues them: the first two describe the markup, not the strategy machinery.
+ * LP0808 says the configuration names no strategy at all, and LP0809 that a
+ * fragment's Astro island cannot start on this page.
  */
 
 import type { RuntimeDeps, RuntimeState } from '../session/runtime-state';

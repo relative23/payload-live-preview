@@ -5,21 +5,13 @@
  * artifact for the byte counts. A decision record keeps the numbers of its day and is not read here.
  */
 
-import { INLINE_LEAN_BUDGET } from './bundle-budgets';
-
 /**
  * The runtime's transfer size drifted from 21 KB to 29 KB in the README without
  * anyone noticing, and from 44 KB to 42 and 33 in a guide the check did not read.
  * Every page that names it is held to the release gate's budget within a
- * kilobyte: the default inline script, and the lean artifact where a sentence is
- * about `LEAN_RUNTIME` or says "with the lean artifact".
+ * kilobyte.
  */
-export function sizeClaimViolations(
-  text: string,
-  file: string,
-  gzipBudget: number,
-  leanGzipBudget: number = INLINE_LEAN_BUDGET.gzip,
-): string[] {
+export function sizeClaimViolations(text: string, file: string, gzipBudget: number): string[] {
   const violations: string[] = [];
   const check = (claim: RegExpMatchArray, budget: number, what: string): void => {
     const expected = Math.round(budget / 1024);
@@ -29,16 +21,7 @@ export function sizeClaimViolations(
       `${file}:${String(line)} says ${claim[1] ?? ''} KB gzip for ${what}, the budget is ${String(expected)} KB`,
     );
   };
-  const lean = [
-    ...text.matchAll(/(\d+) K(?:i)?B (?:gzip )?with the lean (?:artifact|inline script)/gu),
-    ...text.matchAll(/`LEAN_RUNTIME`[^.]*?about (\d+) KiB gzip/gsu),
-  ];
-  for (const claim of lean) check(claim, leanGzipBudget, 'the lean artifact');
   for (const claim of text.matchAll(/about (\d+) K(?:i)?B gzip/gu)) {
-    // "`LEAN_RUNTIME` ... is about 36 KiB gzip against 44 KiB" is a lean sentence.
-    if (/`LEAN_RUNTIME`[^.]*$/su.test(text.slice(Math.max(0, claim.index - 160), claim.index))) {
-      continue;
-    }
     check(claim, gzipBudget, 'the default inline script');
   }
   return violations;

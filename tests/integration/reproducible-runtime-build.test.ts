@@ -45,10 +45,9 @@ const COPIED = [
   'scripts/serialize-source.ts',
 ] as const;
 
-/** The five files the builder writes; all five must reproduce, not just the dated one. */
+/** The files the builder writes; each must reproduce, not just the dated one. */
 const GENERATED = [
   'runtime.generated.ts',
-  'runtime-lean.generated.ts',
   'loader.generated.ts',
   'fragment.generated.ts',
   'route.generated.ts',

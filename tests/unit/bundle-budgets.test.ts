@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import {
   INLINE_BUDGET,
   INLINE_FRAGMENT_BUDGET,
-  INLINE_LEAN_BUDGET,
   INLINE_ROUTE_BUDGET,
 } from '../../scripts/bundle-budgets';
 import { findBudgetViolations, measureBundle } from '../../scripts/bundle-measure';
@@ -50,18 +49,9 @@ describe('release bundle budgets', () => {
     // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25):
     // -9897/-3150/-2788 default, -9686/-3104/-2672 lean, -9897/-3463/-2714 route,
     // -9897/-3418/-2708 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 143_302, gzip: 45_226, brotli: 39_773 });
-    expect(INLINE_LEAN_BUDGET).toEqual({ raw: 114_747, gzip: 36_217, brotli: 31_902 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 151_929, gzip: 47_795, brotli: 41_815 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 157_514, gzip: 49_726, brotli: 43_651 });
-  });
-
-  it('keeps the lean profile a saving, and names how much of one', () => {
-    // The number is the point of the profile: a page pays 32 KB or 26 KB, and
-    // the docs quote this difference. If it shrinks below a fifth, the profile
-    // stops being worth the second artifact and its second behaviour.
-    const saved = INLINE_BUDGET.gzip - INLINE_LEAN_BUDGET.gzip;
-    expect(saved).toBeGreaterThan(INLINE_BUDGET.gzip * 0.15);
+    expect(INLINE_BUDGET).toEqual({ raw: 143_282, gzip: 45_224, brotli: 39_795 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 151_909, gzip: 47_790, brotli: 41_905 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 157_494, gzip: 49_722, brotli: 43_650 });
   });
 
   it('keeps the route prelude the cheaper of the two strategy preludes', () => {

@@ -198,16 +198,6 @@
         "default": "./dist/plugins.cjs"
       }
     },
-    "./lean": {
-      "import": {
-        "types": "./dist/lean.d.ts",
-        "default": "./dist/lean.js"
-      },
-      "require": {
-        "types": "./dist/lean.d.cts",
-        "default": "./dist/lean.cjs"
-      }
-    },
     "./fragment": {
       "import": {
         "types": "./dist/fragment.d.ts",
@@ -264,7 +254,6 @@
     "test:e2e:nuxt-production": "playwright test --config playwright.nuxt-production.config.ts",
     "test:e2e:sveltekit-production": "playwright test --config playwright.sveltekit-production.config.ts",
     "check:fixtures": "tsx scripts/check-fixture-freshness.ts",
-    "check:generated": "tsx scripts/check-generated-runtime.ts",
     "test:e2e:real-payload": "playwright test --config playwright.real-payload.config.ts",
     "test:acl:real-payload": "tsx scripts/check-payload-acl.ts",
     "test:a11y": "playwright test tests/e2e/specs/accessibility.spec.ts",
@@ -306,7 +295,7 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test:policy && npm run test:architecture && npm run compat:check && npm run diagnostics:check && npm run test",
     "prepublishOnly": "npm run build && npm run check && npm run format:check && npm run test:package",
     "changeset": "changeset",
-    "version": "changeset version && tsx scripts/sync-lockfile-metadata.ts && npm run build:runtime",
+    "version": "changeset version && tsx scripts/sync-lockfile-metadata.ts",
     "version:release": "npm run version && npm run compat:record",
     "release": "tsx scripts/publish-artifact.ts",
     "test:docs": "tsx scripts/docs-contracts.ts"

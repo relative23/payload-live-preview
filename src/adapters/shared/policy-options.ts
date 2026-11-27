@@ -91,7 +91,6 @@ export function inlineScriptConfig(
     ...(resolved.sanitizerPolicy !== undefined
       ? { sanitizerPolicy: resolved.sanitizerPolicy }
       : {}),
-    ...(options.runtime !== undefined ? { runtime: options.runtime } : {}),
     ...(options.fragments !== undefined ? { fragmentEndpoint: options.fragments.endpoint } : {}),
     // Only when no endpoint is configured: that prelude carries the route
     // strategy already, and asking for both would emit the larger one twice.

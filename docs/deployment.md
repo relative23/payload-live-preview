@@ -61,7 +61,7 @@ By default the runtime is part of the page. It can be a separate file instead:
 every page then carries a bootstrap of a few hundred bytes, and only a page
 that finds itself in a preview context fetches the runtime. The current
 Next.js fixture's delivery is a 1 344-byte `<script>` element in the page
-against 157 471 bytes for authorized inline delivery: about one per cent,
+against 157 451 bytes for authorized inline delivery: about one per cent,
 and more than the Astro row below
 because a Next page's bootstrap also arms the wait for React's first commit
 before it fetches ([ADR 0015](architecture/0015-first-write-after-hydration.md)). On Next it is the second step down, not the first: a layout
@@ -88,8 +88,7 @@ route-serving adapters cannot use one. Their properties are otherwise
 identical, and they decide how to host the file:
 
 - **Content-hashed and configuration-free.** The bytes depend only on the
-  package version and the artifact (`runtime: LEAN_RUNTIME` is a different
-  hash); the configuration is assigned inline by the bootstrap. The asset can
+  package version; the configuration is assigned inline by the bootstrap. The asset can
   be cached for as long as the host allows — its name changes with the package,
   never with the site. The mounted route says so itself:
   `Cache-Control: public, max-age=31536000, immutable`. `astro dev` serves its
@@ -118,7 +117,7 @@ preview intent. What that case pins to the byte is the delivery's overhead: the
 `<script>` element, tag included, minus the runtime it embeds. The runtime is
 gated on its own (`INLINE_BUDGET` in `scripts/bundle-budgets.ts`) and grows
 with the package. The Bytes column is calculated from the pinned delivery
-overhead, plus the current 143 130-byte runtime artifact in the two rows that
+overhead, plus the current 143 110-byte runtime artifact in the two rows that
 carry it. These are uncompressed bytes for the directly emitted script
 element. The Next.js rows also count its escaped copy in the RSC flight payload,
 whose encoding adds bytes; "twice" counts the two occurrences.
@@ -129,8 +128,8 @@ whose encoding adds bytes; "twice" counts the two occurrences.
 | Next.js, `await LivePreviewScript(…)` in the root layout       | nothing                   | 0              | an async server component can await the verdict, so it renders nothing at all   |
 | Next.js, `delivery: 'asset'`                                   | the bootstrap             | 1 344, twice   | the root layout renders for everyone; what it renders is the bootstrap          |
 | Astro static build, `mode: 'loader'`                           | the bootstrap             | 792            | a static page has no request to decide for, so the check happens in the browser |
-| Astro static build, `mode: 'inline'`                           | the whole runtime         | 143 286        | nothing decides and nothing is deferred                                         |
-| Next.js, `await LivePreviewScript(…)` for an authorized editor | the whole runtime         | 157 471, twice | not a public visitor: what the preview it authorized carries, for comparison    |
+| Astro static build, `mode: 'inline'`                           | the whole runtime         | 143 266        | nothing decides and nothing is deferred                                         |
+| Next.js, `await LivePreviewScript(…)` for an authorized editor | the whole runtime         | 157 451, twice | not a public visitor: what the preview it authorized carries, for comparison    |
 
 The last row is the one exception to "no cookie, no preview intent": it is the
 same layout answering an _authorized_ editor, one request apart from the zero in
@@ -241,28 +240,6 @@ refuse the 3xx answer.
 
 `pll doctor`, `pll migrate` and `pll-codegen` are Node command-line tools and
 are not part of the deployed application.
-
-## A smaller runtime for pages that need less
-
-The default inline script carries about 44 KiB gzip. A site whose preview
-needs neither server-rendered boundaries nor keyed arrays can carry about
-35 KiB with the lean inline script instead:
-
-```ts
-import { LEAN_RUNTIME } from 'payload-live-preview/lean';
-
-livePreview({ runtime: LEAN_RUNTIME, allowedOrigins: [ADMIN] });
-```
-
-What it leaves out — the fragment and route strategies, the keyed morph, the
-structural arrays, the item templates, the screen-reader announcer,
-auto-binding — and what a page is told when it needs one anyway (LP0104): [options.md](options.md) and
-[troubleshooting.md](troubleshooting.md). Everything else is the same runtime:
-the same message bus, the same origin rules, the same merge, the same renderers
-for text, numbers, dates, images, uploads, relationships and rich text.
-
-The import is what puts the artifact in your build, so a project that stays on
-the default ships nothing extra.
 
 ## The fragment endpoint on another runtime
 

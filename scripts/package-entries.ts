@@ -21,7 +21,6 @@ export const DUAL_FORMAT_ENTRIES = {
  * `<entry>.d.ts` self-contained.
  */
 export const STANDALONE_ENTRIES = {
-  lean: 'src/lean.ts',
   server: 'src/server/index.ts',
   client: 'src/client-entry.ts',
   structural: 'src/structural-entry.ts',
