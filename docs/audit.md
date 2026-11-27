@@ -143,8 +143,9 @@ detected, 49 without coverage (2026-11-25). The score
 is lower although no file detects less than before, because the 847 mutants of
 the three files that left were detected at 96 %. Without the names 2.x kept as
 deprecated aliases the scope holds 12 036 mutants at 88.82 %, measured whole in
-CI (2026-11-26), without the mode that gated on intent 11 973 at 88.86 %, and
-with hooks that name their document 11 957 at 88.85 % (2026-11-27). The four
+CI (2026-11-26), without the mode that gated on intent 11 973 at 88.86 %, with
+hooks that name their document 11 957 at 88.85 %, and with a detector that
+trusts no referrer unasked 11 936 at 88.83 % (2026-11-27). The four
 critical coverage cells added in 2.1 covered the population primitive, document
 session, parser and walker; three of them left with Payload 2 in 3.0, and the Coverage job holds the session's floors (95 % of lines and
 branches, every function) on every push, like every other critical file.

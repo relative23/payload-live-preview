@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 529,
-    "suites": 1029,
-    "tests": 4633,
+    "suites": 1028,
+    "tests": 4631,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 430,
-      "suites": 917,
-      "tests": 4218,
+      "suites": 916,
+      "tests": 4216,
       "benchmarks": 0
     }
   },
@@ -802,7 +802,7 @@
       "path": "tests/unit/adapters/astro-loader-mode.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 11,
+      "tests": 12,
       "benchmarks": 0
     },
     {
@@ -858,7 +858,7 @@
       "path": "tests/unit/adapters/document-session-notices.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 11,
+      "tests": 9,
       "benchmarks": 0
     },
     {
@@ -2279,7 +2279,7 @@
       "path": "tests/unit/detection/origin.test.ts",
       "group": "unit",
       "suites": 8,
-      "tests": 34,
+      "tests": 35,
       "benchmarks": 0
     },
     {
@@ -3741,8 +3741,8 @@
     {
       "path": "tests/unit/three-zero-defaults.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 7,
+      "suites": 2,
+      "tests": 5,
       "benchmarks": 0
     },
     {

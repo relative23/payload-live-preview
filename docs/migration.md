@@ -35,7 +35,8 @@ On the 3.0 line these rows are done: `setSanitizerDocument()`,
 store, inline delivery through `livePreviewScriptProps()`, `defaults: 'v1'`,
 `strict: false`, a hook without `document`, a hook with a `locale` that merged
 an update naming none, `lexicalToHtml()` returning unsanitised markup where it
-has no document, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
+has no document, a detector that trusts a referrer without being asked to,
+Astro's inline delivery as the default, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
 import or the type check.
 What a JavaScript config can still pass is refused at startup with the reason
 and the codemod, in production too: `onUnboundChange` and `defaults: 'v1'` by

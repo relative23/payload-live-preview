@@ -56,7 +56,7 @@ No response changes on intent alone: an adapter that decides per request
 `LivePreviewScript` on its first render) refuses to start without
 `authorizePreview`, without non-empty `allowedOrigins`, with an origin that is not `https:` (in production), or with `'referer'` among
 the `previewSignals`. Astro's
-`livePreview()` integration in its default `mode: 'inline'` and in `'loader'`
+`livePreview()` integration in its default `mode: 'loader'` and in `'inline'`
 injects at build time and checks none of this; its `'middleware'` mode takes
 the hook by module reference (`authorizePreviewModule`, ADR 0024) and refuses
 to start without one. 2.x called this `strict` and had two ways around it for a

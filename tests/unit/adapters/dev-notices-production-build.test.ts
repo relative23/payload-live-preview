@@ -1,9 +1,10 @@
 /**
- * The 3.0 notices (ADR 0026) read `process.env.NODE_ENV` in place, so a
- * production build drops them together with their text: a visitor of a Vite or
- * Next.js production build downloads none of it. The React hook, the Vue
- * composable and the client runtime are bundled here the way such a build does,
- * with the define and a minifier, once per mode.
+ * The 3.0 notice a hook still has (ADR 0026) reads `process.env.NODE_ENV` in
+ * place, so a production build drops it together with its text: a visitor of a
+ * Vite or Next.js production build downloads none of it. The React hook and the
+ * Vue composable are bundled here the way such a build does, with the define and
+ * a minifier, once per mode. The client runtime has no notice left since the
+ * origin detector's default changed (ADR 0007, row 22).
  */
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -41,9 +42,8 @@ function bundle(entry: string, symbol: string, mode: 'production' | 'development
   );
 }
 
-// One phrase of each notice, and the registry every notice goes through.
+// One phrase of the notice, and the registry every notice goes through.
 const HOOK = ['3.0 sets a default'];
-const ORIGIN = ['trusts the referrer'];
 const REGISTRY = '__payloadLivePreviewNotices';
 
 const BUNDLES = [
@@ -51,26 +51,20 @@ const BUNDLES = [
     name: 'the React hook',
     entry: 'src/adapters/react/index',
     symbol: 'useLivePreviewDocument',
-    texts: [...HOOK, ...ORIGIN],
+    texts: HOOK,
   },
   {
     name: 'the Vue composable',
     entry: 'src/adapters/vue/index',
     symbol: 'useLivePreviewDocument',
-    texts: [...HOOK, ...ORIGIN],
-  },
-  {
-    name: 'the client runtime',
-    entry: 'src/client-entry',
-    symbol: 'initLivePreview',
-    texts: ORIGIN,
+    texts: HOOK,
   },
 ] as const;
 
 describe.each(BUNDLES)('$name', ({ entry, symbol, texts }) => {
   it('carries no notice and no registry in a production build', () => {
     const code = bundle(entry, symbol, 'production');
-    // The session and the origin detector are in it, only the notices are not.
+    // The session and the origin detector are in it, only the notice is not.
     expect(code.length).toBeGreaterThan(10_000);
     for (const text of [...texts, REGISTRY]) expect(code).not.toContain(text);
   });

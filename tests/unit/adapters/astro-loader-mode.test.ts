@@ -137,7 +137,10 @@ describe('livePreview integration — loader mode', () => {
       livePreview({ mode: 'loader' }).hooks['astro:config:setup']({
         injectScript: vi.fn(),
       }),
-    ).toThrow(/updateConfig/u);
+    ).toThrow(
+      "payload-live-preview: mode 'loader', the default, needs Astro's updateConfig hook " +
+        "to publish the runtime asset. Upgrade Astro or set `mode: 'inline'`.",
+    );
   });
 
   it.each([
@@ -152,9 +155,27 @@ describe('livePreview integration — loader mode', () => {
     expect(setup({}, base).injected).toContain(expected);
   });
 
-  it('registers no asset plugin in the default inline mode', () => {
+  it('is what an integration without `mode` does (ADR 0007, row 33)', () => {
+    const named = makeLoaderContext();
+    livePreview({ mode: 'loader', allowedOrigins: [ADMIN] }).hooks['astro:config:setup'](named);
+    const unnamed = makeLoaderContext();
+    livePreview({ allowedOrigins: [ADMIN] }).hooks['astro:config:setup'](unnamed);
+
+    expect(unnamed.plugins.map((plugin) => plugin.name)).toEqual([
+      'payload-live-preview:loader-asset',
+    ]);
+    expect(unnamed.injectScript.mock.calls).toEqual(named.injectScript.mock.calls);
+    const [stage, bootstrap] = unnamed.injectScript.mock.calls[0] as [string, string];
+    expect(stage).toBe('head-inline');
+    expect(bootstrap).toMatch(RUNTIME_PATH);
+    // Until 3.0 this page carried the runtime itself, more than 100 000 bytes of it.
+    expect(bootstrap.length).toBeLessThan(2_000);
+  });
+
+  it("registers no asset plugin where `mode: 'inline'` bakes the runtime into the page", () => {
     const ctx = makeLoaderContext();
-    livePreview({}).hooks['astro:config:setup'](ctx);
+    livePreview({ mode: 'inline' }).hooks['astro:config:setup'](ctx);
     expect(ctx.plugins).toEqual([]);
+    expect(String(ctx.injectScript.mock.calls[0]?.[1]).length).toBeGreaterThan(100_000);
   });
 });

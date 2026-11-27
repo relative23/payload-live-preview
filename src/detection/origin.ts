@@ -1,12 +1,12 @@
 /**
  * Which admin origins the runtime trusts: explicit ones always, the
- * `document.referrer` origin only when none is configured, any localhost port
- * in development. See docs/security.md §1. The handshake goes to the trusted
+ * `document.referrer` origin only where `enableReferrerDetection: true` asks
+ * for it and none is configured, any localhost port in development. See
+ * docs/security.md §1. The handshake goes to the trusted
  * origins, and to guessed localhost ports only while the browser names no parent.
  */
 
 import { isDevMode, isInIframe } from './environment';
-import { noticeOnce, type BundlerEnv } from './notice';
 
 const LOCALHOST_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i;
 const VALID_ORIGIN_PATTERN = /^https?:\/\/[^/?#\s]+$/i;
@@ -19,7 +19,10 @@ const LOCALHOST_HANDSHAKE_PORTS: readonly number[] = [
 export interface OriginDetectorOptions {
   /** Explicit origins to trust. Always allowed. */
   readonly additionalOrigins?: readonly string[];
-  /** Set to `false` to ignore `document.referrer`. */
+  /**
+   * Set to `true` to trust the origin of `document.referrer` while no explicit
+   * origin is configured. Off unless set, since 3.0 (ADR 0007, row 22).
+   */
   readonly enableReferrerDetection?: boolean;
   /** Set to `false` to ignore the localhost pattern even in development. */
   readonly enableLocalhostMatching?: boolean;
@@ -69,7 +72,7 @@ export class OriginDetector {
       if (normalised !== undefined) explicit.add(normalised);
     }
     let referrerOrigin: string | undefined;
-    if (options.enableReferrerDetection ?? true) {
+    if (options.enableReferrerDetection === true) {
       const referrer =
         options.referrer ?? (typeof document !== 'undefined' ? document.referrer : '');
       if (referrer.length > 0) {
@@ -80,28 +83,6 @@ export class OriginDetector {
           // opaque referrer
         }
       }
-    }
-    // Only a detector built without the option, with a referrer and no origins
-    // of its own, trusts the referrer by default; 3.0 stops (ADR 0007, row 22).
-    // `process.env.NODE_ENV` is read in place and with a dot, the form a bundler
-    // replaces, so a production build drops the notice and its text; every
-    // runtime artefact is built that way. With no bundler and no `process` the
-    // read throws, and nothing is said.
-    try {
-      if (
-        (process.env as BundlerEnv).NODE_ENV !== 'production' &&
-        options.enableReferrerDetection === undefined &&
-        referrerOrigin !== undefined &&
-        explicit.size === 0
-      ) {
-        noticeOnce(
-          'origin-referrer',
-          '`new OriginDetector()` trusts the referrer unless `enableReferrerDetection` says so; ' +
-            '3.0 does not (ADR 0007, row 22).',
-        );
-      }
-    } catch {
-      // No bundler replaced `process.env.NODE_ENV`, and this realm has no `process`.
     }
     const allowLocalhost =
       (options.enableLocalhostMatching ?? true) && (options.forceDevMode ?? isDevMode());

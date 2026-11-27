@@ -199,10 +199,10 @@ interface VitePluginLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/astro/index.d.ts:62:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:62:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:81:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:92:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:63:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:63:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:82:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:93:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
