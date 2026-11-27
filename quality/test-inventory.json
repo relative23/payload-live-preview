@@ -22,7 +22,7 @@
   "totals": {
     "files": 532,
     "suites": 1033,
-    "tests": 4659,
+    "tests": 4660,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 435,
       "suites": 924,
-      "tests": 4252,
+      "tests": 4253,
       "benchmarks": 0
     }
   },
@@ -3161,7 +3161,7 @@
       "path": "tests/unit/quality/compat-vite.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 12,
+      "tests": 13,
       "benchmarks": 0
     },
     {

@@ -2,7 +2,9 @@
  * Tree shaking, measured. A consumer that imports one symbol must ship that
  * symbol's code, not the barrel it came from: each fixture is a one-line
  * consumer bundled with Vite through a real `node_modules` resolution, so the
- * manifest's `exports` and `sideEffects` decide what survives.
+ * manifest's `exports` and `sideEffects` decide what survives. The bundler and
+ * the minifier are the installed Vite's own defaults, which is what a project
+ * on a supported framework builds with.
  */
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -13,6 +15,11 @@ import { build } from 'vite';
 import { improvementNotice } from './size-budget-notice';
 import { TREE_SHAKING_FIXTURES, type Fixture } from './tree-shaking-budgets';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+/**
+ * Library mode keeps whitespace and writes one comment line per module with the module's path, the consumer's
+ * temporary folder included. A site's build has neither, and the path differs per run, so the lines are not measured.
+ */
+const MODULE_MARKER = /^\/\/ \S+\.[cm]?[jt]s\n/gmu;
 
 function slug(fixture: Fixture): string {
   return `${fixture.from.replace(/[^a-z]/gu, '-')}--${fixture.symbol}`;
@@ -31,12 +38,11 @@ async function bundle(consumer: string, fixture: Fixture): Promise<string> {
     define: { 'process.env.NODE_ENV': '"production"' },
     build: {
       write: false,
-      minify: 'esbuild',
       target: 'es2022',
       lib: { entry, formats: ['es'], fileName: 'out' },
       // The optional peers a fixture must not inline: measuring React would
       // measure React, not what this package ships.
-      rollupOptions: { external: ['ts-morph', 'react', 'vue'] },
+      rolldownOptions: { external: ['ts-morph', 'react', 'vue'] },
     },
   });
   const outputs = Array.isArray(result) ? result : [result];
@@ -44,7 +50,7 @@ async function bundle(consumer: string, fixture: Fixture): Promise<string> {
   if (first === undefined || !('output' in first)) throw new Error('vite produced no output');
   const chunk = first.output.find((item) => item.type === 'chunk');
   if (chunk === undefined) throw new Error(`no chunk for ${slug(fixture)}`);
-  return chunk.code;
+  return chunk.code.replace(MODULE_MARKER, '');
 }
 
 async function main(): Promise<void> {

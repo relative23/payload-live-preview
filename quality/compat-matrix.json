@@ -1822,8 +1822,7 @@
     }
   ],
   "vite": {
-    "measured": "2026-11-25",
-    "devBelowNewest": "2026-09-06: the devDependency stays at Vite 7 because @codspeed/vitest-plugin peers on ^4 || ^5 || ^6 || ^7, and raising it made npm ci fail with ERESOLVE — every CI job stopped before its first test. It decides only which Vite the repository's own tools run against; the supported majors are the rows above, and the fixtures install 7 and 8. Remove this line when the dev tooling accepts 8."
+    "measured": "2026-11-25"
   },
   "hooks": [
     {
