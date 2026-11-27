@@ -179,13 +179,21 @@ describe('a revision that falls short', () => {
     // `route-saved`: the refresh was taken as committed the moment the call returned.
     const hostRefresh = vi.fn(() => undefined);
     const undo = registerRouteRefresh(hostRefresh as unknown as RouteRefresh);
+    const log = vi.fn();
     const { runtime } = start(
       BOUND + '<aside data-payload-strategy="route" data-payload-depends="title">route</aside>',
-      { strategies: { route: createRouteStrategy({ minIntervalMs: 0 }) } },
+      { strategies: { route: createRouteStrategy({ minIntervalMs: 0 }) }, log },
     );
     try {
       await send({ title: 'A' });
       expect(hostRefresh).toHaveBeenCalledOnce();
+      // What the strategy says reaches the runtime's own log, under the route's name.
+      expect(log).toHaveBeenCalledWith(
+        'route',
+        'LP0810',
+        'route refresh returned no promise, so its commit cannot be waited for; ' +
+          'counted as failed (see LivePreviewRouteRefresh)',
+      );
       expect(display(runtime)).toMatchObject({
         state: 'partial',
         shortfalls: [{ kind: 'route-failed', outcome: 'failed' }],
