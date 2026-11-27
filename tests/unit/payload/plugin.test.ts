@@ -3,8 +3,7 @@
  * runtime code covers Payload 3 and 4 without importing either package.
  */
 import { describe, expect, it } from 'vitest';
-import { livePreview } from '@/payload/plugin';
-import type { LivePreviewUrlArgs } from '@/payload/index';
+import { livePreview, type LivePreviewUrlArgs } from '@/payload/plugin';
 
 const BASE = 'https://site.example';
 

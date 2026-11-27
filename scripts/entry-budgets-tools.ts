@@ -41,45 +41,6 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +668/+169/+144 B; prior reserves kept.
   'codegen.js': { raw: 17_885, gzip: 6_478, brotli: 5_886 },
   //
-  // 2026-09-11 (Z37, the doctor reads which defaults a script means):
-  // `doctor.js` +2 158 B raw / ~+830 gzip / ~+740 brotli, `doctor-cli.js`
-  // +2 175 / ~+810 / ~+730 for the same code. The bytes are the reading: the
-  // wire-key table the slots are looked up in instead of four hand-kept
-  // numbers, the two runtime profiles an empty slot resolves to, and the words
-  // — a remedy per row and per origin (set explicitly, by `defaults: 'v1'`, or
-  // read from a script that names no defaults) and the line saying a script
-  // predates the marker. A command-line tool; nothing a visitor downloads. Each
-  // row to its measurement plus the cushion (raw ×1.001, gzip ×1.0014); brotli
-  // +130 on `doctor-cli.js` and ~100 on `doctor.js`, like `plugins.*`: neither
-  // embeds the runtime, so the epoch cannot move them, and 130 would put the
-  // smaller one over the 2 % the improvement hint allows.
-  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 16 090 → 17 523 (+1433 B, measured 16 073 → 17 506); gzip 6 550 → 6 963 (+413 B, measured 6 539 → 6 952); brotli 5 780 → 6 143 (measured 6 023, -243 B left; ~120 B as the other brotli rows).
-  // 2026-09-16 (2.0.1: the probe drops a caller header that respells one of its own): raw 17 523 → 17 701 (+178 B, measured 17 506 → 17 684); gzip 6 963 → 7 023 (+60 B, measured 6 952 → 7 012). Same cushions.
-  // 2026-09-16 (2.0.1: --param, the byte-for-byte query splice, the duplicate-header refusal): raw 17 701 → 18 619 (+918 B, measured 17 684 → 18 602); gzip 7 023 → 7 378 (+355 B, measured 7 012 → 7 367); brotli 6 143 → 6 513 (measured 6 393, ~120 B as the other brotli rows).
-  // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 18 619 → 19 210 (+591 B, measured 18 602 → 19 193); gzip 7 378 → 7 600 (+222 B, measured 7 367 → 7 589); brotli 6 513 → 6 711 (measured 6 591; ~120 B).
-  // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 19 210 → 19 261 (+51 B, measured 19 193 → 19 244); gzip 7 600 → 7 624 (+24 B, measured 7 589 → 7 613).
-  // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+11/+3 B; same 17/12/94 B cushions.
-  // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +19/+12/+3 B; same 17/12/94 B cushions.
-  // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +89/+49/+34 B; same 17/12/94 B cushions.
-  // 2026-09-29 (H15, a host route refresh settles after the host commits, ADR 0028): measured +33/+7/+12 B; same 17/12/94 B cushions.
-  // 2026-10-17 (LP0703 yields to `frame-ancestors`, LP0705 says where the visibility gate can be set): measured +302/+65/+56 B; same 17/12/94 B cushions.
-  // 2026-10-26 (the adapters forward the visibility gate, and the doctor reads it): paired Node24.22.1/npm12.0.2; +337/+106/+108 B; prior reserves kept.
-  // 2026-10-26 (the doctor reads a page's configuration element): paired Node24.22.1/npm12.0.2; +590/+209/+200 B; prior reserves kept.
-  // 2026-10-26 (the 2.2 review fixes): paired Node24.22.1/npm12.0.2; +620/+232/+204 B; prior reserves kept.
-  // 2026-10-29 (the doctor counts attributes in start tags, and a fragment boundary is a place an edit arrives): paired Node24.22.1/npm12.0.2; +514/+177/+164 B; prior reserves kept.
-  // 2026-10-31 (the runtime takes the merge deadline): paired Node24.22.1/npm12.0.2; +17/+5/+21 B; prior reserves kept.
-  // 2026-10-31: moved rows, kept blocks, select labels, the details reveal, variants, picture sources and internalLinkPattern: paired Node24.22.1/npm12.0.2; +22/+12/-23 B; the Brotli ceiling stays, it fell; prior reserves kept.
-  // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +790/+283/+272 B; prior reserves kept.
-  // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+9/+2 B; prior reserves kept.
-  // 2026-11-27 (3.0, no response on intent alone: the 1.x profile and strict: false leave, ADR 0007 rows 21 and 36): paired Node24.22.3/npm12.0.2; 0/+1/+5 B; prior reserves kept.
-  // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -32/-13/-13 B; prior reserves kept.
-  // 2026-11-27 (3.0, one runtime: the lean profile leaves, ADR 0007 row 37): paired Node24.22.3/npm12.0.2; -31/-18/-4 B; prior reserves kept.
-  // 2026-11-27 (3.0, the switches say what they turn on, ADR 0007 row 38): paired Node24.22.3/npm12.0.2; +474/+151/+125 B; prior reserves kept.
-  // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +888/+343/+305 B; prior reserves kept.
-  // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +29/+9/+23 B; prior reserves kept.
-  // 2026-11-27 (3.0, ADR 0007 row 40: the route belongs to the router): paired Node24.22.3/npm12.0.2; +33/+18/+15 B; prior reserves kept.
-  'doctor.js': { raw: 24_089, gzip: 9_323, brotli: 8_289 },
-  //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
   // and one sentence naming the key it cannot place — `+415 B raw` on
@@ -134,11 +95,6 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +881/+387/+347 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +32/+16/+39 B; prior reserves kept.
   // 2026-11-27 (3.0, ADR 0007 row 40: the route belongs to the router): paired Node24.22.3/npm12.0.2; +748/+297/+190 B; prior reserves kept.
-  'doctor-cli.js': { raw: 69_451, gzip: 23_697, brotli: 21_038 },
-  // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
-  // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
-  // 2026-10-22 (the same codemod change): measured 19 958 → 20 931 / 6 964 → 7 166 / 6 240 → 6 427 (+973/+202/+187 B); same 17/12/93 B cushions.
-  // 2026-11-27 (3.0, no response on intent alone: the 1.x profile and strict: false leave, ADR 0007 rows 21 and 36): paired Node24.22.3/npm12.0.2; +159/+60/+61 B; prior reserves kept.
-  // 2026-11-27 (3.0, the switches say what they turn on, ADR 0007 row 38): paired Node24.22.3/npm12.0.2; +1190/+340/+298 B; prior reserves kept.
-  'migrate.js': { raw: 22_297, gzip: 7_578, brotli: 6_879 },
+  // 2026-11-27 (3.0, ADR 0007 rows 41 and 42: the payload entry merges into plugin): paired Node24.22.3/npm12.0.2; +1294/+422/+367 B; prior reserves kept.
+  'doctor-cli.js': { raw: 70_745, gzip: 24_119, brotli: 21_405 },
 };

@@ -37,7 +37,7 @@ const START = '<!-- compat-matrix:start -->';
 const END = '<!-- compat-matrix:end -->';
 const EVIDENCE_START = '<!-- compat-evidence:start -->';
 const EVIDENCE_END = '<!-- compat-evidence:end -->';
-const TOOLING_ENTRIES = ['./annotate', './codegen', './codegen/astro', './doctor', './migrate'];
+const TOOLING_ENTRIES = ['./annotate', './codegen', './codegen/astro'];
 
 interface Tested {
   readonly version?: string;

@@ -286,8 +286,8 @@ smoke test against a deploy preview.
 
 The audit makes exactly the two requests it is told to make, sends no
 credentials but the ones passed with `--header` or in the URL, and reports no
-telemetry. `analyzeProbe()` is exported from
-`payload-live-preview/doctor` for callers who fetch the responses themselves.
+telemetry. `--json` prints the findings for a script to read; the checks are
+no longer importable as a library (ADR 0007, row 42).
 
 ## Diagnostic codes
 

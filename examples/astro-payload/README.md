@@ -39,7 +39,7 @@ Then open:
 In a real project the Payload admin frames the page instead of
 `src/pages/admin.astro`. On the Payload side, `admin.livePreview.url` in
 `payload.config.ts` points the admin's iframe at the page; `buildLivePreviewUrl()`
-from `payload-live-preview/payload` builds that callback and appends
+from `payload-live-preview/plugin` builds that callback and appends
 `?preview=true` ([Configure Payload](../../README.md#configure-payload)). On the
 Astro side:
 

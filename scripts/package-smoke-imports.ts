@@ -115,8 +115,7 @@ function esmRuntimeExports(packageName: string): Readonly<Record<string, readonl
     [packageSpecifier(packageName, './nextjs')]: ['createLivePreviewMiddleware'],
     [packageSpecifier(packageName, './sveltekit')]: ['livePreviewHandle'],
     [packageSpecifier(packageName, './nuxt')]: ['livePreviewNitroPlugin'],
-    [packageSpecifier(packageName, './payload')]: ['buildLivePreviewUrl'],
-    [packageSpecifier(packageName, './plugin')]: ['livePreview'],
+    [packageSpecifier(packageName, './plugin')]: ['livePreview', 'buildLivePreviewUrl'],
     [packageSpecifier(packageName, './server')]: ['definePreview', 'authorizePreviewRequest'],
     [packageSpecifier(packageName, './client')]: [
       'LivePreviewClient',
@@ -141,8 +140,7 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
     [packageSpecifier(packageName, './nextjs')]: ['withLivePreview', 'createLivePreviewMiddleware'],
     [packageSpecifier(packageName, '.')]: ['LivePreviewClient', 'createPreviewFocusReporter'],
     [packageSpecifier(packageName, './core')]: ['EventEmitter', 'initLivePreview'],
-    [packageSpecifier(packageName, './payload')]: ['buildLivePreviewUrl'],
-    [packageSpecifier(packageName, './plugin')]: ['livePreview'],
+    [packageSpecifier(packageName, './plugin')]: ['livePreview', 'buildLivePreviewUrl'],
     [packageSpecifier(packageName, './server')]: ['definePreview', 'authorizePreviewRequest'],
     [packageSpecifier(packageName, './client')]: [
       'LivePreviewClient',
@@ -399,7 +397,6 @@ export async function checkPackedImportSmokes(inputs: {
 
   const esmCodegenExports: Readonly<Record<string, readonly string[]>> = {
     [packageSpecifier(inputs.packageName, './codegen')]: ['generateTypes'],
-    [packageSpecifier(inputs.packageName, './migrate')]: ['migrateSource', 'CODEMODS'],
     [packageSpecifier(inputs.packageName, './codegen/astro')]: ['livePreviewCodegen'],
   };
   const cjsCodegenExports: Readonly<Record<string, readonly string[]>> = {

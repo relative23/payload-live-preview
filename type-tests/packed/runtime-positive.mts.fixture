@@ -27,7 +27,7 @@ import {
   type LivePreviewLocals as NuxtLivePreviewLocals,
   type LivePreviewNuxtOptions,
 } from 'payload-live-preview/nuxt';
-import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { buildLivePreviewUrl } from 'payload-live-preview/plugin';
 import {
   livePreview as payloadLivePreview,
   type LivePreviewPluginOptions,

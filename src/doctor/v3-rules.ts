@@ -246,6 +246,16 @@ const RULES: readonly Rule[] = [
         : 'changes';
     },
   },
+  {
+    id: 'tool-entries',
+    row: 42,
+    title:
+      'The `/doctor` and `/migrate` entries are no longer importable; the `pll` binary keeps the checks and the codemods',
+    remedy:
+      'Run the binary: `pll doctor <url> --json` prints the findings for a script, `pll migrate <path>` runs the codemods.',
+    judge: (call) =>
+      entryOf(call) === 'doctor' || entryOf(call) === 'migrate' ? 'changes' : undefined,
+  },
 ];
 
 /** The rules in the order a report names them: by ledger row. */

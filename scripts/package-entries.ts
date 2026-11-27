@@ -9,7 +9,6 @@
 export const DUAL_FORMAT_ENTRIES = {
   index: 'src/index.ts',
   codegen: 'src/codegen/index.ts',
-  payload: 'src/payload/index.ts',
   plugin: 'src/payload/plugin.ts',
 } as const;
 
@@ -34,12 +33,10 @@ export const CORE_ENTRY = {
   core: 'src/core-entry.ts',
 } as const;
 
-/** ESM-only entries: CLIs, the doctor, the codegen integration and the framework adapters. */
+/** ESM-only entries: the two binaries, the codegen integration and the framework adapters. */
 export const ESM_ONLY_ENTRIES = {
   'codegen-cli': 'src/codegen/cli.ts',
   'doctor-cli': 'src/doctor/cli.ts',
-  doctor: 'src/doctor/index.ts',
-  migrate: 'src/migrate/index.ts',
   'codegen-astro': 'src/codegen/astro-plugin.ts',
   annotate: 'src/codegen/annotate/entry.ts',
   'adapters/astro/index': 'src/adapters/astro/index.ts',

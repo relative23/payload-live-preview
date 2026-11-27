@@ -12,7 +12,7 @@
     "src/codegen/index.ts",
     "src/codegen/cli.ts",
     "src/codegen/astro-plugin.ts",
-    "src/payload/index.ts",
+    "src/payload/plugin.ts",
     "src/server/index.ts",
     "src/client-entry.ts",
     "src/structural-entry.ts",

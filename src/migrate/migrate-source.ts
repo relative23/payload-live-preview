@@ -5,6 +5,7 @@
  */
 import { applyTextEdits, parseScript } from './ast';
 import { expandDefaultsV1 } from './codemods/expand-defaults-v1';
+import { movedEntry } from './codemods/move-entry';
 import { moveFetchPreviewHelpers } from './codemods/move-fetch-preview-helpers';
 import { renameAdminOriginsOption } from './codemods/rename-admin-origins-option';
 import { renameBindingsAuthorizedOption } from './codemods/rename-bindings-authorized-option';
@@ -28,9 +29,21 @@ export function importsThisPackage(source: string): boolean {
   return PACKAGE_REFERENCE.test(source);
 }
 
+/** `payload-live-preview/payload` merged into `/plugin` in 3.0 (ADR 0007, row 41). */
+const movePayloadEntry = movedEntry({
+  id: 'move-payload-entry',
+  summary:
+    '`payload-live-preview/payload` → `payload-live-preview/plugin`, which exports `buildLivePreviewUrl()` and its types under the same names',
+  ledgerEntry: 41,
+  from: 'payload',
+  to: 'plugin',
+});
+
+// A moved entry comes first, so the codemods that read bindings see the specifier that stays.
 // The option rename follows the function rename so it sees the new binding, and the profile is
 // expanded last, so it finds a switch another codemod renamed under the name it writes.
 const IMPLEMENTATIONS: readonly CodemodImplementation[] = [
+  movePayloadEntry,
   renameIsPreviewRequest,
   renameAdminOriginsOption,
   renameBindingsAuthorizedOption,

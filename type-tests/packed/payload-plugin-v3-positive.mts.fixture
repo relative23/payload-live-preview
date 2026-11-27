@@ -1,5 +1,5 @@
 import { livePreview, type LivePreviewBreakpoint } from 'payload-live-preview/plugin';
-import { buildLivePreviewUrl } from 'payload-live-preview/payload';
+import { buildLivePreviewUrl } from 'payload-live-preview/plugin';
 import type { LivePreviewConfig, Plugin, RootLivePreviewConfig } from 'payload';
 
 type PayloadLivePreviewUrl = Exclude<NonNullable<LivePreviewConfig['url']>, string>;

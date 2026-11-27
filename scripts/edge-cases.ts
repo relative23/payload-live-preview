@@ -19,7 +19,6 @@ export interface EdgeModules {
   readonly nuxt: Exports;
   readonly server: Exports;
   readonly fragment: Exports;
-  readonly payload: Exports;
   readonly plugin: Exports;
 }
 
@@ -193,7 +192,7 @@ function streamedFragmentRequest(raw: string, declared: string | undefined): Req
 }
 
 export async function edgeCases(modules: EdgeModules): Promise<readonly EdgeCase[]> {
-  const { nextjs, sveltekit, astro, nuxt, server, fragment, payload, plugin } = modules;
+  const { nextjs, sveltekit, astro, nuxt, server, fragment, plugin } = modules;
   const issue = server['issuePreviewToken'] as IssueToken;
   const token = await issue({ audience: AUDIENCE, path: '/page' }, { secret: SECRET });
   const options = adapterOptions(server);
@@ -384,13 +383,16 @@ export async function edgeCases(modules: EdgeModules): Promise<readonly EdgeCase
       },
     },
     {
-      name: 'fragment, payload and config-plugin entries are edge-loadable without Node globals',
+      name: 'fragment and config-plugin entries are edge-loadable without Node globals',
       run: () => {
         check(
           typeof fragment['createFragmentRoute'] === 'function' || Object.keys(fragment).length > 0,
           'fragment: entry evaluated to an empty namespace',
         );
-        check(Object.keys(payload).length > 0, 'payload: entry evaluated to an empty namespace');
+        check(
+          typeof plugin['buildLivePreviewUrl'] === 'function',
+          'plugin: buildLivePreviewUrl is not a function',
+        );
         const configure = plugin['livePreview'] as (
           options: Record<string, unknown>,
         ) => (config: Record<string, unknown>) => Record<string, unknown>;

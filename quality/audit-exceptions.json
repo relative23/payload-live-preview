@@ -8,7 +8,7 @@
     },
     "examples/astro-payload": {
       "exposure": "quality/audit-exposure/astro-payload.json",
-      "exposureSha256": "3273828d6a2918033b3d7394a8b1658ba57b6d34b322944b8b0519bf2b4e2e89",
+      "exposureSha256": "7221d215f46020328fb89d09a68a0f5336989c9c5c06212ecb246cf284407025",
       "exceptions": []
     },
     "examples/nextjs-payload": {

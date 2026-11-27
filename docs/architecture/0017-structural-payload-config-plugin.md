@@ -109,7 +109,8 @@ continuation needs its own security decision before the plugin can own one.
   create state for both callback and string URLs. It evaluates the shared
   routing callback after the first save.
 - Projects that need custom callback composition keep using
-  `buildLivePreviewUrl()` from `payload-live-preview/payload`. Nullable routes
+  `buildLivePreviewUrl()`, which the plugin's entry exports since 3.0 and an
+  entry of its own exported before (ADR 0007, row 41). Nullable routes
   moved into the plugin on 2026-10-31 (addendum below).
 - Projects still configure request authorization, draft reads and frontend
   delivery explicitly. Installing the config plugin alone grants no access.

@@ -162,7 +162,7 @@ checks that in Chromium, Firefox and WebKit. The same target passed once in
 Chromium against 4.0.0-beta.6, outside CI, on 2026-10-31. A slug that declines
 stays in the root list, because the decision is made per document.
 
-`buildLivePreviewUrl()` from `/payload` has the same nullable overload, and it
+`buildLivePreviewUrl()` from `/plugin` has the same nullable overload, and it
 remains the manual building block. Use it when another plugin already owns the
 surrounding config or when an application deliberately composes a more involved
 callback.

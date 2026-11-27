@@ -125,6 +125,25 @@ describe('pll doctor --v3: adapter options (rows 21, 27, 32, 33 and strict: fals
     ).toEqual([]);
   });
 
+  it('lists a call from an entry that is no longer importable, and not one from the entries that stay (row 42)', async () => {
+    const report = await check({
+      'src/audit.ts': [
+        "import { runDoctor } from 'payload-live-preview/doctor';",
+        'await runDoctor({ url });',
+      ].join('\n'),
+      'src/upgrade.ts': [
+        "import { migrateSource } from 'payload-live-preview/migrate';",
+        'migrateSource(source);',
+      ].join('\n'),
+      'src/config.ts': [
+        "import { buildLivePreviewUrl } from 'payload-live-preview/plugin';",
+        "buildLivePreviewUrl({ baseUrl: 'https://site.example' });",
+      ].join('\n'),
+    });
+
+    expect(places(report, 'tool-entries')).toEqual(['audit.ts:2', 'upgrade.ts:2']);
+  });
+
   it('lists a page a framework hydrates that names neither a route strategy nor fragments (row 40)', async () => {
     const files = {
       'src/hooks.server.ts': [
