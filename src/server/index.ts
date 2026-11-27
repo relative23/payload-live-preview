@@ -6,7 +6,6 @@
  */
 
 export {
-  AUTHORIZED_PREVIEW_BRAND_KEY,
   authorizePreviewRequest,
   extractCookie,
   isAuthorizedPreviewContext,

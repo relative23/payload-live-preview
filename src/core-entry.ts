@@ -108,7 +108,6 @@ export type { DefaultsProfile, EventSourcePolicy } from './types/defaults-profil
 // producer (`authorizePreviewRequest`) lives on the root entry; the guard is a
 // few lines and belongs wherever the type is accepted.
 export {
-  AUTHORIZED_PREVIEW_BRAND_KEY,
   isAuthorizedPreviewContext,
   type AuthorizedPreviewContext,
   type AuthorizedPreviewScope,

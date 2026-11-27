@@ -1,27 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import {
   authorizePreviewRequest,
-  AUTHORIZED_PREVIEW_BRAND_KEY,
   isAuthorizedPreviewContext,
   type PreviewVerifierClaims,
 } from '@security/preview-authorization';
 import { scopedClaims, scopedContext, SCOPE_CMS, SCOPE_SITE } from '../../fixtures/scoped-preview';
 
 describe('verifier Payload capability', () => {
-  it('keeps the public verifier name and cross-entry brand literal', async () => {
+  it('keeps the public verifier name, and a context is the object the verifier path made', async () => {
     const context = await scopedContext();
     expect(context.strategy).toBe('verifier');
-    expect(AUTHORIZED_PREVIEW_BRAND_KEY).toBe('payload-live-preview.authorized-preview-context');
-    expect(context[AUTHORIZED_PREVIEW_BRAND_KEY]).toBe(true);
+    expect(isAuthorizedPreviewContext(context)).toBe(true);
+    // The marks 2.x looked for, on something that is not that object.
+    const OLD_KEY = 'payload-live-preview.authorized-preview-context';
     const notAnObject = Object.freeze(
-      Object.assign(() => undefined, { [Symbol.for(AUTHORIZED_PREVIEW_BRAND_KEY)]: true }),
+      Object.assign(() => undefined, { [Symbol.for(OLD_KEY)]: true }),
     );
     expect(isAuthorizedPreviewContext(notAnObject)).toBe(false);
-    const unbranded = Object.freeze({
-      ...context,
-      [Symbol.for(AUTHORIZED_PREVIEW_BRAND_KEY)]: false,
-    });
-    expect(isAuthorizedPreviewContext(unbranded)).toBe(false);
+    const copied = Object.freeze({ ...context, [Symbol.for(OLD_KEY)]: true, [OLD_KEY]: true });
+    expect(isAuthorizedPreviewContext(copied)).toBe(false);
   });
 
   it('refuses at the exact expiry boundary but leaves unbounded legacy verifiers usable', async () => {

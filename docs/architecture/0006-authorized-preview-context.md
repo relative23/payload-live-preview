@@ -394,3 +394,29 @@ It asks for `redirect: 'manual'`, which hands the 3xx answer back, rather than
 there on every request. The draft reads moved to `'manual'` the same day
 (ADR 0019). `FetchLike` carries the mode in its `init`, so a
 custom `fetch` sees it; one that follows redirects anyway undoes the check.
+
+## Addendum (2026-11-27): a context is the object the package made
+
+Section 1 marks a context with a registry symbol, because each entry was a
+bundle with its own copy of the module and a mark one copy kept to itself would
+have refused the other's contexts. A registry symbol is one anybody can write:
+a frozen object with that symbol passed `isAuthorizedPreviewContext()`, and so
+did a frozen copy of a real context. That was the stated strength, a filter
+against look-alikes inside a process that holds the secret anyway.
+
+Since 3.0 the entries are one module graph (ADR 0007, row 43), so the module
+exists once and keeps the contexts it made in a `WeakSet`. The check asks
+whether the object is in it (row 44).
+
+- A copy is refused, frozen or not, and so is a JSON round trip, as before, and
+  an object built by hand, which was not.
+- The context carries no mark: no symbol, and not the string key the type used
+  to name. In the type the mark is a `unique symbol` that nothing exports, which
+  works now that the entries share one declaration of it.
+- The exported name of that string key is gone from the root, `/core` and
+  `/server`. Nothing could be done with it.
+- What this does not survive is two copies of the package in one process, one
+  making a context and the other reading it: two installed versions, or a
+  bundler that inlines the package into one bundle and leaves it external in
+  another. The registry symbol crossed that; the list does not, and the context
+  is then refused, which is the closed side to fail on.

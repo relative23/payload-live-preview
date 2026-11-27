@@ -5,14 +5,12 @@
 ```ts
 
 // @public
-const AUTHORIZED_PREVIEW_BRAND_KEY = "payload-live-preview.authorized-preview-context";
+const AUTHORIZED: unique symbol;
 
 // @public
 interface AuthorizedPreviewContext {
-    // Warning: (ae-forgotten-export) The symbol "AUTHORIZED_PREVIEW_BRAND_KEY" needs to be exported by the entry point module.d.ts
-    //
     // (undocumented)
-    readonly [AUTHORIZED_PREVIEW_BRAND_KEY]: true;
+    readonly [AUTHORIZED]: true;
     readonly authorizedAt: number;
     readonly expiresAt: number | undefined;
     readonly payloadHeaders: Readonly<Record<string, string>>;
@@ -242,8 +240,8 @@ export type VuePluginFactory = (options?: {
 
 // Warnings were encountered during analysis:
 //
-// dist/preview-request-h98Txt_B.d.ts:15:5 - (ae-forgotten-export) The symbol "AuthorizedPreviewContext" needs to be exported by the entry point module.d.ts
-// dist/preview-request-h98Txt_B.d.ts:18:5 - (ae-forgotten-export) The symbol "PreviewAuthorizationOutcome" needs to be exported by the entry point module.d.ts
+// dist/preview-request-DtROPiuW.d.ts:15:5 - (ae-forgotten-export) The symbol "AuthorizedPreviewContext" needs to be exported by the entry point module.d.ts
+// dist/preview-request-DtROPiuW.d.ts:18:5 - (ae-forgotten-export) The symbol "PreviewAuthorizationOutcome" needs to be exported by the entry point module.d.ts
 
 // (No @packageDocumentation comment for this package)
 

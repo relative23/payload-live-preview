@@ -89,7 +89,6 @@ export type { SanitizerPolicyMode, TrustedHtmlPolicyLike } from './security';
 // Authorized preview context (ADR 0006)
 export {
   authorizePreviewRequest,
-  AUTHORIZED_PREVIEW_BRAND_KEY,
   isAuthorizedPreviewContext,
   issuePreviewToken,
 } from './security/preview-authorization';

@@ -99,7 +99,9 @@ export interface ApiReportCheckOptions {
 // without the entry exporting them: astro 35, nuxt 34, sveltekit 30, nextjs 26, the Nuxt module
 // 14, the middleware entry 12, the two hooks 1 each (`PreviewDocument`). The ten other reports
 // are unchanged byte for byte.
-export const FORGOTTEN_EXPORT_BASELINE = 184;
+// 2026-11-27 (3.0, ADR 0007 row 44): -6, the brand key six reports listed. The mark in the type is
+// a `unique symbol` nothing exports, which a report prints and does not count.
+export const FORGOTTEN_EXPORT_BASELINE = 178;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

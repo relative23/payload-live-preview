@@ -20,7 +20,7 @@ only there, carrying `strategy`, `subject`, `authorizedAt`, `expiresAt`,
 material a draft read forwards to Payload. `payloadHeaders` can carry the
 editor's HttpOnly session cookie, so it is not enumerable: `JSON.stringify`,
 a spread, `Object.keys` and a log leave it out, while reading it by name works.
-Pass the object itself: a spread copy, which is not frozen, or a JSON round
+Pass the object itself: a copy, frozen or not, or a JSON round
 trip is refused wherever a context is read. Threat model: [ADR 0006 — Authorized preview context](architecture/0006-authorized-preview-context.md).
 
 ## Strategies
