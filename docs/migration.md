@@ -34,7 +34,9 @@ On the 3.0 line these rows are done: `setSanitizerDocument()`,
 `onUnboundChange`, `isPreviewRequest()`, `adminOrigins`, the two-method replay
 store, inline delivery through `livePreviewScriptProps()`, `defaults: 'v1'`,
 `strict: false`, a hook without `document`, a hook with a `locale` that merged
-an update naming none, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the import or the type check.
+an update naming none, `lexicalToHtml()` returning unsanitised markup where it
+has no document, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
+import or the type check.
 What a JavaScript config can still pass is refused at startup with the reason
 and the codemod, in production too: `onUnboundChange` and `defaults: 'v1'` by
 the adapters and the generator (the profile by the client as well),

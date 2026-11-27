@@ -287,7 +287,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
 ### Rich text on the server
 
-`lexicalToHtml()` sanitizes with a DOM, and a server component has none. Hand it a document for each render, from jsdom (your own dependency). With `requireDocument: true` a render without one throws instead of returning a custom node's markup unsanitized:
+`lexicalToHtml()` sanitizes with a DOM, and a server component has none. Hand it a document for each render, from jsdom (your own dependency). A render without one throws instead of returning a custom node's markup unsanitized; `requireDocument: true` in the call below says what 3.0 does by default:
 
 ```tsx
 // app/[slug]/rich-text.tsx — a server component

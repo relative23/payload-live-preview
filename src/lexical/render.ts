@@ -14,13 +14,14 @@ export interface LexicalRenderOptions {
   /**
    * The DOM the sanitizer parses with, for this call: an SSR document such as
    * linkedom's or jsdom's. Without it the global one is used; with neither the
-   * result is unsanitised and warns once.
+   * call throws, unless `requireDocument: false` asks for the markup as it is.
    */
   readonly document?: SanitizerDocument;
   /**
    * Throw instead of returning unsanitised HTML when no document is available:
-   * the `SanitizerEnvironmentError` `sanitizeHtml()` throws (ADR 0025). Off in
-   * 2.x, where the call warns once and returns the markup; the default in 3.0.
+   * the `SanitizerEnvironmentError` `sanitizeHtml()` throws (ADR 0025). The
+   * default since 3.0 (ADR 0007, row 18). `false` is the 2.x behaviour: the call
+   * warns once and returns the markup unsanitised.
    */
   readonly requireDocument?: boolean;
   /**
@@ -57,14 +58,14 @@ export function isLexicalContent(value: unknown): value is LexicalRoot {
   return Array.isArray(root.children);
 }
 
-/** Render a Lexical document to HTML; without a document the result is unsanitised and warns once, or throws under `requireDocument`. */
+/** Render a Lexical document to sanitised HTML; without a document it throws, or under `requireDocument: false` returns the markup unsanitised and warns once. */
 export function lexicalToHtml(content: LexicalRoot, options: LexicalRenderOptions = {}): string {
   if (!isLexicalContent(content)) return '';
   const html = createContext(options).renderChildren(content.root.children);
   if (options.sanitize === false) return html;
   if (options.document !== undefined) return sanitizeHtml(html, { document: options.document });
   // Without a DOM this throws the sanitizer's own error.
-  if (options.requireDocument === true || hasSanitizerDocument()) return sanitizeHtml(html);
+  if (options.requireDocument !== false || hasSanitizerDocument()) return sanitizeHtml(html);
   warnNoSanitizerOnce();
   return html;
 }
@@ -123,9 +124,9 @@ function warnNoSanitizerOnce(): void {
   warnedNoSanitizer = true;
   try {
     console.warn(
-      '[live-preview] lexicalToHtml() has no sanitizer document and returned unsanitised HTML; ' +
-        'pass { document } (linkedom, jsdom) per call. 3.0 throws here instead: opt in now with ' +
-        '{ requireDocument: true }. See "HTML sanitization" in docs/security.md.',
+      '[live-preview] lexicalToHtml() has no sanitizer document and returned unsanitised HTML, ' +
+        'as { requireDocument: false } asked; pass { document } (linkedom, jsdom) per call. ' +
+        'See "HTML sanitization" in docs/security.md.',
     );
   } catch {
     // Diagnostics never become a second failure.

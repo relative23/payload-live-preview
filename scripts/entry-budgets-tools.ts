@@ -121,7 +121,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-24 (pll doctor --v3, the source check for the 3.0 rows): paired Node22.23.2/zlib1.3.1; +10815/+3507/+2956 B; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+9/+16 B; prior reserves kept.
   // 2026-11-27 (3.0, no response on intent alone: the 1.x profile and strict: false leave, ADR 0007 rows 21 and 36): paired Node24.22.3/npm12.0.2; +170/+50/+65 B; prior reserves kept.
-  'doctor-cli.js': { raw: 65_804, gzip: 22_467, brotli: 20_037 },
+  // 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; +35/+12/+4 B; prior reserves kept.
+  'doctor-cli.js': { raw: 65_839, gzip: 22_479, brotli: 20_041 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
   // 2026-10-22 (the same codemod change): measured 19 958 → 20 931 / 6 964 → 7 166 / 6 240 → 6 427 (+973/+202/+187 B); same 17/12/93 B cushions.

@@ -186,6 +186,8 @@ describe('pll doctor --v3: sanitizing and the origin detector (rows 16, 18 and 2
         'export const c = lexicalToHtml(content, { document });',
         'export const d = lexicalToHtml(content, { requireDocument: true });',
         'export const e = lexicalToHtml(content, { sanitize: false });',
+        // Since 3.0 an explicit `false` is the 2.x behaviour under its name: nothing changes there.
+        'export const f = lexicalToHtml(content, { requireDocument: false });',
       ].join('\n'),
     });
 
@@ -382,7 +384,7 @@ describe('pll doctor --v3: the report', () => {
         '',
         'Row 18: `lexicalToHtml()` without a document throws `SanitizerEnvironmentError`; 2.x returns unsanitised markup with a warning',
         '  render.ts:2',
-        '  Pass `{ document }` to the call, or `{ requireDocument: true }` to take the 3.0 behaviour now.',
+        '  Pass `{ document }` to the call. `{ requireDocument: true }` takes the 3.0 behaviour now, `false` keeps the 2.x one.',
         '',
         'Row 22: `new OriginDetector()` no longer trusts `document.referrer` unless told to',
         '  detect.ts:2',

@@ -160,7 +160,8 @@
 // 2026-11-02 (2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report): the tree-shaking ceilings in tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired, same epoch): initLivePreview from root +92, generateInlineScript from root +89, initLivePreview from core +91, createLivePreviewMiddleware from nextjs +89, LEAN_RUNTIME from lean +96, useLivePreviewDocument from vue +8.
 // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9897/-3418/-2708 B; prior reserves kept.
 // 2026-11-26 (3.0, the 2.x aliases leave, ADR 0007 rows 1, 13, 16, 19, 20, 24 and 32): paired Node24.22.3/npm12.0.2; -90/-49/-36 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 158_008, gzip: 49_947, brotli: 43_817 } as const;
+// 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; -31/-16/-5 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 157_977, gzip: 49_931, brotli: 43_812 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -307,4 +308,5 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 158_008, gzip: 49_947, brotli: 43_8
 // 2.3.1: an image string with a space, a picture's sources, a Payload 4 upload's srcset, the deadline's report: paired Node24.22.1/npm12.0.2; +144/+87/+10 B; prior reserves kept.
 // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -9897/-3463/-2714 B; prior reserves kept.
 // 2026-11-26 (3.0, the 2.x aliases leave, ADR 0007 rows 1, 13, 16, 19, 20, 24 and 32): paired Node24.22.3/npm12.0.2; -90/-43/-49 B; prior reserves kept.
-export const INLINE_ROUTE_BUDGET = { raw: 152_423, gzip: 48_013, brotli: 41_989 } as const;
+// 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; -31/-17/-17 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 152_392, gzip: 47_996, brotli: 41_972 } as const;

@@ -32,9 +32,10 @@
  * Their output is yours to escape here. The built-in renderers escape
  * every value they interpolate, but the sanitizer that would catch a
  * custom renderer's mistake needs a DOM, and there is none during SSR
- * unless the page passes one in `document`. With `requireDocument` the
- * render throws instead of returning unsanitised markup, as 3.0 will by
- * default (ADR 0025). See "HTML sanitization" in docs/security.md.
+ * unless the page passes one in `document`. Without one the render throws
+ * instead of returning unsanitised markup (ADR 0025), unless
+ * `requireDocument={false}` asks for the markup as it is. See "HTML
+ * sanitization" in docs/security.md.
  */
 // Self-referencing import so the shipped copy in dist/ resolves
 // through the package exports map in consumer projects.
@@ -56,7 +57,7 @@ interface Props {
    * `parseHTML(...).document`, for this render.
    */
   document?: SanitizerDocument;
-  /** Throw instead of rendering unsanitised markup when no document is available (ADR 0025). */
+  /** Throw instead of rendering unsanitised markup when no document is available (ADR 0025). Default `true` since 3.0. */
   requireDocument?: boolean;
 }
 

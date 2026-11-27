@@ -137,12 +137,13 @@ So the `PayloadLivePreviewMessage.data?: Record<string, unknown>` contract is en
 
 Browser/live Lexical output and `html`-typed fields run through a curated DOM
 sanitizer. During SSR, `lexicalToHtml()` uses that same backstop only when it
-has a DOM: the `document` passed with the call, or a global one. Without one, built-in node
-renderers remain escape-by-default, custom node and block renderers' markup is
-returned as written, and the call warns once. With `requireDocument: true` it
-throws `SanitizerEnvironmentError` instead, as `sanitizeHtml()` always does;
-that becomes the default in 3.0
-([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)). The
+has a DOM: the `document` passed with the call, or a global one. Without one it
+throws `SanitizerEnvironmentError`, as `sanitizeHtml()` always does; that is the
+default since 3.0
+([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)). With
+`requireDocument: false`, the 2.x behaviour, built-in node renderers remain
+escape-by-default, custom node and block renderers' markup is returned as
+written, and the call warns once. The
 sanitizer:
 
 - **Allow-listed tags only.** Removes `<script>`, `<style>`, `<iframe>`, `<object>`, `<embed>`, `<link>`, `<meta>`, `<base>`, `<form>` and every form control, `<svg>`, `<math>`, `<template>`, `<noscript>`, frames.
