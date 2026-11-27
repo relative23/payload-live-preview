@@ -8,7 +8,7 @@
     },
     "examples/astro-payload": {
       "exposure": "quality/audit-exposure/astro-payload.json",
-      "exposureSha256": "7221d215f46020328fb89d09a68a0f5336989c9c5c06212ecb246cf284407025",
+      "exposureSha256": "81c606c78554ecc3c93d360184d64e21a774e36856d71ece455084b0c921a9e5",
       "exceptions": []
     },
     "examples/nextjs-payload": {
@@ -23,17 +23,12 @@
     },
     "examples/nuxt-payload": {
       "exposure": "quality/audit-exposure/nuxt-payload.json",
-      "exposureSha256": "8bd6fa11779d54db1d877aca23aa94e6f5de17b48b77c3f24048ed83f067d1a4",
-      "exceptions": []
-    },
-    "examples/nuxt4-payload": {
-      "exposure": null,
-      "exposureSha256": null,
+      "exposureSha256": "91496c1f8f46a52f008c017c339acb486f61fbe3fcc5feacc1537ae2373887f0",
       "exceptions": []
     },
     "examples/astro-hybrid": {
       "exposure": "quality/audit-exposure/astro-hybrid.json",
-      "exposureSha256": "d25f0998d741801833eb131fa0f095dd4dbe7819043aaed964288c83a33915eb",
+      "exposureSha256": "5077253c4c32544bcc36fc45336e15efc689e0ebecad130bfd6c338e6a3311eb",
       "exceptions": []
     },
     "examples/pure-html": {
@@ -48,12 +43,12 @@
     },
     "examples/astro-inline": {
       "exposure": "quality/audit-exposure/astro-inline.json",
-      "exposureSha256": "407eaf96bf14671bdfe9a4a48381f8b5407f5f64998c105dd878a7d690e598d4",
+      "exposureSha256": "8242be95bda936950093f0e8ec41af3b3a6bd66f14cdb13892742b2d9c256833",
       "exceptions": []
     },
     "examples/astro-middleware": {
       "exposure": "quality/audit-exposure/astro-middleware.json",
-      "exposureSha256": "c7c2d2300e2105bfa2a9d4f0a8c77b0b2af3d33cc754bbbf194e9bb24d8f3413",
+      "exposureSha256": "aeffd9a1067eed192b708e9be76960a1e750efc81ff4fd35530f87b63bf83bbc",
       "exceptions": []
     },
     "examples/payload-backend": {

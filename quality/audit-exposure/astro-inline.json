@@ -1,15 +1,15 @@
 {
   "sources": {
-    "examples/astro-inline/.npmrc": "89570b4333de5a4920e113d299e774c671b4e83ebfe34757ad27c3960a7bd269",
     "examples/astro-inline/.gitignore": "c760594e89b7b78ec030eb86107c075f9d8177fa7987881c04ff6ea47d5d40cc",
+    "examples/astro-inline/.npmrc": "89570b4333de5a4920e113d299e774c671b4e83ebfe34757ad27c3960a7bd269",
     "examples/astro-inline/astro.config.mjs": "05b288b06da6334e3c682b38f5d5ea4844680165cd7a072203baa1d49c1b453a",
     "examples/astro-inline/src/pages/admin.astro": "301c0785b929f35f8968075509b7eb767bfc068a5681da7ec7273bed00711f20",
     "examples/astro-inline/src/pages/index.astro": "082feeab7b81472cac89201dfa958874b4608e40000966c681ede49942553a27",
     "examples/astro-inline/src/pages/reveal.astro": "806cdfbd5b4f4049cd6853d78fb65c11e0cf45e82d375ce2a9d394a852975437",
     "examples/astro-inline/src/pages/soft-navigation/one.astro": "4e0a92aa62f4f727ee04550cae877df6fcd92f132f8919904aba00a53af2f432",
     "examples/astro-inline/src/pages/soft-navigation/two.astro": "3864ac3da121631850c3a5b2014ab1ba46ed8a26a7a6cee440f529891a4d395c",
-    "playwright.config.ts": "c4a981693ff5aa6754a40b6c2eba28b41285f9d32107465946819f2922193301",
-    "playwright.real-payload.config.ts": "3e46cf2c503cb7e372e248d24868f7b009956bf930982a461183536b7d72a140"
+    "playwright.config.ts": "5080d5074c37ec13972ad000950ca1579ad8f161acf2f2fe7f1779d9cb27a501",
+    "playwright.real-payload.config.ts": "b9b232e5e0a5887fc220d4cda46d5694c950628ca1c7107fe917c839a12368d6"
   },
   "directories": ["examples/astro-inline"],
   "absentFiles": [],

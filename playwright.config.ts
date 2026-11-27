@@ -8,17 +8,8 @@ const isCI = process.env['CI'] === 'true';
 // sets it.
 const astroPort = process.env['PLP_E2E_PORT'] ?? '4173';
 /**
- * Which Nuxt example serves port 4176: the Nuxt 3 fixture, or with
- * `PLP_NUXT_FIXTURE=nuxt4-payload` its Nuxt 4 twin. Any other value is refused
- * before a server starts from an unreviewed directory.
- */
-const nuxtFixture = process.env['PLP_NUXT_FIXTURE'] ?? 'nuxt-payload';
-if (nuxtFixture !== 'nuxt-payload' && nuxtFixture !== 'nuxt4-payload') {
-  throw new Error(`Unreviewed Nuxt fixture: ${nuxtFixture}`);
-}
-/**
- * Which fixture servers to start, e.g. `PLP_E2E_SERVERS=astro` for a job that
- * installs only the Astro fixture (the Astro matrix). Default: all four.
+ * Which fixture servers to start, e.g. `PLP_E2E_SERVERS=nextjs` for a job that
+ * installs only the Next.js fixture (the Next.js matrix). Default: all of them.
  */
 const servers = new Set(
   (
@@ -101,7 +92,7 @@ const config: PlaywrightTestConfig = {
     },
     {
       name: 'nuxt',
-      command: `npm --prefix examples/${nuxtFixture} run dev`,
+      command: 'npm --prefix examples/nuxt-payload run dev',
       url: 'http://localhost:4176/admin.html',
       reuseExistingServer: !isCI,
       // Nuxt compiles the Nitro server and the client bundle on first

@@ -162,7 +162,7 @@ describe('the plugin around it', () => {
 });
 
 /** The recorded majors, restated so the suite's shape is static; held equal below. */
-const MAJORS = [7, 8];
+const MAJORS = [8];
 
 describe('the Vite majors it has to work on', () => {
   const matrix = JSON.parse(

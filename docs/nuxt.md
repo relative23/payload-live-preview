@@ -2,7 +2,7 @@
 
 Nuxt with server-side rendering. A Nitro plugin injects the runtime into authorized preview responses and merges the CSP; a server handler decides before the Vue app renders, so pages can read the decision from `event.context`.
 
-Nuxt 4 is supported. Nuxt 3 reached its [end of life](https://nuxt.com/docs/4.x/community/roadmap) on 31 July 2026 and is no longer supported here officially. It keeps working: the example still runs on Nuxt 3.21.11, and nothing in 2.x breaks it on purpose. CI runs the example in Nuxt 4.6.3's `app/` layout on every push (`examples/nuxt4-payload`), against the mock admin and from the real admin in Chromium, Firefox and WebKit, on its development server. CI also drives the Nuxt 4 production build from the real admin. The `production-lifecycle` job builds the Nuxt 3 example; the Nuxt 4 production build passed the production suite outside CI (54 of 54, 2026-10-30).
+Nuxt 4 is supported. Nuxt 3 reached its [end of life](https://nuxt.com/docs/4.x/community/roadmap) on 31 July 2026; since 3.0 nothing here runs against it, and it is not supported. CI runs the example ([`examples/nuxt-payload`](../examples/nuxt-payload), in Nuxt 4's `app/` layout) on every push: on its development server against the mock admin and from the real admin, and its production build from the real admin, each in Chromium, Firefox and WebKit. The `production-lifecycle` job builds a Nuxt 4 host from the stored package archive. The version CI installs is in the [README's table](../README.md#compatibility).
 
 Environment names used below: `PUBLIC_PAYLOAD_ADMIN_ORIGIN` is the admin origin the browser sees, `PAYLOAD_URL` the Payload origin server code talks to, `SITE_ORIGIN` this site's own origin, and `TOKEN_SECRET` the secret the Payload side shares for signed tokens.
 
@@ -273,7 +273,7 @@ import { fragmentComponentPlugins } from 'payload-live-preview/nuxt-module';
 export default defineNuxtConfig({
   nitro: {
     rollupConfig: {
-      // Nuxt 4 keeps components under app/; on a Nuxt 3 layout use './'.
+      // Nuxt 4 keeps components under app/; name the project's own `srcDir` where it differs.
       plugins: fragmentComponentPlugins(vue, {
         srcDir: fileURLToPath(new URL('./app/', import.meta.url)),
       }),
@@ -363,7 +363,7 @@ The callback appends `?preview=true`, a preview intent that authorizes nothing. 
 
 ## Example
 
-[`examples/nuxt-payload`](../examples/nuxt-payload) — the module `payload-live-preview/nuxt-module` on Nuxt 3, with `delivery: 'asset'` and `authorizePreviewModule`: the hook verifies the mock admin's session cookie or the route token of the framed URL, and against a real Payload admin the editor's own session, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
+[`examples/nuxt-payload`](../examples/nuxt-payload) — the module `payload-live-preview/nuxt-module` on Nuxt 4, with `delivery: 'asset'` and `authorizePreviewModule`: the hook verifies the mock admin's session cookie or the route token of the framed URL, and against a real Payload admin the editor's own session, and `/hybrid` with its endpoint at `server/routes/payload/fragment.post.ts`. Run in Chromium, Firefox and WebKit.
 
 ## When something does not update
 

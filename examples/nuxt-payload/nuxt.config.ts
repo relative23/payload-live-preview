@@ -14,13 +14,13 @@ export default defineNuxtConfig({
   // The fragment endpoint renders the project's components inside the Nitro
   // bundle, whose rollup does not know single-file components. The helper adds
   // Vue's plugin, hashing scope ids from the same directory Nuxt's build does
-  // (this Nuxt 3 layout keeps components at the root; Nuxt 4's under `app/`),
+  // (Nuxt 4 keeps components under `app/`),
   // and keeps each component's CSS out of the server bundle: the page's build
   // delivers it, since the page imports the component (ADR 0029, 0030).
   nitro: {
     rollupConfig: {
       plugins: fragmentComponentPlugins(vue, {
-        srcDir: fileURLToPath(new URL('./', import.meta.url)),
+        srcDir: fileURLToPath(new URL('./app/', import.meta.url)),
       }),
     },
   },
@@ -30,9 +30,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: { siteName: 'Nuxt fixture', payloadUrl: process.env['PLP_PAYLOAD_SERVER_URL'] ?? '' },
   },
-  // Off on purpose: package.json overrides simple-git to 4, the only line that
-  // fixes its advisories, and @nuxt/devtools 3 imports the default export that
-  // 4 removed. With the devtools on, `nuxt dev` fails while loading that module.
+  // Off, so the suite sees the development pages a project's code produces:
+  // switched on, Nuxt DevTools 3.4.4 adds a script element of its own to each
+  // one (measured 2026-10-30).
   devtools: { enabled: false },
   // The mock admin is a static file so it never carries preview intent and
   // therefore never receives the runtime — the same split the other examples

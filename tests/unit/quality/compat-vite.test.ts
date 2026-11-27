@@ -131,13 +131,22 @@ describe('the sentence on the compatibility page', () => {
     expect(line).toContain('measured 2026-09-06');
   });
 
+  it('names one major where every framework installs the same one', () => {
+    const line = renderViteLine(
+      facts({ recorded: [{ framework: 'Astro', major: 7, range: '^8.0.13' }] }),
+      '2026-11-27',
+    );
+
+    expect(line).toContain('Vite 8: that is what');
+  });
+
   it('is the line the compatibility page actually carries', () => {
     const page = readFileSync(
       resolve(import.meta.dirname, '../../../docs/compatibility.md'),
       'utf8',
     );
 
-    expect(page).toContain('Vite 7 through 8');
+    expect(page).toContain('Vite 8: that is what the supported framework majors install');
   });
 });
 
