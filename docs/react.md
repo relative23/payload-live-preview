@@ -220,7 +220,8 @@ approaches are complementary:
 router's refresh, so a route update is a re-render React performs rather than
 server HTML this package morphs over the reconciler's nodes. It renders
 nothing, registers while it is mounted, and gives the registration back on
-unmount; without it the route strategy fetches and morphs as before. In Next's
+unmount. On a page React hydrates the route is refreshed through it alone: without
+it no route is fetched and morphed, and LP0808 says so (ADR 0007, row 47). In Next's
 App Router, `<LivePreviewNavigation />` from `payload-live-preview/nextjs/client`
 renders it with `router.refresh` and also reports client navigations
 ([nextjs.md](nextjs.md#client-navigation-and-route-refreshes)). Outside React

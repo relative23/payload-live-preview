@@ -5,6 +5,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
+import { markHydrated } from '@core/hydration/hydration-manual';
 import { bootstrapInlineRuntime } from '@core/session/runtime';
 import { registerRouteRefresh } from '@core/strategies/route-refresh';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
@@ -102,6 +103,84 @@ describe('the routeStrategy slot', () => {
     await saved();
     expect(route.refreshes()).toBe(1);
     lent();
+    stop();
+  });
+});
+
+/**
+ * ADR 0007, row 47: a page a framework hydrates belongs to that framework's
+ * router. Whichever value asked for a route strategy, its route is rendered
+ * through the refresh the page lent and through nothing else: the strategy's
+ * own fetch and morph would write into DOM the framework's reconciler owns.
+ */
+describe('the route of a page a framework hydrates', () => {
+  let refreshes = 0;
+  beforeEach(() => {
+    refreshes = 0;
+    vi.stubGlobal('__LIVE_PREVIEW_ROUTE__', {
+      createRouteStrategy: () => ({
+        plan: () => false,
+        refresh: () => {
+          refreshes += 1;
+          return Promise.resolve('partial');
+        },
+      }),
+    });
+  });
+  // No framework commits in these cases; the cap of the hydration wait starts the runtime.
+  const committed = (): Promise<unknown> => vi.advanceTimersByTimeAsync(5_100);
+  const saved = async (): Promise<void> => {
+    window.dispatchEvent(
+      new MessageEvent('message', { origin: ADMIN, data: { type: 'payload-document-event' } }),
+    );
+    await vi.advanceTimersByTimeAsync(1_200);
+  };
+
+  it.each(['react', 'vue', 'sveltekit'])(
+    'with `true` and %s, an unbound edit reaches the route through a lent refresh alone',
+    async (hydration) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const stop = start({ routeStrategy: true, hydration });
+      await committed();
+      // The first update is what the page shows; the second is the edit.
+      await send({ hero: { title: 'T' }, subtitle: 'a' });
+      await send({ hero: { title: 'T' }, subtitle: 'b' });
+      expect(refreshes).toBe(0);
+      expect(
+        warn.mock.calls.map((call) => String(call[0])).filter((line) => line.includes('LP0808')),
+      ).toEqual([expect.stringContaining('the page lent no route refresh')]);
+
+      const lent = registerRouteRefresh(() => Promise.resolve());
+      await send({ hero: { title: 'T' }, subtitle: 'c' });
+      expect(refreshes).toBe(1);
+      lent();
+      stop();
+    },
+  );
+
+  it("with `'after-save'` it waits for the save as before, and for the lent refresh as well", async () => {
+    const stop = start({ routeStrategy: 'after-save', hydration: 'react' });
+    await committed();
+    await send({ hero: { title: 'T' }, subtitle: 'a' });
+    await send({ hero: { title: 'T' }, subtitle: 'b' });
+    await saved();
+    expect(refreshes).toBe(0);
+
+    const lent = registerRouteRefresh(() => Promise.resolve());
+    await send({ hero: { title: 'T' }, subtitle: 'c' });
+    expect(refreshes).toBe(0);
+    await saved();
+    expect(refreshes).toBe(1);
+    lent();
+    stop();
+  });
+
+  it("leaves `hydration: 'manual'` to the strategy: the page named no framework that owns its DOM", async () => {
+    const stop = start({ routeStrategy: true, hydration: 'manual' });
+    markHydrated();
+    await send({ hero: { title: 'T' }, subtitle: 'a' });
+    await send({ hero: { title: 'T' }, subtitle: 'b' });
+    expect(refreshes).toBe(1);
     stop();
   });
 });

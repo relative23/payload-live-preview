@@ -53,7 +53,9 @@ export interface InlineScriptConfig {
    * GET shows nothing the editor typed and costs a server render. `'router'` does the
    * same and only through the route refresh the page lent (`registerRouteRefresh()`,
    * which the adapters' navigation helpers call): a page that lent none is not fetched
-   * and morphed, and LP0808 names what to mount.
+   * and morphed, and LP0808 names what to mount. On a page a framework hydrates
+   * (`hydration: 'react'`, `'vue'` or `'sveltekit'`) every value goes through the lent
+   * refresh alone (ADR 0007, row 47).
    */
   readonly routeStrategy?: boolean | 'after-save' | 'router';
   /**

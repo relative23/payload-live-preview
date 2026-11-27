@@ -446,10 +446,13 @@ from `payload-live-preview/react` with `refresh={useRouter().refresh}`.
 Before 2.4 this guide had the project copy a 20-line client component for the
 same job. It keeps working; replace it with the import above.
 
-When neither is there, `routeStrategy: true`, `'after-save'` and a fragment
-endpoint fetch and morph as before. Measured on Next.js 16 against a real admin,
-that morph removes `<next-route-announcer>`, the router's own element, from the
-body; the default, `'router'`, does not fetch and morph at all.
+When neither is there, no route is refreshed, whichever option asked for a
+route strategy: `routeStrategy: true`, `'after-save'` and a fragment endpoint
+go through the lent refresh as well, and LP0808 names what to render (ADR 0007,
+row 47). Until 3.0 they fetched the route and morphed it into the page. That
+morph takes away every element under `<body>` the fetched HTML does not have:
+measured on Next.js 16 against a real admin, `<next-route-announcer>`, the
+router's own element, was one of them.
 
 ### Rich text React renders itself
 

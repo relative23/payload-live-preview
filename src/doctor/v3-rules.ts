@@ -256,6 +256,25 @@ const RULES: readonly Rule[] = [
     judge: (call) =>
       entryOf(call) === 'doctor' || entryOf(call) === 'migrate' ? 'changes' : undefined,
   },
+  {
+    id: 'route-hydrated',
+    row: 47,
+    title:
+      "On a Next.js, SvelteKit or Nuxt page, `routeStrategy: true`, `'after-save'` and the route of a fragment endpoint refresh through the router alone",
+    remedy:
+      'Render `LivePreviewNavigation` (Next.js) or call `livePreviewNavigation()` (SvelteKit), which lend the router to the runtime; the Nuxt module does. A page that lends none is no longer fetched and morphed.',
+    judge: (call) => {
+      if (!ROUTED.has(`${entryOf(call)}/${call.name}`)) return undefined;
+      const { options } = at(call, 0);
+      if (options === undefined) return 'unread';
+      const route = options.keys.get('routeStrategy');
+      if (route === true || route === 'after-save' || options.keys.has('fragments')) {
+        return 'changes';
+      }
+      // A value the reader could not follow may be one of the two.
+      return options.keys.has('routeStrategy') && route === undefined ? 'unread' : undefined;
+    },
+  },
 ];
 
 /** The rules in the order a report names them: by ledger row. */

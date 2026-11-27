@@ -37,6 +37,7 @@
     "src/core/protocol/message-guards.ts": 2120396,
     "src/core/bindings/morph.ts": 335428,
     "src/core/session/navigation-lifecycle.ts": 16952,
+    "src/core/strategies/lent-route.ts": 331901,
     "src/core/strategies/navigation-replay.ts": 517125,
     "src/core/bindings/observers.ts": 1680112,
     "src/core/update/orphan-diagnostics.ts": 865729,

@@ -171,7 +171,8 @@
 // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +32/+15/+32 B; prior reserves kept.
 // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +74/+20/+1 B; prior reserves kept.
 // 2026-11-27 (3.0, ADR 0007 row 40: the route belongs to the router): paired Node24.22.3/npm12.0.2; +555/+205/+156 B; prior reserves kept.
-export const INLINE_FRAGMENT_BUDGET = { raw: 157_964, gzip: 49_883, brotli: 43_783 } as const;
+// 2026-11-27 (3.0, ADR 0007 row 47: the route of a hydrated page goes through the router alone): paired Node24.22.3/npm12.0.2; +47/+30/+41 B; prior reserves kept.
+export const INLINE_FRAGMENT_BUDGET = { raw: 158_011, gzip: 49_913, brotli: 43_824 } as const;
 
 /**
  * The inline script with the route prelude and no fragment endpoint: the
@@ -380,4 +381,8 @@ export const INLINE_FRAGMENT_BUDGET = { raw: 157_964, gzip: 49_883, brotli: 43_7
 // 2026-11-27 (3.0, ADR 0007 row 40: the route belongs to the router): paired Node24.22.3/npm12.0.2; +555/+206/+146 B; prior reserves kept.
 // 2026-11-27 (3.0, ADR 0007 rows 41 and 42: the payload entry merges into plugin): the rows of entry-budgets.ts move with the same change and are recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.3/npm12.0.2, each row by its delta with its reserve kept): `index.cjs` 0/0/+44; `index.js` 0/0/-14.
 // 2026-11-27 (3.0, ADR 0007 rows 41 and 42: the payload entry merges into plugin): the rows of tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired Node24.22.3/npm12.0.2, each row by its delta with its reserve kept): `livePreview` from `payload-live-preview/plugin` -14.
-export const INLINE_ROUTE_BUDGET = { raw: 152_379, gzip: 47_961, brotli: 41_961 } as const;
+// 2026-11-27 (3.0, ADR 0007 row 47: the route of a hydrated page goes through the router alone): the row of bundle-budgets.ts moves with the same change and is recorded here, that file being at its line limit (raw / gzip / brotli, paired Node24.22.3/npm12.0.2): the default inline script +47 / +32 / +41, prior reserves kept.
+// 2026-11-27 (3.0, ADR 0007 row 47: the route of a hydrated page goes through the router alone): the rows of entry-budgets.ts move with the same change and are recorded here (raw / gzip / brotli, paired Node24.22.3/npm12.0.2, each row by its delta with its reserve kept): the four adapters +47 raw each for the rule; `adapters/nextjs/client.js`, `adapters/nuxt/client.js`, `adapters/sveltekit/client.js`, `adapters/react/index.js` and `fragment.js` -219 raw each, since the code that keeps a route to a lent refresh left the module they load for its slot (`core/strategies/lent-route.ts`); `client.js` +36, `index.js` +83, `doctor-cli.js` +660 for the doctor's rule, all JavaScript +743.
+// 2026-11-27 (3.0, ADR 0007 row 47: the route of a hydrated page goes through the router alone): the rows of tree-shaking-budgets.ts move with the same change and are recorded here, that file being at its line limit (gzip, paired Node24.22.3/npm12.0.2, each row by its delta with its reserve kept): `initLivePreview` from the root and from `/client` +19 each, `generateInlineScript` +25, `createLivePreviewMiddleware` from `/nextjs` +29.
+// 2026-11-27 (3.0, ADR 0007 row 47: the route of a hydrated page goes through the router alone): paired Node24.22.3/npm12.0.2; +47/+30/+55 B; prior reserves kept.
+export const INLINE_ROUTE_BUDGET = { raw: 152_426, gzip: 47_991, brotli: 42_016 } as const;
