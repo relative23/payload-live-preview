@@ -130,3 +130,52 @@ export function deliveryOverhead(source: string, name: string): number {
   if (found === null) throw new Error(`delivery-budgets.ts has no overheadBytes for "${name}"`);
   return Number(found[1]?.replaceAll('_', ''));
 }
+
+/** One ceiling of the tree-shaking gate, as a table row names it: the symbol, the entry where the row has one, the bytes. */
+export interface ImportCeiling {
+  readonly symbol: string;
+  /** The specifier a row of the first table imports from; absent in the table of whole files. */
+  readonly from?: string;
+  readonly bytes: number;
+}
+
+const CEILING_ROW = /^\| `(\w+)`(?: from `([^`]+)`)?\s*\|\s*(\d[\d,]*) B\s*\|$/gmu;
+
+/**
+ * `docs/benchmarks.md` prints the ceilings of the tree-shaking gate as two
+ * tables. They fell behind the budget files twice within a day (2026-11-27 and
+ * the change after it), because nothing compared them. Every row must be a
+ * ceiling of the gate with its number, and every ceiling must have its row.
+ */
+export function importCeilingViolations(
+  text: string,
+  file: string,
+  ceilings: readonly ImportCeiling[],
+): string[] {
+  const violations: string[] = [];
+  const key = (symbol: string, from: string | undefined): string =>
+    from === undefined ? symbol : `${symbol} from ${from}`;
+  const open = new Map(ceilings.map((ceiling) => [key(ceiling.symbol, ceiling.from), ceiling]));
+  for (const row of text.matchAll(CEILING_ROW)) {
+    const name = key(row[1] ?? '', row[2]);
+    const line = text.slice(0, row.index).split('\n').length;
+    const ceiling = open.get(name);
+    if (ceiling === undefined) {
+      violations.push(
+        `${file}:${String(line)} has a row for ${name}, which the gate does not measure`,
+      );
+      continue;
+    }
+    open.delete(name);
+    const claimed = digits((row[3] ?? '').replaceAll(',', ''));
+    if (claimed !== ceiling.bytes) {
+      violations.push(
+        `${file}:${String(line)} says ${String(claimed)} B for ${name}, the budget is ${String(ceiling.bytes)}`,
+      );
+    }
+  }
+  for (const name of open.keys()) {
+    violations.push(`${file} has no row for ${name}, which the tree-shaking gate measures`);
+  }
+  return violations;
+}

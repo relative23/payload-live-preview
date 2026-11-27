@@ -656,19 +656,19 @@ floors 3.3 and 18. The job runs Chromium only.
 The root barrel tree-shakes, and that is measured rather than declared:
 `npm run test:treeshake` bundles one-symbol consumers with Vite 8 against the
 built package, resolved through `node_modules` so `exports` and `sideEffects`
-apply as after `npm install`, and holds each to a gzip budget. Importing
-`escapeHtml` from the root is held to 223 B, `lexicalToHtml` to 6,002 B,
-`initLivePreview` to 53,303 B (the client with its built-in renderers, Lexical
-included), `generateInlineScript` to 53,588 B (the inline runtime source and
-nothing of the client). The focused entries give a bundler less to look
-through; the bytes barely move — `initLivePreview` from `./client` is held to
-53,304 B, `lexicalToHtml` from `./lexical` to 5,997 B. For a bundler that takes
-a file whole, as a Next.js project's does, the gate reads a second set of rows
-off `dist`: what the chunk behind one export loads. The budgets are
-`TREE_SHAKING_FIXTURES` in `scripts/tree-shaking-budgets.ts`, with the reason
-each one moved; the first measurement, and why the barrel did not tree-shake
-before it, are in
-[benchmarks.md](benchmarks.md#tree-shaking--what-one-import-costs).
+apply as after `npm install`, and holds each to a gzip budget: `escapeHtml`
+from the root costs about two hundred bytes, `initLivePreview` the client with
+its built-in renderers, `generateInlineScript` the inline runtime source and
+nothing of the client. The focused entries give a bundler less to look
+through, and the bytes barely move. For a bundler that takes a file whole, as
+a Next.js project's does, the gate reads a second set of rows off `dist`: what
+the chunk behind one export loads. The ceilings are in
+[benchmarks.md](benchmarks.md#tree-shaking--what-one-import-costs), which the
+documentation contract holds to the budget files (`TREE_SHAKING_FIXTURES` in
+`scripts/tree-shaking-budgets.ts` and `WHOLE_FILE_ROWS` in
+`scripts/whole-file-budgets.ts`, each with the reason a number moved). The
+first measurement, and why the barrel did not tree-shake before it, are there
+too.
 
 ## Failure handling
 

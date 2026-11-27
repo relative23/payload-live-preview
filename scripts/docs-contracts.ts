@@ -22,13 +22,23 @@ import {
   deliveryClaimViolations,
   deliveryFamilies,
   deliveryOverhead,
+  importCeilingViolations,
   sizeClaimViolations,
   type DeliveryFacts,
+  type ImportCeiling,
 } from './docs-size-claims';
+import { TREE_SHAKING_FIXTURES } from './tree-shaking-budgets';
+import { WHOLE_FILE_ROWS } from './whole-file-budgets';
 
 export { sizeClaimViolations } from './docs-size-claims';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
+
+/** The ceilings `docs/benchmarks.md` prints: one import through Vite (gzip), and through a bundler that takes files whole (raw). */
+const IMPORT_CEILINGS: readonly ImportCeiling[] = [
+  ...TREE_SHAKING_FIXTURES.map(({ symbol, from, gzip }) => ({ symbol, from, bytes: gzip })),
+  ...WHOLE_FILE_ROWS.map(({ symbol, raw }) => ({ symbol, bytes: raw })),
+];
 
 /**
  * Local planning notes, not published with the package. They describe work
@@ -503,6 +513,9 @@ async function main(): Promise<void> {
     // DOMPurify would have cost in ADR 0016); the guides and the README state the current ones.
     if (name.startsWith('docs/architecture/')) continue;
     violations.push(...sizeClaimViolations(text, name, INLINE_BUDGET.gzip));
+    if (name === 'docs/benchmarks.md') {
+      violations.push(...importCeilingViolations(text, name, IMPORT_CEILINGS));
+    }
     const claims = deliveryClaims(text, facts);
     for (const claim of claims) seen.add(claim.family);
     violations.push(...deliveryClaimViolations(claims, name));
