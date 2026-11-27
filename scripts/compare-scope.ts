@@ -84,7 +84,11 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // is gone, data-merger.ts loses the population branch and message-guards.ts the schema parse
 // (1 385 → 873 for the protocol scope). document-session.ts no longer keeps a schema and reports an
 // update of a Payload 2 admin as unavailable instead of merging it (271 → 273).
-export const REVIEWED_SCOPE_LINES = 1146;
+// 2026-11-27 (3.0, ADR 0007 rows 26 and 31): 1 146 → 1 137. document-session.ts −9 (273 → 264): a
+// session requires `document` and leaves alone an update without the locale it names, so the two
+// notices that announced both and the `requireLocale` switch are gone, and a refusal of what a
+// JavaScript caller can still pass came in. No request path changes.
+export const REVIEWED_SCOPE_LINES = 1137;
 
 interface OurFile {
   readonly file: string;

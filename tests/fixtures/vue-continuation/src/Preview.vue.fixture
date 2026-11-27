@@ -32,7 +32,7 @@ const transport: typeof fetch = async (input, init) => {
 function startSession() {
   scope = effectScope();
   const refs = scope.run(() => useLivePreviewDocument({
-    initialData: props.initialData, serverURL: props.origin, allowedOrigins: [props.origin],
+    document: 'any', initialData: props.initialData, serverURL: props.origin, allowedOrigins: [props.origin],
     fetchFn: transport, depth: 2, eventSourcePolicy: 'parent-or-opener',
     enableReferrerDetection: false, enableLocalhostMatching: false,
   }));

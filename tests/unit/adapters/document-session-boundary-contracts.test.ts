@@ -16,6 +16,7 @@ const releases: (() => void)[] = [];
 
 function open(options: Partial<DocumentSessionOptions> = {}) {
   const session = createDocumentSession(INITIAL, {
+    document: 'any',
     serverURL: SERVER,
     allowedOrigins: [ADMIN],
     enableLocalhostMatching: false,
@@ -89,7 +90,7 @@ describe('DocumentSession caller boundaries', () => {
   it('stays at its initial snapshot during SSR without an injected target', () => {
     vi.stubGlobal('window', undefined);
     const fetchFn = vi.fn<typeof fetch>(() => Promise.resolve(response()));
-    const session = createDocumentSession(INITIAL, { serverURL: SERVER, fetchFn });
+    const session = createDocumentSession(INITIAL, { document: 'any', serverURL: SERVER, fetchFn });
     const release = session.subscribe(() => {});
     releases.push(release);
     expect(session.getSnapshot()).toBe(session.getServerSnapshot());

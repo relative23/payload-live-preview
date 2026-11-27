@@ -20,6 +20,7 @@ import {
   type DocumentSession,
   type DocumentSessionOptions,
   type DocumentSnapshot,
+  type PreviewDocument,
 } from '@adapters/shared/document-session';
 
 export interface UseLivePreviewDocumentOptions<T> extends DocumentSessionOptions {
@@ -48,6 +49,17 @@ export function useLivePreviewDocument<T>(
 ): DocumentSnapshot<T> {
   const session = useSessionFor(options);
   return useSyncExternalStore(session.subscribe, session.getSnapshot, session.getServerSnapshot);
+}
+
+/**
+ * The document as part of the session's identity. A JavaScript caller can leave it out; that
+ * has to reach the session, which says what is missing, and not fail here on the way.
+ */
+function documentKey(document: PreviewDocument | 'any' | undefined): string {
+  if (document === undefined || document === 'any') return document ?? '';
+  return 'global' in document
+    ? `global ${document.global} ${document.locale ?? ''}`
+    : `collection ${document.collection} ${String(document.id)} ${document.locale ?? ''}`;
 }
 
 /**
@@ -80,11 +92,7 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
     eventSourcePolicy ?? '',
     String(enableReferrerDetection ?? ''),
     String(enableLocalhostMatching ?? ''),
-    document === undefined
-      ? ''
-      : 'global' in document
-        ? `global ${document.global} ${document.locale ?? ''}`
-        : `collection ${document.collection} ${String(document.id)} ${document.locale ?? ''}`,
+    documentKey(document),
     String(requireLocale ?? ''),
     // A separator no origin, route prefix or policy name can contain.
   ].join(' | ');
@@ -106,7 +114,7 @@ function useSessionFor<T>(options: UseLivePreviewDocumentOptions<T>): DocumentSe
         ...(eventSourcePolicy !== undefined ? { eventSourcePolicy } : {}),
         ...(enableReferrerDetection !== undefined ? { enableReferrerDetection } : {}),
         ...(enableLocalhostMatching !== undefined ? { enableLocalhostMatching } : {}),
-        ...(document !== undefined ? { document } : {}),
+        document,
         ...(requireLocale !== undefined ? { requireLocale } : {}),
         ...(fetchFn !== undefined ? { fetchFn } : {}),
         ...(target !== undefined ? { target } : {}),

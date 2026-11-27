@@ -51,6 +51,7 @@ function Preview({
   timeoutMs,
 }: PreviewProps): React.JSX.Element {
   const { data, isLoading, status, error } = useLivePreviewDocument<Page>({
+    document: 'any',
     serverURL,
     allowedOrigins: [ADMIN],
     eventSourcePolicy: 'any',
@@ -83,6 +84,7 @@ function Probe({
   readonly fetchFn: typeof fetch;
 }): React.JSX.Element {
   const { data } = useLivePreviewDocument<Page>({
+    document: 'any',
     serverURL: SERVER,
     allowedOrigins: [ADMIN],
     eventSourcePolicy: 'any',
@@ -188,6 +190,7 @@ describe('useLivePreviewDocument', () => {
     const painted: [number, string][] = [];
     function Painted({ fetchFn }: { readonly fetchFn: typeof fetch }): React.JSX.Element {
       const { data, revision } = useLivePreviewDocument<Page>({
+        document: 'any',
         serverURL: SERVER,
         allowedOrigins: [ADMIN],
         eventSourcePolicy: 'any',
@@ -324,6 +327,23 @@ describe('useLivePreviewDocument', () => {
     await settle();
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('title').textContent).toBe('Typed into two');
+  });
+
+  it("fails with the session's own words when a JavaScript caller leaves `document` out (row 26)", () => {
+    // React logs a render error before it rethrows; the message is what this case is about.
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    function WithoutDocument(): React.JSX.Element {
+      const options = { serverURL: SERVER, initialData: INITIAL };
+      const { data } = useLivePreviewDocument<Page>(
+        options as unknown as UseLivePreviewDocumentOptions<Page>,
+      );
+      return <h1>{data.title}</h1>;
+    }
+
+    expect(() => render(<WithoutDocument />)).toThrow(
+      'payload-live-preview: a hook needs `document` since 3.0:',
+    );
+    logged.mockRestore();
   });
 
   it('reports an update unavailable once its merge outlives timeoutMs', async () => {

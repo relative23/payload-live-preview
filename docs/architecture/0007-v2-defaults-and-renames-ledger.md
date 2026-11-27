@@ -110,6 +110,26 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
+2026-11-27 (3.0): rows 26 and 31 are carried out. `document` is required on
+`useLivePreviewDocument()` and `createDocumentSession()`, and a hook with a
+`locale` leaves alone an update that names none.
+
+- A session without `document` does not start. The type requires it; a
+  JavaScript caller that leaves it out gets the reason and the two ways on when
+  the session is created, in production too. A session that merged whatever
+  arrived would do other than its page was written for, and it would do so
+  silently.
+- `document: 'any'` is the way to say that a hook follows every document: what
+  row 26 called "has to say so". It is the 2.x default under a name, for a page
+  that renders whatever the admin edits; a create screen is one, because its
+  document has no id to name yet.
+- `requireLocale`, the opt-in of 2.4 for row 31, is what a hook does now. `true`
+  is still taken; `false` is refused when the session is created, with the way
+  out: leave `locale` out of `document` where the admin sends updates without
+  one.
+- The two development notices that announced these rows are gone; the one for
+  a hook without a merge deadline (row 27) stays until that row is done.
+
 2026-11-27 (3.0): rows 21 and 36 are carried out, together, because the
 profile was the other spelling of the second: `defaults: 'v1'` stood for
 `strict: false` and five more rows. An adapter that decides per request has no

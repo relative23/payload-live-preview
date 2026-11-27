@@ -277,7 +277,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; +70/−22/−11 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
   // 2026-11-24 (the merge endpoint aborts a response the server refuses): paired Node22.23.2/zlib1.3.1; +38/−4/−2 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -7974/-2510/-2314 B; prior reserves kept.
-  'adapters/react/index.js': { raw: 18_497, gzip: 6_199, brotli: 5_694 },
+  // 2026-11-27 (3.0, a hook names its document, ADR 0007 rows 26 and 31): paired Node24.22.3/npm12.0.2; +41/+38/+35 B; prior reserves kept.
+  'adapters/react/index.js': { raw: 18_538, gzip: 6_237, brotli: 5_729 },
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +80/+22/+22 B; same 16/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -165/-26/-29 B; same 16/12/120 B cushions.
   // 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7766/+2534/+2343 B; cushions 16/12/120 B.
@@ -295,7 +296,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-04 (2.4, the development notices read `process.env.NODE_ENV` in place, so a consumer's production build drops them): paired Node24.22.1/npm12.0.2; +70/−22/−7 B; the gzip and Brotli ceilings stay, they fell; prior reserves kept.
   // 2026-11-24 (the merge endpoint aborts a response the server refuses): paired Node22.23.2/zlib1.3.1; +38/−4/+0 B; the gzip and Brotli ceilings stay; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; -7974/-2513/-2328 B; prior reserves kept.
-  'adapters/vue/index.js': { raw: 17_459, gzip: 5_915, brotli: 5_415 },
+  // 2026-11-27 (3.0, a hook names its document, ADR 0007 rows 26 and 31): paired Node24.22.3/npm12.0.2; +20/+26/+22 B; prior reserves kept.
+  'adapters/vue/index.js': { raw: 17_479, gzip: 5_941, brotli: 5_437 },
   //
   // 2026-09-06 (R4, zero-config setup): one new row. `adapters/nuxt/module.js`
   // is the build-time Nuxt module — a few hundred bytes, because all it does is

@@ -17,6 +17,8 @@ export function HookPreview(props: {
     serverURL: props.serverURL,
     allowedOrigins: props.allowedOrigins,
     initialData: props.initialData,
+    // The page shows the homepage global, so the hook merges updates for that one alone.
+    document: { global: 'homepage' },
     depth: 1,
   });
   return (

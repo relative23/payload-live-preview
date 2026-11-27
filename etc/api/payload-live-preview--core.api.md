@@ -252,12 +252,12 @@ export interface DocumentSessionOptions {
     readonly allowedOrigins?: readonly string[];
     readonly apiRoute?: string;
     readonly depth?: number;
-    readonly document?: PreviewDocument;
+    readonly document: PreviewDocument | 'any';
     readonly enableLocalhostMatching?: boolean;
     readonly enableReferrerDetection?: boolean;
     readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
     readonly fetchFn?: typeof fetch;
-    readonly requireLocale?: boolean;
+    readonly requireLocale?: true;
     readonly serverURL: string;
     readonly target?: Window;
     readonly timeoutMs?: number;

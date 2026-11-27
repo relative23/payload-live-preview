@@ -28,7 +28,7 @@ export default function Preview({ initialData, path, locale, origin }: { initial
       return Response.json(envelope.data);
     };
   }, [path, locale, initialData.id]);
-  const { data, status, isLoading } = useLivePreviewDocument({ initialData, serverURL: origin, allowedOrigins: [origin], fetchFn: transport, depth: 2 });
+  const { data, status, isLoading } = useLivePreviewDocument({ document: 'any', initialData, serverURL: origin, allowedOrigins: [origin], fetchFn: transport, depth: 2 });
   return <main>
     <h1 data-testid="title">{data.title}</h1>
     <p data-testid="related">{labels(data.related)}</p><p data-testid="files">{labels(data.files)}</p>

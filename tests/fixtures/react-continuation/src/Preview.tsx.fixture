@@ -35,7 +35,7 @@ function Session({ view, onSnapshot }: { view: PreviewView; onSnapshot: (snapsho
     };
   }, [view]);
   const { data, status, isLoading } = useLivePreviewDocument<PreviewDocument>({
-    initialData: view.initialData, serverURL: view.origin, allowedOrigins: [view.origin],
+    document: 'any', initialData: view.initialData, serverURL: view.origin, allowedOrigins: [view.origin],
     fetchFn: transport, depth: 2, eventSourcePolicy: 'parent-or-opener',
     enableReferrerDetection: false, enableLocalhostMatching: false,
   });

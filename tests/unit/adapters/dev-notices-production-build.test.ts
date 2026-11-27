@@ -42,7 +42,7 @@ function bundle(entry: string, symbol: string, mode: 'production' | 'development
 }
 
 // One phrase of each notice, and the registry every notice goes through.
-const HOOK = ['3.0 requires it', '3.0 sets a default', '3.0 skips it'];
+const HOOK = ['3.0 sets a default'];
 const ORIGIN = ['trusts the referrer'];
 const REGISTRY = '__payloadLivePreviewNotices';
 

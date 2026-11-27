@@ -218,6 +218,8 @@ export function connection(admin, target) {
   return {
     serverURL: admin,
     allowedOrigins: [admin],
+    // The lanes drive one hook with whichever document the case edits.
+    document: 'any',
     depth: 1,
     fetchFn: observedFetch,
     eventSourcePolicy: 'parent-or-opener',

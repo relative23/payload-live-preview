@@ -38,6 +38,7 @@ const { data, isLoading, status, error } = useLivePreviewDocument<Page>({
   serverURL: import.meta.env.VITE_PAYLOAD_URL,
   allowedOrigins: [import.meta.env.VITE_PAYLOAD_ADMIN_ORIGIN],
   initialData: props.page,
+  document: { collection: 'pages', id: props.page.id },
   depth: 1,
 });
 </script>
@@ -60,8 +61,9 @@ Every option is the one the React hook takes, with the same defaults
 ([react.md](react.md#the-hook) has the table): `serverURL` and `initialData` are
 required, `depth` is `1`, `apiRoute` is `/api`, `allowedOrigins` names the admin
 origins, and a message is accepted only from the window that framed or opened
-the page unless `eventSourcePolicy: 'any'` says otherwise. With `document`, the
-composable merges only the updates for that document
+the page unless `eventSourcePolicy: 'any'` says otherwise. `document` is
+required too: the composable merges only the updates for the document it names,
+or with `'any'` whichever the admin sends
 ([react.md](react.md#measured-against-the-official-package) says which it leaves
 alone).
 

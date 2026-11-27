@@ -174,6 +174,7 @@ describe('a hook session with timeoutMs', () => {
     const session = createDocumentSession(
       { id: '1', title: 'From the server' },
       {
+        document: 'any',
         serverURL: SERVER,
         allowedOrigins: [ADMIN],
         eventSourcePolicy: 'any',

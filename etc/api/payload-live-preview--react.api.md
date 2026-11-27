@@ -4,9 +4,9 @@
 
 ```ts
 
-import { D as DocumentSessionOptions } from '../../document-session-oK92QjES.js';
-import { a as DocumentSnapshot } from '../../document-session-oK92QjES.js';
-import { b as DocumentStatus } from '../../document-session-oK92QjES.js';
+import { D as DocumentSessionOptions } from '../../document-session-Vq56Megs.js';
+import { a as DocumentSnapshot } from '../../document-session-Vq56Megs.js';
+import { b as DocumentStatus } from '../../document-session-Vq56Megs.js';
 
 export { DocumentSessionOptions }
 

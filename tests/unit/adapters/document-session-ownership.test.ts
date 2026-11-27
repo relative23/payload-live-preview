@@ -29,6 +29,7 @@ function send(data: Record<string, unknown>, extra: Record<string, unknown> = {}
 
 function session(fetchFn: typeof fetch): DocumentSession<Record<string, unknown>> {
   return createDocumentSession<Record<string, unknown>>(INITIAL, {
+    document: 'any',
     serverURL: ADMIN,
     allowedOrigins: [ADMIN],
     enableLocalhostMatching: false,

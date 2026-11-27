@@ -67,6 +67,7 @@ function createSession(
   options: Partial<{ serverURL: string; fetchFn: typeof fetch; depth: number; initial: Doc }> = {},
 ): DocumentSession<Doc> {
   return createDocumentSession<Doc>(options.initial ?? INITIAL, {
+    document: 'any',
     serverURL: options.serverURL ?? SERVER,
     allowedOrigins: [ADMIN],
     eventSourcePolicy: 'any',

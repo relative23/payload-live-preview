@@ -58,6 +58,7 @@ function mount(fetchFn: typeof fetch, initialData: Page = INITIAL): Mounted {
   const Preview = defineComponent({
     setup() {
       const { data, isLoading, status, error } = useLivePreviewDocument<Page>({
+        document: 'any',
         serverURL: SERVER,
         allowedOrigins: [ADMIN],
         eventSourcePolicy: 'any',
@@ -131,6 +132,7 @@ describe('useLivePreviewDocument — Vue', () => {
     const Painted = defineComponent({
       setup() {
         const { data, revision } = useLivePreviewDocument<Page>({
+          document: 'any',
           serverURL: SERVER,
           allowedOrigins: [ADMIN],
           eventSourcePolicy: 'any',
@@ -196,6 +198,7 @@ describe('useLivePreviewDocument — Vue', () => {
     const scope = effectScope();
     scope.run(() => {
       useLivePreviewDocument<Page>({
+        document: 'any',
         serverURL: SERVER,
         allowedOrigins: [ADMIN],
         eventSourcePolicy: 'any',
@@ -214,6 +217,7 @@ describe('useLivePreviewDocument — Vue', () => {
   it('refuses to run without a scope, because nothing could release it', () => {
     expect(() =>
       useLivePreviewDocument<Page>({
+        document: 'any',
         serverURL: SERVER,
         allowedOrigins: [ADMIN],
         initialData: INITIAL,
@@ -233,6 +237,7 @@ describe('useLivePreviewDocument — Vue', () => {
     const scope = effectScope();
     scope.run(() => {
       const { data } = useLivePreviewDocument<Page>({
+        document: 'any',
         serverURL: SERVER,
         allowedOrigins: [ADMIN],
         eventSourcePolicy: 'any',

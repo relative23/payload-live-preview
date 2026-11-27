@@ -62,6 +62,7 @@ function open(
   extra: Partial<DocumentSessionOptions> = {},
 ): DocumentSession<Doc> {
   const session = createDocumentSession<Doc>(initial, {
+    document: 'any',
     serverURL: SERVER,
     allowedOrigins: [ADMIN],
     eventSourcePolicy: 'any',
@@ -173,7 +174,7 @@ describe('DocumentSession with a document', () => {
     expect(String(warn.mock.calls[0]?.[0])).toContain('previews global "header" and ignored');
   });
 
-  it('with a locale, leaves a message in another locale alone and merges one without a locale', async () => {
+  it('with a locale, leaves a message in another locale alone, and one that names no locale (row 31)', async () => {
     const { urls, fetchFn } = server();
     open({ id: '1', title: 'Eins' }, fetchFn, {
       document: { collection: 'pages', id: '1', locale: 'de' },
@@ -183,9 +184,11 @@ describe('DocumentSession with a document', () => {
     expect(urls).toEqual([]);
     update('pages', '1', 'Deutsch', { locale: 'de' });
     await settle();
+    expect(urls).toHaveLength(1);
+    // Until 3.0 this one merged unless `requireLocale: true` said otherwise.
     update('pages', '1', 'Ohne Locale');
     await settle();
-    expect(urls).toHaveLength(2);
+    expect(urls).toHaveLength(1);
     // Without a locale of its own, a session takes the update in whichever locale it comes.
     const any = server();
     open({ id: '1', title: 'One' }, any.fetchFn, { document: { collection: 'pages', id: '1' } });
@@ -230,16 +233,42 @@ describe('DocumentSession with a document', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('without a document, still follows every message (the 2.x default) and says 3.0 will not', async () => {
+  it("with `document: 'any'`, follows whichever document the admin sends, and says nothing", async () => {
     const { urls, fetchFn } = server();
-    const session = open({ id: '2', title: 'Two' }, fetchFn);
+    const session = open({ id: '2', title: 'Two' }, fetchFn, { document: 'any' });
     update('pages', '1', 'Typed into one');
     await settle();
     expect(urls).toEqual([`${SERVER}/api/pages/1`]);
     expect(session.getSnapshot().status).toBe('live');
-    // The default 3.0 changes for this hook, once, and nothing else.
-    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
-      expect.stringContaining('A hook without `document`'),
-    ]);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('does not start without a document, which 3.0 requires (row 26)', () => {
+    const { fetchFn } = server();
+    const withoutDocument = { serverURL: SERVER, fetchFn } as unknown as DocumentSessionOptions;
+
+    expect(() => createDocumentSession<Doc>({ id: '2', title: 'Two' }, withoutDocument)).toThrow(
+      'payload-live-preview: a hook needs `document` since 3.0: `{ collection, id }`, ' +
+        "`{ global }`, or 'any' to follow whichever the admin sends (ADR 0007, row 26).",
+    );
+  });
+
+  it('refuses `requireLocale: false`, the 2.x reading of an update without a locale (row 31)', () => {
+    const { fetchFn } = server();
+    const asked = {
+      serverURL: SERVER,
+      fetchFn,
+      document: { collection: 'pages', id: '1', locale: 'de' },
+      requireLocale: false,
+    } as unknown as DocumentSessionOptions;
+
+    expect(() => createDocumentSession<Doc>({ id: '1', title: 'Eins' }, asked)).toThrow(
+      'payload-live-preview: `requireLocale: false` was removed in 3.0; leave `locale` out of ' +
+        '`document` to merge updates that name none (ADR 0007, row 31).',
+    );
+    // The value 2.4 offered for the 3.0 behaviour is still taken.
+    expect(() =>
+      createDocumentSession<Doc>({ id: '1', title: 'Eins' }, { ...asked, requireLocale: true }),
+    ).not.toThrow();
   });
 });

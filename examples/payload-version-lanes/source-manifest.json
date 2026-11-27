@@ -59,8 +59,8 @@
       "bytes": 1727
     },
     "frontend/ledger.mjs": {
-      "sha256": "0d9a17944965566179c54f3a476f902356850076ca518514fc4b3dc1e96c7f62",
-      "bytes": 7779
+      "sha256": "3664437746b8a07d6ead00870de3c394016aadf51d44889f20a588f8b03476e9",
+      "bytes": 7872
     },
     "frontend/payload.config.ts.fixture": {
       "sha256": "37387f14a24206773183220639acb2a49197439c343429c0ae66d4fab39e8a26",

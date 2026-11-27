@@ -23,7 +23,7 @@
     },
     "examples/nuxt-payload": {
       "exposure": "quality/audit-exposure/nuxt-payload.json",
-      "exposureSha256": "3f4b3d919a831b10131b949d0d7504a1961bec312c5074e09e48d7c2a7625b8c",
+      "exposureSha256": "f0d82e3cc864909656ebf4eda75d9040d43dd91c5f58eb1a61a4a2e9309f5133",
       "exceptions": []
     },
     "examples/nuxt4-payload": {

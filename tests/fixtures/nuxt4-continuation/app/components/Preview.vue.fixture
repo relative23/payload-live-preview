@@ -22,7 +22,7 @@ const transport: typeof fetch = async (input, init) => {
   if (envelope.version !== 1 || envelope.ok !== true || envelope.revision !== expected) throw new Error('Reference revision mismatch');
   return Response.json(envelope.data);
 };
-const { data, status, isLoading } = useLivePreviewDocument({ initialData: props.initialData,
+const { data, status, isLoading } = useLivePreviewDocument({ document: 'any', initialData: props.initialData,
   serverURL: props.origin, allowedOrigins: [props.origin], fetchFn: transport, depth: 2,
   eventSourcePolicy: 'parent-or-opener', enableReferrerDetection: false, enableLocalhostMatching: false,
 });
