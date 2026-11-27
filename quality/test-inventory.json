@@ -22,7 +22,7 @@
   "totals": {
     "files": 528,
     "suites": 1028,
-    "tests": 4631,
+    "tests": 4632,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 429,
       "suites": 916,
-      "tests": 4215,
+      "tests": 4216,
       "benchmarks": 0
     }
   },
@@ -2027,7 +2027,7 @@
       "path": "tests/unit/core/revision-display.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 20,
+      "tests": 21,
       "benchmarks": 0
     },
     {

@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRouteStrategy } from '@fragment/index';
 import type { RouteContext } from '@core/strategies/strategies';
-import { registerRouteRefresh } from '@core/strategies/route-refresh';
+import { registerRouteRefresh, type RouteRefresh } from '@core/strategies/route-refresh';
 
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 const logs: string[] = [];
@@ -93,27 +93,38 @@ describe('refresh — a host that owns its own DOM', () => {
   it('fetches again once the registration is undone', async () => {
     const fetchFn = vi.fn<FetchLike>(() => Promise.resolve(html('<p>fetched</p>')));
     document.body.innerHTML = '<p data-testid="layout">old</p>';
-    const undo = registerRouteRefresh(() => {});
+    const undo = registerRouteRefresh(() => Promise.resolve());
     undo();
     const strategy = createRouteStrategy({ ...BASE, fetch: fetchFn });
     expect(await strategy.refresh(context())).toBe('partial');
     expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 
-  it('says once, as LP0810, that a refresh returning no promise cannot be waited for (H15)', async () => {
+  it('counts a refresh that returns no promise as failed, and says so once as LP0810 (H15, row 23)', async () => {
     logs.length = 0;
     const fetchFn = vi.fn<FetchLike>(() => Promise.resolve(html('<p>fetched</p>')));
     // Next's router.refresh() starts a transition and returns nothing: the
-    // commit lands later, after the runtime has re-applied the revision.
-    registerRouteRefresh(() => undefined);
+    // commit lands later. The type refuses such a function since 3.0; this is
+    // what a JavaScript caller can still register.
+    const hostRefresh = vi.fn(() => undefined);
+    registerRouteRefresh(hostRefresh as unknown as RouteRefresh);
     const strategy = createRouteStrategy({ ...BASE, fetch: fetchFn });
 
-    expect(await strategy.refresh(context())).toBe('partial');
-    expect(await strategy.refresh(context())).toBe('partial');
+    const said = [
+      'LP0810 route refresh returned no promise, so its commit cannot be waited for; ' +
+        'counted as failed (see LivePreviewRouteRefresh)',
+    ];
+    const lines = (): string[] => logs.filter((line) => line.startsWith('LP0810'));
 
-    const lines = logs.filter((line) => line.startsWith('LP0810'));
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toMatch(/no promise.*LivePreviewRouteRefresh/u);
+    // Until 3.0 both were `partial`: taken as committed when the call returned.
+    expect(await strategy.refresh(context())).toBe('failed');
+    // Said with the first refresh that could not be waited for, and not again.
+    expect(lines()).toEqual(said);
+    expect(await strategy.refresh(context())).toBe('failed');
+    expect(lines()).toEqual(said);
+
+    expect(hostRefresh).toHaveBeenCalledTimes(2);
+    // The host owns the route: its failure is not answered with a fetch and a morph over its DOM.
     expect(fetchFn).not.toHaveBeenCalled();
   });
 

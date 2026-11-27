@@ -19,14 +19,14 @@
  */
 
 /**
- * A host's own route refresh. It must settle once the fresh markup is
+ * A host's own route refresh. Its promise settles once the fresh markup is
  * committed: the runtime re-applies the revision on top of it, and doing that
  * against the markup being replaced would write into nodes about to be dropped.
- * A function that returns nothing is taken as already committed; the route
- * strategy says once that it could not wait (LP0810), and 3.0 requires the
- * promise (ADR 0028).
+ * A host that renders synchronously returns `Promise.resolve()`. A function
+ * that returns no promise cannot be waited for: the route strategy counts that
+ * refresh as failed and says so once (LP0810; ADR 0028, ADR 0007 row 23).
  */
-export type RouteRefresh = () => void | Promise<void>;
+export type RouteRefresh = () => Promise<void>;
 
 /** Read late, so it does not matter whether the runtime or the component came first. */
 const SLOT = '__livePreviewRouteRefresh';

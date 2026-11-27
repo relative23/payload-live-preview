@@ -123,7 +123,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   EscalationUnavailable: 'LP0808',
   /** A fragment inserted an Astro island the page cannot start: it never loaded the island element or that client directive. */
   IslandStartUnavailable: 'LP0809',
-  /** The host's route refresh returned no promise, so the revision was re-applied before the host committed. */
+  /** The host's route refresh returned no promise, so its commit could not be waited for and the refresh counts as failed. */
   RouteRefreshUnconfirmed: 'LP0810',
   /** A readiness row is not yet at its 2.0 value; `pll doctor --v2` reports it. */
   V2ReadinessGap: 'LP0709',

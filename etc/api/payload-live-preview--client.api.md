@@ -624,7 +624,7 @@ export interface RoutePlanContext {
 }
 
 // @public
-export type RouteRefresh = () => void | Promise<void>;
+export type RouteRefresh = () => Promise<void>;
 
 // @public
 export interface RouteStrategy {

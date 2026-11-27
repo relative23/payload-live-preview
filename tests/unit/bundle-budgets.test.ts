@@ -52,8 +52,8 @@ describe('release bundle budgets', () => {
     // -9897/-3418/-2708 fragments; reserves unchanged.
     expect(INLINE_BUDGET).toEqual({ raw: 143_302, gzip: 45_226, brotli: 39_773 });
     expect(INLINE_LEAN_BUDGET).toEqual({ raw: 114_747, gzip: 36_217, brotli: 31_902 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 151_897, gzip: 47_782, brotli: 41_807 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 157_482, gzip: 49_718, brotli: 43_653 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 151_929, gzip: 47_795, brotli: 41_815 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 157_514, gzip: 49_726, brotli: 43_651 });
   });
 
   it('keeps the lean profile a saving, and names how much of one', () => {

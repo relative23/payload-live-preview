@@ -37,7 +37,8 @@ store, inline delivery through `livePreviewScriptProps()`, `defaults: 'v1'`,
 an update naming none, `lexicalToHtml()` returning unsanitised markup where it
 has no document, a detector that trusts a referrer without being asked to,
 Astro's inline delivery as the default, a partly bound group covered by its one
-bound path, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
+bound path, a route refresh without a promise taken as committed, Payload 2 and
+`fieldSchemaJSON`. A name that is gone fails the
 import or the type check.
 What a JavaScript config can still pass is refused at startup with the reason
 and the codemod, in production too: `onUnboundChange` and `defaults: 'v1'` by

@@ -767,8 +767,8 @@ own refresh with `registerRouteRefresh()`; since 2.4 the package does it for
 Next.js (`<LivePreviewNavigation />`), SvelteKit (`livePreviewNavigation()`) and
 Nuxt (the module's client plugin). The strategy then calls it instead of
 the GET and the morph, waits for the promise it returns, and re-applies the
-revision on the committed markup; a refresh that returns no promise is reported
-once, under `debug`, as `LP0810` (ADR 0028). The setup is in
+revision on the committed markup; a refresh that returns no promise counts as
+failed and is reported once, under `debug`, as `LP0810` (ADR 0028). The setup is in
 [nextjs.md](nextjs.md#client-navigation-and-route-refreshes),
 [sveltekit.md](sveltekit.md#client-navigation-and-route-refreshes) and
 [nuxt.md](nuxt.md#client-navigation-and-route-refreshes).
