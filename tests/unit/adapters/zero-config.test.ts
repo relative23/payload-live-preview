@@ -10,13 +10,11 @@ import {
   sys,
 } from 'typescript';
 import livePreviewModule, {
-  HANDLER_FILENAME,
-  PLUGIN_FILENAME,
-  pluginSource,
   type NitroConfigLike,
   type NuxtLike,
   type NuxtTemplateLike,
 } from '@adapters/nuxt/module';
+import { HANDLER_FILENAME, PLUGIN_FILENAME, pluginSource } from '@adapters/nuxt/module-sources';
 import {
   previewHeaderRules,
   withLivePreview,
@@ -66,7 +64,8 @@ describe('the Nuxt module', () => {
     const project = resolve(import.meta.dirname, '../../..');
     const file = resolve(import.meta.dirname, 'legacy-nuxt-consumer.ts');
     const source = `
-      import livePreviewModule, { pluginSource, type NuxtLike } from '@adapters/nuxt/module';
+      import livePreviewModule, { type NuxtLike } from '@adapters/nuxt/module';
+      import { pluginSource } from '@adapters/nuxt/module-sources';
       pluginSource({});
       const nuxt: NuxtLike = {
         options: { buildDir: '/app/.nuxt', build: { templates: [] } },

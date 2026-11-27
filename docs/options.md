@@ -410,8 +410,8 @@ the runtime.
 | `payload-live-preview`                               | Stable       | Client, inline script generator, renderers, built-in plugins, authorization and binding helpers; not the exports named above.                                                                                                                                                                          |
 | `payload-live-preview/core`                          | Stable       | The client and runtime without the built-in plugin constructors, generator or adapters; `createDocumentSession()` (`@beta`).                                                                                                                                                                           |
 | `payload-live-preview/client`                        | Stable       | `LivePreviewClient` and `initLivePreview()` alone.                                                                                                                                                                                                                                                     |
-| `payload-live-preview/structural`                    | Experimental | The structural array renderer, the keyed morph and the `data-payload-depends` helpers; `morphElement()`, `MorphOptions`, `isMorphBoundary()` and `retainIslandBoundary()` are `@beta`, ADR 0008's engine.                                                                                              |
-| `payload-live-preview/lexical`                       | Stable       | `lexicalToHtml()`, `lexicalToPlainText()`, `registerLexicalNode()`, `registerBlockRenderer()`.                                                                                                                                                                                                         |
+| `payload-live-preview/structural`                    | Experimental | The keyed morph and its boundary rules, ADR 0008's engine: `morphElement()`, `MorphOptions`, `isMorphBoundary()` and `retainIslandBoundary()`, all `@beta`.                                                                                                                                            |
+| `payload-live-preview/lexical`                       | Stable       | `lexicalToHtml()`, `lexicalToPlainText()`, `isLexicalContent()`, `registerLexicalNode()`, `registerBlockRenderer()`.                                                                                                                                                                                   |
 | `payload-live-preview/plugins`                       | Stable       | `PluginManager`, plugin types and the built-in plugins.                                                                                                                                                                                                                                                |
 | `payload-live-preview/fragment`                      | Stable       | `createFragmentStrategy()` and `createRouteStrategy()`: the browser half of fragment boundaries.                                                                                                                                                                                                       |
 | `payload-live-preview/server`                        | Stable       | `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `createPreviewBindings()`, `previewBindingsFromLocals()`, `bind()`.                                                                                                                                                             |
@@ -429,7 +429,16 @@ the runtime.
 `payload-live-preview/astro/middleware-entry` also exists; Astro's
 `mode: 'middleware'` registers it and nothing else imports it.
 
+Since 3.0 an entry exports no value marked `@internal`: what is exported is
+for a project to use (ADR 0007, row 15).
+
 A few exports serve integrations more than pages:
+
+- `VERSION` (root) is the version of this package, and `generateCspNonce()`
+  (root) a base64url nonce for a `script-src` policy; it throws where the
+  runtime has no Web Crypto.
+- `isLexicalContent()` (root, `/lexical`) says whether a value has the shape
+  of Lexical editor state, before it is handed to `lexicalToHtml()`.
 
 - `createDocumentSession()` (`/core`, `@beta`) returns a `DocumentSession`, the
   session behind the React and Vue hooks, for a framework that has no hook

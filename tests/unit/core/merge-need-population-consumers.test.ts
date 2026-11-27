@@ -6,7 +6,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import type { RuntimeOptions } from '@core/session/lifecycle';
 import { ISLAND_EVENT, type IslandUpdateDetail } from '@core/bindings/islands';
-import { fragmentStrategyFrom, type StrategyRequest } from '@fragment/index';
+import { type StrategyRequest } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 import { EventEmitter } from '@events/emitter';
 import { emailRenderer } from '@field-types/email';
 import { post, startRuntime, textRenderer, TRUSTED } from '../../helpers/runtime';

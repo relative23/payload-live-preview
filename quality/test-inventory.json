@@ -1124,7 +1124,7 @@
       "path": "tests/unit/bundle-shape.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 5,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -2363,7 +2363,7 @@
       "path": "tests/unit/entry-surfaces.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {

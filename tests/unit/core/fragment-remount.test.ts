@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/session/lifecycle';
 import type { FieldRenderer } from '@core/types';
-import { fragmentStrategyFrom, type FragmentOutcome } from '@fragment/index';
+import { type FragmentOutcome } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 
 /**
  * A boundary the host replaces while its render is in flight (H06): a

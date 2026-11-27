@@ -3,12 +3,8 @@ import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/session/lifecycle';
 import type { FragmentContext, FragmentStrategy } from '@core/strategies/strategies';
 import type { FieldRenderer } from '@core/types';
-import {
-  fragmentStrategyFrom,
-  type FragmentHandler,
-  type FragmentOutcome,
-  type StrategyRequest,
-} from '@fragment/index';
+import { type FragmentHandler, type FragmentOutcome, type StrategyRequest } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 
 /**
  * The fragment strategy in the core (roadmap 1.6.0): a `data-payload-fragment`

@@ -4,20 +4,11 @@
 
 ```ts
 
-// @internal
-export function collectFragmentBoundaries(root: ParentNode, changedFields: ReadonlySet<string>): readonly FragmentBoundary[];
-
-// @internal (undocumented)
-export function createFragmentHandler(options: FragmentStrategyOptions): FragmentHandler;
-
 // @public
 export function createFragmentStrategy(options: FragmentStrategyOptions): FragmentStrategy;
 
 // @public (undocumented)
 export function createRouteStrategy(options?: RouteStrategyOptions): RouteStrategy;
-
-// @internal (undocumented)
-export function describeBoundary(element: Element): FragmentBoundary | null;
 
 // @public
 export const DIAGNOSTIC_CODES: Readonly<{
@@ -76,18 +67,6 @@ export const DIAGNOSTIC_CODES: Readonly<{
 
 // @public
 export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_CODES];
-
-// @internal
-export const FRAGMENT_ATTRIBUTE = "data-payload-fragment";
-
-// @internal
-export const FRAGMENT_KEY_ATTRIBUTE = "data-payload-fragment-key";
-
-// @internal
-export const FRAGMENT_PROTOCOL_VERSION = 1;
-
-// @internal (undocumented)
-export const FRAGMENT_VERSION_HEADER = "x-payload-fragment-version";
 
 // @internal (undocumented)
 export interface FragmentBoundary {
@@ -190,9 +169,6 @@ export interface FragmentStrategy {
     readonly render: (context: FragmentContext, boundaries: readonly Element[]) => Promise<FragmentReport>;
 }
 
-// @internal
-export function fragmentStrategyFrom(handler: FragmentHandler): FragmentStrategy;
-
 // @public
 export interface FragmentStrategyOptions {
     readonly endpoint: string;
@@ -206,21 +182,6 @@ export interface FragmentStrategyOptions {
     readonly maxResponseBytes?: number;
     readonly timeoutMs?: number;
 }
-
-// @internal
-export function isRouteBound(element: Element): boolean;
-
-// @internal
-export function parseFragmentRequest(value: unknown, maxFieldDepth?: number): FragmentRequestBody | null;
-
-// @internal
-export function parseFragmentResponse(value: unknown): FragmentResponseBody | null;
-
-// @internal
-export function resolveStrategy(element: Element): UpdateSource | undefined;
-
-// @internal
-export const ROUTE_REFRESH_HEADER = "x-payload-live-preview";
 
 // @public
 export interface RouteContext {
@@ -251,7 +212,7 @@ export interface RouteStrategy {
     readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 
-// @public (undocumented)
+// @public
 export interface RouteStrategyOptions {
     readonly document?: Document;
     readonly fetch?: (url: string, init?: RequestInit) => Promise<Response>;

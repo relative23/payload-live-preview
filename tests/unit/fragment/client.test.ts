@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  createFragmentHandler,
   createFragmentStrategy,
   type FragmentBoundary,
   type StrategyRequest,
 } from '@fragment/index';
+import { createFragmentHandler } from '@fragment/handler';
 
 const ENDPOINT = '/payload/fragment';
 const LOCATION = { pathname: '/page', search: '?preview=true&previewToken=t' };

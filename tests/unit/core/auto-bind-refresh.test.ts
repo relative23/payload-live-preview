@@ -13,7 +13,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildBuiltinRenderers } from '@field-types/index';
-import { fragmentStrategyFrom } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 import { createRouteStrategy } from '@fragment/route';
 import { compareFidelity, reportDifferences } from '../../e2e/helpers/fidelity';
 import { AUTO_BIND_TRAPS, editedFields, type AutoBindTrap } from '../../fixtures/auto-bind-traps';

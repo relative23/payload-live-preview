@@ -12,7 +12,7 @@ export interface BlockRenderContext {
 // @public
 export type BlockRenderer = (fields: Record<string, unknown>, context: BlockRenderContext) => string;
 
-// @internal (undocumented)
+// @public
 export function isLexicalContent(value: unknown): value is LexicalRoot;
 
 // @public (undocumented)
@@ -64,12 +64,6 @@ export function lexicalToHtml(content: LexicalRoot, options?: LexicalRenderOptio
 // @public
 export function lexicalToPlainText(content: LexicalRoot): string;
 
-// @internal (undocumented)
-export function lookupBlockRenderer(blockType: string): BlockRenderer | undefined;
-
-// @internal (undocumented)
-export function lookupLexicalNode(type: string): NodeRenderer | undefined;
-
 // @public (undocumented)
 export type NodeRenderer = (node: LexicalNode, context: RenderNodeContext) => string;
 
@@ -78,9 +72,6 @@ export function registerBlockRenderer(blockType: string, renderer: BlockRenderer
 
 // @public
 export function registerDefaultBlocks(): void;
-
-// @internal (undocumented)
-export function registeredBlockTypes(): readonly string[];
 
 // @public
 export function registerLexicalNode(type: string, renderer: NodeRenderer): void;
@@ -103,18 +94,6 @@ export interface SanitizerDocument {
         readonly content: ParentNode;
     };
 }
-
-// @internal
-export const TextFormat: {
-    readonly BOLD: 1;
-    readonly ITALIC: 2;
-    readonly STRIKETHROUGH: 4;
-    readonly UNDERLINE: 8;
-    readonly CODE: 16;
-    readonly SUBSCRIPT: 32;
-    readonly SUPERSCRIPT: 64;
-    readonly HIGHLIGHT: 128;
-};
 
 // (No @packageDocumentation comment for this package)
 

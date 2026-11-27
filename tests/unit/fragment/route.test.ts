@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createRouteStrategy, isRouteBound, ROUTE_REFRESH_HEADER } from '@fragment/index';
+import { createRouteStrategy } from '@fragment/index';
+import { isRouteBound, ROUTE_REFRESH_HEADER } from '@fragment/route';
 import type { RouteContext } from '@core/strategies/strategies';
 
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;

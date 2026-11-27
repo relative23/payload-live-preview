@@ -48,7 +48,7 @@ export function setCspCrypto(crypto: WebCryptoLike | null): void {
   cryptoOverride = crypto ?? undefined;
 }
 
-/** A base64url nonce of `bytes` random bytes (default 16); throws without Web Crypto, since a predictable nonce silently defeats the CSP. @internal */
+/** A base64url nonce of `bytes` random bytes (default 16); throws without Web Crypto, since a predictable nonce silently defeats the CSP. */
 export function generateCspNonce(bytes: number = DEFAULT_NONCE_BYTES): string {
   if (!Number.isInteger(bytes) || bytes < 8) {
     throw new RangeError(`generateCspNonce: bytes must be an integer >= 8, got ${String(bytes)}`);

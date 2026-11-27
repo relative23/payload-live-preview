@@ -2,5 +2,5 @@
 
 import pkg from '../package.json' with { type: 'json' };
 
-/** @internal */
+/** The version of this package, as its `package.json` states it. */
 export const VERSION: string = pkg.version;

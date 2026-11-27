@@ -12,12 +12,8 @@ import { createFieldAddressability, unboundChangedFields } from '@core/update/un
 import type { RouteContext } from '@core/strategies/strategies';
 import { createFragmentEndpointHandler } from '@adapters/shared/fragment-endpoint';
 import { authorizePreviewRequest, definePreview, issuePreviewToken } from '@/server/index';
-import {
-  createFragmentHandler,
-  createRouteStrategy,
-  type FragmentBoundary,
-  type StrategyRequest,
-} from '@fragment/index';
+import { createRouteStrategy, type FragmentBoundary, type StrategyRequest } from '@fragment/index';
+import { createFragmentHandler } from '@fragment/handler';
 
 const SITE = 'https://site.example.com';
 const SECRET = 'hardening-reproduction-secret-at-least-32-bytes';

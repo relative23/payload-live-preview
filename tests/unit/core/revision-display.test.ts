@@ -5,7 +5,8 @@ import type { RouteOutcome, RouteStrategy, StrategyHandlers } from '@core/strate
 import type { FieldRenderer } from '@core/types';
 import type { LivePreviewEventMap } from '@events/types';
 import { registerRouteRefresh, type RouteRefresh } from '@core/strategies/route-refresh';
-import { createRouteStrategy, fragmentStrategyFrom, type FragmentOutcome } from '@fragment/index';
+import { createRouteStrategy, type FragmentOutcome } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 import type { IslandUpdateDetail } from '@core/bindings/islands';
 import { deferred, fireMessage, IO, TRUSTED, textRenderer } from './lifecycle-harness';
 

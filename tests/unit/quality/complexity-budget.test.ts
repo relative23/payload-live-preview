@@ -66,8 +66,9 @@ describe('counting the surface', () => {
       'export type F = string;',
     ].join('\n');
 
-    // `F` has no tag line of its own and is public, as API Extractor treats it.
-    expect(countDeclarations(report)).toEqual({ public: 3, internal: 2 });
+    // `F` has no tag line of its own and is public, as API Extractor treats it. Of the two
+    // internal names only `B` exists at run time; an interface does not.
+    expect(countDeclarations(report)).toEqual({ public: 3, internal: 2, internalRuntime: 1 });
     expect(countPublicDeclarations(report)).toBe(3);
   });
 

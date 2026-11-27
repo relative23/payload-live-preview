@@ -8,7 +8,8 @@ import type {
   RouteStrategy,
 } from '@core/strategies/strategies';
 import type { FieldRenderer } from '@core/types';
-import { fragmentStrategyFrom, type FragmentHandler, type StrategyRequest } from '@fragment/index';
+import { type FragmentHandler, type StrategyRequest } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 
 /**
  * Server work a newer revision cuts short, or outlives. The diff that plans a

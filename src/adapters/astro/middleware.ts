@@ -10,12 +10,7 @@ import { exposeDecision, exposeNonce, type LivePreviewLocalsSink } from '@adapte
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import { ASTRO_PAGE } from './page-facts';
 
-export {
-  AUTHORIZATION_LOCALS_KEY,
-  AUTHORIZATION_OUTCOME_LOCALS_KEY,
-  NONCE_LOCALS_KEY,
-  type LivePreviewLocals,
-} from '@adapters/shared/locals';
+export type { LivePreviewLocals } from '@adapters/shared/locals';
 
 // Local shims keep `astro` a runtime-optional peer; the runtime signature matches.
 type MiddlewareNext = () => Promise<Response>;

@@ -1,5 +1,14 @@
 /** Public entry for the nuxt adapter; the implementation lives in ./adapter so coverage measures it. */
-export * from './adapter';
+export {
+  buildLivePreviewCsp,
+  defineLivePreviewServerHandler,
+  livePreviewNitroPlugin,
+  renderLivePreviewScript,
+  type LivePreviewLocals,
+  type LivePreviewNuxtOptions,
+  type NitroHandler,
+  type PreviewAdapterOptions,
+} from './adapter';
 export {
   createFragmentEndpoint,
   type FragmentEndpointOptions,

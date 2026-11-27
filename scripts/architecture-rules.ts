@@ -43,6 +43,8 @@ const SERVER_ONLY_MODULES: ReadonlySet<string> = new Set([
   // The Nuxt module: Nuxt runs it in its build process, and it resolves the
   // shipped Nitro plugin's path from its own module URL.
   'src/adapters/nuxt/module.ts',
+  // The two server files it writes, and the reading of a hook reference from disk.
+  'src/adapters/nuxt/module-sources.ts',
 ]);
 const NODE_BUILTINS = new Set(
   builtinModules.flatMap((module) => [

@@ -81,9 +81,15 @@ export interface ComplexityViolation {
 export interface DeclarationCounts {
   /** Names a project is meant to import: everything an example imports or a guide names, and what those signatures reach. */
   readonly public: number;
-  /** Names the entry exports for the package's own tests and modules, marked `@internal` (scripts/surface-usage.ts). */
+  /** Names marked `@internal`: types a public signature reaches and no project is meant to name (scripts/surface-usage.ts). */
   readonly internal: number;
+  /** The `@internal` names among them that exist at run time. None since 3.0 (ADR 0007, row 15). */
+  readonly internalRuntime: number;
 }
+
+/** A declaration a module exports at run time, as API Extractor prints it; an interface or a type alias is not one. */
+const RUNTIME_DECLARATION =
+  /^export (?:declare )?(?:abstract )?(?:function|const|class|enum|let|var)\b/u;
 
 /**
  * Declarations in one API report, split by release tag. API Extractor writes
@@ -93,6 +99,7 @@ export interface DeclarationCounts {
 export function countDeclarations(report: string): DeclarationCounts {
   let publicCount = 0;
   let internalCount = 0;
+  let internalRuntime = 0;
   let internalNext = false;
   for (const line of report.split('\n')) {
     if (line.startsWith('// @')) {
@@ -100,12 +107,14 @@ export function countDeclarations(report: string): DeclarationCounts {
       continue;
     }
     if (line.startsWith('export ')) {
-      if (internalNext) internalCount += 1;
-      else publicCount += 1;
+      if (internalNext) {
+        internalCount += 1;
+        if (RUNTIME_DECLARATION.test(line)) internalRuntime += 1;
+      } else publicCount += 1;
       internalNext = false;
     }
   }
-  return { public: publicCount, internal: internalCount };
+  return { public: publicCount, internal: internalCount, internalRuntime };
 }
 
 /** Public declarations in one API report: the reviewed names an entry exports for a project to use. */
@@ -140,11 +149,13 @@ export function countInterfaceMembers(source: string, name: string): number {
 export async function measureComplexity(): Promise<ComplexityMeasurement> {
   const entries: Record<string, number> = {};
   let internalDeclarations = 0;
+  let internalRuntimeNames = 0;
   for (const file of (await readdir(API_REPORTS)).sort()) {
     if (!file.endsWith('.api.md')) continue;
     const counts = countDeclarations(await readFile(resolve(API_REPORTS, file), 'utf8'));
     entries[file] = counts.public;
     internalDeclarations += counts.internal;
+    internalRuntimeNames += counts.internalRuntime;
   }
   const manifest = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
     exports: Record<string, unknown>;
@@ -163,6 +174,7 @@ export async function measureComplexity(): Promise<ComplexityMeasurement> {
     totals: {
       publicDeclarations: Object.values(entries).reduce((sum, count) => sum + count, 0),
       internalDeclarations,
+      internalRuntimeNames,
       // `./package.json` is not one of them: it exports the manifest so
       // tooling can read the installed version, not a surface a reader chooses
       // between before writing a line of code.

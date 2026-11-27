@@ -12,7 +12,6 @@ export {
 } from './fragments';
 export {
   withLivePreview,
-  previewHeaderRules,
   type NextConfigLike,
   type NextHeaderRule,
   type WithLivePreviewOptions,

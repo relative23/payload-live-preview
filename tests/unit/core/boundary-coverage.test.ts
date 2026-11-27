@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/session/lifecycle';
 import type { RouteStrategy, StrategyHandlers } from '@core/strategies/strategies';
-import { fragmentStrategyFrom, type StrategyRequest } from '@fragment/index';
+import { type StrategyRequest } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 import { TRUSTED, fireMessage, textRenderer } from './lifecycle-harness';
 
 /**

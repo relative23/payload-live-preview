@@ -4,7 +4,8 @@ import { LivePreviewRuntime } from '@core/session/lifecycle';
 import type { IslandUpdateDetail } from '@core/bindings/islands';
 import type { FragmentStrategy, RouteOutcome, RouteStrategy } from '@core/strategies/strategies';
 import type { LivePreviewEventMap } from '@events/types';
-import { fragmentStrategyFrom, type FragmentOutcome } from '@fragment/index';
+import { type FragmentOutcome } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 import { deferred, fireMessage, TRUSTED, textRenderer } from './lifecycle-harness';
 import { mergingFetch, relationshipRenderer } from './populating-server-harness';
 

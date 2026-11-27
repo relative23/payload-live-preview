@@ -18,8 +18,6 @@
  */
 
 export { VERSION } from './version';
-/** @internal */
-export const CORE_ENTRY = true;
 
 // High-level client — without the heavyweight built-in plugins.
 export { LivePreviewClient } from './client';
@@ -28,14 +26,11 @@ export { initLivePreview, type LivePreviewClientConfig } from './client';
 // Security primitives (consumers building their own CSP)
 export {
   buildFrameAncestors,
-  buildScriptSrcWithNonce,
   generateCspNonce,
-  setCspCrypto,
   isSafeUrl,
   isExternalHttpUrl,
   sanitizeHtml,
   escapeHtml,
-  escapeHtmlAttribute,
   type FrameAncestorsOptions,
   type SanitizerDocument,
 } from './security';
@@ -46,23 +41,12 @@ export { type EventHandler, type LivePreviewEventMap, type Unsubscribe } from '.
 
 // Detection helpers
 export { OriginDetector } from './detection';
-export {
-  detectInitialLocale,
-  isInIframe,
-  isInPopup,
-  isInPreviewContext,
-  isDevMode,
-} from './detection';
 
 // Protocol negotiation — needed for any consumer that wants to branch
 // on capabilities.
-export {
-  LIBRARY_PROTOCOL_VERSION,
-  hasCapability,
-  negotiateProtocol,
-} from './core/protocol/protocol-version';
+export { negotiateProtocol } from './core/protocol/protocol-version';
 export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol/protocol-version';
-export { CAPABILITY_DECLARATIONS, PROTOCOL_CAPABILITIES } from './core/protocol/protocol-version';
+export { CAPABILITY_DECLARATIONS } from './core/protocol/protocol-version';
 export type { CapabilityDeclaration, CapabilitySource } from './core/protocol/protocol-version';
 export { CAPABILITY_DOCUMENTATION } from './core/protocol/protocol-capability-docs';
 export type { CapabilityDocumentation } from './core/protocol/protocol-capability-docs';
@@ -149,8 +133,8 @@ export type {
 export type { PluginCompatibility } from './plugins';
 export type { SanitizerPolicyMode } from './security';
 
-// Island interoperability — the bridge event and the boundary test (docs/renderers.md, islands).
-export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/bindings/islands';
+// Island interoperability: what the bridge event carries (docs/renderers.md, islands).
+export type { IslandUpdateDetail } from './core/bindings/islands';
 
 // The framework-free session behind the React and Vue hooks, for a store of your own.
 export {

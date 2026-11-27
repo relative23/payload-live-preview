@@ -4,27 +4,10 @@
  * and wants the same boundary rules without the runtime or Lexical.
  */
 
-export { createStructuralArrayRenderer } from './field-types/structural-array';
-export {
-  KEY_ATTRIBUTE,
-  applyStructuralPatches,
-  createStructuralStore,
-  type StructuralApplyOptions,
-  type StructuralStore,
-} from './core/bindings/structural-applier';
-export {
-  ISLAND_ATTRIBUTE,
-  OWNED_ATTRIBUTE,
-  isMorphBoundary,
-  retainIslandBoundary,
-} from './core/bindings/islands';
-export { isMorphCompatible, morphElement, type MorphOptions } from './core/bindings/morph';
-export {
-  dependencyMapFromBinding,
-  mergeDependencyMaps,
-  parseDependencyList,
-  type DependencyMap,
-} from './core/update/dependencies';
+export type { StructuralApplyOptions, StructuralStore } from './core/bindings/structural-applier';
+export { isMorphBoundary, retainIslandBoundary } from './core/bindings/islands';
+export { morphElement, type MorphOptions } from './core/bindings/morph';
+export type { DependencyMap } from './core/update/dependencies';
 export type {
   CachedElement,
   CustomRendererKey,

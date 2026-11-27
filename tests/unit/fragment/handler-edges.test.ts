@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  createFragmentHandler,
   createFragmentStrategy,
   type FragmentBoundary,
   type StrategyRequest,
 } from '@fragment/index';
+import { createFragmentHandler } from '@fragment/handler';
 
 /**
  * What the handler does with an answer it cannot use: a body that is not a

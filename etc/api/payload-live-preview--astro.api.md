@@ -60,12 +60,6 @@ export interface AstroIntegrationLike {
     readonly name: string;
 }
 
-// @internal
-export const AUTHORIZATION_LOCALS_KEY = "livePreviewAuthorization";
-
-// @internal
-export const AUTHORIZATION_OUTCOME_LOCALS_KEY = "livePreviewAuthorizationOutcome";
-
 // @public
 const AUTHORIZED: unique symbol;
 
@@ -284,9 +278,6 @@ interface MiddlewareContext {
 
 // @public
 type MiddlewareNext = () => Promise<Response>;
-
-// @internal
-export const NONCE_LOCALS_KEY = "livePreviewNonce";
 
 // @public (undocumented)
 interface PayloadSessionStrategy {

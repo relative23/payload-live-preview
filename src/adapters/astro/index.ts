@@ -4,9 +4,6 @@ export { livePreview, type AstroIntegrationLike } from './integration';
 export { resolveIslandModule, type IslandModuleResolver } from './island-modules';
 export {
   createLivePreviewMiddleware,
-  NONCE_LOCALS_KEY,
-  AUTHORIZATION_LOCALS_KEY,
-  AUTHORIZATION_OUTCOME_LOCALS_KEY,
   type LivePreviewLocals,
   type LivePreviewMiddleware,
 } from './middleware';

@@ -20,7 +20,6 @@ export {
 } from './built-in/document-save';
 export {
   createUnboundFieldsOverlayPlugin,
-  unboundFieldNames,
   type UnboundFieldsOverlayOptions,
 } from './built-in/unbound-fields-overlay';
 export type { PluginCompatibility } from './compat';

@@ -29,12 +29,6 @@ export interface AnnotatePluginOptions {
     readonly readFile?: (path: string) => string;
 }
 
-// @internal
-export function annotateSource(code: string, options: AnnotatePluginOptions): {
-    readonly code: string;
-    readonly refusals: readonly AnnotationRefusal[];
-};
-
 // @beta
 export interface AnnotateVitePlugin {
     // (undocumented)
@@ -68,12 +62,6 @@ export interface AnnotationRefusal {
 
 // @beta
 export function livePreviewAnnotate(options: AnnotatePluginOptions): AnnotateVitePlugin;
-
-// @internal
-export function splitFrontmatter(code: string): {
-    readonly frontmatter: string;
-    readonly bodyOffset: number;
-};
 
 // (No @packageDocumentation comment for this package)
 

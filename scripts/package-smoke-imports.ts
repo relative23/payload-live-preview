@@ -121,15 +121,12 @@ function esmRuntimeExports(packageName: string): Readonly<Record<string, readonl
       'LivePreviewClient',
       'createPreviewFocusReporter',
     ],
-    [packageSpecifier(packageName, './structural')]: [
-      'createStructuralArrayRenderer',
-      'morphElement',
-    ],
+    [packageSpecifier(packageName, './structural')]: ['morphElement', 'isMorphBoundary'],
     [packageSpecifier(packageName, './lexical')]: ['lexicalToHtml', 'isLexicalContent'],
     [packageSpecifier(packageName, './plugins')]: ['PluginManager', 'createAnalyticsPlugin'],
     [packageSpecifier(packageName, './fragment')]: [
       'createFragmentStrategy',
-      'parseFragmentResponse',
+      'createRouteStrategy',
     ],
     [packageSpecifier(packageName, './astro/middleware-entry')]: ['onRequest'],
   };
@@ -146,15 +143,12 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
       'LivePreviewClient',
       'createPreviewFocusReporter',
     ],
-    [packageSpecifier(packageName, './structural')]: [
-      'createStructuralArrayRenderer',
-      'morphElement',
-    ],
+    [packageSpecifier(packageName, './structural')]: ['morphElement', 'isMorphBoundary'],
     [packageSpecifier(packageName, './lexical')]: ['lexicalToHtml', 'isLexicalContent'],
     [packageSpecifier(packageName, './plugins')]: ['PluginManager', 'createAnalyticsPlugin'],
     [packageSpecifier(packageName, './fragment')]: [
       'createFragmentStrategy',
-      'parseFragmentResponse',
+      'createRouteStrategy',
     ],
   };
 }

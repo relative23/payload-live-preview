@@ -1,9 +1,4 @@
-import {
-  emitTypes,
-  extractSchema,
-  generateTypes,
-  type GenerateTypesOptions,
-} from 'payload-live-preview/codegen';
+import { generateTypes, type GenerateTypesOptions } from 'payload-live-preview/codegen';
 import { livePreviewCodegen, type AstroCodegenOptions } from 'payload-live-preview/codegen/astro';
 
 const generateOptions = {
@@ -16,11 +11,6 @@ const astroOptions = {
   watch: true,
 } satisfies AstroCodegenOptions;
 
-const publicValues = [
-  generateTypes(generateOptions),
-  extractSchema(generateOptions),
-  emitTypes({ globals: [], collections: [], diagnostics: [] }),
-  livePreviewCodegen(astroOptions),
-] as const;
+const publicValues = [generateTypes(generateOptions), livePreviewCodegen(astroOptions)] as const;
 
 void publicValues;

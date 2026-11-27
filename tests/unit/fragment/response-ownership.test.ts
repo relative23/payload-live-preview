@@ -10,11 +10,8 @@ import {
   type ReadableStreamDefaultController as NativeController,
 } from 'node:stream/web';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  createFragmentHandler,
-  type FragmentBoundary,
-  type StrategyRequest,
-} from '@fragment/index';
+import { type FragmentBoundary, type StrategyRequest } from '@fragment/index';
+import { createFragmentHandler } from '@fragment/handler';
 
 const ENDPOINT = '/payload/fragment';
 const LOCATION = { pathname: '/page', search: '' };

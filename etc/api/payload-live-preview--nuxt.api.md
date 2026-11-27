@@ -70,9 +70,6 @@ export function createFragmentEndpoint(options: FragmentEndpointOptions): (reque
 // @public
 export function createRuntimeAssetRoute(options?: LivePreviewNuxtOptions): (request: Request) => Response;
 
-// @internal
-export const DECISION_CONTEXT_KEY = "livePreviewDecision";
-
 // @public
 type DefaultsProfile = 'v2';
 
