@@ -57,10 +57,13 @@ policy holds the list in both directions — a survivor the list does not name
 fails the run, and so does an entry whose mutant is killed now (a ratchet to
 take), moved, or described with other text — so the score below 100 is not a
 gap but a reviewed remainder, and the survivors stay visible in every report.
-It runs on every push to `main`, in the Critical Gates workflow. The six
-shards of the scheduled profile run there every night and for a commit whose
-version is not on npm yet ([ADR 0013 §13](../architecture/0013-release-pipeline.md)),
-so on any other push the core run is the longest job: its 1,409 mutants took 90
+It runs in the Critical Gates workflow with the six shards of the scheduled
+profile, every night and for a commit whose version is not on npm yet, and at
+once for a push to `main` that changes a module of the core, the list that
+names them, its policy or Stryker's setup
+([ADR 0013 §13 and §14](../architecture/0013-release-pipeline.md)). Until
+2026-11-27 it ran on every push, 111 minutes at the median over six weeks, and
+reported no mutant in that time. Its 1,409 mutants took 90
 minutes on the runner on 2026-11-25, as long as a shard of the same run (77 to
 95 minutes). Its cap is 150 minutes and theirs 180. The scheduled report cannot
 stand in for it — that one is a single score over 84 files with a drift band,

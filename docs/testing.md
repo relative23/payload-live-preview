@@ -319,7 +319,7 @@ base SHA and fails closed when that SHA or an LCOV source record is unavailable.
 
 Coverage is deliberately complemented by Stryker. The small PR profile protects
 the highest-risk pure boundaries on every pull request; the release-critical
-profile, run on every push to `main` and on the schedule, expands to sanitizer,
+profile, run every night and for the commit a release is published from, expands to sanitizer,
 origin, message ordering, scheduler, and plugin ownership. See
 [mutation and property testing](testing/mutation-and-property-testing.md) for the
 reproducible seeds, profiles, and baseline. A surviving mutant is not waived by
@@ -335,7 +335,8 @@ forced GC, in addition to repeated start/destroy ownership churn. The mutation
 shards, the trusted-core scope, the leak gate and the soak are one reusable
 workflow, `critical-gates.yml`, which CI also calls on every push to `main` (the
 Release Gates job, with the five-minute soak); there the mutation shards run
-only for a commit whose version is not on npm yet. The Node gate requires all owned
+only for a commit whose version is not on npm yet, and the trusted-core scope
+with them or for a push that changes it. The Node gate requires all owned
 observers, listeners, timers, and DOM nodes to return to zero and both
 long-session and post-destroy retained heap drift to remain below 2 MiB.
 

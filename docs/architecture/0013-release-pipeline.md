@@ -434,6 +434,41 @@ merge, with Deep Quality run on its branch, and brings the new baseline along
 (docs/testing.md). The schedule runs on `main` alone; a maintenance branch gets
 the shards with its release commit.
 
+### 14. The trusted core is mutated with the complete scope, and for a push that changes it (2026-11-27)
+
+§13 left the trusted core on every push. Measured on the 120 push runs of
+`main` from 2026-10-17 to 2026-11-27 (the API listed the jobs of 107): the job
+ended 106 times, 104 of them green, once cancelled, and once red after 72
+minutes because the hosted runner lost its connection. It never reported a
+mutant. It took 111 minutes at the median and 144 at most, against a cap of
+150, and 10 861 runner minutes in all; the longest other job of those runs
+took 6 minutes at the median. Nine of the 119 pushes changed a module of the
+core, the list that names them, its policy or Stryker's setup.
+
+The trusted core now runs
+
+- whenever the six shards do: every night, and on a push whose version is not
+  on npm (§13);
+- on a push that changes one of the modules `quality/trusted-core.json` names,
+  that file, `quality/mutation-policy-core.json`, `stryker.config.js` or
+  `vitest.stryker.config.ts`.
+
+`scripts/mutation-plan.ts` reads the pushed range from the commit the push
+started at (`github.event.before`) and fetches that commit when the checkout
+does not hold it. A range it cannot read counts as one that changes the core,
+and the job runs unless the plan said `false`, as the shards do.
+
+The gate needs no new rule here either: a commit whose version is not on npm
+gets no successful push run without the trusted core.
+
+What this gives up, and why the paths are not the whole answer: in the report
+of `e31c483`, 1 373 of the core's 1 393 mutants are killed, by tests in 71
+files, and 189 of them by tests of other modules (the React hook, the document
+session, the runtime's lifecycle), which reach the core through code outside
+it. A change there can lose such a kill without touching a path above. It is
+found by the next night's run, or by the release commit at the latest, no
+longer within two hours of its push.
+
 ## Consequences
 
 - What is on npm is what CI tested, provably: manifest and registry archive are
