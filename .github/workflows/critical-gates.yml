@@ -5,7 +5,9 @@ name: Critical Gates
 # definition, called from CI on every push to a release branch and from Deep
 # Quality on its schedule. The six shards of the complete scope run every
 # night, and on a push only for a commit whose version is not on npm yet: the
-# one a release is published from (ADR 0013 §13).
+# one a release is published from (ADR 0013 §13). The trusted core runs with
+# them, and for a push that changes one of its modules, their list, its policy
+# or Stryker's setup (§14).
 on:
   workflow_call:
     inputs:
@@ -37,6 +39,7 @@ jobs:
       contents: read
     outputs:
       full: ${{ steps.plan.outputs.full }}
+      core: ${{ steps.plan.outputs.core }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -48,10 +51,12 @@ jobs:
       - name: Use repository npm version
         run: npm install --global "$(node -p "require('./package.json').packageManager")"
       - run: npm ci
-      - name: Decide whether this run mutates the complete scope
+      - name: Decide what this run mutates
         id: plan
         env:
           MUTATION_MODE: ${{ inputs.full-mutation }}
+          # The commit a push started from; empty on a schedule or a dispatch.
+          MUTATION_BASE: ${{ github.event.before }}
         run: npx tsx scripts/mutation-plan.ts
 
   critical-mutation:
@@ -110,6 +115,9 @@ jobs:
 
   trusted-core-mutation:
     name: Trusted Core Mutation
+    needs: mutation-plan
+    # As for the shards: only the plan's "false" leaves it out.
+    if: needs.mutation-plan.outputs.core != 'false'
     runs-on: ubuntu-latest
     # Nine modules and 2,080 mutants: 29 minutes on a development host with four
     # workers, 85 minutes on this runner in the run for e03f369 and more than 90

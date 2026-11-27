@@ -418,7 +418,10 @@ export const CRITICAL_GATES: WorkflowSpec = {
         ...PINNED_SETUP,
         {
           run: 'npx tsx scripts/mutation-plan.ts',
-          env: { MUTATION_MODE: '${{ inputs.full-mutation }}' },
+          env: {
+            MUTATION_MODE: '${{ inputs.full-mutation }}',
+            MUTATION_BASE: '${{ github.event.before }}',
+          },
         },
       ],
     },
@@ -442,8 +445,12 @@ export const CRITICAL_GATES: WorkflowSpec = {
     },
     // The trusted core on its own, beside the shards: same runtime, stricter
     // policy. The nightly report cannot stand in for it — one score over sixty
-    // files says nothing about nine that carry the capabilities.
+    // files says nothing about nine that carry the capabilities. It runs with
+    // the shards and for a push that changes what its score is measured on;
+    // like them, only the plan's "false" leaves it out.
     'trusted-core-mutation': {
+      if: "needs.mutation-plan.outputs.core != 'false'",
+      needs: ['mutation-plan'],
       timeoutMinutes: 150,
       permissions: READ_ONLY,
       steps: [

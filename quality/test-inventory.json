@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 527,
-    "suites": 1024,
-    "tests": 4623,
+    "suites": 1025,
+    "tests": 4630,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 430,
-      "suites": 915,
-      "tests": 4216,
+      "suites": 916,
+      "tests": 4223,
       "benchmarks": 0
     }
   },
@@ -3237,8 +3237,8 @@
     {
       "path": "tests/unit/quality/mutation-plan.test.ts",
       "group": "unit",
-      "suites": 1,
-      "tests": 6,
+      "suites": 2,
+      "tests": 13,
       "benchmarks": 0
     },
     {

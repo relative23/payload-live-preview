@@ -364,6 +364,13 @@ describe('workflow contracts', () => {
       violation: 'critical-gates.yml job critical-mutation does not use the reviewed condition',
     },
     {
+      label: 'a trusted core mutation that a lost plan answer skips',
+      file: 'critical-gates.yml',
+      original: "if: needs.mutation-plan.outputs.core != 'false'",
+      replacement: "if: needs.mutation-plan.outputs.core == 'true'",
+      violation: 'critical-gates.yml job trusted-core-mutation does not use the reviewed condition',
+    },
+    {
       label: 'a quick leak soak',
       file: 'critical-gates.yml',
       original: 'run: npm run test:leak',
