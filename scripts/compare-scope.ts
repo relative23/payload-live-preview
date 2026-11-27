@@ -97,7 +97,9 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // the table's deadline, and the notice that announced one, with the field it read, is gone.
 // 2026-11-27 (3.0, the defaults are written once): 1 111 → 1 110. document-session.ts −1: the
 // hook hands its referrer switch to the detector in one expression, not a conditional spread.
-export const REVIEWED_SCOPE_LINES = 1110;
+// 2026-11-27 (3.0, ADR 0007 row 39): 1 110 → 1 112. document-session.ts +2: a session locks onto
+// the origin of the first update it accepts and lets go when its last subscriber leaves.
+export const REVIEWED_SCOPE_LINES = 1112;
 
 interface OurFile {
   readonly file: string;
