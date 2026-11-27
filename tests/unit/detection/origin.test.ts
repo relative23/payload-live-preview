@@ -101,6 +101,17 @@ describe('OriginDetector — referrer detection', () => {
     expect(detector.matches('https://admin.example.com')).toBe(false);
   });
 
+  it('trusts no referrer unless asked to (ADR 0007, row 22)', () => {
+    // Until 3.0 a detector built without the option trusted the referrer's origin.
+    const detector = new OriginDetector({
+      referrer: 'https://admin.example.com/preview',
+      forceDevMode: false,
+    });
+    expect(detector.matches('https://admin.example.com')).toBe(false);
+    expect(detector.enumerate()).toEqual([]);
+    expect(detector.isReferrerOnlyTrust).toBe(false);
+  });
+
   it('disabling referrer detection prevents matching', () => {
     const detector = new OriginDetector({
       referrer: 'https://admin.example.com/preview',
@@ -110,10 +121,16 @@ describe('OriginDetector — referrer detection', () => {
   });
 
   it('referrerWasAvailable reflects whether a referrer was captured', () => {
-    const withReferrer = new OriginDetector({ referrer: 'https://admin.example.com' });
+    const withReferrer = new OriginDetector({
+      referrer: 'https://admin.example.com',
+      enableReferrerDetection: true,
+    });
     expect(withReferrer.referrerWasAvailable).toBe(true);
-    const without = new OriginDetector({ referrer: '' });
+    const without = new OriginDetector({ referrer: '', enableReferrerDetection: true });
     expect(without.referrerWasAvailable).toBe(false);
+    // A detector that was not asked to read the referrer captured none.
+    const unasked = new OriginDetector({ referrer: 'https://admin.example.com' });
+    expect(unasked.referrerWasAvailable).toBe(false);
   });
 
   it('referrer is a fallback, NOT a union member: explicit origins pin the allow-list', () => {

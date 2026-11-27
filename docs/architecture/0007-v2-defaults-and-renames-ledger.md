@@ -110,6 +110,15 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
+2026-11-27 (3.0): rows 22 and 33 are carried out. `new OriginDetector()`
+trusts the origin of `document.referrer` only where `enableReferrerDetection:
+true` asks for it; the runtime, the client and the hooks passed the option
+already, so only a detector a project builds itself changes. The Astro
+integration without `mode` delivers through `'loader'`: a bootstrap in the
+page and the runtime as a hashed asset, fetched only in a preview context;
+`mode: 'inline'` is the 2.x delivery under its name. Both notices of 2.4 are
+gone with the defaults they announced.
+
 2026-11-27 (3.0): row 18 is carried out. `lexicalToHtml()` and the Astro
 `RichText` component throw `SanitizerEnvironmentError` where they have no
 document to sanitise with, as `sanitizeHtml()` always did. `requireDocument:

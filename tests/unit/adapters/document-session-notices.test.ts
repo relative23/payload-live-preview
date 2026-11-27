@@ -7,12 +7,12 @@ import {
 import { OriginDetector } from '@detection/origin';
 
 /**
- * The rows of the ADR 0007 ledger whose default 3.0 still changes say so once
+ * The row of the ADR 0007 ledger whose default 3.0 still changes says so once
  * per page in development (ADR 0026, 2026-11-03): a hook without a merge
- * deadline (row 27) and a detector that trusts the referrer by default
- * (row 22). Nothing is said in production, and nothing where 3.0 changes
- * nothing. Rows 26 and 31 are done: a hook names its document, and one with a
- * locale leaves alone an update that names none, without a word.
+ * deadline (row 27). Nothing is said in production, and nothing where 3.0
+ * changes nothing. Rows 22, 26 and 31 are done: a detector trusts a referrer
+ * only when asked to, a hook names its document, and one with a locale leaves
+ * alone an update that names none, each without a word.
  */
 
 const ADMIN = 'https://admin.example.com';
@@ -89,14 +89,13 @@ describe('3.0 notices from a hook', () => {
     ]);
   });
 
-  it('names each notice by a fixed key on the page, which every copy of the package shares', () => {
+  it('names the notice by a fixed key on the page, which every copy of the package shares', () => {
     // Two copies on one page, possibly of different versions, must agree on
-    // these strings, or each would print its own line.
+    // this string, or each would print its own line.
     open();
-    new OriginDetector({ referrer: 'https://admin.example.com/admin' });
     const issued = (globalThis as Record<string, unknown>)['__payloadLivePreviewNotices'];
-    expect([...(issued as Set<string>)].sort()).toEqual(['hook-deadline', 'origin-referrer']);
-    expect(said()).toHaveLength(2);
+    expect([...(issued as Set<string>)]).toEqual(['hook-deadline']);
+    expect(said()).toHaveLength(1);
   });
 
   it('says nothing about a hook that names a deadline, including `timeoutMs: 0`', () => {
@@ -147,35 +146,20 @@ describe('an update without a locale, for a hook with one (row 31)', () => {
   });
 });
 
-describe('a detector that trusts the referrer by default (row 22)', () => {
-  const referrer = 'https://admin.example.com/admin/collections/pages/1';
+describe('a detector built without `enableReferrerDetection` (row 22)', () => {
+  it('trusts no referrer, and has nothing left to announce', () => {
+    const detector = new OriginDetector({
+      referrer: 'https://admin.example.com/admin/collections/pages/1',
+      forceDevMode: false,
+    });
 
-  it('says once that 3.0 stops trusting it', () => {
-    new OriginDetector({ referrer });
-    new OriginDetector({ referrer });
-    expect(said()).toEqual([
-      '[payload-live-preview] `new OriginDetector()` trusts the referrer unless ' +
-        '`enableReferrerDetection` says so; 3.0 does not (ADR 0007, row 22).',
-    ]);
-  });
-
-  it('says nothing where 3.0 changes nothing', () => {
-    new OriginDetector({ referrer, enableReferrerDetection: true });
-    new OriginDetector({ referrer, enableReferrerDetection: false });
-    new OriginDetector({ referrer, additionalOrigins: [ADMIN] });
-    new OriginDetector({ referrer: '' });
-    expect(said()).toEqual([]);
-  });
-
-  it('says nothing in production', () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    new OriginDetector({ referrer });
+    expect(detector.matches(ADMIN)).toBe(false);
     expect(said()).toEqual([]);
   });
 });
 
 describe('a page with no bundler and no `process`', () => {
-  it('says nothing and throws nothing, from a hook or a detector', async () => {
+  it('says nothing and throws nothing, from a hook', async () => {
     // As a browser that loads the module unbundled: nothing replaced
     // `process.env.NODE_ENV`, and the global does not exist.
     const saved = globalThis.process;
@@ -184,7 +168,6 @@ describe('a page with no bundler and no `process`', () => {
       expect(typeof globalThis.process).toBe('undefined');
       open({ document: { collection: 'pages', id: '1' } });
       post({ data: { id: '1', title: 'Typed' } });
-      new OriginDetector({ referrer: 'https://admin.example.com/admin' });
     } finally {
       globalThis.process = saved;
     }

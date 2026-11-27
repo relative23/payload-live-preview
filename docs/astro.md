@@ -52,18 +52,18 @@ Astro evaluates `astro.config.mjs` before it loads `.env`, and `import.meta.env`
 
 `mode` selects how the runtime reaches a page. A static build has no request to decide on, so `'inline'` and `'loader'` are delivery choices and not authorization boundaries: neither changes a response header, carries a nonce or reads a draft, and the injected runtime does not start at all outside a preview frame. What an editor is shown is decided by whatever fetches the draft — see [authorization.md](authorization.md). `'middleware'` is the mode that runs per request, and the one the policy engine gates; for that reason `'inline'` and `'loader'` refuse `authorizePreview`, `shouldInject` and `authorizePreviewModule` at startup instead of leaving a hook in the configuration that nothing would call.
 
-**`'inline'` (the default)** bakes the runtime into every page at build time. It works without a server, and every ordinary visitor downloads about 44 KiB gzip with the default inline script for a feature only an editor uses. 3.0 makes `'loader'` the default (ADR 0007, row 33): since 2.4 an integration without `mode` says so once in development, with the bytes of both deliveries for the project's own options. Write `mode: 'inline'` to keep this delivery.
+**`'loader'` (the default)** keeps the pages small. Each page carries a bootstrap of a few hundred bytes that checks the preview context and fetches the runtime as a content-hashed, SRI-verified asset only inside a preview. The asset is published once at `/_payload-live-preview/runtime.<hash>.js` (below Astro's `base`, when one is set), cached across every page, and identical for every site on the same package version and runtime artifact (`runtime: LEAN_RUNTIME` is another file), so it carries no deployment secret. `astro dev` serves the same path from memory. The price is one extra request the first time an editor opens a preview.
 
-**`'loader'`** keeps the pages small. Each page carries a bootstrap of a few hundred bytes that checks the preview context and fetches the runtime as a content-hashed, SRI-verified asset only inside a preview. The asset is published once at `/_payload-live-preview/runtime.<hash>.js` (below Astro's `base`, when one is set), cached across every page, and identical for every site on the same package version and runtime artifact (`runtime: LEAN_RUNTIME` is another file), so it carries no deployment secret. `astro dev` serves the same path from memory. The price is one extra request the first time an editor opens a preview.
+Under a strict CSP the asset is a same-origin script with an `integrity` attribute and needs no `'unsafe-inline'`. The bootstrap is an inline `<script>` without a nonce, because a static build has no request to derive one from; its content is deterministic for a package version and configuration, so a `'sha256-…'` source expression covers it.
+
+**`'inline'`** bakes the runtime into every page at build time. It works without a second request, and every ordinary visitor downloads about 44 KiB gzip with the default inline script for a feature only an editor uses. It was the default until 3.0 (ADR 0007, row 33); name it to keep that delivery:
 
 ```ts
 livePreview({
-  mode: 'loader',
+  mode: 'inline',
   allowedOrigins: [process.env.PUBLIC_PAYLOAD_ADMIN_ORIGIN],
 }),
 ```
-
-Under a strict CSP the asset is a same-origin script with an `integrity` attribute and needs no `'unsafe-inline'`. The bootstrap is an inline `<script>` without a nonce, because a static build has no request to derive one from; its content is deterministic for a package version and configuration, so a `'sha256-…'` source expression covers it.
 
 **`'middleware'`** injects at request time on pages that render on demand (`output: 'server'`, or `prerender = false` under an adapter), into a response the server authorized and no other. The integration serializes its options into the build, so it cannot carry the `authorizePreview` hook as a function; it takes the module that exports it ([ADR 0024](architecture/0024-authorization-by-module-reference.md)):
 

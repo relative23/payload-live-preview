@@ -12,7 +12,6 @@ import { inlineScriptConfig } from '@adapters/shared/policy-options';
 import { refuseRemovedOptions } from '@/types/removed-options';
 import type { LivePreviewAstroOptions } from './types';
 import { ASTRO_PAGE } from './page-facts';
-import { isDevelopmentProcess, warnOnce } from '@/types/dev-warning';
 import { islandModuleTable, writeIslandTable } from './island-table';
 
 // Local shims keep `astro` a runtime-optional peer.
@@ -136,7 +135,7 @@ function requestFunctionsOf(options: object): {
  * options); here the refusal names where each can run.
  */
 function refuseRequestFunctions(options: LivePreviewAstroOptions): void {
-  const mode = options.mode === 'loader' ? 'loader' : 'inline';
+  const mode = options.mode === 'inline' ? 'inline' : 'loader';
   const given = requestFunctionsOf(options);
   if (given.authorizePreview !== undefined) {
     throw new Error(
@@ -195,42 +194,18 @@ export function livePreview(options: LivePreviewAstroOptions = {}): AstroIntegra
         }
         refuseRequestFunctions(options);
         if (options.autoInject === false) return;
-        if (options.mode === 'loader') {
-          setupLoaderMode(ctx, options);
+        // The whole runtime in every page is what a project asks for by name (ADR 0007, row 33).
+        if (options.mode === 'inline') {
+          ctx.injectScript(
+            'head-inline',
+            generateInlineScript(inlineScriptConfig(options, ASTRO_PAGE)),
+          );
           return;
         }
-        const script = generateInlineScript(inlineScriptConfig(options, ASTRO_PAGE));
-        if (options.mode === undefined && isDevelopmentProcess()) {
-          warnInlineDefault(ctx, options, script);
-        }
-        ctx.injectScript('head-inline', script);
+        setupLoaderMode(ctx, options);
       },
     },
   };
-}
-
-/**
- * The default 3.0 changes (ADR 0007, row 33), with the two sizes measured on
- * this project's own options rather than quoted, so the numbers never go stale.
- */
-function warnInlineDefault(
-  ctx: AstroConfigSetupContext,
-  options: LivePreviewAstroOptions,
-  inline: string,
-): void {
-  const asset = loaderAsset(ctx.config?.base ?? '/', options.runtime);
-  const loader = generateLoaderScript(inlineScriptConfig(options, ASTRO_PAGE), {
-    runtimeSrc: asset.urlPath,
-    integrity: asset.integrity,
-  });
-  const size = (text: string): string => String(new TextEncoder().encode(text).length);
-  warnOnce(
-    'astro-inline-default',
-    `\`livePreview()\` without \`mode\` delivers inline: ${size(inline)} bytes of runtime in ` +
-      `every page, against a ${size(loader)}-byte bootstrap with \`mode: 'loader'\`. 3.0 makes ` +
-      "`loader` the default; set `mode: 'inline'` to keep this, or `mode: 'loader'` now " +
-      '(ADR 0007, row 33).',
-  );
 }
 
 /**
@@ -243,9 +218,8 @@ function setupLoaderMode(ctx: AstroConfigSetupContext, options: LivePreviewAstro
   // is injected anyway; that 404 is invisible until an editor opens a preview.
   if (ctx.updateConfig === undefined) {
     throw new Error(
-      "payload-live-preview: mode 'loader' needs Astro's updateConfig hook " +
-        '(Astro >= 4) to publish the runtime asset. Upgrade Astro or use the ' +
-        'default inline mode.',
+      "payload-live-preview: mode 'loader', the default, needs Astro's updateConfig hook " +
+        "to publish the runtime asset. Upgrade Astro or set `mode: 'inline'`.",
     );
   }
 

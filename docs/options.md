@@ -74,7 +74,7 @@ writes the rows it stood for into the options, except the two 3.0 cannot keep:
 | `scriptSrcExtra`           | —      | —             | yes                                                                 | —                        | `[]`                                                |
 | `delivery`                 | —      | —             | yes (Astro uses `mode`)                                             | —                        | `'inline'`                                          |
 | `assetPath`                | —      | —             | yes, with `delivery: 'asset'`                                       | —                        | `/payload-live-preview`                             |
-| `mode`                     | —      | —             | Astro integration only                                              | —                        | `'inline'`                                          |
+| `mode`                     | —      | —             | Astro integration only                                              | —                        | `'loader'`                                          |
 | `runtime`                  | —      | yes           | yes                                                                 | —                        | — (the full runtime)                                |
 | `nonce`                    | —      | —             | render helpers only                                                 | —                        | —                                                   |
 
@@ -173,16 +173,16 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 157 934 for authorized inline delivery. It fetches one
+  (ADR 0015), against 157 935 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the
   integrity check and what a proxy must not do to the file are in
   [docs/deployment.md](deployment.md#the-runtime-as-a-cached-asset).
-- `mode` (Astro): `'inline'` bakes the runtime into every page at build time;
-  `'loader'` injects a small bootstrap that fetches the runtime as a hashed,
-  SRI-verified asset only inside a preview. Neither decides anything per
-  request. `authorizePreview` and `shouldInject` are functions that would have
+- `mode` (Astro): `'loader'`, the default since 3.0, injects a small bootstrap
+  that fetches the runtime as a hashed, SRI-verified asset only inside a
+  preview; `'inline'` bakes the runtime into every page at build time. Neither
+  decides anything per request. `authorizePreview` and `shouldInject` are functions that would have
   to run on one, so both modes refuse them at startup, as they refuse
   `authorizePreviewModule`, and the message names where they can run. The
   options that only describe a request (`previewSignals`,

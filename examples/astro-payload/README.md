@@ -60,7 +60,7 @@ export default defineConfig({
       // re-fetches the populated document, and mergeDepth is required with it.
       serverURL: ADMIN,
       mergeDepth: 1,
-      // Without `mode`, the whole runtime is inlined into every page.
+      // The default since 3.0, named here; `'inline'` bakes the whole runtime into every page.
       mode: 'loader',
     }),
   ],

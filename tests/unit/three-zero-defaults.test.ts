@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
-import { livePreview } from '@adapters/astro/index';
 import { livePreviewScriptProps } from '@adapters/nextjs/index';
 import { resolvePolicyOptions } from '@adapters/shared/policy-options';
 import { generateInlineScript } from '@inline/generator';
@@ -8,11 +7,10 @@ import { resetDevWarnings } from '@/types/dev-warning';
 /**
  * The server half of "3.0 announces itself" (ADR 0026, 2026-11-03): once per
  * process in development, never in production, an adapter or the generator
- * names a merge without a deadline (ADR 0007, row 27), and the Astro integration
- * names the inline default 3.0 replaces with `loader` (row 33). What 3.0 already
- * did is here too: `livePreviewScriptProps()` builds a bootstrap and refuses
- * inline delivery (row 32). The sizes are measured from what was generated, not
- * quoted.
+ * names a merge without a deadline (ADR 0007, row 27). What 3.0 already did is
+ * here too: `livePreviewScriptProps()` builds a bootstrap and refuses inline
+ * delivery (row 32). The Astro integration's loader default (row 33) is held
+ * where loader mode is, in `adapters/astro-loader-mode.test.ts`.
  */
 
 const ADMIN = 'https://admin.example.com';
@@ -76,41 +74,6 @@ describe('livePreviewScriptProps() without inline delivery (row 32)', () => {
     expect(() => untyped()).toThrow(refusal);
     vi.stubEnv('NODE_ENV', 'production');
     expect(() => untyped(options)).toThrow(refusal);
-    expect(said()).toEqual([]);
-  });
-});
-
-describe('Astro without `mode` (row 33)', () => {
-  const options = { allowedOrigins: [ADMIN], mergeTimeoutMs: 10_000 } as const;
-
-  function setUp(extra: Record<string, unknown> = {}): string {
-    const injectScript = vi.fn();
-    livePreview({ ...options, ...extra }).hooks['astro:config:setup']({
-      injectScript,
-      updateConfig: () => undefined,
-      config: { base: '/' },
-    });
-    return String(injectScript.mock.calls[0]?.[1] ?? '');
-  }
-
-  it('names the inline bytes against the loader bootstrap, both measured, once', () => {
-    const inline = setUp();
-    setUp();
-    const bytes = new TextEncoder().encode(inline).length;
-    expect(said()).toHaveLength(1);
-    const [line] = said();
-    expect(line).toContain(`delivers inline: ${String(bytes)} bytes of runtime in every page`);
-    const loader = Number(/against a (\d+)-byte bootstrap/u.exec(line ?? '')?.[1]);
-    expect(loader).toBeGreaterThan(0);
-    expect(loader).toBeLessThan(2_000);
-    expect(line).toContain("3.0 makes `loader` the default; set `mode: 'inline'` to keep this");
-  });
-
-  it('says nothing once `mode` is set, either way, or in production', () => {
-    setUp({ mode: 'inline' });
-    setUp({ mode: 'loader' });
-    vi.stubEnv('NODE_ENV', 'production');
-    setUp();
     expect(said()).toEqual([]);
   });
 });

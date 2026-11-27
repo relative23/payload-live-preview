@@ -178,7 +178,7 @@ export default defineConfig({
 });
 ```
 
-The default `inline` mode writes the runtime into every page at build time, where it starts only inside the admin's preview frame. `mode: 'middleware'` decides per request with an `authorizePreview` module, as the adapters below do: [docs/astro.md](docs/astro.md).
+By default every page carries a bootstrap of a few hundred bytes, which fetches the runtime as a content-hashed asset only inside the admin's preview frame (`mode: 'loader'`). `mode: 'inline'` writes the whole runtime into every page instead, and `mode: 'middleware'` decides per request with an `authorizePreview` module, as the adapters below do: [docs/astro.md](docs/astro.md).
 
 ### Next.js (App Router)
 

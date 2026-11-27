@@ -211,3 +211,10 @@ A removed form does not warn any more. Where a JavaScript config can still pass 
 what the site does, it is refused at startup with the same sentence the warning
 gave, as an error: ADR 0007 has the list under the same date. The keys of the
 removed warnings are no longer written to the realm.
+
+**3.0 takes the defaults it announced (2026-11-27).** The notices of rows 22,
+26, 31 and 33 are gone with the defaults they named: a detector trusts a
+referrer only when asked to, a hook names its document and leaves alone an
+update without its locale, and the Astro integration delivers through
+`'loader'`. Row 18's warning stays for a render that asks for `requireDocument:
+false`, and row 27's notice stays until the deadline is set.

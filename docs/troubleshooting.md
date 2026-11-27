@@ -78,7 +78,7 @@ error instead points at the adapter's startup check: an adapter that decides per
 to start without `authorizePreview`, without non-empty `allowedOrigins` (`https:`
 ones in production), or with `'referer'` among the `previewSignals`, and
 the error names the option. Astro's
-`livePreview()` integration in `mode: 'inline'` (the default) or `'loader'`
+`livePreview()` integration in `mode: 'loader'` (the default) or `'inline'`
 checks none of this; it refuses `authorizePreview`, `shouldInject` and
 `authorizePreviewModule` at startup instead, because those modes never call
 them ([migration.md](migration.md#upgrading-to-21)).

@@ -26,9 +26,9 @@ describe('livePreview integration — inline mode', () => {
     expect(livePreview().name).toBe('payload-live-preview');
   });
 
-  it('injects the script via head-inline by default', () => {
+  it("injects the whole runtime via head-inline where `mode: 'inline'` asks for it", () => {
     const injectScript = vi.fn();
-    livePreview({ allowedOrigins: [ADMIN] }).hooks['astro:config:setup']({
+    livePreview({ mode: 'inline', allowedOrigins: [ADMIN] }).hooks['astro:config:setup']({
       injectScript,
     });
     expect(injectScript).toHaveBeenCalledOnce();
@@ -48,7 +48,9 @@ describe('livePreview integration — inline mode', () => {
 
   it('forwards debounce, heartbeat, and debug options into the injected script', () => {
     const injectScript = vi.fn();
-    livePreview({ debug: true, debounceMs: 250, heartbeatMs: 60_000 }).hooks['astro:config:setup']({
+    livePreview({ mode: 'inline', debug: true, debounceMs: 250, heartbeatMs: 60_000 }).hooks[
+      'astro:config:setup'
+    ]({
       injectScript,
     });
     const config = injectedConfig(injectScript.mock.calls[0]![1] as string);
@@ -59,7 +61,7 @@ describe('livePreview integration — inline mode', () => {
 
   it('forwards skipUnchanged into the trailing wire slot', () => {
     const injectScript = vi.fn();
-    livePreview({ skipUnchanged: true }).hooks['astro:config:setup']({
+    livePreview({ mode: 'inline', skipUnchanged: true }).hooks['astro:config:setup']({
       injectScript,
     });
     expect(injectedConfig(injectScript.mock.calls[0]![1] as string)[14]).toBe(true);
@@ -102,7 +104,7 @@ describe('livePreview integration — hooks that need a request', () => {
   });
 
   it.each([
-    ['inline', undefined],
+    ['loader', undefined],
     ['inline', 'inline' as const],
     ['loader', 'loader' as const],
   ])('refuses authorizePreview in %s delivery, naming where it can run (mode %s)', (name, mode) => {
@@ -117,8 +119,8 @@ describe('livePreview integration — hooks that need a request', () => {
   });
 
   it.each([
-    ['inline', undefined],
-    ['loader', 'loader' as const],
+    ['loader', undefined],
+    ['inline', 'inline' as const],
   ])('refuses shouldInject in %s delivery, naming where it can run (mode %s)', (name, mode) => {
     expect(() =>
       setup(untyped({ ...(mode === undefined ? {} : { mode }), shouldInject: decide })),

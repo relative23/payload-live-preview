@@ -88,7 +88,9 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // session requires `document` and leaves alone an update without the locale it names, so the two
 // notices that announced both and the `requireLocale` switch are gone, and a refusal of what a
 // JavaScript caller can still pass came in. No request path changes.
-export const REVIEWED_SCOPE_LINES = 1137;
+// 2026-11-27 (3.0, ADR 0007 row 22): 1 137 → 1 121. origin.ts −16: a detector trusts a referrer
+// only where `enableReferrerDetection: true` asks for it, and the notice that announced it is gone.
+export const REVIEWED_SCOPE_LINES = 1121;
 
 interface OurFile {
   readonly file: string;

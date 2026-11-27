@@ -12,11 +12,12 @@ export interface LivePreviewAstroOptions extends Omit<
   'authorizePreview' | 'shouldInject'
 > {
   /**
-   * How the integration registers. `'inline'` (default) bakes the runtime into
-   * every page and `'loader'` publishes it as a hashed asset and injects a
-   * bootstrap — Astro emits and serves that asset itself, through a Vite
+   * How the integration registers. `'loader'` (default since 3.0) publishes the
+   * runtime as a hashed asset and injects a bootstrap that fetches it only in a
+   * preview context — Astro emits and serves that asset itself, through a Vite
    * plugin, which is why this is a mode here and the `delivery` option
-   * elsewhere: there is no route to mount.
+   * elsewhere: there is no route to mount. `'inline'` bakes the runtime into
+   * every page.
    *
    * `'middleware'` registers the request-time middleware. It serializes its
    * options into the build, so `authorizePreview` and `shouldInject` cannot
