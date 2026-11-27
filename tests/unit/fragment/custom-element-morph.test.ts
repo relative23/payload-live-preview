@@ -43,6 +43,7 @@ function start(): LivePreviewRuntime {
     LIVE +
     '</section></main>';
   runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     root: document.querySelector('main')!,
     renderers: {
       text: {

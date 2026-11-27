@@ -13,6 +13,7 @@ import {
   NAVIGATION_REPLAY_SELECTOR,
   OWNER_ATTRIBUTE,
 } from './cache';
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import { ISLAND_ATTRIBUTE, ISLAND_SELECTOR } from './islands';
 
 export interface ObserverCallbacks {
@@ -29,7 +30,6 @@ export interface ObserverOptions {
 }
 
 const DEFAULT_DEBOUNCE_MS = 100;
-const DEFAULT_ROOT_MARGIN = '200px';
 const ASTRO_SSR_ATTRIBUTE = 'ssr';
 /** `nodeType` is stable across realms; the global `Node` constructor is not. */
 const ELEMENT_NODE = 1;
@@ -60,7 +60,7 @@ export class ObserverManager {
   constructor(callbacks: ObserverCallbacks, options: ObserverOptions = {}) {
     this.callbacks = callbacks;
     this.debounceMs = options.mutationDebounceMs ?? DEFAULT_DEBOUNCE_MS;
-    this.rootMargin = options.intersectionRootMargin ?? DEFAULT_ROOT_MARGIN;
+    this.rootMargin = options.intersectionRootMargin ?? V2_RUNTIME_DEFAULTS.intersectionRootMargin;
   }
 
   /** Observe `root`; a repeated start hands over cleanly. */

@@ -283,7 +283,7 @@ export interface InspectionScheduler {
 
 // @public
 export class LivePreviewClient {
-    constructor(rawConfig?: LivePreviewClientConfig);
+    constructor(config?: LivePreviewClientConfig);
     destroy(): Promise<void>;
     get destroyed(): boolean;
     // (undocumented)

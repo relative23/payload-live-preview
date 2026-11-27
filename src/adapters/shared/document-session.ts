@@ -21,6 +21,7 @@ import { observeCapabilities, PAYLOAD_2_REFUSED } from '@core/protocol/protocol-
 import { isDevMode } from '@detection/environment';
 import { noticeOnce, type BundlerEnv } from '@detection/notice';
 import { OriginDetector } from '@detection/origin';
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import type { PayloadLivePreviewMessage } from '@/types/payload-protocol';
 
 /**
@@ -179,7 +180,9 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
       ...(options.allowedOrigins !== undefined
         ? { additionalOrigins: options.allowedOrigins }
         : {}),
-      enableReferrerDetection: options.enableReferrerDetection ?? false,
+      ...(options.enableReferrerDetection !== undefined
+        ? { enableReferrerDetection: options.enableReferrerDetection }
+        : {}),
       ...(options.enableLocalhostMatching !== undefined
         ? { enableLocalhostMatching: options.enableLocalhostMatching }
         : {}),
@@ -202,7 +205,7 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
         // A save is the admin's business; the document itself arrives as an
         // update like any other.
       },
-      sourcePolicy: options.eventSourcePolicy ?? 'parent-or-opener',
+      sourcePolicy: options.eventSourcePolicy ?? V2_RUNTIME_DEFAULTS.eventSourcePolicy,
     });
     this.#target = options.target;
     this.#document = namedDocument(options);

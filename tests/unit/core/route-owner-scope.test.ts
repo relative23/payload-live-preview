@@ -56,6 +56,7 @@ function patched(): Promise<void> {
 }
 function start(route: RouteStrategy, scopeBindingsByOwner: boolean): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],

@@ -16,7 +16,7 @@ import type { LivePreviewPlugin } from '@plugins/types';
 import { isDevMode, isInPreviewContext } from '@detection/environment';
 import { buildBuiltinRenderers } from '@field-types/index';
 import { definedOnly } from '@/types/defined-only';
-import { withProfileDefaults, type LivePreviewClientConfig } from './config';
+import { refuseRemovedClientOptions, type LivePreviewClientConfig } from './config';
 import { noopDiagnostic, safeConsoleDebug } from '@core/diagnostics';
 
 /** `T` with every property optional and `undefined`-able, for literals built from optional inputs. */
@@ -34,8 +34,8 @@ export class LivePreviewClient {
   #tornDown = false;
   #destroyPromise: Promise<void> | null = null;
 
-  constructor(rawConfig: LivePreviewClientConfig = {}) {
-    const config = withProfileDefaults(rawConfig);
+  constructor(config: LivePreviewClientConfig = {}) {
+    refuseRemovedClientOptions(config);
     const serverURL = config.serverURL ?? '';
     assertMergeDepthExplicit({ serverURL, mergeDepth: config.mergeDepth });
     const debug = config.debug ?? isDevMode();

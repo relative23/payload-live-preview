@@ -2,6 +2,7 @@
  * Fetching for `pll doctor`: the two probes, and the default fetch that talks
  * to a real server. Not in the barrel so it stays in the coverage report.
  */
+import { V2_ADAPTER_DEFAULTS } from '@/types/defaults-profile';
 import { analyzeProbe } from './analyze';
 import type { DoctorReport, DoctorResponse } from './types';
 
@@ -41,13 +42,6 @@ export interface RunDoctorOptions {
    */
   readonly tokenQueryParam?: string | undefined;
 }
-
-/**
- * The query parameters an adapter reads as preview intent by default; the same
- * list as `DEFAULT_QUERY_PARAMS` in adapters/shared/preview-request.ts, which
- * `previewQueryParams` replaces rather than extends.
- */
-const DEFAULT_INTENT_PARAMS: readonly string[] = ['preview', 'draft', 'livePreview'];
 
 function isIntentValue(value: string): boolean {
   return value === 'true' || value === '1';
@@ -255,7 +249,7 @@ export async function runDoctor(options: RunDoctorOptions): Promise<DoctorReport
   const fetchImpl = options.fetchImpl ?? createDefaultFetch();
   const params =
     options.previewQueryParams === undefined || options.previewQueryParams.length === 0
-      ? DEFAULT_INTENT_PARAMS
+      ? V2_ADAPTER_DEFAULTS.previewQueryParams
       : options.previewQueryParams;
   const tokenParam = options.tokenQueryParam ?? TOKEN_PARAM;
   // No referer, no intent parameter and no credentials on the visitor probe:

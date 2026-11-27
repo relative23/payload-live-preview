@@ -62,6 +62,7 @@ function start(
   } = {},
 ) {
   runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: options.renderers ?? { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],

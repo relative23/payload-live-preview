@@ -70,6 +70,7 @@ function start(
   options: { scopeBindingsByOwner?: boolean } = {},
 ): void {
   runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     ...options,
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,

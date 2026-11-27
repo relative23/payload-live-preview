@@ -23,7 +23,7 @@ writes the rows it stood for into the options, except the two 3.0 cannot keep:
 | ------------------------- | ------ | ------------- | ------------------------------------------------------------------- | ------------------------ | --------------------------------------------------- |
 | `allowedOrigins`          | yes    | yes           | yes; needed non-empty, `https:` in production                       | —                        | `[]`                                                |
 | `serverURL`               | yes    | yes           | yes                                                                 | yes, required            | — (no REST merge)                                   |
-| `apiRoute`                | yes    | yes           | yes                                                                 | yes                      | `/api`                                              |
+| `apiRoute`                | yes    | yes           | yes                                                                 | yes                      | `'/api'`                                            |
 | `mergeDepth`              | yes    | yes           | yes                                                                 | as `depth`, required     | — (required with `serverURL`; `0` for none)         |
 | `mergeTimeoutMs`          | yes    | yes           | yes                                                                 | —                        | off                                                 |
 | `internalLinkPattern`     | yes    | yes           | yes                                                                 | —                        | off                                                 |
@@ -73,7 +73,7 @@ writes the rows it stood for into the options, except the two 3.0 cannot keep:
 | `frameAncestorsExtra`     | —      | —             | yes                                                                 | —                        | `[]`                                                |
 | `scriptSrcExtra`          | —      | —             | yes                                                                 | —                        | `[]`                                                |
 | `delivery`                | —      | —             | yes (Astro uses `mode`)                                             | —                        | `'inline'`                                          |
-| `assetPath`               | —      | —             | yes, with `delivery: 'asset'`                                       | —                        | `/payload-live-preview`                             |
+| `assetPath`               | —      | —             | yes, with `delivery: 'asset'`                                       | —                        | `'/payload-live-preview'`                           |
 | `mode`                    | —      | —             | Astro integration only                                              | —                        | `'loader'`                                          |
 | `runtime`                 | —      | yes           | yes                                                                 | —                        | — (the full runtime)                                |
 | `nonce`                   | —      | —             | render helpers only                                                 | —                        | —                                                   |
@@ -174,7 +174,7 @@ Notes on the rows that need one:
   once it finds itself in a preview context. The current Next.js fixture's
   delivery, held by `tests/e2e/specs/public-response.spec.ts`, is 1 344 bytes
   in its direct script element, including the arming for React's first commit
-  (ADR 0015), against 157 487 for authorized inline delivery. It fetches one
+  (ADR 0015), against 157 260 for authorized inline delivery. It fetches one
   response the browser may
   keep for a year, because the file name is the hash of its contents. It needs
   the asset route mounted, which each adapter page shows; the caching, the

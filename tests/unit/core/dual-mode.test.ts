@@ -1,14 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/session/lifecycle';
-import { withProfileDefaults } from '@client/config';
 import type { FieldRenderer } from '@core/types';
 
 /**
  * The row `skipUnchanged` in both states from one parametrised suite: the
  * default, and `false` written out, which is what 1.x did and what the
- * removed `defaults: 'v1'` stood for. The default is resolved through the real
- * `withProfileDefaults`, the path a client's configuration takes.
+ * removed `defaults: 'v1'` stood for. The default is the runtime's own: the
+ * option is left out, and the runtime takes its row of the defaults table.
  */
 
 class IO implements IntersectionObserver {
@@ -61,9 +60,8 @@ function afterUpdate(): Promise<void> {
   });
 }
 
-/** Build a runtime with the row as the client resolves it. */
+/** Build a runtime with the row given, or left out. */
 function startFor(skipUnchanged: false | undefined): LivePreviewRuntime {
-  const config = withProfileDefaults(skipUnchanged === undefined ? {} : { skipUnchanged });
   runtime = new LivePreviewRuntime({
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
@@ -74,7 +72,7 @@ function startFor(skipUnchanged: false | undefined): LivePreviewRuntime {
     enableVisibilityGate: false,
     enableA11y: false,
     warn: () => {},
-    skipUnchanged: config.skipUnchanged === true,
+    ...(skipUnchanged === undefined ? {} : { skipUnchanged }),
     // Held at 'any': jsdom's window is its own parent, so 'parent-or-opener'
     // cannot be exercised here — the message-bus unit tests cover that flip
     // with a mocked parent. This suite isolates the skipUnchanged row.

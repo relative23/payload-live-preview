@@ -54,6 +54,8 @@ export function makeRuntime(
   overrides: Partial<ConstructorParameters<typeof LivePreviewRuntime>[0]> = {},
 ): LivePreviewRuntime {
   return new LivePreviewRuntime({
+    // These suites post from their own window, which is neither the parent nor the opener.
+    eventSourcePolicy: 'any',
     renderers: { text: textRenderer() },
     originMatcher: (o) => o === TRUSTED,
     readyTargets: [TRUSTED],

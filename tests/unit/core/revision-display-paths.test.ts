@@ -22,6 +22,7 @@ function start(html: string, overrides: Partial<Options> = {}) {
   const emitter = new EventEmitter();
   const events: Display[] = [];
   const runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: { text: textRenderer() },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],

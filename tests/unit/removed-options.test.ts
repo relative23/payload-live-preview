@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createPreviewPolicy } from '@adapters/shared/policy';
 import { resolvePolicyOptions, type PreviewPolicyOptions } from '@adapters/shared/policy-options';
-import { withProfileDefaults, type LivePreviewClientConfig } from '@client/config';
+import { refuseRemovedClientOptions, type LivePreviewClientConfig } from '@client/config';
 import { generateInlineScript, generateLoaderScript } from '@inline/generator';
 import type { InlineScriptConfig } from '@/types/inline-config';
 
@@ -35,7 +35,9 @@ describe('an option 3.0 removed is refused, not ignored', () => {
     expect(() => resolvePolicyOptions(removed as PreviewPolicyOptions)).toThrow(refusal);
     expect(() => generateInlineScript(removed as InlineScriptConfig)).toThrow(refusal);
     expect(() => generateLoaderScript(removed as InlineScriptConfig, target)).toThrow(refusal);
-    expect(() => withProfileDefaults(removed as LivePreviewClientConfig)).toThrow(refusal);
+    expect(() => {
+      refuseRemovedClientOptions(removed as LivePreviewClientConfig);
+    }).toThrow(refusal);
   });
 
   it('refuses `strict: false` from an adapter, and before the rule it used to switch off (row 36)', () => {
@@ -65,9 +67,13 @@ describe('an option 3.0 removed is refused, not ignored', () => {
       expect(() => resolvePolicyOptions(removed as PreviewPolicyOptions)).toThrow(refusal);
       expect(() => generateInlineScript(removed as InlineScriptConfig)).toThrow(refusal);
       expect(() => generateLoaderScript(removed as InlineScriptConfig, target)).toThrow(refusal);
-      expect(() => withProfileDefaults(removed as LivePreviewClientConfig)).toThrow(refusal);
+      expect(() => {
+        refuseRemovedClientOptions(removed);
+      }).toThrow(refusal);
       // Not set is not given: a config built with the key and no value starts.
-      expect(() => withProfileDefaults({ [before]: undefined })).not.toThrow();
+      expect(() => {
+        refuseRemovedClientOptions({ [before]: undefined });
+      }).not.toThrow();
     },
   );
 
@@ -82,6 +88,8 @@ describe('an option 3.0 removed is refused, not ignored', () => {
     expect(() => resolvePolicyOptions({ onUnfaithfulPatch: 'ignore' })).not.toThrow();
     expect(() => generateInlineScript({ onUnfaithfulPatch: 'ignore' })).not.toThrow();
     expect(() => resolvePolicyOptions({ defaults: 'v2', strict: true })).not.toThrow();
-    expect(() => withProfileDefaults({ defaults: 'v2' })).not.toThrow();
+    expect(() => {
+      refuseRemovedClientOptions({ defaults: 'v2' });
+    }).not.toThrow();
   });
 });

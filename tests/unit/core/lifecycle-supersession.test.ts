@@ -12,6 +12,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       fireMessage({ type: 'payload-live-preview', data: { title: 'newer' } });
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -35,6 +36,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       e.cancel();
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
       readyTargets: [TRUSTED],
@@ -54,6 +56,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
     const onDocumentSave = vi.fn();
     emitter.on('documentSave', onDocumentSave);
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
       readyTargets: [TRUSTED],
@@ -75,6 +78,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       if (data.fields['title'] === 'A') await releaseFirst.promise;
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [TRUSTED],
@@ -112,6 +116,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       onceHandlers.push(String(data.fields['title']));
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [TRUSTED],
@@ -149,6 +154,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
     });
     let reentered = false;
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       resolveRenderer: () => {
         if (!reentered) {
@@ -190,6 +196,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       },
     };
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: reentrantRenderer },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -234,6 +241,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       },
     };
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: renderer },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -275,6 +283,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       },
     };
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: renderer },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],

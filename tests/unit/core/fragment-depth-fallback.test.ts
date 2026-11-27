@@ -48,6 +48,7 @@ describe('fragment depth refusal fallback', () => {
       emitter.once('error', resolve);
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: {
         text: {
           name: 'text',

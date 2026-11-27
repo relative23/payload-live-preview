@@ -7,12 +7,13 @@
  * inside.
  */
 
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import { A11yAnnouncer } from '../bindings/a11y';
 import { MessageBus } from '../protocol/message-bus';
 import type { RuntimeOptions } from './runtime-options';
 
 export function createA11y(options: RuntimeOptions): A11yAnnouncer | null {
-  if (options.enableA11y === false) return null;
+  if (!(options.enableA11y ?? V2_RUNTIME_DEFAULTS.enableA11y)) return null;
   const root = options.root;
   const targetDocument =
     root === undefined ? undefined : isDocumentRoot(root) ? root : root.ownerDocument;

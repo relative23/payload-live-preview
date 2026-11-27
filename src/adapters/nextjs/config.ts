@@ -24,6 +24,8 @@
  * policy and only once the engine has authorized the request.
  */
 
+import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
+
 /** The slice of `next.config` this touches; everything else is passed through. */
 export interface NextConfigLike {
   readonly allowedDevOrigins?: readonly string[];
@@ -54,8 +56,6 @@ export interface WithLivePreviewOptions {
   readonly allowDevOrigins?: boolean;
 }
 
-const DEFAULT_QUERY_PARAMS: readonly string[] = ['preview', 'draft', 'livePreview'];
-
 function hostOf(origin: string): string | undefined {
   try {
     return new URL(origin).host;
@@ -66,7 +66,7 @@ function hostOf(origin: string): string | undefined {
 
 /** One rule per intent parameter: Next matches `has` entries as a conjunction. @internal */
 export function previewHeaderRules(options: WithLivePreviewOptions): readonly NextHeaderRule[] {
-  return (options.previewQueryParams ?? DEFAULT_QUERY_PARAMS).map((key) => ({
+  return (options.previewQueryParams ?? V2_ADAPTER_DEFAULTS.previewQueryParams).map((key) => ({
     source: '/:path*',
     // Next anchors `value` as a regular expression (`^${value}$`, matchHas in
     // next/dist/shared/lib/router/utils/prepare-destination). The runtime reads

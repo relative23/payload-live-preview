@@ -12,6 +12,7 @@ import {
 } from '@security/csp';
 import type { PreviewAuthorizationOutcome } from '@security/preview-verdict';
 import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
+import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import { refuseRemovedOptions } from '@/types/removed-options';
 import { wrapWithScriptTag } from '@inline/generator';
@@ -27,11 +28,11 @@ export type { PreviewAuthorizationHookResult } from './options';
 /** How the adapter manages Content-Security-Policy, normalised. */
 export type CspMode = false | 'frame-ancestors' | 'full';
 
-/** `manageCsp` normalised: unset and `true` both mean frame-ancestors only. */
+/** `manageCsp` normalised: unset and `true` both mean the default, frame-ancestors only. */
 export function normalizeCspMode(value: PreviewPolicyOptions['manageCsp']): CspMode {
   if (value === false) return false;
   if (value === 'full') return 'full';
-  return 'frame-ancestors';
+  return V2_ADAPTER_DEFAULTS.manageCsp;
 }
 
 /** Whether the request shows preview intent under the options; `inject: 'always'` counts as intent. */
@@ -41,7 +42,7 @@ export function previewIntentFor(
 ): boolean {
   const signals = resolvePolicyOptions(options).previewSignals;
   return (
-    (options.inject ?? 'preview-only') === 'always' ||
+    (options.inject ?? V2_ADAPTER_DEFAULTS.inject) === 'always' ||
     hasPreviewIntent(request, {
       ...(options.previewQueryParams !== undefined
         ? { queryParams: options.previewQueryParams }
@@ -86,7 +87,7 @@ export function buildPreviewCsp(
   if (mode === 'full') {
     additions['script-src'] = buildScriptSrcWithNonce(nonce, {
       self: true,
-      strictDynamic: options.strictDynamic ?? false,
+      strictDynamic: options.strictDynamic ?? V2_ADAPTER_DEFAULTS.strictDynamic,
       ...(options.scriptSrcExtra !== undefined ? { extra: options.scriptSrcExtra } : {}),
     });
   }
@@ -152,7 +153,7 @@ export function createPreviewPolicy(
   assertCspSources(options);
   assertStrictConfiguration(options);
   const cspMode = normalizeCspMode(options.manageCsp);
-  const autoInject = options.autoInject ?? true;
+  const autoInject = options.autoInject ?? V2_ADAPTER_DEFAULTS.autoInject;
   let body: string | undefined;
   const scriptBody = (): string => {
     body ??= renderScriptBody(options, facts);

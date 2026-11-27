@@ -18,6 +18,7 @@ async function contextSeenBy(options: {
     },
   };
   const runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: { text: renderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],
@@ -39,7 +40,7 @@ describe('LivePreviewRuntime — the sanitizer policy rides in the render contex
     expect((await contextSeenBy({ sanitizerPolicy: policy }))?.sanitizerPolicy).toBe(policy);
   });
 
-  it('leaves the context without one when the option is absent, so the process default applies', async () => {
-    expect((await contextSeenBy({}))?.sanitizerPolicy).toBeUndefined();
+  it("hands over the strict policy when the option is absent: the default is the runtime's own", async () => {
+    expect((await contextSeenBy({}))?.sanitizerPolicy).toBe('strict');
   });
 });

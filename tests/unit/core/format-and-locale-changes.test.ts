@@ -22,6 +22,7 @@ afterEach(() => {
 
 function start(skipUnchanged: boolean): void {
   runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: buildBuiltinRenderers(),
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],

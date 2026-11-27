@@ -3,6 +3,7 @@
  * It never speaks postMessage or walks the DOM during an update. See ADR 0004.
  */
 
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import { createA11y, defaultSendReady } from './runtime-wiring';
 import { BindingWriter } from '../bindings/binding-writer';
 import { ElementCache, hasSameBindingIdentity } from '../bindings/cache';
@@ -23,7 +24,7 @@ import { isDocumentRoot, readDocumentBody, startWhenReady, type StartupHost } fr
 import { ConnectionState, HeartbeatTimer } from './state';
 import type { CachedElement } from '../types';
 import { UpdatePipeline } from '../update/update-pipeline';
-import { DEFAULT_DEBOUNCE_MS, UpdateScheduler } from '../update/update-scheduler';
+import { UpdateScheduler } from '../update/update-scheduler';
 
 export type { RuntimeOptions } from './runtime-options';
 export { resolveFieldValue } from '../update/field-value';
@@ -44,6 +45,7 @@ export class LivePreviewRuntime {
   private observedRoot: Node | null = null;
   private replayRetainedOnStart = false;
 
+  /** An omitted option takes its row of the defaults table, here and in the parts built below. */
   constructor(options: RuntimeOptions) {
     const { emitter, renderers } = options;
     const log = options.log === undefined ? noopDiagnostic : isolateDiagnostic(options.log);
@@ -130,9 +132,7 @@ export class LivePreviewRuntime {
         log('LP0501 message rejected:', reason, origin);
       },
       ...(options.validateToken !== undefined ? { validateToken: options.validateToken } : {}),
-      ...(options.eventSourcePolicy !== undefined
-        ? { sourcePolicy: options.eventSourcePolicy }
-        : {}),
+      sourcePolicy: options.eventSourcePolicy ?? V2_RUNTIME_DEFAULTS.eventSourcePolicy,
     });
     const merge = options.dataMerge;
     this.deps = {
@@ -143,7 +143,7 @@ export class LivePreviewRuntime {
       bus,
       connection: new ConnectionState(),
       heartbeat: new HeartbeatTimer({
-        ...(options.heartbeatMs !== undefined ? { timeoutMs: options.heartbeatMs } : {}),
+        timeoutMs: options.heartbeatMs ?? V2_RUNTIME_DEFAULTS.heartbeatMs,
         onTimeout: () => {
           this.onHeartbeatTimeout();
         },
@@ -154,7 +154,7 @@ export class LivePreviewRuntime {
       renderRichText: options.renderRichText,
       internalLinkPattern: options.internalLinkPattern,
       routeAfterSave: options.routeAfterSave === true,
-      sanitizerPolicy: options.sanitizerPolicy,
+      sanitizerPolicy: options.sanitizerPolicy ?? V2_RUNTIME_DEFAULTS.sanitizerPolicy,
       root,
       readyTargets:
         typeof options.readyTargets === 'function'
@@ -170,16 +170,17 @@ export class LivePreviewRuntime {
       a11y: createA11y(options),
       serverURL: merge?.serverURL,
       merger: merge === undefined ? null : new DataMerger({ ...merge, log }),
-      mergeWindowMs: options.debounceMs ?? DEFAULT_DEBOUNCE_MS,
-      scopeBindingsByOwner: options.scopeBindingsByOwner === true,
-      subfieldCoverage: options.subfieldCoverage ?? 'declared',
+      mergeWindowMs: options.debounceMs ?? V2_RUNTIME_DEFAULTS.debounceMs,
+      scopeBindingsByOwner:
+        options.scopeBindingsByOwner ?? V2_RUNTIME_DEFAULTS.scopeBindingsByOwner,
+      subfieldCoverage: options.subfieldCoverage ?? V2_RUNTIME_DEFAULTS.subfieldCoverage,
       lockedOrigin: options.lockedOrigin ?? ((): undefined => undefined),
-      skipUnchanged: options.skipUnchanged === true,
+      skipUnchanged: options.skipUnchanged ?? V2_RUNTIME_DEFAULTS.skipUnchanged,
       dependencies: options.dependencies ?? {},
       strategies: options.strategies ?? {},
-      revealEditedField: options.revealEditedField === true,
-      onUnfaithfulPatch: options.onUnfaithfulPatch ?? 'escalate',
-      autoBind: options.autoBind ?? 'off',
+      revealEditedField: options.revealEditedField ?? V2_RUNTIME_DEFAULTS.revealEditedField,
+      onUnfaithfulPatch: options.onUnfaithfulPatch ?? V2_RUNTIME_DEFAULTS.onUnfaithfulPatch,
+      autoBind: options.autoBind ?? V2_RUNTIME_DEFAULTS.autoBind,
       hydration: options.hydration,
     };
     this.writer = new BindingWriter(this.deps, this.state);

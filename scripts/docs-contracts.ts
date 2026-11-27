@@ -15,6 +15,7 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { INLINE_BUDGET } from './bundle-budgets';
+import { V2_ADAPTER_DEFAULTS, V2_RUNTIME_DEFAULTS } from '../src/types/defaults-profile';
 import {
   deliveryClaims,
   deliveryClaimViolations,
@@ -257,6 +258,54 @@ export function optionTableViolations(
   return violations;
 }
 
+/** A default as the options table writes it: `'strict'`, `50`, `['query']`. */
+function defaultLiteral(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(defaultLiteral).join(', ')}]`;
+  return typeof value === 'string' ? `'${value}'` : String(value);
+}
+
+/**
+ * The Default column of the options table, against the defaults table the code reads
+ * (`src/types/defaults-profile.ts`). A row's cell begins with the value as source writes it; what
+ * follows is prose. An option of the table that the page leaves out is a violation too.
+ */
+export function optionDefaultViolations(
+  text: string,
+  file: string,
+  defaults: Readonly<Record<string, unknown>>,
+): string[] {
+  const violations: string[] = [];
+  const lines = text.split('\n');
+  const header = lines.findIndex(
+    (line) => line.startsWith('| Option') && line.includes('| Default'),
+  );
+  if (header < 0) return violations;
+  const column = lines[header]!.split('|').findIndex((cell) => cell.trim() === 'Default');
+  const seen = new Set<string>();
+  for (let index = header + 2; index < lines.length; index += 1) {
+    const line = lines[index] ?? '';
+    if (!line.startsWith('|')) break;
+    const cells = line.split('|');
+    const name = (cells[1] ?? '').trim().replace(/`/gu, '');
+    if (!Object.hasOwn(defaults, name)) continue;
+    seen.add(name);
+    const wanted = `\`${defaultLiteral(defaults[name])}\``;
+    const says = (cells[column] ?? '').trim();
+    if (!says.startsWith(wanted)) {
+      violations.push(
+        `${file}:${String(index + 1)} the Default column says ${says} for ${name}, ` +
+          `the defaults table says ${wanted}`,
+      );
+    }
+  }
+  for (const name of Object.keys(defaults)) {
+    if (!seen.has(name)) {
+      violations.push(`${file} has no row for ${name}, which the defaults table sets`);
+    }
+  }
+  return violations;
+}
+
 /**
  * `initLivePreview()` returns `LivePreviewClient | null` — it returns `null`
  * where the runtime does not start, outside a preview frame — so a snippet that
@@ -472,6 +521,11 @@ async function main(): Promise<void> {
     violations.push(...setupSnippetViolations(text, name));
     violations.push(...readSnippetViolations(text, name, readMembers));
     violations.push(...optionTableViolations(text, name, clientMembers));
+    if (name === 'docs/options.md') {
+      violations.push(
+        ...optionDefaultViolations(text, name, { ...V2_ADAPTER_DEFAULTS, ...V2_RUNTIME_DEFAULTS }),
+      );
+    }
     violations.push(...nullGuardViolations(text, name));
     violations.push(...esmOnlyListViolations(text, name, esmOnly, covered));
     violations.push(...brokenLinks(text, name, linkTarget(file)));

@@ -1,15 +1,11 @@
 /**
- * `LivePreviewClient` configuration. The defaults are one table since 3.0
- * removed `defaults: 'v1'` (ADR 0007, row 21).
+ * `LivePreviewClient` configuration. An omitted option takes its row of the
+ * defaults table, which the runtime and the detector apply themselves.
  */
 
 import type { CachedElement, FieldRenderer, RendererKey, RichTextRenderer } from '@core/types';
 import type { StrategyHandlers } from '@core/strategies/strategies';
-import {
-  V2_RUNTIME_DEFAULTS,
-  type DefaultsProfile,
-  type EventSourcePolicy,
-} from '@/types/defaults-profile';
+import type { DefaultsProfile, EventSourcePolicy } from '@/types/defaults-profile';
 import { refuseRemovedProfile, refuseTurnedSwitches } from '@/types/removed-options';
 
 export interface LivePreviewClientConfig {
@@ -102,18 +98,8 @@ export interface LivePreviewClientConfig {
   ) => boolean | Promise<boolean>;
 }
 
-/** The configuration with the defaults table applied: explicit options win. */
-export function withProfileDefaults(config: LivePreviewClientConfig): LivePreviewClientConfig {
+/** Throws for an option 3.0 removed that a JavaScript config can still pass to the client. */
+export function refuseRemovedClientOptions(config: LivePreviewClientConfig): void {
   refuseRemovedProfile(config);
   refuseTurnedSwitches(config);
-  // The bare runtime's own fallbacks are older than the table for three of these rows, so the
-  // client fills every one it was not given.
-  const rows = V2_RUNTIME_DEFAULTS;
-  return {
-    ...config,
-    skipUnchanged: config.skipUnchanged ?? rows.skipUnchanged,
-    enableReferrerDetection: config.enableReferrerDetection ?? rows.enableReferrerDetection,
-    eventSourcePolicy: config.eventSourcePolicy ?? rows.eventSourcePolicy,
-    sanitizerPolicy: config.sanitizerPolicy ?? rows.sanitizerPolicy,
-  };
 }

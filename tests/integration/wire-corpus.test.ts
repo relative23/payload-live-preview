@@ -63,6 +63,7 @@ afterEach(() => {
 
 function start(origin: string, skipUnchanged = false): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: buildBuiltinRenderers(),
     originMatcher: (candidate) => candidate === origin,
     readyTargets: [origin],

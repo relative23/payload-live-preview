@@ -81,6 +81,7 @@ function createRuntime(options: { readonly scopeBindingsByOwner?: boolean } = {}
 } {
   const warnings: string[] = [];
   const runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: { text: textRenderer() },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],

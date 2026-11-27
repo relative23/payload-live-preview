@@ -14,9 +14,7 @@
  */
 
 import { RUNTIME_CONTENT_HASH, RUNTIME_INTEGRITY, RUNTIME_SOURCE } from '@inline/runtime.generated';
-
-/** Where the asset route is mounted when nothing says otherwise. */
-export const DEFAULT_ASSET_PATH = '/payload-live-preview';
+import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
 
 export interface RuntimeAssetOptions {
   /**
@@ -60,7 +58,7 @@ export function runtimeAsset(options: RuntimeAssetOptions = {}): RuntimeAsset {
   const fileName = `runtime.${RUNTIME_CONTENT_HASH}.js`;
   return {
     fileName,
-    urlPath: `${normalizePath(options.assetPath ?? DEFAULT_ASSET_PATH)}/${fileName}`,
+    urlPath: `${normalizePath(options.assetPath ?? V2_ADAPTER_DEFAULTS.assetPath)}/${fileName}`,
     integrity: RUNTIME_INTEGRITY,
     source: RUNTIME_SOURCE,
   };

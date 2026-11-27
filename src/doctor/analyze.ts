@@ -5,6 +5,7 @@
  * attributes inside start tags and find the runtime marker; findings say what
  * was observed.
  */
+import { V2_RUNTIME_DEFAULTS } from '@/types/defaults-profile';
 import { DIAGNOSTIC_CODES } from '../core/diagnostic-codes';
 import { frameAncestorsAdmits, frameAncestorsOf } from './csp';
 import { analyzeV2Readiness, readServedConfig } from './readiness';
@@ -29,8 +30,6 @@ const RUNTIME_MARKER = '__LIVE_PREVIEW_CONFIG__';
 const START_TAG = /<[a-zA-Z](?:"[^"]*"|'[^']*'|[^"'<>])*>/gu;
 /** One attribute of a start tag: its name, and its value when it has one. */
 const TAG_ATTRIBUTE = /([^\s"'>/=]+)(\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/gu;
-/** Mirrors the scheduler default; the audit must not import the runtime. */
-const DEFAULT_VISIBILITY_GATE_THRESHOLD = 50;
 const LEVEL_ORDER = { error: 0, warning: 1, info: 2 } as const;
 // An end tag may carry junk before its `>`; browsers still close on it, so the
 // pattern must too, or a `</script foo>` would leave the script body counted.
@@ -305,7 +304,7 @@ function servedGate(body: string): ServedGate {
   const threshold = config?.value('visibilityGateThreshold');
   return typeof threshold === 'number'
     ? { threshold, configured: true }
-    : { threshold: DEFAULT_VISIBILITY_GATE_THRESHOLD, configured: false };
+    : { threshold: V2_RUNTIME_DEFAULTS.visibilityGateThreshold, configured: false };
 }
 
 function bindingFindings(

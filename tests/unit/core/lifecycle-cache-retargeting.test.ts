@@ -19,6 +19,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
       },
     };
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text },
       originMatcher: () => true,
       readyTargets: [],
@@ -51,6 +52,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
     if (defaultElement === null || de === null || fr === null) throw new Error('bindings missing');
     const warn = vi.fn();
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
       readyTargets: [],
@@ -84,6 +86,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
     const afterUpdate = vi.fn();
     emitter.on('afterUpdate', afterUpdate);
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
       readyTargets: [],
@@ -127,6 +130,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
     const element = document.querySelector('span');
     if (owner === null || element === null) throw new Error('binding missing');
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
       readyTargets: [],
@@ -169,6 +173,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
     const afterUpdate = vi.fn();
     emitter.on('afterUpdate', afterUpdate);
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
       readyTargets: [],
