@@ -4,6 +4,8 @@
  * Verify with `authorizePreviewRequest()` before anything privileged.
  */
 
+import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
+
 /** `query`: `?preview=true`; `fetch-dest`: `Sec-Fetch-Dest: iframe`; `referer`: an admin-origin Referer. */
 export type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
 
@@ -15,8 +17,6 @@ export interface PreviewRequestOptions {
   /** Admin origins whose Referer signals intent, e.g. `['https://cms.example.com']` — the adapters' option of the same name. */
   readonly allowedOrigins?: readonly string[];
 }
-
-const DEFAULT_QUERY_PARAMS = ['preview', 'draft', 'livePreview'] as const;
 
 /** The request surface the predicate reads; `Request` satisfies it, Nitro/H3 events need a shim. */
 export interface PreviewRequestLike {
@@ -30,7 +30,7 @@ export function hasPreviewIntent(
   options: PreviewRequestOptions = {},
 ): boolean {
   const signals = new Set<PreviewSignal>(options.signals ?? ['query', 'fetch-dest', 'referer']);
-  const queryParams = options.queryParams ?? DEFAULT_QUERY_PARAMS;
+  const queryParams = options.queryParams ?? V2_ADAPTER_DEFAULTS.previewQueryParams;
 
   if (signals.has('query')) {
     let url: URL | undefined;

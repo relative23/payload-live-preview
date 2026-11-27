@@ -13,6 +13,7 @@ describe('LivePreviewRuntime — error handling', () => {
       errors.push(event);
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -48,6 +49,7 @@ describe('LivePreviewRuntime — error handling', () => {
       errors.push(event);
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -78,6 +80,7 @@ describe('LivePreviewRuntime — error handling', () => {
     });
     emitter.on('afterUpdate', afterUpdate);
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       resolveRenderer: () => {
         throw new Error('resolution failed');
@@ -110,6 +113,7 @@ describe('LivePreviewRuntime — error handling', () => {
     emitter.on('afterUpdate', afterUpdate);
     let firstResolution = true;
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       resolveRenderer: () => {
         if (firstResolution) {
@@ -144,6 +148,7 @@ describe('LivePreviewRuntime — error handling', () => {
     emitter.on('error', errors);
     emitter.on('afterUpdate', afterUpdate);
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: {},
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -174,6 +179,7 @@ describe('LivePreviewRuntime — error handling', () => {
     const destroy = vi.fn();
     emitter.on('destroy', destroy);
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
       readyTargets: [],
@@ -198,6 +204,7 @@ describe('LivePreviewRuntime — error handling', () => {
   });
   it('passes the configured intersection margin to the owned observer', () => {
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: {},
       originMatcher: () => true,
       readyTargets: [],
@@ -225,6 +232,7 @@ describe('LivePreviewRuntime — error handling', () => {
       previousValues.push(event.previousValue);
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: { name: 'text', render: () => undefined } },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -262,6 +270,7 @@ describe('LivePreviewRuntime — error handling', () => {
       },
     };
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: failingRenderer },
       originMatcher: (o) => o === TRUSTED,
       readyTargets: [TRUSTED],
@@ -278,6 +287,7 @@ describe('LivePreviewRuntime — error handling', () => {
   it('start is idempotent', () => {
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: {},
       originMatcher: () => true,
       readyTargets: [],
@@ -298,6 +308,7 @@ describe('LivePreviewRuntime — error handling', () => {
     }
     globalThis.IntersectionObserver = FailingIntersectionObserver;
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [TRUSTED],
@@ -328,6 +339,7 @@ describe('LivePreviewRuntime — error handling', () => {
       throw new Error('ready transport failed');
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [TRUSTED],

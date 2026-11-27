@@ -4,14 +4,14 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-ChqKjn4R.js';
-import { a as a_2 } from '../../options-DjT9ZLiL.js';
-import { b } from '../../fragment-endpoint-ChqKjn4R.js';
-import { c } from '../../fragment-endpoint-ChqKjn4R.js';
-import { F } from '../../fragment-endpoint-ChqKjn4R.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-ChqKjn4R.js';
-import { L as LivePreviewLocals } from '../../locals-abr85sfw.js';
-import { P as PreviewAdapterOptions } from '../../options-DjT9ZLiL.js';
+import { a } from '../../fragment-endpoint-0UX-SvIb.js';
+import { a as a_2 } from '../../options-C2gQODY2.js';
+import { b } from '../../fragment-endpoint-0UX-SvIb.js';
+import { c } from '../../fragment-endpoint-0UX-SvIb.js';
+import { F } from '../../fragment-endpoint-0UX-SvIb.js';
+import { d as FragmentRenderInput } from '../../fragment-endpoint-0UX-SvIb.js';
+import { L as LivePreviewLocals } from '../../locals-zxuP-u2i.js';
+import { P as PreviewAdapterOptions } from '../../options-C2gQODY2.js';
 
 // @public
 export function buildLivePreviewCsp(options: LivePreviewNuxtOptions, nonce: string, existing?: string, mode?: 'frame-ancestors' | 'full'): string;

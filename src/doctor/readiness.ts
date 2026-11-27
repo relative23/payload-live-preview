@@ -9,7 +9,7 @@
  * 1.x or 2.0.0-beta.0 — and is read as 1.x, with a line that says so.
  */
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
-import { V2_RUNTIME_DEFAULTS, type RuntimeProfileDefaults } from '@/types/defaults-profile';
+import { V2_RUNTIME_DEFAULTS, type EventSourcePolicy } from '@/types/defaults-profile';
 import type { DoctorFinding, DoctorProbe } from './types';
 
 const CONFIG_NAME = '__LIVE_PREVIEW_CONFIG__';
@@ -23,6 +23,13 @@ const CONFIG_ID = /(?:^|\s)[iI][dD]\s*=\s*["']?__LIVE_PREVIEW_CONFIG__(?=["'\s]|
 const JSON_TYPE = /(?:^|\s)type\s*=\s*["']?application\/json(?=["'\s;]|$)/iu;
 
 type InlineKey = (typeof INLINE_CONFIG_KEYS)[number];
+/** The runtime rows of the readiness table: the four that 2.0 moved. */
+interface ReadinessRuntimeRows {
+  readonly enableReferrerDetection: boolean;
+  readonly eventSourcePolicy: EventSourcePolicy;
+  readonly skipUnchanged: boolean;
+  readonly sanitizerPolicy: 'compat' | 'strict';
+}
 
 /** The configuration a preview response serves, whichever way the page writes it. */
 export interface ServedConfig {
@@ -37,7 +44,7 @@ export interface ServedConfig {
 
 /** A runtime row of the readiness table, as a finding words it. */
 interface ReadinessRow {
-  readonly key: keyof RuntimeProfileDefaults;
+  readonly key: keyof ReadinessRuntimeRows;
   /** The option before 3.0, where 3.0 turned it round: it said the opposite, and an older page sets it. */
   readonly before?: InlineKey;
   readonly title: string;
@@ -80,7 +87,7 @@ const ROWS: readonly ReadinessRow[] = [
  * under `defaults: 'v1'`, or one 1.x generated. 3.0 generates neither, and the doctor still
  * reads both.
  */
-const ONE_X_RUNTIME_ROWS: RuntimeProfileDefaults = Object.freeze({
+const ONE_X_RUNTIME_ROWS: ReadinessRuntimeRows = Object.freeze({
   enableReferrerDetection: true,
   eventSourcePolicy: 'any',
   skipUnchanged: false,

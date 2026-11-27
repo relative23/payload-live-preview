@@ -49,6 +49,7 @@ function afterUpdate(): Promise<void> {
 }
 function start(): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],

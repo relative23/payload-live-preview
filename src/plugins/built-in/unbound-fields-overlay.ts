@@ -20,6 +20,7 @@
  * yourself, and only in development.
  */
 
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import type { LivePreviewPlugin, PluginDisposer } from '../types';
 import {
   COVERS_ATTRIBUTE,
@@ -82,7 +83,7 @@ export function unboundFieldNames(
   boundNames: Iterable<string>,
   locale?: string,
   coverPaths: readonly string[] = [],
-  subfieldCoverage: 'descendant' | 'declared' = 'declared',
+  subfieldCoverage: 'descendant' | 'declared' = V2_RUNTIME_DEFAULTS.subfieldCoverage,
 ): readonly string[] {
   const bound = [...boundNames];
   const addressable = createNameAddressability(bound, locale, coverPaths);
@@ -261,7 +262,11 @@ export function createUnboundFieldsOverlayPlugin(
       const overlay = mountOverlay(root, POSITIONS[options.position ?? 'bottom-right']);
       if (overlay === null) return;
       ctx.registerCleanup?.(overlay.destroy);
-      const mode = ctx.getConfig()['subfieldCoverage'] === 'descendant' ? 'descendant' : 'declared';
+      const given = ctx.getConfig()['subfieldCoverage'];
+      const mode =
+        given === 'descendant' || given === 'declared'
+          ? given
+          : V2_RUNTIME_DEFAULTS.subfieldCoverage;
       const rendering = (ctx.getConfig()['strategies'] ?? {}) as ServerRendering;
       ctx.events.on('afterUpdate', (e) => {
         const names = unboundFieldNames(

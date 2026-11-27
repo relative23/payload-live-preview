@@ -26,6 +26,7 @@ describe('LivePreviewRuntime — a binding that hydration binds anew after a nav
     document.body.innerHTML = '<h1 data-payload-field="title">published first route</h1>';
     const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
     runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
       readyTargets: [],

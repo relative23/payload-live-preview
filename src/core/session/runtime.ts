@@ -6,6 +6,7 @@
  * `bootstrapInlineRuntime` and calls it itself.
  */
 
+import { definedOnly } from '@/types/defined-only';
 import { type INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/types/inline-config';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from './lifecycle';
@@ -64,49 +65,49 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     }
   }
 
+  // An empty slot is an option nobody set: the detector and the runtime below take its row of
+  // the defaults table, so no default is written here.
   const [
     additionalOrigins = [],
     serverURL = '',
-    apiRoute = '/api',
-    mergeDepth = 1,
-    debug = false,
-    debounceMs = 50,
-    enableA11y = true,
-    heartbeatMs = 0,
+    apiRoute,
+    mergeDepth,
+    debug,
+    debounceMs,
+    enableA11y,
+    heartbeatMs,
     _disableVisibilityGate,
-    visibilityGateThreshold = 50,
-    intersectionRootMargin = '200px',
+    visibilityGateThreshold,
+    intersectionRootMargin,
     _disableReferrerDetection,
     _disableLocalhostMatching,
-    scopeBindingsByOwner = false,
-    skipUnchanged = true,
-    eventSourcePolicy = 'parent-or-opener',
-    sanitizerPolicy = 'strict',
+    scopeBindingsByOwner,
+    skipUnchanged,
+    eventSourcePolicy,
+    sanitizerPolicy,
     fragmentEndpoint,
-    revealEditedField = false,
-    routeStrategy = false,
+    revealEditedField,
+    routeStrategy,
     _onUnboundChange,
     onUnfaithfulPatch,
-    autoBind = 'off',
+    autoBind,
     hydration,
     _defaults,
     softNavigationEvents = [],
     subfieldCoverage,
     mergeTimeoutMs,
     internalLinkPattern,
-    enableVisibilityGate = true,
-    enableReferrerDetection = false,
-    enableLocalhostMatching = true,
+    enableVisibilityGate,
+    enableReferrerDetection,
+    enableLocalhostMatching,
   ] = readBuildConfig();
   // Which prelude the generator emitted is what the runtime can observe of
   // `routeStrategy`, whose slot adds only when a route may run.
   const strategies = resolveStrategyPreludes(fragmentEndpoint);
 
-  const detector = new OriginDetector({
-    additionalOrigins,
-    enableReferrerDetection,
-    enableLocalhostMatching,
-  });
+  const detector = new OriginDetector(
+    definedOnly({ additionalOrigins, enableReferrerDetection, enableLocalhostMatching }),
+  );
 
   if (detector.isProductionUnconfigured) {
     safeConsoleWarn(
@@ -123,51 +124,46 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
   const emitter = new EventEmitter();
   const renderers: Readonly<Record<string, FieldRenderer>> = buildBuiltinRenderers();
 
-  const runtime = new LivePreviewRuntime({
-    renderers,
-    originMatcher: (origin) => detector.matches(origin),
-    lockedOrigin: () => detector.lockedOrigin,
-    readyTargets: () => detector.enumerate(),
-    emitter,
-    eventSourcePolicy,
-    ...(serverURL !== ''
-      ? {
-          dataMerge: {
-            serverURL,
-            apiRoute,
-            depth: mergeDepth,
-            ...(mergeTimeoutMs === undefined ? {} : { timeoutMs: mergeTimeoutMs }),
-          },
-        }
-      : {}),
-    ...(internalLinkPattern === undefined ? {} : { internalLinkPattern }),
-    ...(routeStrategy === 'after-save' ? { routeAfterSave: true } : {}),
-    debounceMs,
-    heartbeatMs,
-    intersectionRootMargin,
-    enableVisibilityGate,
-    visibilityGateThreshold,
-    enableA11y,
-    scopeBindingsByOwner,
-    ...(subfieldCoverage === undefined ? {} : { subfieldCoverage }),
-    skipUnchanged,
-    revealEditedField,
-    ...(onUnfaithfulPatch === undefined ? {} : { onUnfaithfulPatch }),
-    autoBind,
-    ...(hydration !== undefined ? { hydration } : {}),
-    sanitizerPolicy,
-    ...(strategies !== undefined ? { strategies } : {}),
-    onHeartbeatTimeout: () => {
-      detector.unlockOrigin();
-    },
-    ...(debug
-      ? {
-          log: (...args: unknown[]): void => {
-            safeConsoleDebug('[live-preview]', ...args);
-          },
-        }
-      : {}),
-  });
+  const runtime = new LivePreviewRuntime(
+    definedOnly({
+      renderers,
+      originMatcher: (origin: string) => detector.matches(origin),
+      lockedOrigin: () => detector.lockedOrigin,
+      readyTargets: () => detector.enumerate(),
+      emitter,
+      eventSourcePolicy,
+      dataMerge:
+        serverURL === ''
+          ? undefined
+          : definedOnly({ serverURL, apiRoute, depth: mergeDepth, timeoutMs: mergeTimeoutMs }),
+      internalLinkPattern,
+      routeAfterSave: routeStrategy === 'after-save' ? true : undefined,
+      debounceMs,
+      heartbeatMs,
+      intersectionRootMargin,
+      enableVisibilityGate,
+      visibilityGateThreshold,
+      enableA11y,
+      scopeBindingsByOwner,
+      subfieldCoverage,
+      skipUnchanged,
+      revealEditedField,
+      onUnfaithfulPatch,
+      autoBind,
+      hydration,
+      sanitizerPolicy,
+      strategies,
+      onHeartbeatTimeout: () => {
+        detector.unlockOrigin();
+      },
+      log:
+        debug === true
+          ? (...args: unknown[]): void => {
+              safeConsoleDebug('[live-preview]', ...args);
+            }
+          : undefined,
+    }),
+  );
 
   // The first accepted update locks the detector to that origin.
   emitter.on('connect', (e) => {

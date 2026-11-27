@@ -8,6 +8,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
     document.body.innerHTML = html;
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
       readyTargets: [TRUSTED],
@@ -133,6 +134,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
     document.body.innerHTML = '<p data-payload-field="title">x</p>';
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
       readyTargets: [TRUSTED],
@@ -167,6 +169,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
       readyTargets: [TRUSTED],
@@ -218,6 +221,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
       readyTargets: [TRUSTED],
@@ -254,6 +258,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic, one level down', (
   ): LivePreviewRuntime {
     document.body.innerHTML = html;
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
       readyTargets: [TRUSTED],

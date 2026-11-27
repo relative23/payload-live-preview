@@ -6,6 +6,7 @@
  * origins, and to guessed localhost ports only while the browser names no parent.
  */
 
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import { isDevMode, isInIframe } from './environment';
 
 const LOCALHOST_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i;
@@ -72,7 +73,7 @@ export class OriginDetector {
       if (normalised !== undefined) explicit.add(normalised);
     }
     let referrerOrigin: string | undefined;
-    if (options.enableReferrerDetection === true) {
+    if (options.enableReferrerDetection ?? V2_RUNTIME_DEFAULTS.enableReferrerDetection) {
       const referrer =
         options.referrer ?? (typeof document !== 'undefined' ? document.referrer : '');
       if (referrer.length > 0) {
@@ -85,7 +86,8 @@ export class OriginDetector {
       }
     }
     const allowLocalhost =
-      (options.enableLocalhostMatching ?? true) && (options.forceDevMode ?? isDevMode());
+      (options.enableLocalhostMatching ?? V2_RUNTIME_DEFAULTS.enableLocalhostMatching) &&
+      (options.forceDevMode ?? isDevMode());
     this.#state = [
       explicit,
       referrerOrigin,

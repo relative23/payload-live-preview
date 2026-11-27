@@ -6,7 +6,6 @@ import { livePreviewScriptProps } from '@adapters/nextjs/adapter';
 import { scriptElementProps } from '@adapters/nextjs/script-element';
 import {
   ASSET_CACHE_CONTROL,
-  DEFAULT_ASSET_PATH,
   runtimeAsset,
   runtimeAssetResponse,
 } from '@adapters/shared/runtime-asset';
@@ -26,7 +25,7 @@ describe('the runtime asset', () => {
     const asset = runtimeAsset();
 
     expect(asset.fileName).toBe(`runtime.${RUNTIME_CONTENT_HASH}.js`);
-    expect(asset.urlPath).toBe(`${DEFAULT_ASSET_PATH}/${asset.fileName}`);
+    expect(asset.urlPath).toBe(`/payload-live-preview/${asset.fileName}`);
     expect(asset.integrity).toBe(RUNTIME_INTEGRITY);
     expect(asset.source).toBe(RUNTIME_SOURCE);
   });

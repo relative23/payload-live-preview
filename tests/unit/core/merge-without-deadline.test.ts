@@ -112,6 +112,7 @@ describe('a merge request that never answers', () => {
       states.push(display.state);
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: buildBuiltinRenderers(),
       originMatcher: (origin) => origin === ADMIN,
       readyTargets: [ADMIN],

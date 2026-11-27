@@ -74,6 +74,7 @@ function start(
     });
   }
   runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     root: document.querySelector('main')!,
     renderers: {
       text: {

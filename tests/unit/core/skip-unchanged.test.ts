@@ -54,6 +54,7 @@ function createRuntime(
   options: Record<string, unknown> = {},
 ): LivePreviewRuntime {
   return new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: { text: recordingRenderer(writes) },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],
@@ -85,7 +86,7 @@ afterEach(() => {
 describe('skipUnchanged off (the 1.x default)', () => {
   it('renders every bound field on every message, unchanged or not', async () => {
     const writes: string[] = [];
-    const runtime = createRuntime(writes);
+    const runtime = createRuntime(writes, { skipUnchanged: false });
     runtime.start();
 
     await update({ title: 'A', subtitle: 'B', priceLabel: 'C' });
@@ -218,6 +219,7 @@ describe('skipUnchanged on', () => {
     // not counted as applied. The identity must not be recorded for it, or
     // the next identical message would skip a binding that was never written.
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: createTextRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [TRUSTED],

@@ -75,7 +75,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -32/-13/-13 B; prior reserves kept.
   // 2026-11-27 (3.0, one runtime: the lean profile leaves, ADR 0007 row 37): paired Node24.22.3/npm12.0.2; -31/-18/-4 B; prior reserves kept.
   // 2026-11-27 (3.0, the switches say what they turn on, ADR 0007 row 38): paired Node24.22.3/npm12.0.2; +474/+151/+125 B; prior reserves kept.
-  'doctor.js': { raw: 23_139, gzip: 8_953, brotli: 7_946 },
+  // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +888/+343/+305 B; prior reserves kept.
+  'doctor.js': { raw: 24_027, gzip: 9_296, brotli: 8_251 },
   //
   // 2026-09-12 (pll migrate reports a read key 2.0 has no home for): the
   // codemod carries the option lists of `ReadDocumentOptions`/`ReadGlobalOptions`
@@ -128,7 +129,8 @@ export const TOOL_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -32/-9/-26 B; prior reserves kept.
   // 2026-11-27 (3.0, one runtime: the lean profile leaves, ADR 0007 row 37): paired Node24.22.3/npm12.0.2; +321/+96/+94 B; prior reserves kept.
   // 2026-11-27 (3.0, the switches say what they turn on, ADR 0007 row 38): paired Node24.22.3/npm12.0.2; +1662/+431/+353 B; prior reserves kept.
-  'doctor-cli.js': { raw: 67_790, gzip: 22_997, brotli: 20_462 },
+  // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +881/+387/+347 B; prior reserves kept.
+  'doctor-cli.js': { raw: 68_671, gzip: 23_384, brotli: 20_809 },
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 14 220 → 14 534 (+314 B, measured 14 203 → 14 517); gzip 5 110 → 5 265 (+155 B, measured 5 100 → 5 255); brotli 4 630 → 4 750 (measured 4 657; below the 2 % notice, which ~120 B would cross on a file this small).
   // 2026-09-29 (O-35, deprecations warn before 3.0, ADR 0026): measured +5441/+1709/+1583 B; same 17/12/93 B cushions.
   // 2026-10-22 (the same codemod change): measured 19 958 → 20 931 / 6 964 → 7 166 / 6 240 → 6 427 (+973/+202/+187 B); same 17/12/93 B cushions.

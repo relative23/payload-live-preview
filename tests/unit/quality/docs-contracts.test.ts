@@ -6,6 +6,7 @@ import {
   interfaceMembers,
   isKnownName,
   nullGuardViolations,
+  optionDefaultViolations,
   optionTableViolations,
   readSnippetViolations,
   referencesIn,
@@ -220,6 +221,59 @@ describe('the option table against the client interface', () => {
     const text = table(['| `debug` | yes | yes |', '| `hydration` | — | yes |']);
 
     expect(optionTableViolations(text, 'docs/options.md', new Set(['debug']))).toEqual([]);
+  });
+});
+
+describe('the Default column of the options table', () => {
+  const page = (rows: readonly string[]): string =>
+    [
+      '| Option | Client | Default |',
+      '| --- | --- | --- |',
+      ...rows,
+      '',
+      '| Option | Default |',
+    ].join('\n');
+  const defaults = {
+    debounceMs: 50,
+    skipUnchanged: true,
+    sanitizerPolicy: 'strict',
+    previewSignals: ['query', 'fetch-dest'],
+  };
+
+  it('accepts a cell that begins with the value as source writes it, whatever prose follows', () => {
+    const text = page([
+      '| `debounceMs` | yes | `50` ms |',
+      '| `skipUnchanged` | yes | `true` |',
+      "| `sanitizerPolicy` | yes | `'strict'` (hardened) |",
+      "| `previewSignals` | — | `['query', 'fetch-dest']` |",
+      '| `root` | yes | `document` |',
+    ]);
+
+    expect(optionDefaultViolations(text, 'docs/options.md', defaults)).toEqual([]);
+  });
+
+  it('flags a cell that names another value, and one that writes a string without its quotes', () => {
+    const text = page([
+      '| `debounceMs` | yes | `100` |',
+      '| `skipUnchanged` | yes | off |',
+      '| `sanitizerPolicy` | yes | `strict` |',
+      "| `previewSignals` | — | `['query']` |",
+    ]);
+
+    expect(optionDefaultViolations(text, 'docs/options.md', defaults)).toEqual([
+      'docs/options.md:3 the Default column says `100` for debounceMs, the defaults table says `50`',
+      'docs/options.md:4 the Default column says off for skipUnchanged, the defaults table says `true`',
+      "docs/options.md:5 the Default column says `strict` for sanitizerPolicy, the defaults table says `'strict'`",
+      "docs/options.md:6 the Default column says `['query']` for previewSignals, the defaults table says `['query', 'fetch-dest']`",
+    ]);
+  });
+
+  it('flags a row of the defaults table the page leaves out, and reads no later table', () => {
+    const text = `${page(['| `debounceMs` | yes | `50` |'])}\n| --- | --- |\n| \`skipUnchanged\` | \`true\` |\n`;
+
+    expect(
+      optionDefaultViolations(text, 'docs/options.md', { debounceMs: 50, skipUnchanged: true }),
+    ).toEqual(['docs/options.md has no row for skipUnchanged, which the defaults table sets']);
   });
 });
 

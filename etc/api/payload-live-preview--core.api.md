@@ -577,7 +577,7 @@ export const LIBRARY_PROTOCOL_VERSION = 4;
 
 // @public
 export class LivePreviewClient {
-    constructor(rawConfig?: LivePreviewClientConfig);
+    constructor(config?: LivePreviewClientConfig);
     destroy(): Promise<void>;
     get destroyed(): boolean;
     // (undocumented)

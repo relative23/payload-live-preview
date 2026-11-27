@@ -57,6 +57,7 @@ function patched(): Promise<void> {
 }
 function start(route: RouteStrategy, subfieldCoverage?: SubfieldCoverage): void {
   runtime = new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],

@@ -112,6 +112,18 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
+2026-11-27 (3.0): the defaults are written once. `src/types/defaults-profile.ts`
+held the six readiness rows; every other default stood as a literal where it was
+applied, and some stood twice or three times: the visibility threshold in the
+scheduler and in `pll doctor`, the intent parameters in the request predicate,
+the Next.js config helper and the doctor's probe, and the runtime's rows in the
+inline start, in the client and in the runtime class, whose own fallbacks were
+still the 1.x ones for three rows. The table now holds every row that code
+applies, whoever applies one reads it there, the inline start and the client
+fill in nothing of their own, and a gate holds the Default column of
+docs/options.md to the same rows. No default changes. The merger's fallbacks
+for `apiRoute` and the depth stay where they are, in the trusted core.
+
 2026-11-27 (3.0): row 38 is added and carried out. An option that names
 what it turns off reads twice negated wherever it is off by default:
 `disableReferrerDetection: false` turned referrer trust on. The three switches

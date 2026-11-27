@@ -1,4 +1,7 @@
-/** Options accepted by `LivePreviewRuntime`. */
+/**
+ * Options accepted by `LivePreviewRuntime`. An option left out takes its row of the defaults
+ * table (`@/types/defaults-profile`), which the runtime and its parts read themselves.
+ */
 
 import type { EventEmitter } from '@events/emitter';
 import type { SanitizerPolicyMode } from '@security/sanitizer';
@@ -24,8 +27,8 @@ export interface RuntimeOptions {
   readonly routeAfterSave?: boolean;
   /**
    * Sanitizer policy for this instance's rich-text and HTML writes, handed to
-   * every renderer through its context. Without one, the process default set
-   * by `setSanitizerPolicy()` applies.
+   * every renderer through its context. Default `'strict'`; the process default
+   * `setSanitizerPolicy()` sets is for direct `sanitizeHtml()` calls.
    */
   readonly sanitizerPolicy?: SanitizerPolicyMode;
   /**
@@ -46,8 +49,7 @@ export interface RuntimeOptions {
   /**
    * Skip a binding whose value is identical to the one it last applied.
    * Every message carries the whole document, so this saves almost every
-   * render per keystroke. Default `false` here; the inline runtime and
-   * `defaults: 'v2'` turn it on.
+   * render per keystroke. Default `true`.
    */
   readonly skipUnchanged?: boolean;
   /** Scroll the preview to the field being edited when its value changes. */
@@ -123,7 +125,7 @@ export interface RuntimeOptions {
    * covers all of it.
    */
   readonly subfieldCoverage?: 'descendant' | 'declared';
-  /** Which windows may post updates. `defaults: 'v2'` sets `'parent-or-opener'`. */
+  /** Which windows may post updates. Default `'parent-or-opener'`. */
   readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
   /** Hold an off-screen update until its element is visible. Default `true`. */
   readonly enableVisibilityGate?: boolean;

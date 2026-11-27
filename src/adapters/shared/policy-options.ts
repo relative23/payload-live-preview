@@ -5,7 +5,7 @@
  */
 
 import type { generateInlineScript } from '@inline/generator';
-import { V2_ADAPTER_DEFAULTS } from '@/types/defaults-profile';
+import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
 import { warnChangingDefaults } from '@/types/dev-warning';
 import { refuseRemovedOptions } from '@/types/removed-options';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';

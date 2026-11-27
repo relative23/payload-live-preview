@@ -12,6 +12,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
     const afterUpdate = vi.fn();
     emitter.on('afterUpdate', afterUpdate);
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [TRUSTED],
@@ -59,6 +60,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       after.push(event);
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -96,6 +98,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
   });
   it('negotiates a data-less ready handshake without consuming an update revision', () => {
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: {},
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -122,6 +125,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
     const parent = { postMessage } as unknown as Window;
     Object.defineProperty(window, 'parent', { configurable: true, value: parent });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: {},
       originMatcher: () => true,
       readyTargets: [TRUSTED],
@@ -149,6 +153,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
     Object.defineProperty(opener, 'postMessage', { configurable: true, value: postMessage });
     Object.defineProperty(window, 'opener', { configurable: true, value: opener });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: {},
       originMatcher: () => true,
       readyTargets: [TRUSTED],
@@ -182,6 +187,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       }
     };
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -221,6 +227,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       }
     };
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -260,6 +267,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       },
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -288,6 +296,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       applied.push(event);
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],
@@ -329,6 +338,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       '<p data-payload-field="missingRoot">initial</p>' +
       '<p data-payload-field="nullRoot">initial</p>';
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [],

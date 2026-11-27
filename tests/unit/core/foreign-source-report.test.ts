@@ -22,14 +22,14 @@ interface Harness {
   readonly warnings: string[];
 }
 
-function start(policy: 'any' | 'parent-or-opener'): Harness {
+function start(policy?: 'any' | 'parent-or-opener'): Harness {
   const warnings: string[] = [];
   const runtime = new LivePreviewRuntime({
     renderers: buildBuiltinRenderers(),
     originMatcher: (origin) => origin === ADMIN,
     readyTargets: [],
     emitter: new EventEmitter(),
-    eventSourcePolicy: policy,
+    ...(policy === undefined ? {} : { eventSourcePolicy: policy }),
     warn: (...args: unknown[]) => {
       warnings.push(args.map(String).join(' '));
     },
@@ -92,6 +92,15 @@ describe('LP0501: a trusted origin, the wrong window', () => {
     sendFromForeignWindow();
 
     expect(lp0501(harness)).toHaveLength(1);
+  });
+
+  it('refuses the window without being told to: the policy is the default', () => {
+    harness = start();
+
+    sendFromForeignWindow();
+
+    expect(lp0501(harness)).toHaveLength(1);
+    expect(document.querySelector('h1')?.textContent).toBe('t');
   });
 
   it('says nothing under the 1.x policy, where the window is not refused', () => {

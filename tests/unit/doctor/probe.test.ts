@@ -1,7 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { DEFAULT_VISIBILITY_THRESHOLD } from '@core/update/update-scheduler';
 import {
   createDefaultFetch,
   describeFailure,
@@ -140,14 +137,5 @@ describe('the preview probe', () => {
     ['not a url/', 'not a url/'],
   ])('normalises %s to the referer %s', (adminOrigin, referer) => {
     expect(previewReferer(adminOrigin)).toBe(referer);
-  });
-});
-
-describe('the visibility-gate threshold is duplicated on purpose', () => {
-  it('matches the scheduler default it mirrors', () => {
-    const source = readFileSync(resolve(process.cwd(), 'src/doctor/analyze.ts'), 'utf8');
-    const declared = /const DEFAULT_VISIBILITY_GATE_THRESHOLD = (\d+);/u.exec(source)?.[1];
-    expect(declared).toBeDefined();
-    expect(Number(declared)).toBe(DEFAULT_VISIBILITY_THRESHOLD);
   });
 });

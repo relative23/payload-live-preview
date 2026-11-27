@@ -6,6 +6,7 @@
  * never writes the DOM; the injected `apply` callback does.
  */
 
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import type { PayloadLivePreviewData } from '@/types/payload-protocol';
 import { hasSameBindingIdentity } from '../bindings/cache';
 import { usesNoWriteOutcome } from '../internal-outcome';
@@ -53,10 +54,6 @@ export interface FlushStats {
   readonly data?: PayloadLivePreviewData;
 }
 
-/** Exported so the merge behind a burst of writes can share the window that batches them. */
-export const DEFAULT_DEBOUNCE_MS = 50;
-/** Exported so `pll doctor` can prove its own copy of the number has not drifted. */
-export const DEFAULT_VISIBILITY_THRESHOLD = 50;
 /**
  * Longest a write waits for an animation frame. WebKit gave a visible
  * cross-origin preview frame none for seconds (the real-admin suite, 2026-10-22,
@@ -102,11 +99,12 @@ export class UpdateScheduler {
 
   constructor(apply: ApplyUpdate, options: UpdateSchedulerOptions) {
     this.apply = apply;
-    this.debounceMs = options.debounceMs ?? DEFAULT_DEBOUNCE_MS;
+    this.debounceMs = options.debounceMs ?? V2_RUNTIME_DEFAULTS.debounceMs;
     this.maxWaitMs = options.maxWaitMs ?? this.debounceMs * 4;
     this.isVisible = options.isVisible;
-    this.gateThresholdValue = options.visibilityGateThreshold ?? DEFAULT_VISIBILITY_THRESHOLD;
-    this.gateEnabled = options.enableVisibilityGate ?? true;
+    this.gateThresholdValue =
+      options.visibilityGateThreshold ?? V2_RUNTIME_DEFAULTS.visibilityGateThreshold;
+    this.gateEnabled = options.enableVisibilityGate ?? V2_RUNTIME_DEFAULTS.enableVisibilityGate;
     this.getCacheSize = options.getCacheSize;
     this.onFlush = options.onFlush;
     this.scheduleFrame =

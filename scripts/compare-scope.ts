@@ -90,7 +90,10 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // JavaScript caller can still pass came in. No request path changes.
 // 2026-11-27 (3.0, ADR 0007 row 22): 1 137 → 1 121. origin.ts −16: a detector trusts a referrer
 // only where `enableReferrerDetection: true` asks for it, and the notice that announced it is gone.
-export const REVIEWED_SCOPE_LINES = 1121;
+// 2026-11-27 (3.0, one table of defaults): 1 121 → 1 126. origin.ts +2 and document-session.ts
+// +3: both read their fallbacks from the defaults table, an import each and the lines the longer
+// names wrap to; a hook leaves an unset referrer switch to the detector. No request path changes.
+export const REVIEWED_SCOPE_LINES = 1126;
 
 interface OurFile {
   readonly file: string;
