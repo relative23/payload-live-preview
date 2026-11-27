@@ -93,7 +93,9 @@ describe('Astro default bridge', () => {
   });
 
   it('answers generically when the internal template cannot load', async () => {
-    vi.doMock('@adapters/astro/FragmentBridge.astro', () => {
+    // The registration from `beforeEach`, made to throw. A second `vi.doMock` of the module here would be queued
+    // beside the first, and Vitest applies queued registrations as their paths resolve, in no fixed order.
+    loadBridge.mockImplementationOnce(() => {
       throw new Error('internal bridge path must not reach the client');
     });
     const handler = await endpoint();
