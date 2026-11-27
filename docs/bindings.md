@@ -416,7 +416,12 @@ document.
 The `id` of an array row or of a related document is a path like the others.
 When a row moves, or a relationship switches to another document, a page that
 binds `rows.0.label` or `author.name` and covers nothing else is told that
-`rows.0.id` or `author.id` changed with nothing to show it.
+`rows.0.id` or `author.id` changed with nothing to show it. That is on
+purpose: another row or document stands at the path now, and what the page
+drew for the old one without a binding stayed behind. Read off a document
+before anything changed, a row's `id` and a block's `blockType` are not
+listed: LP0203 and the unbound-fields overlay name fields an editor types
+into.
 
 `subfieldCoverage: 'descendant'` is the 2.x rule: one bound path covers the
 whole group, so an edit of `hero.description` on a page that binds only

@@ -74,7 +74,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a rebound binding is written again): paired Node24.22.3/npm12.0.2; +40/+18/-11 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -428/-71/-86 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +32/+15/+44 B; prior reserves kept.
-  'client.cjs': { raw: 157_085, gzip: 49_386, brotli: 42_724 },
+  // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +76/+21/+8 B; prior reserves kept.
+  'client.cjs': { raw: 157_161, gzip: 49_407, brotli: 42_732 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -131,7 +132,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a rebound binding is written again): paired Node24.22.3/npm12.0.2; +40/+18/+26 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -428/-71/-76 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +32/+16/+16 B; prior reserves kept.
-  'client.js': { raw: 157_004, gzip: 49_368, brotli: 42_674 },
+  // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +76/+20/-7 B; prior reserves kept.
+  'client.js': { raw: 157_080, gzip: 49_388, brotli: 42_667 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).
@@ -200,7 +202,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -32/-11/-3 B; prior reserves kept.
   // 2026-11-27 (3.0, one runtime: the lean profile leaves, ADR 0007 row 37): paired Node24.22.3/npm12.0.2; -31/-18/-14 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +8/+9/-24 B; prior reserves kept.
-  'plugins.cjs': { raw: 22_426, gzip: 8_217, brotli: 7_298 },
+  // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +90/+39/+55 B; prior reserves kept.
+  'plugins.cjs': { raw: 22_516, gzip: 8_256, brotli: 7_353 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +32/+12/+1 B; same 86/33/92 B cushions.
   // 2026-09-28 (PHD-03, styles through the CSSOM under a strict style-src): measured -32/+0/+9 B; same 86/33/92 B cushions.
   // 2026-09-29 (H02, sub-field coverage declared, ADR 0022): measured +2605/+921/+832 B; same 86/33/92 B cushions.
@@ -211,7 +214,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -32/-13/+7 B; prior reserves kept.
   // 2026-11-27 (3.0, one runtime: the lean profile leaves, ADR 0007 row 37): paired Node24.22.3/npm12.0.2; -31/-20/-32 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +8/+4/+21 B; prior reserves kept.
-  'plugins.js': { raw: 22_402, gzip: 8_198, brotli: 7_311 },
+  // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +90/+38/+25 B; prior reserves kept.
+  'plugins.js': { raw: 22_492, gzip: 8_236, brotli: 7_336 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+423/+399 B; same 20/3/84 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+13/-6 B; same 20/3/84 B cushions.
   // 2026-09-29 (H07, fragment requests within measured bounds, ADR 0027): measured +0/+0/+2 B; same 20/3/84 B cushions.

@@ -22,7 +22,7 @@
   "totals": {
     "files": 527,
     "suites": 1024,
-    "tests": 4621,
+    "tests": 4623,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 430,
       "suites": 915,
-      "tests": 4214,
+      "tests": 4216,
       "benchmarks": 0
     }
   },
@@ -1901,7 +1901,7 @@
       "path": "tests/unit/core/orphan-diagnostics.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 7,
+      "tests": 8,
       "benchmarks": 0
     },
     {
@@ -2860,7 +2860,7 @@
       "path": "tests/unit/plugins/unbound-fields-overlay.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 16,
+      "tests": 17,
       "benchmarks": 0
     },
     {

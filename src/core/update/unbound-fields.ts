@@ -34,6 +34,17 @@ export const SYSTEM_FIELD_NAMES: ReadonlySet<string> = new Set([
   'localized',
 ]);
 
+/**
+ * Whether a path ends in a name Payload writes itself: the `id` of a row or of
+ * a populated document, a block's `blockType`. Read off a document, such a path
+ * is not a field the page left out. A diff keeps it, because there it says
+ * that another row or document stands at the path (`moved-rows.ts`).
+ */
+export function isSystemFieldPath(path: string): boolean {
+  const leaf = path.slice(path.lastIndexOf('.') + 1);
+  return leaf === 'blockType' || SYSTEM_FIELD_NAMES.has(leaf);
+}
+
 /** Owner keys as the update resolved them; `false` means scoping is off. */
 export type OwnerScope = readonly string[] | null | false;
 
@@ -180,7 +191,7 @@ export function uncoveredNamePaths(
     const root = stripLocaleSuffix(fieldName, locale);
     if (coverage.covers(root) || !coverage.reachesBelow(root)) continue;
     for (const { path } of uncoveredChangedPaths(root, undefined, value, coverage)) {
-      found.push(path);
+      if (!isSystemFieldPath(path)) found.push(path);
     }
   }
   return found;
