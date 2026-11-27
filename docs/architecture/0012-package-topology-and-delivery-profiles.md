@@ -82,6 +82,14 @@ fails on a file without one. The inline script is measured four ways —
 `INLINE_BUDGET`, `INLINE_LEAN_BUDGET`, `INLINE_ROUTE_BUDGET` and
 `INLINE_FRAGMENT_BUDGET`, all imported from `scripts/bundle-budgets.ts`.
 
+2026-11-27 (3.0, ADR 0007 row 43): the package is one module graph, so a file
+in `dist/` is an entry or a chunk several entries load, and a chunk's name
+changes with its content. `scripts/check-bundle-size.ts` budgets an entry's
+closure, its file with every chunk it loads (`scripts/entry-closure.ts`), and
+the sum of all JavaScript files. It fails on an entry without a row, on a chunk
+no entry loads and on a `require` condition in the manifest. What a consumer's
+bundler keeps for one imported name stays with `scripts/check-tree-shaking.ts`.
+
 ### 4. Dual format where a consumer might still be on CommonJS
 
 The runtime entries ship both `import` and `require`, and so do `./server`,
@@ -90,6 +98,41 @@ framework in the peer range is; `./annotate`, `./codegen/astro`, `./doctor` and
 `./migrate` are ESM-only because they are tools a build or a maintainer runs,
 not code a consumer bundles. The package is `"type": "module"` with `"sideEffects": false`, which is what lets a bundler
 drop an unused entry rather than merely not call it.
+
+2026-11-27 (3.0, ADR 0007 row 43): one format. Every entry is an ES module and
+no CommonJS file is built: Node 24, the floor of 3.0, loads an ES module through
+`require()` (measured on 24.0.0 and 24.22.3). The eleven entries a CommonJS file
+could load before keep that: the ten that had a CommonJS build, and `./nextjs`,
+which a `next.config.ts` compiled to CommonJS requires. Each carries a `default`
+condition beside `import`, on the same file and the same declarations. The
+other entries are for `import`, as they were. `./payload` is part of `./plugin`,
+and `./doctor` and `./migrate` are the `pll` binary alone (rows 41 and 42).
+
+Measured on the commit before and on this one: the JavaScript in the archive
+goes from 2 798 814 to 540 940 bytes and the packed archive from 1 922 839 to
+444 632. Beyond size it gives one instance of every module. A renderer
+registered through `./lexical` is known to the root entry and to a module
+loaded the other way; before, each entry had its own copy of the registry and
+the root rendered a placeholder for that block. The package gate holds this
+against the installed archive.
+
+The cost: an entry loads a shared chunk whole, with what its other readers
+need, so its closure is larger than its bundled file was: by 3 to 6 % for the
+root and the adapters, 14 % for `./core`, 21 and 23 % for the two hooks, 72 %
+for `./plugins` and 120 % for `./fragment` (16 971 to 37 308 bytes). That is
+what Node reads from disk for an import, and what a page without a bundler
+fetches: `./client` is 19 files with 168 351 bytes where it was one file, and
+such a page serves the folder. The plain-HTML production host of the test
+suite copied the one file and failed in 5 of 8 cases until it copied the
+entry with what it loads. What a bundler keeps for one imported
+name is level: the twelve tree-shaking rows moved by between −286 and +112
+bytes gzip.
+
+Vite 8 bundles with Rolldown, and against the bundled entries it kept far more
+than the name asked for. Measured with Vite 8.4.0 on the two packed archives,
+one consumer per row: `escapeHtml` from the root goes from 983 to 219 bytes
+gzip, `PluginManager` from `./plugins` from 3 945 to 3 275, `lexicalToHtml`
+from the root from 6 685 to 6 055, and no row grows by more than 30 bytes.
 
 ### 5. A peer dependency is allowed only where it is optional
 
@@ -122,3 +165,8 @@ of it to the app's own installation (ADR 0032, addendum).
 row 37). The package builds one runtime; `INLINE_LEAN_BUDGET` and the generated
 file that was committed for the entry leave with it, and no generated file is
 committed any more.
+
+2026-11-27 (3.0, rows 41 to 43): 23 API reports. API Extractor reads a copy of
+the installed package outside `node_modules`, because it takes a declaration
+chunk under `node_modules` for another package and then prints an entry's
+exports as names without their signatures.

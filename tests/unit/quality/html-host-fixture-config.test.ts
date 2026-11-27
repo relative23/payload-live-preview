@@ -17,9 +17,12 @@ describe('framework-free HTML host fixture', () => {
     expect(helper).not.toContain('port}0');
   });
 
-  it('builds only the packed browser entry and records its actual byte cost', () => {
+  it('builds only the packed browser entry with the chunks it loads and records its actual byte cost', () => {
     const build = source('build.mjs');
     expect(build).toContain("import.meta.resolve('payload-live-preview/client')");
+    expect(build).toContain('if (!modules.includes(name)) modules.push(name)');
+    expect(build).toContain("'dist/assets.json'");
+    expect(build).toContain("...modules.map(file => 'dist/' + file)");
     expect(build).toContain('require.resolve(name)');
     expect(build).toContain("code: 'MODULE_NOT_FOUND'");
     expect(build).toContain('bytes[path] = contents.byteLength');
@@ -35,7 +38,9 @@ describe('framework-free HTML host fixture', () => {
     expect(service).toContain('withNativeHostRequest(incoming, url, handle)');
     expect(service).toContain('assets.get(url.pathname)');
     expect(service).toContain("['/preview.js'");
-    expect(service).toContain("['/client.js'");
+    expect(service).toContain('...built.assets.map(name =>');
+    expect(service).toContain('assert.match(name, /^[A-Za-z0-9._-]+\\.js$/u)');
+    expect(service).toContain("assert.ok(assets.has('/client.js'))");
     expect(service).not.toContain('readFileSync(url.pathname)');
     expect(service).toContain("process.env.PLP_HTML_HOST_ENABLED === 'local-test-only'");
     expect(service).toContain('response.headers.getSetCookie()');

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { READINESS_ROWS, V2_ADAPTER_DEFAULTS, V2_RUNTIME_DEFAULTS } from '@/types/defaults-profile';
+import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
+import { READINESS_ROWS } from '@/types/defaults-profile';
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 
 /**
  * ADR 0007 §1: the defaults table sets every readiness row that has an option.

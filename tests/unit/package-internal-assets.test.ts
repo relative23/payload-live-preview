@@ -24,6 +24,25 @@ describe('internal Astro bridge asset', () => {
     expect(await findPackedContentFailures(new Set([...publicFiles, ASSET]))).toEqual([]);
   });
 
+  it('refuses a CommonJS file, its map and its declarations in the archive, which 3.0 does not build', async () => {
+    const archive = new Set([
+      ...publicFiles,
+      ASSET,
+      'dist/index.js',
+      'dist/index.js.map',
+      'dist/index.d.ts',
+      'dist/index.cjs',
+      'dist/index.cjs.map',
+      'dist/index.d.cts',
+    ]);
+
+    expect(await findPackedContentFailures(archive)).toEqual([
+      'package content is outside the public allow-list: dist/index.cjs',
+      'package content is outside the public allow-list: dist/index.cjs.map',
+      'package content is outside the public allow-list: dist/index.d.cts',
+    ]);
+  });
+
   it('checks the installed internal asset even though it has no public export', async () => {
     const consumer = await mkdtemp(join(tmpdir(), 'plp-internal-asset-unit-'));
     try {

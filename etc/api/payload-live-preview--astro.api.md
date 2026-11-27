@@ -4,23 +4,6 @@
 
 ```ts
 
-import { a } from '../../fragment-endpoint-DeNC56CC.js';
-import { A as AUTHORIZATION_LOCALS_KEY } from '../../locals-CwcgOvsW.js';
-import { a as AUTHORIZATION_OUTCOME_LOCALS_KEY } from '../../locals-CwcgOvsW.js';
-import { b } from '../../fragment-endpoint-DeNC56CC.js';
-import { c } from '../../fragment-endpoint-DeNC56CC.js';
-import { c as createLivePreviewMiddleware } from '../../middleware-CN9Z5_72.js';
-import { F } from '../../fragment-endpoint-DeNC56CC.js';
-import { d as FragmentRenderInput } from '../../fragment-endpoint-DeNC56CC.js';
-import { h as hasPreviewIntent } from '../../options-D6jxFb1l.js';
-import { L as LivePreviewLocals } from '../../locals-CwcgOvsW.js';
-import { L as LivePreviewMiddleware } from '../../middleware-CN9Z5_72.js';
-import { N as NONCE_LOCALS_KEY } from '../../locals-CwcgOvsW.js';
-import { P as PreviewAdapterOptions } from '../../options-D6jxFb1l.js';
-import { a as PreviewRequestLike } from '../../options-D6jxFb1l.js';
-import { b as PreviewRequestOptions } from '../../options-D6jxFb1l.js';
-import { c as PreviewSignal } from '../../options-D6jxFb1l.js';
-
 // @public
 export type AstroComponentLike = object;
 
@@ -77,9 +60,65 @@ export interface AstroIntegrationLike {
     readonly name: string;
 }
 
-export { AUTHORIZATION_LOCALS_KEY }
+// @internal
+export const AUTHORIZATION_LOCALS_KEY = "livePreviewAuthorization";
 
-export { AUTHORIZATION_OUTCOME_LOCALS_KEY }
+// @internal
+export const AUTHORIZATION_OUTCOME_LOCALS_KEY = "livePreviewAuthorizationOutcome";
+
+// @public
+const AUTHORIZED_PREVIEW_BRAND_KEY = "payload-live-preview.authorized-preview-context";
+
+// @public
+interface AuthorizedPreviewContext {
+    // Warning: (ae-forgotten-export) The symbol "AUTHORIZED_PREVIEW_BRAND_KEY" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly [AUTHORIZED_PREVIEW_BRAND_KEY]: true;
+    readonly authorizedAt: number;
+    readonly expiresAt: number | undefined;
+    readonly payloadHeaders: Readonly<Record<string, string>>;
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewScope" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly scope: AuthorizedPreviewScope;
+    // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationStrategyName" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly strategy: PreviewAuthorizationStrategyName;
+    readonly subject: string | undefined;
+}
+
+// @public
+type AuthorizedPreviewDocument = {
+    readonly kind: 'collection';
+    readonly slug: string;
+    readonly id: string | number;
+} | {
+    readonly kind: 'global';
+    readonly slug: string;
+};
+
+// @public
+interface AuthorizedPreviewPayloadScope {
+    readonly apiRoute?: string;
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewDocument" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly document: AuthorizedPreviewDocument;
+    readonly maxDepth: number;
+    readonly serverURL: string;
+}
+
+// @public
+interface AuthorizedPreviewScope {
+    readonly audience?: string;
+    // (undocumented)
+    readonly locale?: string;
+    readonly path?: string;
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewPayloadScope" needs to be exported by the entry point index.d.ts
+    readonly payload?: AuthorizedPreviewPayloadScope;
+}
 
 // @public
 export function createFragmentEndpoint(options: FragmentEndpointOptions): (context: {
@@ -87,7 +126,11 @@ export function createFragmentEndpoint(options: FragmentEndpointOptions): (conte
     readonly locals?: unknown;
 }) => Promise<Response>;
 
-export { createLivePreviewMiddleware }
+// @public
+export function createLivePreviewMiddleware(options?: PreviewAdapterOptions): LivePreviewMiddleware;
+
+// @public
+type DefaultsProfile = 'v2';
 
 // @public (undocumented)
 interface DevRequest {
@@ -105,21 +148,98 @@ interface DevResponse {
     statusCode: number;
 }
 
+// @public
+type EventSourcePolicy = 'any' | 'parent-or-opener';
+
+// @public
+type FetchLike = (input: string, init: {
+    readonly headers: Record<string, string>;
+    readonly signal: AbortSignal;
+    readonly redirect: 'manual';
+}) => Promise<{
+    readonly ok: boolean;
+    readonly status: number;
+    json(): Promise<unknown>;
+}>;
+
+// Warning: (ae-forgotten-export) The symbol "FragmentEndpointOptions_2" needs to be exported by the entry point index.d.ts
+//
 // @public (undocumented)
-export type FragmentEndpointOptions = F<AstroComponentLike>;
+export type FragmentEndpointOptions = FragmentEndpointOptions_2<AstroComponentLike>;
+
+// @public (undocumented)
+interface FragmentEndpointOptions_2<Component> {
+    readonly allowedOrigins?: readonly string[];
+    // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationStrategy" needs to be exported by the entry point index.d.ts
+    readonly authorize?: PreviewAuthorizationStrategy;
+    readonly authorizePreview?: NonNullable<PreviewAdapterOptions['authorizePreview']>;
+    // (undocumented)
+    readonly limits?: {
+        readonly bodyBytes?: number;
+        readonly timeoutMs?: number;
+        readonly fieldDepth?: number;
+        readonly totalTimeoutMs?: number;
+    };
+    // Warning: (ae-forgotten-export) The symbol "FragmentRegistry_2" needs to be exported by the entry point index.d.ts
+    readonly registry: FragmentRegistry_2<Component>;
+    // Warning: (ae-forgotten-export) The symbol "FragmentRenderer_2" needs to be exported by the entry point index.d.ts
+    readonly render?: FragmentRenderer_2<Component>;
+}
 
 // @internal (undocumented)
-export type FragmentRegistry = a<AstroComponentLike>;
+export type FragmentRegistry = FragmentRegistry_2<AstroComponentLike>;
+
+// Warning: (ae-forgotten-export) The symbol "FragmentRegistryEntry_2" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+type FragmentRegistry_2<Component> = Readonly<Record<string, FragmentRegistryEntry_2<Component>>>;
 
 // @public (undocumented)
-export type FragmentRegistryEntry<Props extends object = object> = b<AstroComponentLike, Props>;
+export type FragmentRegistryEntry<Props extends object = object> = FragmentRegistryEntry_2<AstroComponentLike, Props>;
+
+// @public
+interface FragmentRegistryEntry_2<Component, Props extends object = object> {
+    // (undocumented)
+    readonly component: Component;
+    readonly props: (input: FragmentRenderInput) => Props | Promise<Props>;
+}
 
 // @internal (undocumented)
-export type FragmentRenderer = c<AstroComponentLike>;
+export type FragmentRenderer = FragmentRenderer_2<AstroComponentLike>;
 
-export { FragmentRenderInput }
+// @public
+type FragmentRenderer_2<Component> = (component: Component, props: Record<string, unknown>, input: FragmentRenderInput) => Promise<string>;
 
-export { hasPreviewIntent }
+// @public
+export interface FragmentRenderInput {
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewContext" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly authorization: AuthorizedPreviewContext;
+    // (undocumented)
+    readonly collectionSlug: string | undefined;
+    // (undocumented)
+    readonly fields: Readonly<Record<string, unknown>>;
+    // (undocumented)
+    readonly globalSlug: string | undefined;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly key: string | undefined;
+    // (undocumented)
+    readonly locale: string | undefined;
+    readonly locals: unknown;
+    // (undocumented)
+    readonly request: Request;
+    // (undocumented)
+    readonly revision: number;
+    // (undocumented)
+    readonly route: string;
+    readonly signal: AbortSignal;
+}
+
+// @public
+export function hasPreviewIntent(request: PreviewRequestLike, options?: PreviewRequestOptions): boolean;
 
 // @public
 export type IslandModuleResolver = (specifier: string) => Promise<string>;
@@ -133,19 +253,192 @@ export interface LivePreviewAstroOptions extends Omit<PreviewAdapterOptions, 'au
     readonly mode?: 'inline' | 'loader' | 'middleware';
 }
 
-export { LivePreviewLocals }
+// @public
+export interface LivePreviewLocals {
+    readonly livePreviewAuthorization?: AuthorizedPreviewContext;
+    // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationOutcome" needs to be exported by the entry point index.d.ts
+    readonly livePreviewAuthorizationOutcome?: PreviewAuthorizationOutcome;
+    readonly livePreviewNonce?: string;
+    readonly livePreviewRequiresAuthorization?: boolean;
+}
 
-export { LivePreviewMiddleware }
+// @public
+type LivePreviewLocalsSink = {
+    -readonly [K in keyof LivePreviewLocals]: LivePreviewLocals[K];
+};
 
-export { NONCE_LOCALS_KEY }
+// Warning: (ae-forgotten-export) The symbol "MiddlewareContext" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "MiddlewareNext" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export type LivePreviewMiddleware = (context: MiddlewareContext, next: MiddlewareNext) => Promise<Response>;
 
-export { PreviewAdapterOptions }
+// @public (undocumented)
+interface MiddlewareContext {
+    readonly isPrerendered?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "LivePreviewLocalsSink" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly locals: LivePreviewLocalsSink;
+    // (undocumented)
+    readonly request: Request;
+}
 
-export { PreviewRequestLike }
+// @public
+type MiddlewareNext = () => Promise<Response>;
 
-export { PreviewRequestOptions }
+// @internal
+export const NONCE_LOCALS_KEY = "livePreviewNonce";
 
-export { PreviewSignal }
+// @public (undocumented)
+interface PayloadSessionStrategy {
+    readonly cookieName?: string;
+    // Warning: (ae-forgotten-export) The symbol "FetchLike" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly fetch?: FetchLike;
+    readonly maxCookieLength?: number;
+    readonly now?: () => number;
+    readonly origin?: string;
+    readonly serverURL: string;
+    readonly timeoutMs?: number;
+    // (undocumented)
+    readonly type: 'payload-session';
+    readonly usersSlug?: string;
+}
+
+// @public (undocumented)
+export interface PreviewAdapterOptions<Req = Request> {
+    readonly allowedOrigins?: readonly string[];
+    readonly apiRoute?: string;
+    readonly assetPath?: string;
+    // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationHookResult" needs to be exported by the entry point index.d.ts
+    readonly authorizePreview?: (request: Req) => PreviewAuthorizationHookResult | Promise<PreviewAuthorizationHookResult>;
+    readonly autoBind?: 'off' | 'unique';
+    readonly autoInject?: boolean;
+    readonly debounceMs?: number;
+    readonly debug?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "DefaultsProfile" needs to be exported by the entry point index.d.ts
+    readonly defaults?: DefaultsProfile;
+    readonly delivery?: 'inline' | 'asset';
+    readonly enableLocalhostMatching?: boolean;
+    readonly enableReferrerDetection?: boolean;
+    readonly enableVisibilityGate?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "EventSourcePolicy" needs to be exported by the entry point index.d.ts
+    readonly eventSourcePolicy?: EventSourcePolicy;
+    readonly fragments?: {
+        readonly endpoint: string;
+    };
+    readonly frameAncestorsExtra?: readonly string[];
+    readonly heartbeatMs?: number;
+    readonly hydration?: 'manual';
+    readonly inject?: 'preview-only' | 'always';
+    readonly internalLinkPattern?: string;
+    readonly manageCsp?: boolean | 'frame-ancestors' | 'full';
+    readonly mergeDepth?: number;
+    readonly mergeTimeoutMs?: number;
+    readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
+    readonly previewQueryParams?: readonly string[];
+    readonly previewSignals?: readonly PreviewSignal[];
+    readonly revealEditedField?: boolean;
+    readonly routeStrategy?: boolean | 'after-save' | 'router';
+    readonly sanitizerPolicy?: 'compat' | 'strict';
+    readonly scopeBindingsByOwner?: boolean;
+    readonly scriptSrcExtra?: readonly string[];
+    readonly serverURL?: string;
+    readonly shouldInject?: (request: Req) => boolean;
+    readonly skipUnchanged?: boolean;
+    readonly strict?: true;
+    readonly strictDynamic?: boolean;
+    readonly subfieldCoverage?: 'descendant' | 'declared';
+    readonly visibilityGateThreshold?: number;
+}
+
+// @public
+type PreviewAuthorization = {
+    readonly authorized: true;
+    readonly outcome: 'authorized';
+    readonly context: AuthorizedPreviewContext;
+} | {
+    readonly authorized: false;
+    readonly outcome: Exclude<PreviewAuthorizationOutcome, 'authorized'>;
+    readonly context: null;
+};
+
+// Warning: (ae-forgotten-export) The symbol "PreviewAuthorization" needs to be exported by the entry point index.d.ts
+//
+// @public
+type PreviewAuthorizationHookResult = PreviewAuthorization | AuthorizedPreviewContext | null | undefined;
+
+// @public
+type PreviewAuthorizationOutcome = 'authorized' | 'missing-credential' | 'invalid' | 'expired' | 'wrong-audience' | 'wrong-path' | 'wrong-locale' | 'wrong-purpose' | 'replayed' | 'unavailable';
+
+// @public
+interface PreviewAuthorizationRequest {
+    // (undocumented)
+    readonly headers: {
+        get(name: string): string | null;
+    };
+    readonly signal?: AbortSignal;
+    // (undocumented)
+    readonly url: string;
+}
+
+// Warning: (ae-forgotten-export) The symbol "PayloadSessionStrategy" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "SignedTokenStrategy" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "VerifierStrategy" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+type PreviewAuthorizationStrategy = PayloadSessionStrategy | SignedTokenStrategy | VerifierStrategy;
+
+// @public (undocumented)
+type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
+
+// @public
+export interface PreviewRequestLike {
+    // (undocumented)
+    readonly headers: {
+        get(name: string): string | null;
+    };
+    // (undocumented)
+    readonly url: string;
+}
+
+// @public (undocumented)
+export interface PreviewRequestOptions {
+    readonly allowedOrigins?: readonly string[];
+    readonly queryParams?: readonly string[];
+    readonly signals?: readonly PreviewSignal[];
+}
+
+// @public
+export type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
+
+// @public
+interface PreviewTokenReplayStore {
+    consume(id: string, expiresAt: number): Promise<boolean> | boolean;
+}
+
+// @public
+type PreviewTokenTransport = {
+    readonly kind: 'query';
+    readonly param?: string;
+} | {
+    readonly kind: 'header';
+    readonly name?: string;
+};
+
+// @public
+interface PreviewVerifierClaims {
+    // (undocumented)
+    readonly expiresAt?: number;
+    // (undocumented)
+    readonly payloadHeaders?: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly scope?: AuthorizedPreviewScope;
+    // (undocumented)
+    readonly subject?: string;
+}
 
 // @public
 export function renderLivePreviewScript(options?: RenderScriptOptions): string;
@@ -170,6 +463,56 @@ interface RollupEmitContext {
 
 // @public
 type ScriptStage = 'head-inline' | 'page' | 'before-hydration' | 'page-ssr';
+
+// @public (undocumented)
+interface SignedTokenStrategy {
+    readonly audience: string;
+    // Warning: (ae-forgotten-export) The symbol "SubtleCryptoLike" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly crypto?: SubtleCryptoLike;
+    // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationRequest" needs to be exported by the entry point index.d.ts
+    readonly locale?: (request: PreviewAuthorizationRequest) => string | undefined;
+    // (undocumented)
+    readonly now?: () => number;
+    readonly purpose?: string;
+    // Warning: (ae-forgotten-export) The symbol "PreviewTokenReplayStore" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly replay?: PreviewTokenReplayStore;
+    readonly secret: string | Uint8Array;
+    // Warning: (ae-forgotten-export) The symbol "PreviewTokenTransport" needs to be exported by the entry point index.d.ts
+    readonly transport?: PreviewTokenTransport;
+    // (undocumented)
+    readonly type: 'signed-token';
+}
+
+// @public
+interface SubtleCryptoLike {
+    // (undocumented)
+    getRandomValues<T extends Uint8Array>(array: T): T;
+    // (undocumented)
+    readonly subtle: {
+        importKey(format: 'raw', keyData: Uint8Array, algorithm: {
+            readonly name: 'HMAC';
+            readonly hash: 'SHA-256';
+        }, extractable: false, keyUsages: readonly ('sign' | 'verify')[]): Promise<CryptoKey>;
+        sign(algorithm: 'HMAC', key: CryptoKey, data: Uint8Array): Promise<ArrayBuffer>;
+        verify(algorithm: 'HMAC', key: CryptoKey, signature: Uint8Array, data: Uint8Array): Promise<boolean>;
+    };
+}
+
+// @public
+interface VerifierStrategy {
+    // (undocumented)
+    readonly now?: () => number;
+    // (undocumented)
+    readonly type: 'verifier';
+    // Warning: (ae-forgotten-export) The symbol "PreviewVerifierClaims" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    readonly verify: (request: PreviewAuthorizationRequest) => Promise<PreviewVerifierClaims | null> | PreviewVerifierClaims | null;
+}
 
 // @public (undocumented)
 interface ViteDevServerLike {
@@ -199,10 +542,10 @@ interface VitePluginLike {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/astro/index.d.ts:63:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:63:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:82:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
-// dist/adapters/astro/index.d.ts:93:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:67:9 - (ae-forgotten-export) The symbol "DevRequest" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:67:9 - (ae-forgotten-export) The symbol "DevResponse" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:86:13 - (ae-forgotten-export) The symbol "VitePluginLike" needs to be exported by the entry point index.d.ts
+// dist/adapters/astro/index.d.ts:97:9 - (ae-forgotten-export) The symbol "AstroConfigSetupContext" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

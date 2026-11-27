@@ -12,12 +12,13 @@ type JsonRecord = Record<string, unknown>;
 export interface TypedApiEntry {
   readonly exportName: string;
   readonly importTypesTarget: string;
-  readonly requireTypesTarget: string | undefined;
+  /** Whether `require()` reaches the entry too: a `default` condition on the same ES module. */
+  readonly requirable: boolean;
   readonly reportName: string;
 }
 
 export interface AttwInvocation {
-  readonly label: 'dual-format' | 'ESM-only';
+  readonly label: 'ESM-only';
   readonly args: readonly string[];
 }
 
@@ -90,7 +91,15 @@ export interface ApiReportCheckOptions {
 // 2026-10-31: +1, the session's `Listener`, a plain `() => void` that `createDocumentSession()` reaches from `/core`.
 // 2026-11-03: -1, the same `Listener`: `DocumentSession` is an interface whose `subscribe` spells it `() => void`.
 // 2026-11-25 (3.0): -2, `PayloadBlockSchema`, which the root and core entries reached through `PayloadFieldSchema`; both types left with Payload 2.
-export const FORGOTTEN_EXPORT_BASELINE = 48;
+// 2026-11-27 (3.0, one module graph): 48 to 184, and none of the 136 is new. The eight reports of
+// the adapters, the Nuxt module, the hooks and the Astro middleware entry used to print
+// `import { … } from '../../<chunk>.js'` where a signature reached a declaration chunk, because
+// the extractor ran inside `node_modules` and took the chunk for an external library. It reads a
+// copy outside it now, prints the declarations, and with them the names those signatures reach
+// without the entry exporting them: astro 35, nuxt 34, sveltekit 30, nextjs 26, the Nuxt module
+// 14, the middleware entry 12, the two hooks 1 each (`PreviewDocument`). The ten other reports
+// are unchanged byte for byte.
+export const FORGOTTEN_EXPORT_BASELINE = 184;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.
@@ -111,39 +120,39 @@ function isRecord(value: unknown): value is JsonRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function conditionExists(value: JsonRecord, condition: 'import' | 'require'): boolean {
-  const branch = value[condition];
-  return typeof branch === 'string' || isRecord(branch);
-}
-
 function assertDeclarationTarget(target: string, exportName: string): string {
   const segments = target.slice(2).split('/');
   if (
     !target.startsWith('./') ||
     segments.some((segment) => segment.length === 0 || segment === '.' || segment === '..') ||
-    !/\.d\.(?:c|m)?ts$/u.test(target)
+    !target.endsWith('.d.ts')
   ) {
     throw new Error(`${exportName} exposes an unsafe or non-declaration types target: ${target}`);
   }
   return target;
 }
 
-function typesTarget(
-  value: JsonRecord,
-  exportName: string,
-  condition: 'import' | 'require',
-): string | undefined {
-  const branch = value[condition];
-  if (isRecord(branch) && typeof branch['types'] === 'string') {
-    return assertDeclarationTarget(branch['types'], exportName);
+/**
+ * The declarations of an entry. Since 3.0 an entry is one ES module with one
+ * declaration file: a `require` condition would name a CommonJS build that does
+ * not exist, and a `default` condition, which is what `require()` matches, has
+ * to hand out the declarations `import` gets.
+ */
+function typesTarget(value: JsonRecord, exportName: string): string | undefined {
+  if ('require' in value) {
+    throw new Error(`${exportName} names a CommonJS build; the package is ESM alone since 3.0`);
   }
-
-  const sharedTarget = value['types'];
-  if (typeof sharedTarget !== 'string') return undefined;
-  if (conditionExists(value, condition)) {
-    return assertDeclarationTarget(sharedTarget, exportName);
+  const branch = value['import'];
+  const target =
+    isRecord(branch) && typeof branch['types'] === 'string' ? branch['types'] : value['types'];
+  if (typeof target !== 'string') return undefined;
+  const fallback = value['default'];
+  if (isRecord(fallback) && fallback['types'] !== target) {
+    throw new Error(
+      `${exportName} gives require() other declarations than import: ${String(fallback['types'])} != ${target}`,
+    );
   }
-  return condition === 'import' ? assertDeclarationTarget(sharedTarget, exportName) : undefined;
+  return assertDeclarationTarget(target, exportName);
 }
 
 function reportBaseName(packageName: string, exportName: string): string {
@@ -172,10 +181,8 @@ export function collectTypedApiEntries(manifest: unknown): readonly TypedApiEntr
   const reportNames = new Set<string>();
   for (const [exportName, conditions] of Object.entries(exportsValue)) {
     if (!isRecord(conditions)) continue;
-    const importTypesTarget = typesTarget(conditions, exportName, 'import');
-    const requireTypesTarget = typesTarget(conditions, exportName, 'require');
-    const primaryTarget = importTypesTarget ?? requireTypesTarget;
-    if (primaryTarget === undefined) continue;
+    const importTypesTarget = typesTarget(conditions, exportName);
+    if (importTypesTarget === undefined) continue;
 
     const reportName = reportBaseName(manifest['name'], exportName);
     if (reportNames.has(reportName)) {
@@ -184,8 +191,8 @@ export function collectTypedApiEntries(manifest: unknown): readonly TypedApiEntr
     reportNames.add(reportName);
     entries.push({
       exportName,
-      importTypesTarget: primaryTarget,
-      requireTypesTarget,
+      importTypesTarget,
+      requirable: isRecord(conditions['default']),
       reportName,
     });
   }
@@ -196,37 +203,18 @@ function attwEntrypoint(exportName: string): string {
   return exportName === '.' ? '.' : exportName.slice(2);
 }
 
-/** Build ATTW commands without ever asking the tool to repack the source tree. */
+/**
+ * The ATTW command, which never asks the tool to repack the source tree. One
+ * profile: every entry is an ES module, and the tool's CommonJS resolutions
+ * have nothing to check where no CommonJS file exists.
+ */
 export function buildAttwInvocations(
   tarball: string,
   entries: readonly TypedApiEntry[],
 ): readonly AttwInvocation[] {
-  const dualFormat = entries
-    .filter((entry) => entry.requireTypesTarget !== undefined)
-    .map((entry) => attwEntrypoint(entry.exportName));
-  const esmOnly = entries
-    .filter((entry) => entry.requireTypesTarget === undefined)
-    .map((entry) => attwEntrypoint(entry.exportName));
-  const invocations: AttwInvocation[] = [];
-
-  if (dualFormat.length > 0) {
-    invocations.push({
-      label: 'dual-format',
-      args: [
-        tarball,
-        '--profile',
-        'node16',
-        '--no-definitely-typed',
-        '--entrypoints',
-        ...dualFormat,
-        '--format',
-        'table',
-        '--no-color',
-      ],
-    });
-  }
-  if (esmOnly.length > 0) {
-    invocations.push({
+  if (entries.length === 0) return [];
+  return [
+    {
       label: 'ESM-only',
       args: [
         tarball,
@@ -234,43 +222,13 @@ export function buildAttwInvocations(
         'esm-only',
         '--no-definitely-typed',
         '--entrypoints',
-        ...esmOnly,
+        ...entries.map((entry) => attwEntrypoint(entry.exportName)),
         '--format',
         'table',
         '--no-color',
       ],
-    });
-  }
-  return invocations;
-}
-
-/**
- * Keep dual-format declarations one public contract.
- *
- * API Extractor reads the ESM declaration entry while ATTW and the compiler
- * exercise both resolution branches. Requiring byte-identical `.d.ts` and
- * `.d.cts` output closes the remaining drift seam without maintaining two API
- * snapshots for what is intentionally the same 1.x surface.
- */
-export async function checkDualDeclarationParity(
-  entries: readonly TypedApiEntry[],
-  packageRootForEntry: (entry: TypedApiEntry) => string,
-): Promise<readonly string[]> {
-  const failures: string[] = [];
-  for (const entry of entries) {
-    if (entry.requireTypesTarget === undefined) continue;
-    const packageRoot = packageRootForEntry(entry);
-    const [importDeclaration, requireDeclaration] = await Promise.all([
-      readFile(resolve(packageRoot, entry.importTypesTarget.slice(2))),
-      readFile(resolve(packageRoot, entry.requireTypesTarget.slice(2))),
-    ]);
-    if (!importDeclaration.equals(requireDeclaration)) {
-      failures.push(
-        `${entry.exportName} import/require declarations differ: ${entry.importTypesTarget} != ${entry.requireTypesTarget}`,
-      );
-    }
-  }
-  return failures;
+    },
+  ];
 }
 
 function formatExtractorMessage(

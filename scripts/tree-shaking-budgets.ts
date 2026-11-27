@@ -420,10 +420,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   },
   {
     // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +2 B gzip; reserve kept.
+    // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +112 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 6_008,
+    gzip: 6_120,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
@@ -444,10 +445,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +288 B gzip; reserve kept.
     // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
     // without the change: +318 B gzip; retain the reserve it had.
+    // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -286 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 54_690,
+    gzip: 54_404,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -468,10 +470,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +239 B gzip; reserve kept.
     // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
     // without the change: +270 B gzip; retain the reserve it had.
+    // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -23 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 53_226,
+    gzip: 53_203,
     why: 'the generator carries the inline runtime source and nothing of the client',
   },
   {
@@ -492,17 +495,19 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +293 B gzip; reserve kept.
     // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
     // without the change: +326 B gzip; retain the reserve it had.
+    // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -235 B gzip; reserve kept.
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 54_624,
+    gzip: 54_389,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
+    // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -30 B gzip; reserve kept.
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 6_145,
+    gzip: 6_115,
     why: 'the Lexical renderer from its focused entry',
   },
   {
@@ -536,35 +541,39 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-11-05 (2.4.2, a full-mode merge keeps the page's 'unsafe-inline'): paired, same epoch: 62_529 → 62_695, +166 B gzip; reserve kept.
     // 2026-11-05 (2.4.2, the union also reaches the page's own script-src-elem): paired, same epoch: 62_695 → 62_725, +30 B gzip; reserve kept.
     // 2026-11-24 (each strict refusal names its remedy): paired Node22.23.2: 62_734 → 62_849, +115 B gzip; reserve kept.
+    // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -110 B gzip; reserve kept.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 59_049,
+    gzip: 58_939,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     // 2026-10-04: paired combined 2.1 population/locale integration adds +3075 B gzip; retain 80 B cushion.
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery -14 B gzip; retain 80 B.
+    // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +14 B gzip; reserve kept.
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 6_467,
+    gzip: 6_481,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
     // 2026-10-04: paired combined 2.1 population/locale integration adds +3070 B gzip; retain 80 B cushion.
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery -21 B gzip; retain 80 B.
+    // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +17 B gzip; reserve kept.
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 6_365,
+    gzip: 6_382,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {
+    // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +16 B gzip; reserve kept.
     from: 'payload-live-preview/plugins',
     symbol: 'PluginManager',
     use: 'export const out = PluginManager;',
-    gzip: 3_373,
+    gzip: 3_389,
     why: 'the plugin manager without the built-in plugins',
   },
   {

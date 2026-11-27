@@ -6,7 +6,7 @@
  */
 
 import { readFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
@@ -49,15 +49,57 @@ export function edgeGlobals(): Record<string, unknown> {
   };
 }
 
+/**
+ * The modules of one context by file. A chunk two entries share exists once, as
+ * in a runtime, and the promise is what is kept: the linker asks for the same
+ * chunk from several importers before the first read of it has finished, and
+ * a module that keeps state must not exist twice.
+ */
+const LOADED = new WeakMap<vm.Context, Map<string, Promise<vm.SourceTextModule>>>();
+
+/**
+ * Where a specifier in a built file leads, when it is one of the package's own
+ * files under `dist`: a relative path that stays inside it. `undefined` for a
+ * bare specifier, a Node builtin or a path that leaves the folder, which an
+ * edge runtime does not have.
+ */
+export function ownChunk(dist: string, from: string, specifier: string): string | undefined {
+  if (!specifier.startsWith('./') && !specifier.startsWith('../')) return undefined;
+  const target = resolve(dirname(from), specifier);
+  const inside = relative(dist, target);
+  return inside.startsWith('..') || inside === '' ? undefined : target;
+}
+
+/**
+ * Load a built entry into the context. It may import the package's own chunks,
+ * which are loaded the same way, and nothing else.
+ */
 export async function loadModule(context: vm.Context, file: string): Promise<Exports> {
-  const source = await readFile(resolve(ROOT, file), 'utf8');
-  const identifier = pathToFileURL(resolve(ROOT, file)).href;
-  const module = new vm.SourceTextModule(source, { context, identifier });
-  await module.link((specifier: string) => {
-    throw new Error(
-      `edge check: ${file} imports "${specifier}" — an edge bundle must be self-contained`,
+  const dist = resolve(ROOT, 'dist');
+  const loaded = LOADED.get(context) ?? new Map<string, Promise<vm.SourceTextModule>>();
+  LOADED.set(context, loaded);
+  const load = (path: string): Promise<vm.SourceTextModule> => {
+    const known = loaded.get(path);
+    if (known !== undefined) return known;
+    const module = readFile(path, 'utf8').then(
+      (source) =>
+        new vm.SourceTextModule(source, { context, identifier: pathToFileURL(path).href }),
     );
-  });
+    loaded.set(path, module);
+    return module;
+  };
+  const link = (specifier: string, referencing: vm.Module): Promise<vm.SourceTextModule> => {
+    const from = fileURLToPath(referencing.identifier);
+    const target = ownChunk(dist, from, specifier);
+    if (target === undefined) {
+      throw new Error(
+        `edge check: ${relative(ROOT, from)} imports "${specifier}" — an edge bundle may import the package's own chunks and nothing else`,
+      );
+    }
+    return load(target);
+  };
+  const module = await load(resolve(ROOT, file));
+  await module.link(link);
   await module.evaluate();
   return module.namespace as Exports;
 }

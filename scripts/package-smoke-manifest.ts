@@ -7,33 +7,12 @@
 import { readFile, stat } from 'node:fs/promises';
 import { basename, relative, resolve, sep } from 'node:path';
 import { exists, isRecord, ROOT, type JsonRecord } from './package-smoke-support';
+import { reexportsOnly } from './entry-closure';
 
 const PUBLIC_TOP_LEVEL_FILES = new Set(['LICENSE', 'README.md', 'package.json']);
 const INTERNAL_ASSETS = { astroBridge: './dist/adapters/astro/FragmentBridge.astro' } as const;
-const PUBLIC_DIST_SUFFIXES = [
-  '.js',
-  '.cjs',
-  '.js.map',
-  '.cjs.map',
-  '.d.ts',
-  '.d.cts',
-  '.astro',
-] as const;
-const ESM_ONLY_ARTIFACT_STEMS = [
-  'dist/adapters/astro/index',
-  'dist/adapters/astro/middleware-entry',
-  'dist/adapters/nextjs/index',
-  'dist/adapters/nextjs/client',
-  'dist/adapters/nuxt/index',
-  'dist/adapters/nuxt/client',
-  'dist/adapters/sveltekit/index',
-  'dist/adapters/sveltekit/client',
-  'dist/adapters/react/index',
-  'dist/adapters/vue/index',
-  'dist/codegen-astro',
-  'dist/codegen-cli',
-] as const;
-const FORBIDDEN_ESM_ONLY_SUFFIXES = ['.cjs', '.cjs.map', '.d.cts'] as const;
+/** ESM alone since 3.0: a `.cjs` file, its map or a `.d.cts` in the archive is outside the list. */
+const PUBLIC_DIST_SUFFIXES = ['.js', '.js.map', '.d.ts', '.astro'] as const;
 
 /**
  * The quoted placeholder the Astro integration fills with the island module
@@ -89,20 +68,6 @@ export async function findPackedContentFailures(
     }
   }
 
-  for (const stem of ESM_ONLY_ARTIFACT_STEMS) {
-    for (const suffix of FORBIDDEN_ESM_ONLY_SUFFIXES) {
-      const path = `${stem}${suffix}`;
-      const inDist = await exists(resolve(ROOT, path));
-      const inTarball = packedFiles.has(path);
-      if (inDist || inTarball) {
-        const locations = [inDist ? 'dist' : '', inTarball ? 'tarball' : '']
-          .filter((location) => location.length > 0)
-          .join(' and ');
-        failures.push(`unexported ESM-only CJS artifact in ${locations}: ${path}`);
-      }
-    }
-  }
-
   return failures;
 }
 
@@ -151,12 +116,17 @@ async function findSourceMapFailures(
   }
   try {
     const sourceMap: unknown = JSON.parse(await readFile(mapPath, 'utf8'));
+    // An entry that only re-exports from the shared chunks has no line of its own to map.
+    const empty =
+      isRecord(sourceMap) &&
+      sourceMap['mappings'] === '' &&
+      reexportsOnly(await readFile(absolute, 'utf8'));
     if (
       !isRecord(sourceMap) ||
       sourceMap['version'] !== 3 ||
       sourceMap['file'] !== basename(target) ||
       !Array.isArray(sourceMap['sources']) ||
-      sourceMap['sources'].length === 0 ||
+      (sourceMap['sources'].length === 0 && !empty) ||
       typeof sourceMap['mappings'] !== 'string'
     ) {
       return [`${label} source map is malformed: ${mapTarget}`];
@@ -197,7 +167,7 @@ export async function findPackedTargetFailures(
       continue;
     }
 
-    if ((target.endsWith('.js') || target.endsWith('.cjs')) && !checkedMaps.has(target)) {
+    if (target.endsWith('.js') && !checkedMaps.has(target)) {
       checkedMaps.add(target);
       failures.push(...(await findSourceMapFailures(label, target, absolute, packedFiles)));
     }

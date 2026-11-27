@@ -1,8 +1,11 @@
 /**
- * The defaults, row by row, and the one place a default is written. Whoever
- * applies one reads it here: the runtime and its parts, the origin detector,
- * the hooks, the adapters' request policy and `pll doctor`; a gate holds
- * `docs/options.md` to the same rows. The merger's own fallbacks (`apiRoute`,
+ * The defaults table: its rows are the exports of `adapter-defaults.ts` and
+ * `runtime-defaults.ts`, one per option, and the one place a default is
+ * written. Whoever applies one imports the module of its half as a namespace
+ * and reads the row, so that a bundle carries the rows it reads and the
+ * package's shared chunks no object of all of them: the runtime and its parts,
+ * the origin detector, the hooks, the adapters' request policy and `pll
+ * doctor`; a gate holds `docs/options.md` to the same rows. The merger's own fallbacks (`apiRoute`,
  * the depth) are not rows: it is in the trusted core and keeps them.
  *
  * 3.0 has one profile: `defaults: 'v1'`, the 1.x table that 2.x kept for a
@@ -31,16 +34,3 @@ export const READINESS_ROWS = /* @__PURE__ */ Object.freeze({
   skipUnchanged: 'skip unchanged bindings by default',
   sanitizerPolicy: 'hardened sanitizer id/data-* policy',
 } as const);
-
-/**
- * The rows an adapter's request decision reads: the exports of `adapter-defaults.ts`, one per
- * row, as one object for whoever reads the table whole.
- */
-export * as V2_ADAPTER_DEFAULTS from './adapter-defaults';
-
-/**
- * The rows the browser runtime, the client and the hooks read: the exports of
- * `runtime-defaults.ts`. Code that is bundled imports the module of its half itself, as a
- * namespace, so that the bundler resolves each row and leaves the others out.
- */
-export * as V2_RUNTIME_DEFAULTS from './runtime-defaults';

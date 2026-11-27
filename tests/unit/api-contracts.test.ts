@@ -1,22 +1,12 @@
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   buildAttwInvocations,
-  checkDualDeclarationParity,
   collectTypedApiEntries,
   findForgottenExportBaselineViolation,
 } from '../../scripts/api-contracts';
 
 describe('packed API contracts', () => {
-  const temporaryRoots: string[] = [];
-
-  afterEach(async () => {
-    await Promise.all(temporaryRoots.splice(0).map((path) => rm(path, { recursive: true })));
-  });
-
   const manifest = {
     name: 'example-package',
     exports: {
@@ -25,9 +15,10 @@ describe('packed API contracts', () => {
           types: './dist/index.d.ts',
           default: './dist/index.js',
         },
-        require: {
-          types: './dist/index.d.cts',
-          default: './dist/index.cjs',
+        // What `require()` matches: the same ES module, the same declarations.
+        default: {
+          types: './dist/index.d.ts',
+          default: './dist/index.js',
         },
       },
       './adapter': {
@@ -46,38 +37,21 @@ describe('packed API contracts', () => {
         exportName: '.',
         importTypesTarget: './dist/index.d.ts',
         reportName: 'example-package',
-        requireTypesTarget: './dist/index.d.cts',
+        requirable: true,
       },
       {
         exportName: './adapter',
         importTypesTarget: './dist/adapter.d.ts',
         reportName: 'example-package--adapter',
-        requireTypesTarget: undefined,
+        requirable: false,
       },
     ]);
   });
 
-  it('runs both ATTW profiles against the exact same archive', () => {
+  it('runs ATTW once, for ES modules, against the exact archive', () => {
     const tarball = '/tmp/exact/example-package-1.2.3.tgz';
-    const invocations = buildAttwInvocations(tarball, collectTypedApiEntries(manifest));
 
-    expect(invocations).toHaveLength(2);
-    expect(invocations.map(({ args }) => args[0])).toEqual([tarball, tarball]);
-    expect(invocations).toEqual([
-      {
-        args: [
-          tarball,
-          '--profile',
-          'node16',
-          '--no-definitely-typed',
-          '--entrypoints',
-          '.',
-          '--format',
-          'table',
-          '--no-color',
-        ],
-        label: 'dual-format',
-      },
+    expect(buildAttwInvocations(tarball, collectTypedApiEntries(manifest))).toEqual([
       {
         args: [
           tarball,
@@ -85,6 +59,7 @@ describe('packed API contracts', () => {
           'esm-only',
           '--no-definitely-typed',
           '--entrypoints',
+          '.',
           'adapter',
           '--format',
           'table',
@@ -117,28 +92,33 @@ describe('packed API contracts', () => {
     expect(findForgottenExportBaselineViolation(47, 48)).toMatch(/48 to 47/u);
   });
 
-  it('rejects drift between import and require declarations from the installed archive', async () => {
-    const packageRoot = await mkdtemp(resolve(tmpdir(), 'plp-api-parity-'));
-    temporaryRoots.push(packageRoot);
-    await mkdir(resolve(packageRoot, 'dist'));
-    await writeFile(
-      resolve(packageRoot, 'dist/index.d.ts'),
-      'export declare const value: string;\n',
-    );
-    await writeFile(
-      resolve(packageRoot, 'dist/index.d.cts'),
-      'export declare const value: number;\n',
-    );
-    const entries = collectTypedApiEntries(manifest);
+  it('refuses a manifest that names a CommonJS build, which 3.0 does not have', () => {
+    expect(() =>
+      collectTypedApiEntries({
+        name: 'dual-package',
+        exports: {
+          '.': {
+            import: { types: './dist/index.d.ts', default: './dist/index.js' },
+            require: { types: './dist/index.d.cts', default: './dist/index.cjs' },
+          },
+        },
+      }),
+    ).toThrow('. names a CommonJS build; the package is ESM alone since 3.0');
+  });
 
-    await expect(checkDualDeclarationParity(entries, () => packageRoot)).resolves.toEqual([
-      '. import/require declarations differ: ./dist/index.d.ts != ./dist/index.d.cts',
-    ]);
-
-    await writeFile(
-      resolve(packageRoot, 'dist/index.d.cts'),
-      'export declare const value: string;\n',
+  it('refuses an entry whose require() would get other declarations than its import', () => {
+    expect(() =>
+      collectTypedApiEntries({
+        name: 'split-package',
+        exports: {
+          './adapter': {
+            import: { types: './dist/adapter.d.ts', default: './dist/adapter.js' },
+            default: { types: './dist/other.d.ts', default: './dist/adapter.js' },
+          },
+        },
+      }),
+    ).toThrow(
+      './adapter gives require() other declarations than import: ./dist/other.d.ts != ./dist/adapter.d.ts',
     );
-    await expect(checkDualDeclarationParity(entries, () => packageRoot)).resolves.toEqual([]);
   });
 });

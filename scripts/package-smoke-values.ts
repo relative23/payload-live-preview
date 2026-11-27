@@ -52,7 +52,7 @@ async function writeProbes(
     const directory = resolve(consumer, 'declared-value-probes');
     await mkdir(directory, { recursive: true });
     const specifier = specifierFor(packageName, entry.exportName);
-    const conditions = entry.requireTypesTarget === undefined ? ['import'] : ['import', 'require'];
+    const conditions = entry.requirable ? ['import', 'require'] : ['import'];
     for (const condition of conditions as readonly ('import' | 'require')[]) {
       // The extension picks the condition NodeNext resolves the specifier under.
       const file = resolve(directory, `${String(index)}.${condition === 'import' ? 'mts' : 'cts'}`);

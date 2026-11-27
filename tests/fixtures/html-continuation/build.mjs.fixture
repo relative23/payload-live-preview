@@ -2,11 +2,14 @@
  * Plain Node copies the reviewed browser entry and the application modules.
  * No framework compiler, peer, workspace link or runtime code generation is
  * required; the build record binds exactly the files served by this consumer.
+ * Since 3.0 an entry imports the chunks beside it, so the entry is copied with
+ * every file it loads, and nothing else of the package.
  */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
@@ -15,13 +18,21 @@ for (const name of absent) {
   assert.throws(() => require.resolve(name), { code: 'MODULE_NOT_FOUND' });
 }
 const client = fileURLToPath(import.meta.resolve('payload-live-preview/client'));
+const modules = [basename(client)];
+for (const file of modules) {
+  const text = await readFile(join(dirname(client), file), 'utf8');
+  for (const [, name] of text.matchAll(/(?:from|import)\s*["']\.\/([A-Za-z0-9._-]+\.js)["']/g)) {
+    if (!modules.includes(name)) modules.push(name);
+  }
+}
 await mkdir('dist', { recursive: true });
-await copyFile(client, 'dist/client.js');
+for (const file of modules) await copyFile(join(dirname(client), file), join('dist', file));
+await writeFile('dist/assets.json', JSON.stringify({ entry: basename(client), assets: modules }));
 await copyFile('preview.mjs', 'dist/preview.js');
 await copyFile('server.mjs', 'dist/server.mjs');
 const hashes = {};
 const bytes = {};
-for (const path of ['dist/client.js', 'dist/preview.js', 'dist/server.mjs', 'html-host.mjs', 'native-request.mjs']) {
+for (const path of [...modules.map(file => 'dist/' + file), 'dist/preview.js', 'dist/server.mjs', 'html-host.mjs', 'native-request.mjs']) {
   const contents = await readFile(path);
   hashes[path] = createHash('sha256').update(contents).digest('hex');
   bytes[path] = contents.byteLength;

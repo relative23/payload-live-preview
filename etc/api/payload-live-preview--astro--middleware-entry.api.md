@@ -4,10 +4,107 @@
 
 ```ts
 
-import { L } from '../../middleware-CN9Z5_72.js';
+// @public
+const AUTHORIZED_PREVIEW_BRAND_KEY = "payload-live-preview.authorized-preview-context";
 
 // @public
-export const onRequest: L;
+interface AuthorizedPreviewContext {
+    // Warning: (ae-forgotten-export) The symbol "AUTHORIZED_PREVIEW_BRAND_KEY" needs to be exported by the entry point middleware-entry.d.ts
+    //
+    // (undocumented)
+    readonly [AUTHORIZED_PREVIEW_BRAND_KEY]: true;
+    readonly authorizedAt: number;
+    readonly expiresAt: number | undefined;
+    readonly payloadHeaders: Readonly<Record<string, string>>;
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewScope" needs to be exported by the entry point middleware-entry.d.ts
+    //
+    // (undocumented)
+    readonly scope: AuthorizedPreviewScope;
+    // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationStrategyName" needs to be exported by the entry point middleware-entry.d.ts
+    //
+    // (undocumented)
+    readonly strategy: PreviewAuthorizationStrategyName;
+    readonly subject: string | undefined;
+}
+
+// @public
+type AuthorizedPreviewDocument = {
+    readonly kind: 'collection';
+    readonly slug: string;
+    readonly id: string | number;
+} | {
+    readonly kind: 'global';
+    readonly slug: string;
+};
+
+// @public
+interface AuthorizedPreviewPayloadScope {
+    readonly apiRoute?: string;
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewDocument" needs to be exported by the entry point middleware-entry.d.ts
+    //
+    // (undocumented)
+    readonly document: AuthorizedPreviewDocument;
+    readonly maxDepth: number;
+    readonly serverURL: string;
+}
+
+// @public
+interface AuthorizedPreviewScope {
+    readonly audience?: string;
+    // (undocumented)
+    readonly locale?: string;
+    readonly path?: string;
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewPayloadScope" needs to be exported by the entry point middleware-entry.d.ts
+    readonly payload?: AuthorizedPreviewPayloadScope;
+}
+
+// @public
+interface LivePreviewLocals {
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewContext" needs to be exported by the entry point middleware-entry.d.ts
+    readonly livePreviewAuthorization?: AuthorizedPreviewContext;
+    // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationOutcome" needs to be exported by the entry point middleware-entry.d.ts
+    readonly livePreviewAuthorizationOutcome?: PreviewAuthorizationOutcome;
+    readonly livePreviewNonce?: string;
+    readonly livePreviewRequiresAuthorization?: boolean;
+}
+
+// Warning: (ae-forgotten-export) The symbol "LivePreviewLocals" needs to be exported by the entry point middleware-entry.d.ts
+//
+// @public
+type LivePreviewLocalsSink = {
+    -readonly [K in keyof LivePreviewLocals]: LivePreviewLocals[K];
+};
+
+// Warning: (ae-forgotten-export) The symbol "MiddlewareContext" needs to be exported by the entry point middleware-entry.d.ts
+// Warning: (ae-forgotten-export) The symbol "MiddlewareNext" needs to be exported by the entry point middleware-entry.d.ts
+//
+// @public (undocumented)
+type LivePreviewMiddleware = (context: MiddlewareContext, next: MiddlewareNext) => Promise<Response>;
+
+// @public (undocumented)
+interface MiddlewareContext {
+    readonly isPrerendered?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "LivePreviewLocalsSink" needs to be exported by the entry point middleware-entry.d.ts
+    //
+    // (undocumented)
+    readonly locals: LivePreviewLocalsSink;
+    // (undocumented)
+    readonly request: Request;
+}
+
+// @public
+type MiddlewareNext = () => Promise<Response>;
+
+// Warning: (ae-forgotten-export) The symbol "LivePreviewMiddleware" needs to be exported by the entry point middleware-entry.d.ts
+//
+// @public
+export const onRequest: LivePreviewMiddleware;
+
+// @public
+type PreviewAuthorizationOutcome = 'authorized' | 'missing-credential' | 'invalid' | 'expired' | 'wrong-audience' | 'wrong-path' | 'wrong-locale' | 'wrong-purpose' | 'replayed' | 'unavailable';
+
+// @public (undocumented)
+type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
 
 // (No @packageDocumentation comment for this package)
 
