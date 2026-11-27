@@ -17,6 +17,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
     const disconnect = vi.fn();
     emitter.on('disconnect', disconnect);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -59,6 +60,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
     const sendReady = vi.fn();
     emitter.on('disconnect', disconnect);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -90,6 +92,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
     const validateToken = vi.fn(() => verdict.promise);
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -125,6 +128,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
     const release = deferred<undefined>();
     emitter.on('beforeUpdate', async () => release.promise);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -149,6 +153,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
     const emitter = new EventEmitter();
     const onHeartbeatTimeout = vi.fn();
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
@@ -170,6 +175,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
     document.body.innerHTML = '<p data-payload-field="x">published</p>';
     const onHeartbeatTimeout = vi.fn();
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -203,6 +209,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
     const emitter = new EventEmitter();
     const sendReady = vi.fn();
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -233,6 +240,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       if (reason === 'timeout') runtime.destroy();
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -260,6 +268,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       disconnects.push(e.reason);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
@@ -289,6 +298,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       }
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) =>
@@ -327,6 +337,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       disconnects.push(e.reason);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,

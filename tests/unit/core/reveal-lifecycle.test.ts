@@ -37,6 +37,7 @@ let scrolled: string[];
 
 function start(revealEditedField: boolean): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],

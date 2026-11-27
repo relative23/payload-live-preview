@@ -64,6 +64,7 @@ function afterUpdate(): Promise<void> {
 }
 function start(extra: { scopeBindingsByOwner?: boolean; skipUnchanged?: boolean } = {}): void {
   runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     ...extra,
     renderers: { text: textRenderer },

@@ -57,6 +57,7 @@ describe('fragment islands on a page without Astro islands (ADR 0021)', () => {
           '<astro-island component-url="/_astro/Panel.js" renderer-url="/_astro/client.js" client="load" ssr props="{}"></astro-island>',
       });
     runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer },
       originMatcher: (origin) => origin === TRUSTED,

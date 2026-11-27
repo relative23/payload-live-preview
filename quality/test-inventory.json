@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 527,
-    "suites": 1023,
-    "tests": 4617,
+    "suites": 1024,
+    "tests": 4621,
     "benchmarks": 12
   },
   "groups": {
@@ -47,7 +47,7 @@
     "integration": {
       "files": 24,
       "suites": 28,
-      "tests": 107,
+      "tests": 108,
       "benchmarks": 0
     },
     "real-payload": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 430,
-      "suites": 914,
-      "tests": 4211,
+      "suites": 915,
+      "tests": 4214,
       "benchmarks": 0
     }
   },
@@ -620,7 +620,7 @@
       "path": "tests/integration/runtime-config-defaults.test.ts",
       "group": "integration",
       "suites": 1,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -836,8 +836,8 @@
     {
       "path": "tests/unit/adapters/document-session-notices.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 5,
+      "suites": 4,
+      "tests": 6,
       "benchmarks": 0
     },
     {
@@ -2069,7 +2069,7 @@
       "path": "tests/unit/core/session-scope.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 7,
       "benchmarks": 0
     },
     {
@@ -2188,7 +2188,7 @@
       "path": "tests/unit/core/update-scheduler-destroy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {

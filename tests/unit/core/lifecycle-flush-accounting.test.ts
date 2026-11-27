@@ -16,6 +16,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       elementRevisions.push(revision);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -58,6 +59,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       },
     };
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: renderer },
       originMatcher: (origin) => origin === TRUSTED,
@@ -89,6 +91,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       laterRevisions.push(revision);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -120,6 +123,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       laterRevisions.push(revision);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -144,6 +148,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       if (data.fields['title'] === 'B') cancel();
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -174,6 +179,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       afterRevisions.push(revision);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -203,6 +209,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
     const release = deferred<undefined>();
     emitter.on('beforeUpdate', async () => release.promise);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -229,6 +236,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       after.push(event);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -254,6 +262,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       after.push(event);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,

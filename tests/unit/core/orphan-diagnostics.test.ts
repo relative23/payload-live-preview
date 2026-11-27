@@ -52,6 +52,7 @@ function afterUpdate(): Promise<void> {
 }
 function start(subfieldCoverage: 'descendant' | 'declared' = 'descendant'): void {
   runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     subfieldCoverage,
     renderers: { text: textRenderer },

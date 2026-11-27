@@ -41,6 +41,7 @@ function start(
   const route: RouteStrategy = { plan, refresh };
   const handlers: StrategyHandlers = strategies === 'route' ? { route } : { fragment, route };
   const runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: textRenderer() },
     originMatcher: (origin) => origin === TRUSTED,

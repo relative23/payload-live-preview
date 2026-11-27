@@ -68,6 +68,7 @@ describe('real Payload 3.x protocol', () => {
       errors.push(e);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: buildBuiltinRenderers(),
       originMatcher: (o) => o === ADMIN_ORIGIN,

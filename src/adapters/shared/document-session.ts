@@ -178,9 +178,8 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
       ...(options.allowedOrigins !== undefined
         ? { additionalOrigins: options.allowedOrigins }
         : {}),
-      ...(options.enableReferrerDetection !== undefined
-        ? { enableReferrerDetection: options.enableReferrerDetection }
-        : {}),
+      enableReferrerDetection:
+        options.enableReferrerDetection ?? V2_RUNTIME_DEFAULTS.enableReferrerDetection,
       ...(options.enableLocalhostMatching !== undefined
         ? { enableLocalhostMatching: options.enableLocalhostMatching }
         : {}),

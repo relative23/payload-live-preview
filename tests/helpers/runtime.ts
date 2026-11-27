@@ -91,6 +91,7 @@ export function createRuntime(overrides: Partial<RuntimeOptions> = {}): RuntimeH
   const warnings: string[] = [];
   const logs: string[] = [];
   const runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     // These suites post from their own window, which is neither the parent nor the opener.
     eventSourcePolicy: 'any',
     renderers: { text: textRenderer() },

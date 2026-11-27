@@ -21,6 +21,7 @@ describe('LivePreviewRuntime — cache refresh, the element-local locale', () =>
     };
     element.setAttribute('data-payload-type', 'number');
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { number: numberRenderer },
       originMatcher: () => true,

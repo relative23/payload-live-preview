@@ -32,6 +32,7 @@ function start(html: string, overrides: Partial<Options> = {}): Harness {
     events.push(event);
   });
   const runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: textRenderer() },
     originMatcher: (origin) => origin === TRUSTED,

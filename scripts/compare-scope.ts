@@ -95,7 +95,9 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // names wrap to; a hook leaves an unset referrer switch to the detector. No request path changes.
 // 2026-11-27 (3.0, ADR 0007 row 27): 1 126 → 1 111. document-session.ts −15: a hook's merge has
 // the table's deadline, and the notice that announced one, with the field it read, is gone.
-export const REVIEWED_SCOPE_LINES = 1111;
+// 2026-11-27 (3.0, the defaults are written once): 1 111 → 1 110. document-session.ts −1: the
+// hook hands its referrer switch to the detector in one expression, not a conditional spread.
+export const REVIEWED_SCOPE_LINES = 1110;
 
 interface OurFile {
   readonly file: string;

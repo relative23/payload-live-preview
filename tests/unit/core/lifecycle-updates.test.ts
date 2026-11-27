@@ -9,6 +9,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
     document.body.innerHTML = '<h1 data-payload-field="title">old</h1>';
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
@@ -39,12 +40,14 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       enableVisibilityGate: false,
     } as const;
     const main = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       ...base,
       root: document,
       emitter: new EventEmitter(),
     });
     const other = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       ...base,
       root: otherDocument.body,
@@ -73,6 +76,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
     if (region === null || consumerChild === null) throw new Error('test live region missing');
 
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -114,6 +118,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
     emitter.on('elementUpdate', push('elementUpdate'));
     emitter.on('afterUpdate', push('afterUpdate'));
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (o) => o === TRUSTED,
@@ -148,6 +153,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
     const emitter = new EventEmitter();
     const emitWhile = vi.spyOn(emitter, 'emitWhile');
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: { name: 'text', render } },
       originMatcher: (origin) => origin === TRUSTED,
@@ -190,6 +196,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
     emitter.on('elementUpdate', elementUpdate);
     emitter.on('afterUpdate', afterUpdate);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: { name: 'text', render: vi.fn() } },
       originMatcher: (origin) => origin === TRUSTED,
@@ -232,6 +239,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
     const elementUpdate = vi.fn();
     let registered = false;
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: {
         text: {
@@ -288,6 +296,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
     const emitter = new EventEmitter();
     emitter.on('elementUpdate', vi.fn());
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: {
         text: {
@@ -332,6 +341,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       },
     };
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,

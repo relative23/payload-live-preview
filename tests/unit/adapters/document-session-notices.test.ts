@@ -114,6 +114,31 @@ describe('an update without a locale, for a hook with one (row 31)', () => {
   });
 });
 
+describe("the page's referrer, for a hook (row 22)", () => {
+  it('is trusted only where `enableReferrerDetection: true` asks for it', async () => {
+    // No allow-list and no localhost matcher: the referrer is the only origin left to trust.
+    const alone = { allowedOrigins: [], enableLocalhostMatching: false, timeoutMs: 0 } as const;
+    Object.defineProperty(document, 'referrer', {
+      value: `${ADMIN}/admin/collections/pages/1`,
+      configurable: true,
+    });
+    try {
+      open(alone);
+      post({ data: { id: '1', title: 'Unasked' } });
+      await settle();
+      expect(urls).toEqual([]);
+
+      const asked = open({ ...alone, enableReferrerDetection: true });
+      post({ data: { id: '1', title: 'Asked' } });
+      await settle();
+      expect(urls).toEqual([`${SERVER}/api/pages/1`]);
+      expect(asked.getSnapshot().data.title).toBe('Asked');
+    } finally {
+      Reflect.deleteProperty(document, 'referrer');
+    }
+  });
+});
+
 describe('a detector built without `enableReferrerDetection` (row 22)', () => {
   it('trusts no referrer, and has nothing left to announce', () => {
     const detector = new OriginDetector({
