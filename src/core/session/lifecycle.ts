@@ -504,6 +504,8 @@ export class LivePreviewRuntime {
         deps.scheduler.retarget(entry);
       } else {
         deps.scheduler.forget(entry.element);
+        // Its stamp was written for another binding, or by nobody: the value is written again.
+        state.lastAppliedIdentity.delete(entry.element);
         added.add(entry.element);
       }
       previous.delete(entry.element);

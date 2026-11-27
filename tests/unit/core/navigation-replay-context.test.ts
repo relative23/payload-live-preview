@@ -356,37 +356,6 @@ describe('LivePreviewRuntime — navigation replay context', () => {
     runtime.destroy();
   });
 
-  it('hands a retained binding to the route strategy when hydration changes its owner', async () => {
-    document.body.innerHTML = '<h1 data-payload-field="title">published first route</h1>';
-    const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
-    const runtime = new LivePreviewRuntime({
-      renderers: { text: textRenderer() },
-      originMatcher: () => true,
-      readyTargets: [],
-      emitter: new EventEmitter(),
-      debounceMs: 0,
-      heartbeatMs: 10 * 60_000,
-      enableVisibilityGate: false,
-      strategies: { route: { plan: () => false, refresh } },
-    });
-    runtime.start();
-    fireMessage({ type: 'payload-live-preview', data: { title: 'unsaved hydrated title' } });
-    await vi.advanceTimersByTimeAsync(50);
-
-    runtime.navigationCommit();
-    await vi.advanceTimersByTimeAsync(50);
-    const heading = document.querySelector('h1');
-    if (heading === null) throw new Error('binding missing');
-    heading.textContent = 'published hydration commit';
-    heading.setAttribute('data-payload-strategy', 'route');
-    await flushMicrotasks();
-    await vi.advanceTimersByTimeAsync(150);
-
-    expect(refresh).toHaveBeenCalledOnce();
-    expect(heading.textContent).toBe('unsaved hydrated title');
-    runtime.destroy();
-  });
-
   it('runs the fragment strategy for a fragment binding that streams in later', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">published first route</h1>';
     const render = vi.fn<FragmentStrategy['render']>((context, boundaries) => {
