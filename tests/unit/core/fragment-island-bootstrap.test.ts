@@ -8,7 +8,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/session/lifecycle';
 import type { FieldRenderer } from '@core/types';
-import { fragmentStrategyFrom, type FragmentHandler } from '@fragment/index';
+import { type FragmentHandler } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 
 class IO implements IntersectionObserver {
   readonly root: Element | Document | null = null;

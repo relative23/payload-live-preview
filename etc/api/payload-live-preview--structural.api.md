@@ -5,9 +5,6 @@
 ```ts
 
 // @internal
-export function applyStructuralPatches(options: StructuralApplyOptions): boolean | null;
-
-// @internal
 export type ArrayPatch = {
     readonly kind: 'insert';
     readonly index: number;
@@ -55,20 +52,11 @@ export interface CachedElement {
     readonly targetAttribute?: string;
 }
 
-// @internal (undocumented)
-export function createStructuralArrayRenderer(): FieldRenderer;
-
-// @internal (undocumented)
-export function createStructuralStore(): StructuralStore;
-
 // @public
 export type CustomRendererKey = `${string}:${string}`;
 
 // @internal
 export type DependencyMap = Readonly<Record<string, readonly string[]>>;
-
-// @internal
-export function dependencyMapFromBinding(fieldName: string, dependsOn: readonly string[]): DependencyMap;
 
 // @public
 export interface FieldRenderer {
@@ -81,20 +69,8 @@ export interface FieldRenderer {
 // @public
 export type FieldType = PayloadFieldType | 'html' | 'url' | 'image' | 'structural-array';
 
-// @internal (undocumented)
-export const ISLAND_ATTRIBUTE = "data-payload-island";
-
 // @beta
 export function isMorphBoundary(element: Element): boolean;
-
-// @internal
-export function isMorphCompatible(live: Element, rendered: Element, boundary?: (element: Element) => boolean): boolean;
-
-// @internal (undocumented)
-export const KEY_ATTRIBUTE = "data-payload-key";
-
-// @internal
-export function mergeDependencyMaps(...maps: readonly DependencyMap[]): DependencyMap;
 
 // @beta
 export function morphElement(live: Element, rendered: Element, options: MorphOptions): Element;
@@ -107,12 +83,6 @@ export interface MorphOptions {
     readonly retainBoundary?: (live: Element, rendered: Element) => boolean;
     readonly retainChildrenOf?: (live: Element, rendered: Element) => boolean;
 }
-
-// @internal
-export const OWNED_ATTRIBUTE = "data-payload-owned";
-
-// @internal
-export function parseDependencyList(value: string | null | undefined): readonly string[];
 
 // @public
 export type PayloadFieldType = 'text' | 'textarea' | 'richText' | 'email' | 'number' | 'checkbox' | 'date' | 'select' | 'radio' | 'array' | 'blocks' | 'group' | 'tabs' | 'row' | 'collapsible' | 'relationship' | 'upload' | 'point' | 'json' | 'code' | 'ui';

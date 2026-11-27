@@ -48,7 +48,7 @@ export interface LexicalRenderOptions {
 
 let warnedNoSanitizer = false;
 
-/** @internal */
+/** Whether `value` has the shape of Lexical editor state: an object with a `root` node that has children. */
 export function isLexicalContent(value: unknown): value is LexicalRoot {
   if (typeof value !== 'object' || value === null) return false;
   if (!('root' in value)) return false;

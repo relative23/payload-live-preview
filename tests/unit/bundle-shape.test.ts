@@ -19,7 +19,7 @@ describe('bundle shape — `core` entry', () => {
     expect(coreEntry.EventEmitter).toBeTypeOf('function');
     expect(coreEntry.sanitizeHtml).toBeTypeOf('function');
     expect(coreEntry.generateCspNonce).toBeTypeOf('function');
-    expect(coreEntry.LIBRARY_PROTOCOL_VERSION).toBeTypeOf('number');
+    expect(coreEntry.negotiateProtocol).toBeTypeOf('function');
   });
 
   it('OMITS the heavyweight optional pieces', () => {
@@ -35,11 +35,6 @@ describe('bundle shape — `core` entry', () => {
 
   it('shares the same VERSION as the full entry', () => {
     expect(coreEntry.VERSION).toBe(fullEntry.VERSION);
-  });
-
-  it('marks itself with a CORE_ENTRY flag the full entry does not have', () => {
-    expect(coreEntry.CORE_ENTRY).toBe(true);
-    expect((fullEntry as Record<string, unknown>)['CORE_ENTRY']).toBeUndefined();
   });
 });
 

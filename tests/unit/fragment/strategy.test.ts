@@ -6,7 +6,8 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import type { FragmentContext } from '@core/strategies/strategies';
-import { fragmentStrategyFrom, type FragmentHandler } from '@fragment/index';
+import { type FragmentHandler } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 
 function boundaryElement(id: string): Element {
   const element = document.createElement('section');

@@ -69,9 +69,6 @@ export function fragmentComponentPlugins(vue: VuePluginFactory, options: {
     readonly name: string;
 }[];
 
-// @internal
-export const HANDLER_FILENAME = "payload-live-preview-server-handler.mjs";
-
 // @public
 function livePreviewModule(inlineOptions: LivePreviewModuleOptions | undefined, nuxt: NuxtLike): void;
 
@@ -139,12 +136,6 @@ export interface NuxtTemplateLike {
     // (undocumented)
     readonly write: boolean;
 }
-
-// @internal
-export const PLUGIN_FILENAME = "payload-live-preview-nitro-plugin.mjs";
-
-// @internal
-export function pluginSource(options: LivePreviewModuleOptions, rootDir?: string, alias?: Readonly<Record<string, string>>): string;
 
 // @public (undocumented)
 interface PreviewAdapterOptions<Req = Request> {

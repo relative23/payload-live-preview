@@ -75,13 +75,6 @@ export interface BindOptions {
 // @public
 export function buildFrameAncestors(options?: FrameAncestorsOptions): string;
 
-// @internal
-export function buildScriptSrcWithNonce(nonce: string, options?: {
-    readonly self?: boolean;
-    readonly extra?: readonly string[];
-    readonly strictDynamic?: boolean;
-}): string;
-
 // @public
 export interface CachedElement {
     readonly altField?: string;
@@ -159,9 +152,6 @@ export type CapabilitySource = 'version' | 'observed';
 // @public
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
 
-// @internal (undocumented)
-export const CORE_ENTRY = true;
-
 // @beta
 export function createDocumentSession<T>(initialData: T, options: DocumentSessionOptions): DocumentSession<T>;
 
@@ -173,9 +163,6 @@ export type CustomRendererKey = `${string}:${string}`;
 
 // @public
 export type DefaultsProfile = 'v2';
-
-// @internal (undocumented)
-export function detectInitialLocale(): string;
 
 // @public
 export function detectProtocolProfile(observed: ReadonlySet<ProtocolCapability>): ProtocolProfile;
@@ -276,9 +263,6 @@ export type DocumentStatus = 'idle' | 'live' | 'unavailable';
 
 // @public
 export function escapeHtml(text: string): string;
-
-// @internal
-export function escapeHtmlAttribute(value: string): string;
 
 // @public
 export class EventEmitter<TMap extends object = LivePreviewEventMap> {
@@ -429,11 +413,8 @@ export interface FrameAncestorsOptions {
     readonly self?: boolean;
 }
 
-// @internal
+// @public
 export function generateCspNonce(bytes?: number): string;
-
-// @internal (undocumented)
-export function hasCapability(negotiation: ProtocolNegotiation, capability: ProtocolCapability): boolean;
 
 // @public
 export function initLivePreview(config?: LivePreviewClientConfig): LivePreviewClient | null;
@@ -535,26 +516,8 @@ export interface InspectionScheduler {
 // @public
 export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext;
 
-// @internal
-export function isDevMode(): boolean;
-
 // @public
 export function isExternalHttpUrl(url: string): boolean;
-
-// @internal
-export function isInIframe(): boolean;
-
-// @internal (undocumented)
-export function isInPopup(): boolean;
-
-// @internal
-export function isInPreviewContext(): boolean;
-
-// @internal
-export function isInsideIsland(element: Element): boolean;
-
-// @internal
-export const ISLAND_EVENT = "payload-live-preview:update";
 
 // @public (undocumented)
 export interface IslandUpdateDetail {
@@ -571,9 +534,6 @@ export interface IslandUpdateDetail {
 
 // @public
 export function isSafeUrl(url: unknown): boolean;
-
-// @internal
-export const LIBRARY_PROTOCOL_VERSION = 4;
 
 // @public
 export class LivePreviewClient {
@@ -920,9 +880,6 @@ export type PreviewDocument = {
     readonly locale?: string;
 };
 
-// @internal
-export const PROTOCOL_CAPABILITIES: readonly ProtocolCapability[];
-
 // @public (undocumented)
 export type ProtocolCapability = keyof typeof CAPABILITY_DECLARATIONS;
 
@@ -1062,11 +1019,6 @@ export interface SanitizerDocument {
 // @public
 export type SanitizerPolicyMode = 'compat' | 'strict';
 
-// Warning: (ae-forgotten-export) The symbol "WebCryptoLike" needs to be exported by the entry point core.d.ts
-//
-// @internal
-export function setCspCrypto(crypto: WebCryptoLike | null): void;
-
 // @public (undocumented)
 export interface StrategyHandlers {
     // (undocumented)
@@ -1087,14 +1039,8 @@ export type UpdateSource = 'patch' | 'fragment' | 'route';
 // @internal
 export type ValueAt<T, P extends string> = P extends `${infer Head}.${infer Rest}` ? Head extends keyof T ? T[Head] extends readonly (infer U)[] ? ValueAt<U, Rest> : T[Head] extends object ? ValueAt<T[Head], Rest> : unknown : unknown : P extends keyof T ? T[P] : unknown;
 
-// @internal (undocumented)
-export const VERSION: string;
-
 // @public
-interface WebCryptoLike {
-    // (undocumented)
-    getRandomValues: <T extends ArrayBufferView | null>(array: T) => T;
-}
+export const VERSION: string;
 
 // (No @packageDocumentation comment for this package)
 

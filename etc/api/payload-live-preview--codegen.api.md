@@ -6,12 +6,6 @@
 
 import { Project } from 'ts-morph';
 
-// @internal
-export const ANNOTATABLE_EXTENSIONS: readonly string[];
-
-// @internal
-export function annotatablePaths(inventory: AnnotatableSchema): ReadonlySet<string>;
-
 // @beta
 export interface AnnotatableSchema {
     // (undocumented)
@@ -64,9 +58,6 @@ export interface AnnotateResult {
     readonly written: boolean;
 }
 
-// @internal (undocumented)
-export function annotateTemplates(options: AnnotateOptions): Promise<AnnotateResult>;
-
 // @internal
 export interface AnnotationCandidate {
     readonly insertAt: number;
@@ -85,19 +76,11 @@ export interface AnnotationRefusal {
     readonly reason: string;
 }
 
-// @internal
-export function buildPreviewInventory(schema: ExtractedSchema): PreviewInventory;
-
 // @public (undocumented)
 interface EmitOptions {
     readonly header?: string;
     readonly markLocalizedAsDeprecated?: boolean;
 }
-
-// Warning: (ae-forgotten-export) The symbol "EmitOptions" needs to be exported by the entry point codegen.d.ts
-//
-// @internal (undocumented)
-export function emitTypes(schema: ExtractedSchema, options?: EmitOptions): string;
 
 // Warning: (ae-forgotten-export) The symbol "ExtractedFieldBase" needs to be exported by the entry point codegen.d.ts
 //
@@ -221,11 +204,6 @@ interface ExtractedUploadField extends ExtractedFieldBase {
     readonly target: string;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ExtractSchemaOptions" needs to be exported by the entry point codegen.d.ts
-//
-// @internal (undocumented)
-export function extractSchema(options: ExtractSchemaOptions): ExtractedSchema;
-
 // @public
 interface ExtractSchemaOptions {
     readonly configPath: string;
@@ -233,12 +211,12 @@ interface ExtractSchemaOptions {
     readonly tsConfigFilePath?: string;
 }
 
-// @internal
-export function formatAnnotateReport(result: AnnotateResult): string;
-
 // @public
 export function generateTypes(options: GenerateTypesOptions): Promise<GenerateTypesResult>;
 
+// Warning: (ae-forgotten-export) The symbol "ExtractSchemaOptions" needs to be exported by the entry point codegen.d.ts
+// Warning: (ae-forgotten-export) The symbol "EmitOptions" needs to be exported by the entry point codegen.d.ts
+//
 // @public (undocumented)
 export interface GenerateTypesOptions extends Pick<ExtractSchemaOptions, 'configPath' | 'project' | 'tsConfigFilePath'>, EmitOptions {
     readonly cwd?: string;

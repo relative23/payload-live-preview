@@ -98,18 +98,8 @@ export interface BlockRenderContext {
 // @public
 export type BlockRenderer = (fields: Record<string, unknown>, context: BlockRenderContext) => string;
 
-// @internal
-export function buildBuiltinRenderers(): Readonly<Record<string, FieldRenderer>>;
-
 // @public
 export function buildFrameAncestors(options?: FrameAncestorsOptions): string;
-
-// @internal
-export function buildScriptSrcWithNonce(nonce: string, options?: {
-    readonly self?: boolean;
-    readonly extra?: readonly string[];
-    readonly strictDynamic?: boolean;
-}): string;
 
 // @public
 export interface CachedElement {
@@ -216,9 +206,6 @@ export const debugPlugin: LivePreviewPlugin;
 // @public
 export type DefaultsProfile = 'v2';
 
-// @internal (undocumented)
-export function detectInitialLocale(): string;
-
 // @public
 export function detectProtocolProfile(observed: ReadonlySet<ProtocolCapability>): ProtocolProfile;
 
@@ -302,9 +289,6 @@ export type DocumentSaveStrategy = 'silent' | 'reload' | 'revalidate' | 'fetch';
 
 // @public
 export function escapeHtml(text: string): string;
-
-// @internal
-export function escapeHtmlAttribute(value: string): string;
 
 // @public
 export class EventEmitter<TMap extends object = LivePreviewEventMap> {
@@ -472,14 +456,11 @@ export interface FrameAncestorsOptions {
     readonly self?: boolean;
 }
 
-// @internal
+// @public
 export function generateCspNonce(bytes?: number): string;
 
 // @public
 export function generateInlineScript(config?: InlineScriptConfig): string;
-
-// @internal (undocumented)
-export function hasCapability(negotiation: ProtocolNegotiation, capability: ProtocolCapability): boolean;
 
 // @public
 export function hasPreviewIntent(request: PreviewRequestLike, options?: PreviewRequestOptions): boolean;
@@ -619,26 +600,8 @@ export interface InspectionScheduler {
 // @public
 export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext;
 
-// @internal
-export function isDevMode(): boolean;
-
 // @public
 export function isExternalHttpUrl(url: string): boolean;
-
-// @internal
-export function isInIframe(): boolean;
-
-// @internal (undocumented)
-export function isInPopup(): boolean;
-
-// @internal
-export function isInPreviewContext(): boolean;
-
-// @internal
-export function isInsideIsland(element: Element): boolean;
-
-// @internal
-export const ISLAND_EVENT = "payload-live-preview:update";
 
 // @public (undocumented)
 export interface IslandUpdateDetail {
@@ -653,7 +616,7 @@ export interface IslandUpdateDetail {
     readonly revision: number;
 }
 
-// @internal (undocumented)
+// @public
 export function isLexicalContent(value: unknown): value is LexicalRoot;
 
 // @public
@@ -722,9 +685,6 @@ export function lexicalToHtml(content: LexicalRoot, options?: LexicalRenderOptio
 
 // @public
 export function lexicalToPlainText(content: LexicalRoot): string;
-
-// @internal
-export const LIBRARY_PROTOCOL_VERSION = 4;
 
 // @public
 export class LivePreviewClient {
@@ -1234,9 +1194,6 @@ export interface PreviewVerifierClaims {
     readonly subject?: string;
 }
 
-// @internal
-export const PROTOCOL_CAPABILITIES: readonly ProtocolCapability[];
-
 // @public (undocumented)
 export type ProtocolCapability = keyof typeof CAPABILITY_DECLARATIONS;
 
@@ -1357,19 +1314,6 @@ export interface RouteStrategy {
     readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 
-// @public (undocumented)
-interface RuntimeBuildInfo {
-    // (undocumented)
-    readonly generatedAt: string;
-    // (undocumented)
-    readonly size: number;
-}
-
-// Warning: (ae-forgotten-export) The symbol "RuntimeBuildInfo" needs to be exported by the entry point index.d.ts
-//
-// @internal (undocumented)
-export function runtimeBuildInfo(): RuntimeBuildInfo;
-
 // Warning: (ae-forgotten-export) The symbol "SanitizeOptions" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -1397,11 +1341,6 @@ export interface SanitizerDocument {
 
 // @public
 export type SanitizerPolicyMode = 'compat' | 'strict';
-
-// Warning: (ae-forgotten-export) The symbol "WebCryptoLike" needs to be exported by the entry point index.d.ts
-//
-// @internal
-export function setCspCrypto(crypto: WebCryptoLike | null): void;
 
 // @public
 export function setSanitizerPolicy(mode: SanitizerPolicyMode): void;
@@ -1452,12 +1391,6 @@ export interface SubtleCryptoLike {
 // @public
 export type SuppressedBinding = Readonly<Record<string, never>>;
 
-// @internal (undocumented)
-export const TRUSTED_TYPES_POLICY_NAME = "payload-live-preview";
-
-// @internal
-export function trustedHtml(html: string): string;
-
 // @public
 export interface TrustedHtmlPolicyLike {
     // (undocumented)
@@ -1483,14 +1416,8 @@ export interface VerifierStrategy {
     readonly verify: (request: PreviewAuthorizationRequest) => Promise<PreviewVerifierClaims | null> | PreviewVerifierClaims | null;
 }
 
-// @internal (undocumented)
-export const VERSION: string;
-
 // @public
-interface WebCryptoLike {
-    // (undocumented)
-    getRandomValues: <T extends ArrayBufferView | null>(array: T) => T;
-}
+export const VERSION: string;
 
 // @public
 export function wrapWithScriptTag(body: string, options?: {

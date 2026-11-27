@@ -101,7 +101,9 @@ export interface ApiReportCheckOptions {
 // are unchanged byte for byte.
 // 2026-11-27 (3.0, ADR 0007 row 44): -6, the brand key six reports listed. The mark in the type is
 // a `unique symbol` nothing exports, which a report prints and does not count.
-export const FORGOTTEN_EXPORT_BASELINE = 178;
+// 2026-11-27 (3.0, ADR 0007 row 15): -3, types that only signatures of the internal names reached,
+// which left the entries.
+export const FORGOTTEN_EXPORT_BASELINE = 175;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

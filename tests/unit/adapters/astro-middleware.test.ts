@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  createLivePreviewMiddleware,
-  AUTHORIZATION_OUTCOME_LOCALS_KEY,
-  NONCE_LOCALS_KEY,
-  renderLivePreviewScript,
-} from '@adapters/astro/index';
+import { createLivePreviewMiddleware, renderLivePreviewScript } from '@adapters/astro/index';
+import { AUTHORIZATION_OUTCOME_LOCALS_KEY, NONCE_LOCALS_KEY } from '@adapters/shared/locals';
 import { AUTHORIZED, authorizeAll } from './authorize-all';
 
 const ADMIN = 'https://admin.example.com';

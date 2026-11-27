@@ -10,7 +10,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { FragmentStrategy, RouteOutcome, RouteStrategy } from '@core/strategies/strategies';
 import type { LivePreviewRuntime } from '@core/session/lifecycle';
-import { fragmentStrategyFrom } from '@fragment/index';
+import { fragmentStrategyFrom } from '@fragment/strategy';
 import { buildBuiltinRenderers } from '@field-types/index';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 

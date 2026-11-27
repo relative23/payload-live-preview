@@ -7,11 +7,11 @@ import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
 import { readRouteRefresh } from '@core/strategies/route-refresh';
 import { bindNuxtNavigation, type NuxtNavigationApp } from '@adapters/nuxt/client';
 import livePreviewModule, {
-  PLUGIN_FILENAME,
   type NuxtLike,
   type NuxtPluginLike,
   type NuxtTemplateLike,
 } from '@adapters/nuxt/module';
+import { PLUGIN_FILENAME } from '@adapters/nuxt/module-sources';
 import { resetDevWarnings } from '@/types/dev-warning';
 
 /**

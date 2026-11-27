@@ -1,7 +1,7 @@
 /**
- * payload-live-preview — the root entry. Every export here is public API
- * except the ones tagged `@internal`: those stay exported for the package's
- * own modules and tests, and a project is not meant to import them.
+ * payload-live-preview — the root entry. Every value exported here is public
+ * API. The package's own modules and tests import what else they need from the
+ * module that defines it (ADR 0007, row 15).
  *
  * @packageDocumentation
  */
@@ -60,26 +60,20 @@ export type { ConnectionStatus } from './core/session/state';
 export {
   generateInlineScript,
   wrapWithScriptTag,
-  runtimeBuildInfo,
   type InlineScriptConfig,
 } from './inline/generator';
 
 // Security primitives (consumers building their own CSP)
 export {
   buildFrameAncestors,
-  buildScriptSrcWithNonce,
   generateCspNonce,
   mergeCspHeader,
-  setCspCrypto,
   isSafeUrl,
   isExternalHttpUrl,
   sanitizeHtml,
   setSanitizerPolicy,
   setTrustedTypesPolicy,
-  trustedHtml,
-  TRUSTED_TYPES_POLICY_NAME,
   escapeHtml,
-  escapeHtmlAttribute,
   type CspDirectiveMerge,
   type FrameAncestorsOptions,
   type SanitizerDocument,
@@ -161,18 +155,10 @@ export {
 } from './plugins';
 
 // Detection helpers (useful for framework adapters)
-export {
-  OriginDetector,
-  detectInitialLocale,
-  isInIframe,
-  isInPopup,
-  isInPreviewContext,
-  isDevMode,
-} from './detection';
+export { OriginDetector } from './detection';
 
 // Field-type registry (advanced customisation)
 export {
-  buildBuiltinRenderers,
   registerBuiltinRenderer,
   type PayloadMedia,
   type PayloadRelationship,
@@ -190,13 +176,9 @@ export type {
 } from './core/types';
 
 // Protocol negotiation
-export {
-  LIBRARY_PROTOCOL_VERSION,
-  hasCapability,
-  negotiateProtocol,
-} from './core/protocol/protocol-version';
+export { negotiateProtocol } from './core/protocol/protocol-version';
 export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol/protocol-version';
-export { CAPABILITY_DECLARATIONS, PROTOCOL_CAPABILITIES } from './core/protocol/protocol-version';
+export { CAPABILITY_DECLARATIONS } from './core/protocol/protocol-version';
 export type { CapabilityDeclaration, CapabilitySource } from './core/protocol/protocol-version';
 export { CAPABILITY_DOCUMENTATION } from './core/protocol/protocol-capability-docs';
 export type { CapabilityDocumentation } from './core/protocol/protocol-capability-docs';
@@ -228,4 +210,4 @@ export type {
 } from './types/payload-protocol';
 
 // Island interoperability (docs/renderers.md)
-export { ISLAND_EVENT, isInsideIsland, type IslandUpdateDetail } from './core/bindings/islands';
+export type { IslandUpdateDetail } from './core/bindings/islands';

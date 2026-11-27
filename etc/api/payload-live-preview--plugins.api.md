@@ -427,9 +427,6 @@ export type RouteOutcome = 'refreshed' | 'partial' | 'failed' | 'refused' | 'sup
 // @public
 export type SanitizerPolicyMode = 'compat' | 'strict';
 
-// @internal
-export function unboundFieldNames(fields: Readonly<Record<string, unknown>>, boundNames: Iterable<string>, locale?: string, coverPaths?: readonly string[], subfieldCoverage?: 'descendant' | 'declared'): readonly string[];
-
 // @public
 export interface UnboundFieldsOverlayOptions {
     readonly onlyWithDebug?: boolean;

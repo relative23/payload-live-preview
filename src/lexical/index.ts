@@ -6,14 +6,11 @@ export {
   lexicalToPlainText,
   type LexicalRenderOptions,
 } from './render';
-export { register as registerLexicalNode, lookup as lookupLexicalNode } from './registry';
+export { register as registerLexicalNode } from './registry';
 export {
   registerBlockRenderer,
-  lookupBlockRenderer,
-  registeredBlockTypes,
   type BlockRenderer,
   type BlockRenderContext,
 } from './blocks/registry';
 export { registerDefaultBlocks } from './blocks/defaults';
 export type { LexicalNode, LexicalRoot } from './types';
-export { TextFormat } from './types';

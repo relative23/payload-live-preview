@@ -2,11 +2,11 @@ import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildLivePreviewCsp,
-  DECISION_CONTEXT_KEY,
   defineLivePreviewServerHandler,
   livePreviewNitroPlugin,
   renderLivePreviewScript,
 } from '@adapters/nuxt/index';
+import { DECISION_CONTEXT_KEY } from '@adapters/nuxt/adapter';
 import { createPreviewPolicy } from '@adapters/shared/policy';
 import { withCspHeader } from '@adapters/shared/response';
 import { authorizePreviewRequest } from '@security/preview-authorization';

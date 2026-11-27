@@ -8,9 +8,7 @@
  */
 
 export {
-  annotateSource,
   livePreviewAnnotate,
-  splitFrontmatter,
   type AnnotatePluginOptions,
   type AnnotateVitePlugin,
 } from './vite-plugin';

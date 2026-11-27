@@ -332,9 +332,6 @@ type PreviewAuthorizationStrategy = PayloadSessionStrategy | SignedTokenStrategy
 // @public (undocumented)
 type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
 
-// @internal
-export function previewHeaderRules(options: WithLivePreviewOptions): readonly NextHeaderRule[];
-
 // @public
 type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
 

@@ -219,6 +219,29 @@ browser has a document, so nothing changes there.
   passed. The module keeps the contexts it made instead. Two copies of the
   package in one process no longer accept each other's contexts.
 
+2026-11-27 (3.0): row 15 is carried out. The API reports listed 82 names
+marked `@internal` that an entry exported at run time: the root 20, `/core`
+16, `/fragment` 13, `/structural` 10, `/codegen` 7, `/lexical` 5, the Nuxt
+module 3, the Astro adapter 3, `/annotate` 2, and one each in `/plugins`, the
+Next.js and the Nuxt adapter.
+
+- Three names are public now, because something outside the package's own
+  modules imports them: `VERSION` and `generateCspNonce()` (the reference
+  site) and `isLexicalContent()` (the package's `RichText.astro`, which a
+  project's Astro compiles, and an example). Each stood in two reports, six of
+  the 82.
+- The other 76 left the entries. The package's modules and tests import them
+  from the module that defines them; with one module graph no entry has to
+  export a name for another entry to reach it.
+- Nothing gathers them behind an internal entry, the alternative this row
+  named: no reader was found for one.
+- The 36 names left under `@internal` are types that public signatures
+  reach. `scripts/check-complexity.ts` counts a function, a constant or a
+  class under that tag in a report, and the reviewed number is 0.
+- An entry no longer loads what only those exports needed: `/structural` is
+  5 776 bytes with its chunks where it was 26 539, `/codegen` 12 312 where it
+  was 18 209.
+
 2026-11-27 (3.0): rows 41 and 42 are new and carried out, the first cut of
 the entry table. Three sites and the examples import 7 of the package's
 entries; each one kept is a surface to hold stable. `/payload` held one

@@ -421,10 +421,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
   {
     // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +2 B gzip; reserve kept.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +112 B gzip; reserve kept.
+    // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: -130 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 6_120,
+    gzip: 5_990,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
@@ -446,10 +447,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
     // without the change: +318 B gzip; retain the reserve it had.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -286 B gzip; reserve kept.
+    // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: -52 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 54_404,
+    gzip: 54_352,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -496,25 +498,28 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
     // without the change: +326 B gzip; retain the reserve it had.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -235 B gzip; reserve kept.
+    // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: -26 B gzip; reserve kept.
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 54_389,
+    gzip: 54_363,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -30 B gzip; reserve kept.
+    // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: -130 B gzip; reserve kept.
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 6_115,
+    gzip: 5_985,
     why: 'the Lexical renderer from its focused entry',
   },
   {
+    // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: +1 B gzip; reserve kept.
     from: 'payload-live-preview/structural',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_579,
+    gzip: 1_580,
     why: 'the keyed morph alone, without the array renderer',
   },
   {
@@ -562,10 +567,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04: paired combined 2.1 population/locale integration adds +3070 B gzip; retain 80 B cushion.
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery -21 B gzip; retain 80 B.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +17 B gzip; reserve kept.
+    // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: +2 B gzip; reserve kept.
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 6_382,
+    gzip: 6_384,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {
