@@ -5,12 +5,12 @@
 ```ts
 
 // @public
-export const AUTHORIZED_PREVIEW_BRAND_KEY = "payload-live-preview.authorized-preview-context";
+const AUTHORIZED: unique symbol;
 
 // @public
 export interface AuthorizedPreviewContext {
     // (undocumented)
-    readonly [AUTHORIZED_PREVIEW_BRAND_KEY]: true;
+    readonly [AUTHORIZED]: true;
     readonly authorizedAt: number;
     readonly expiresAt: number | undefined;
     readonly payloadHeaders: Readonly<Record<string, string>>;

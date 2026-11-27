@@ -67,14 +67,12 @@ export const AUTHORIZATION_LOCALS_KEY = "livePreviewAuthorization";
 export const AUTHORIZATION_OUTCOME_LOCALS_KEY = "livePreviewAuthorizationOutcome";
 
 // @public
-const AUTHORIZED_PREVIEW_BRAND_KEY = "payload-live-preview.authorized-preview-context";
+const AUTHORIZED: unique symbol;
 
 // @public
 interface AuthorizedPreviewContext {
-    // Warning: (ae-forgotten-export) The symbol "AUTHORIZED_PREVIEW_BRAND_KEY" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
-    readonly [AUTHORIZED_PREVIEW_BRAND_KEY]: true;
+    readonly [AUTHORIZED]: true;
     readonly authorizedAt: number;
     readonly expiresAt: number | undefined;
     readonly payloadHeaders: Readonly<Record<string, string>>;

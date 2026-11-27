@@ -93,6 +93,7 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 41  | 3.0 (decided 2026-11-27)           | move    | the entry `/payload`, which exports `buildLivePreviewUrl()` and its types, beside `/plugin` and `/plugins`: three names for three things                                                                                                                                     | the entry `/plugin` exports `buildLivePreviewUrl()` and its types under the same names; `/payload` is gone from the exports map                                                                                                                                                                                           | —                                                         | `move-payload-entry` rewrites the specifier wherever a script names the entry as a module: `import`, `export … from`, `import()`, `require()`, an `import()` type                                                                                                                                                                             |
 | 42  | 3.0 (decided 2026-11-27)           | removal | the entries `/doctor` and `/migrate`: the checks and the codemods of the `pll` binary as libraries (`runDoctor()`, `analyzeProbe()`, `migrateSource()`)                                                                                                                      | the `pll` binary alone: `pll doctor <url> --json` prints the findings for a script, `pll migrate <path>` runs the codemods. Neither subpath is in the exports map, so an import of one does not resolve                                                                                                                   | `pll doctor --v3` names a call from either entry          | none: run the binary                                                                                                                                                                                                                                                                                                                          |
 | 43  | 3.0 (decided 2026-11-24)           | removal | ten entries built twice, as ESM and as CommonJS, and every entry a bundle of its own with its own copy of every class and registry it shares with the others                                                                                                                 | one module graph, ESM alone: a shared module is built once as a chunk the entries import. The entries that had a CommonJS build answer `require()` with the ES module `import` gets, which Node 24 loads. No `.cjs` file and no `require` condition are left                                                              | —                                                         | none: an `import` or a `require()` of an entry by its name keeps working. A deep import of a file under `dist/` does not: the shared files change their names with every release                                                                                                                                                              |
+| 44  | 3.0 (decided 2026-11-24)           | removal | `AUTHORIZED_PREVIEW_BRAND_KEY` on the root, `/core` and `/server`, and a context marked by a registry symbol, which a frozen copy keeps and a hand-built object can carry                                                                                                    | a context is the object `authorizePreviewRequest()` made: the module keeps a list of them, and a copy, frozen or not, and an object built by hand are refused. The context has no key of that name, and nothing exports one                                                                                               | —                                                         | none: pass the context itself, as `docs/authorization.md` has always said; delete an import of the name                                                                                                                                                                                                                                       |
 
 2026-09-16 (2.0.1): row 5's "outside local dev" names an exception the runtime
 does not have. `disableReferrerDetection` is `true` everywhere under `'v2'`;
@@ -192,8 +193,8 @@ false` is the 2.x behaviour under its name, the markup as rendered with one
 warning, and `sanitize: false` still says that the caller sanitises itself. A
 browser has a document, so nothing changes there.
 
-2026-11-27 (3.0): row 43 is new and carried out: one module graph (the plan's
-A-1, fixed on 2026-11-24).
+2026-11-27 (3.0): rows 43 and 44 are new and carried out: one module graph
+(the plan's A-1, fixed on 2026-11-24).
 
 - Until 3.0 each of the package's entries was bundled alone, ten of them as
   ESM and as CommonJS. Every class and every registry existed once per entry,
@@ -212,6 +213,11 @@ A-1, fixed on 2026-11-24).
   `/nextjs`: Node 24.0.0 and 24.22.3 load them from a CommonJS file, and a
   CommonJS-loaded `next.config.ts` relies on it. The other entries were
   import-only before and are.
+- Row 44 follows from the one copy. The mark of an authorized context was a
+  registry symbol so that two copies of the module agreed on it, and a
+  registry symbol is one anybody can write: a frozen object carrying it
+  passed. The module keeps the contexts it made instead. Two copies of the
+  package in one process no longer accept each other's contexts.
 
 2026-11-27 (3.0): rows 41 and 42 are new and carried out, the first cut of
 the entry table. Three sites and the examples import 7 of the package's

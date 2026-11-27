@@ -1,17 +1,17 @@
 import { inspect } from 'node:util';
 import { describe, expect, it } from 'vitest';
 import {
-  AUTHORIZED_PREVIEW_BRAND_KEY,
   createAuthorizedPreviewContext,
   isAuthorizedPreviewContext,
 } from '@/types/authorized-preview';
 
 /**
- * The brand must survive bundling. The root entry and every adapter entry
- * are separate bundles with their own copy of this module; a per-bundle
- * `Symbol()` made `livePreviewHandle` refuse contexts `authorizePreviewRequest`
- * had produced — in the packaged package only, never in a unit test. This
- * pins the registry symbol so the failure cannot come back quietly.
+ * A context is authorized because `authorizePreviewRequest()` made it, and for
+ * no other reason. Until 3.0 the mark was a registry symbol, because every
+ * entry was a bundle of its own with its own copy of this module, and a mark
+ * one copy could not see would have refused the other's contexts. A registry
+ * symbol is one anybody can write. Since the entries are one module graph, the
+ * module keeps the contexts it made, and nothing else passes (ADR 0007, row 44).
  */
 function context() {
   return createAuthorizedPreviewContext({
@@ -24,27 +24,42 @@ function context() {
   });
 }
 
-describe('authorized preview brand', () => {
-  it('is a registry symbol, identical across module copies', () => {
-    const value = context();
-    const [brand] = Object.getOwnPropertySymbols(value);
-    expect(brand).toBe(Symbol.for(AUTHORIZED_PREVIEW_BRAND_KEY));
-    expect(Symbol.keyFor(brand!)).toBe(AUTHORIZED_PREVIEW_BRAND_KEY);
-    // What another bundle's copy of the guard does: the same registry lookup.
-    const foreignGuard = (candidate: unknown): boolean =>
-      typeof candidate === 'object' &&
-      candidate !== null &&
-      (candidate as Record<symbol, unknown>)[Symbol.for(AUTHORIZED_PREVIEW_BRAND_KEY)] === true &&
-      Object.isFrozen(candidate);
-    expect(foreignGuard(value)).toBe(true);
-    expect(isAuthorizedPreviewContext(value)).toBe(true);
+const OLD_KEY = 'payload-live-preview.authorized-preview-context';
+
+describe('an authorized preview context', () => {
+  it('is the object the package made', () => {
+    expect(isAuthorizedPreviewContext(context())).toBe(true);
   });
 
-  it('still refuses copies and literals — the brand is a look-alike filter, not a secret', () => {
+  it('is not an object built by hand with the marks 2.x looked for', () => {
+    const forged = Object.freeze({
+      strategy: 'verifier',
+      subject: 'someone',
+      authorizedAt: 0,
+      expiresAt: undefined,
+      scope: Object.freeze({}),
+      payloadHeaders: Object.freeze({}),
+      [OLD_KEY]: true,
+      [Symbol.for(OLD_KEY)]: true,
+    });
+
+    expect(isAuthorizedPreviewContext(forged)).toBe(false);
+  });
+
+  it('is not a copy of one, frozen or not, nor what a JSON round trip gives back', () => {
     const value = context();
+
+    expect(isAuthorizedPreviewContext(Object.freeze({ ...value }))).toBe(false);
     expect(isAuthorizedPreviewContext({ ...value })).toBe(false);
     expect(isAuthorizedPreviewContext(JSON.parse(JSON.stringify(value)))).toBe(false);
     expect(isAuthorizedPreviewContext({ authorized: true })).toBe(false);
+  });
+
+  it('carries no mark a reader could copy: no symbol, and no key of the old name', () => {
+    const value = context();
+
+    expect(Object.getOwnPropertySymbols(value)).toEqual([]);
+    expect(OLD_KEY in value).toBe(false);
   });
 
   it('keeps the forwarded cookie out of every enumeration: JSON, a spread, the keys, a log', () => {

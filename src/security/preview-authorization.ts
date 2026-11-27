@@ -6,7 +6,6 @@
  */
 
 import {
-  AUTHORIZED_PREVIEW_BRAND_KEY,
   createAuthorizedPreviewContext,
   isAuthorizedPreviewContext,
   type AuthorizedPreviewContext,
@@ -25,7 +24,6 @@ import { authorizeToken, type SignedTokenStrategy } from './preview-token';
 import { isValidPayloadScope } from './preview-scope';
 
 export {
-  AUTHORIZED_PREVIEW_BRAND_KEY,
   isAuthorizedPreviewContext,
   type AuthorizedPreviewContext,
   type AuthorizedPreviewDocument,

@@ -435,9 +435,10 @@ A few exports serve integrations more than pages:
   session behind the React and Vue hooks, for a framework that has no hook
   ([docs/sveltekit.md](sveltekit.md) has a store recipe).
 - `isAuthorizedPreviewContext()` (root, `/core`, `/server`) says whether a value
-  carries the brand `authorizePreviewRequest()` gives it.
-  `AUTHORIZED_PREVIEW_BRAND_KEY` is the name of that brand's property; writing it
-  by hand buys nothing ([ADR 0006](architecture/0006-authorized-preview-context.md)).
+  is a context `authorizePreviewRequest()` made. Since 3.0 that is the only thing
+  it accepts: a copy, a JSON round trip and an object built by hand are refused,
+  and the context carries no key a reader could write
+  ([ADR 0006](architecture/0006-authorized-preview-context.md)).
 - `extractCookie()` (`/server`) returns exactly one value for a cookie name from
   a `Cookie` header, or `null` when it is absent, empty, too long or repeated.
 - `negotiateProtocol()`, `detectProtocolProfile()` and `CAPABILITY_DECLARATIONS`

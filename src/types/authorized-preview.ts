@@ -4,26 +4,14 @@
  */
 
 /**
- * The brand key, in the type and on the object.
- *
- * This was a `unique symbol` until 2026-08-30. A `unique symbol` is nominal per
- * *declaration*, and the published entries each carry their own declaration
- * file — so `AuthorizedPreviewContext` from the root barrel was a different
- * type from the one in `./server` or in an adapter, and the documented flow
- * (authorize once, hand the context to the adapter hook and to the draft read)
- * did not type-check in any combination a consumer can write.
- *
- * That is the same trap the runtime brand below already avoids by using
- * `Symbol.for` rather than `Symbol()`; the lesson simply had not reached the
- * type. A shared string literal is identical in every bundle for the same
- * reason a registry symbol is.
- *
- * It is not what makes a context trustworthy. `isAuthorizedPreviewContext`
- * decides that, on the registry symbol and on `Object.isFrozen`, and every
- * consumption point calls it — the adapter policy, the draft read and the
- * binding emitter. Writing this key by hand buys nothing.
+ * The mark in the type. It names no property: no object has this key, and
+ * nothing exports it, so a context cannot be written as a literal. Until 3.0
+ * the mark was a string key every entry's declaration file repeated, because a
+ * `unique symbol` is nominal per declaration and each entry had its own. Since
+ * the entries share their declarations (ADR 0007, row 43), one declaration is
+ * what all of them see.
  */
-export const AUTHORIZED_PREVIEW_BRAND_KEY = 'payload-live-preview.authorized-preview-context';
+declare const AUTHORIZED: unique symbol;
 
 export type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
 
@@ -56,7 +44,7 @@ export interface AuthorizedPreviewScope {
 
 /** The verdict of a successful `authorizePreviewRequest()`: frozen, branded, produced only there. Carry it, do not rebuild it. */
 export interface AuthorizedPreviewContext {
-  readonly [AUTHORIZED_PREVIEW_BRAND_KEY]: true;
+  readonly [AUTHORIZED]: true;
   readonly strategy: PreviewAuthorizationStrategyName;
   /** The user id, token subject, or whatever the verifier named. */
   readonly subject: string | undefined;
@@ -69,27 +57,27 @@ export interface AuthorizedPreviewContext {
   readonly payloadHeaders: Readonly<Record<string, string>>;
 }
 
-// A registry symbol: entries are separate bundles, and a per-bundle `Symbol()`
-// would refuse the other's contexts in the package while unit tests passed.
-const BRAND = Symbol.for(AUTHORIZED_PREVIEW_BRAND_KEY);
+/**
+ * The contexts this module made. Until 3.0 the mark was a registry symbol on
+ * the object, because every entry carried its own copy of this module and a
+ * mark one copy kept to itself would have refused the other's contexts. Anybody
+ * can write a registry symbol. With one module graph there is one copy, and it
+ * keeps the list (ADR 0007, row 44).
+ */
+const MINTED = new WeakSet();
 
 /**
- * Whether `value` carries the brand `authorizePreviewRequest()` gives it. A JSON round trip or an
- * unfrozen copy does not; a frozen spread copy keeps the registry symbol and passes, because the
- * brand is a runtime check, not a cryptographic one (ADR 0006).
+ * Whether `value` is a context `authorizePreviewRequest()` made. A copy is not, frozen or not,
+ * and neither is a JSON round trip or an object built by hand (ADR 0006).
  */
 export function isAuthorizedPreviewContext(value: unknown): value is AuthorizedPreviewContext {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as Record<PropertyKey, unknown>)[BRAND] === true &&
-    Object.isFrozen(value)
-  );
+  // `has` answers false for what is not an object, so nothing is asked before it.
+  return MINTED.has(value as WeakKey);
 }
 
 /** Internal: the one place a context is made. */
 export function createAuthorizedPreviewContext(
-  fields: Omit<AuthorizedPreviewContext, typeof AUTHORIZED_PREVIEW_BRAND_KEY>,
+  fields: Omit<AuthorizedPreviewContext, typeof AUTHORIZED>,
 ): AuthorizedPreviewContext {
   const context = {
     ...fields,
@@ -105,12 +93,12 @@ export function createAuthorizedPreviewContext(
           }),
     }),
     payloadHeaders: Object.freeze({ ...fields.payloadHeaders }),
-    [BRAND]: true,
-    [AUTHORIZED_PREVIEW_BRAND_KEY]: true as const,
   };
   // The cookie is HttpOnly in the browser. Not enumerable, so `JSON.stringify(locals)`, a log,
   // a spread or a framework serializer leaves it out; a draft read still reads it by name.
   Object.defineProperty(context, 'payloadHeaders', { enumerable: false });
-  // No cast: the frozen object carries the brand key the interface declares.
-  return Object.freeze(context);
+  Object.freeze(context);
+  MINTED.add(context);
+  // The mark is in the type alone: the list above is what says the object was made here.
+  return context as typeof context & { readonly [AUTHORIZED]: true };
 }

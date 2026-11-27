@@ -114,7 +114,8 @@ goes from 2 798 814 to 540 940 bytes and the packed archive from 1 922 839 to
 registered through `./lexical` is known to the root entry and to a module
 loaded the other way; before, each entry had its own copy of the registry and
 the root rendered a placeholder for that block. The package gate holds this
-against the installed archive.
+against the installed archive. An authorized context is recognised by a list
+one module keeps, not by a key every copy had to agree on (ADR 0006).
 
 The cost: an entry loads a shared chunk whole, with what its other readers
 need, so its closure is larger than its bundled file was: by 3 to 6 % for the

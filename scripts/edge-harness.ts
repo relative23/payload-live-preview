@@ -53,7 +53,8 @@ export function edgeGlobals(): Record<string, unknown> {
  * The modules of one context by file. A chunk two entries share exists once, as
  * in a runtime, and the promise is what is kept: the linker asks for the same
  * chunk from several importers before the first read of it has finished, and
- * a module that keeps state must not exist twice.
+ * two instances of the module that keeps the authorized contexts would refuse
+ * each other's.
  */
 const LOADED = new WeakMap<vm.Context, Map<string, Promise<vm.SourceTextModule>>>();
 
