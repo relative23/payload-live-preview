@@ -135,7 +135,9 @@ describe('LivePreviewScript', () => {
 
     const html = elementOf(rendered).props.dangerouslySetInnerHTML.__html;
     expect(html).toContain('__LP_RUNTIME_SRC__');
-    expect(html.length).toBeLessThan(4_000);
+    // The bootstrap and, since row 40, the route prelude an authorized page carries by default:
+    // about 10 kB, against the 143 kB of the runtime it does not carry.
+    expect(html.length).toBeLessThan(12_000);
   });
 
   it('renders nothing when injection is switched off, and leaves the header side to the middleware', async () => {

@@ -97,7 +97,9 @@ export function livePreviewScriptProps(
         'renders nothing for a request it does not authorize (ADR 0007, row 32).',
     );
   }
-  return scriptElementProps(options);
+  // This bootstrap is rendered for every visitor, so it carries a route strategy only where the
+  // project asked for one; the default of row 40 is for a script an authorized request receives.
+  return scriptElementProps({ ...options, routeStrategy: options.routeStrategy ?? false });
 }
 
 /**

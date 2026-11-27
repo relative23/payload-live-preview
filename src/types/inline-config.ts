@@ -50,9 +50,12 @@ export interface InlineScriptConfig {
    * `data-payload-strategy="route"` refreshes the route. `fragmentEndpoint`
    * implies it — the fragment prelude already contains it. Default `false`.
    * `'after-save'` renders the route only once Payload reports a save: before it, a
-   * GET shows nothing the editor typed and costs a server render.
+   * GET shows nothing the editor typed and costs a server render. `'router'` does the
+   * same and only through the route refresh the page lent (`registerRouteRefresh()`,
+   * which the adapters' navigation helpers call): a page that lent none is not fetched
+   * and morphed, and LP0808 names what to mount.
    */
-  readonly routeStrategy?: boolean | 'after-save';
+  readonly routeStrategy?: boolean | 'after-save' | 'router';
   /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn. `'escalate'` (the default) hands the region to the

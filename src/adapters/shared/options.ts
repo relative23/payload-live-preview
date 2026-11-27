@@ -108,11 +108,15 @@ export interface PreviewAdapterOptions<Req = Request> {
   /**
    * Carry the route strategy: a binding in `<head>` or one marked
    * `data-payload-strategy="route"` then refreshes the route. Implied by
-   * `fragments`, whose prelude already contains it. Default `false`.
+   * `fragments`, whose prelude already contains it.
    * `'after-save'` renders the route only once Payload reports a save: before it, a
-   * GET shows nothing the editor typed and costs a server render.
+   * GET shows nothing the editor typed and costs a server render. `'router'` does the
+   * same and only through the route refresh the page lent, which `LivePreviewNavigation`
+   * (Next.js), `livePreviewNavigation()` (SvelteKit) and the Nuxt module do: a page that
+   * lent none is not fetched and morphed. Default: `'router'` in the Next.js, SvelteKit
+   * and Nuxt adapters where no `fragments` endpoint is set (ADR 0007, row 40), else `false`.
    */
-  readonly routeStrategy?: boolean | 'after-save';
+  readonly routeStrategy?: boolean | 'after-save' | 'router';
   /**
    * What to do when the runtime knows a patch cannot reach what the server
    * would have drawn — a value no renderer can represent, a Lexical block whose

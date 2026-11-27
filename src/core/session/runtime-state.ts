@@ -86,6 +86,7 @@ export interface RuntimeDeps {
   readonly renderRichText: RichTextRenderer | undefined;
   readonly internalLinkPattern: string | undefined;
   readonly routeAfterSave: boolean;
+  readonly routeLentOnly: boolean;
   readonly sanitizerPolicy: SanitizerPolicyMode | undefined;
   readonly root: Document | Element;
   readonly readyTargets: () => readonly string[];

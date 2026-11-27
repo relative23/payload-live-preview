@@ -68,6 +68,14 @@ const SETUP: ReadonlySet<string> = new Set([
   'initLivePreview',
 ]);
 
+/** The calls that write the script of a page a framework hydrates, for an authorized request. */
+const ROUTED: ReadonlySet<string> = new Set([
+  'nextjs/LivePreviewScript',
+  'nextjs/renderLivePreviewScript',
+  'sveltekit/livePreviewHandle',
+  'nuxt/livePreviewNitroPlugin',
+]);
+
 function setup(call: PackageCall): Target {
   // The Payload config plugin is `livePreview` too, and takes none of these options.
   const astroIntegration = call.name === 'livePreview' && entryOf(call) === 'astro';
@@ -220,6 +228,23 @@ const RULES: readonly Rule[] = [
     remedy:
       "Remove the option and the import. For fewer bytes on a visitor's page, deliver the runtime as an asset: `delivery: 'asset'`, or Astro's `mode: 'loader'`.",
     judge: (call) => (setup(call)?.options?.keys.has('runtime') === true ? 'changes' : undefined),
+  },
+  {
+    id: 'route-router',
+    row: 40,
+    title:
+      'A Next.js, SvelteKit or Nuxt page without `routeStrategy` or `fragments` hands its route to the router',
+    remedy:
+      'Render `LivePreviewNavigation` (Next.js) or call `livePreviewNavigation()` (SvelteKit), which lend the router to the runtime; the Nuxt module does. `routeStrategy: false` keeps no route strategy.',
+    judge: (call) => {
+      if (!ROUTED.has(`${entryOf(call)}/${call.name}`)) return undefined;
+      const { options } = at(call, 0);
+      if (options === undefined) return 'unread';
+      if (options.keys.has('routeStrategy') || options.keys.has('fragments')) return undefined;
+      return unsure(options, 'routeStrategy') || unsure(options, 'fragments')
+        ? 'unread'
+        : 'changes';
+    },
   },
 ];
 

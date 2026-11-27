@@ -75,7 +75,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -428/-71/-86 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +32/+15/+44 B; prior reserves kept.
   // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +76/+21/+8 B; prior reserves kept.
-  'client.cjs': { raw: 157_161, gzip: 49_407, brotli: 42_732 },
+  // 2026-11-27 (3.0, ADR 0007 row 40: the route belongs to the router): paired Node24.22.3/npm12.0.2; +480/+150/+146 B; prior reserves kept.
+  'client.cjs': { raw: 157_641, gzip: 49_557, brotli: 42_878 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 128 653 → 128 687 (+34 B, measured 128 632 → 128 666); brotli 35 116 → 35 236 (measured 35 116, 0 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 128 687 → 128 736 (+49 B, measured 128 666 → 128 715); gzip 40 630 → 40 644 (+14 B, measured 40 621 → 40 635).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 128 736 → 128 869 (+133 B, measured 128 715 → 128 848); gzip 40 644 → 40 684 (+40 B, measured 40 635 → 40 675).
@@ -133,7 +134,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -428/-71/-76 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; +32/+16/+16 B; prior reserves kept.
   // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +76/+20/-7 B; prior reserves kept.
-  'client.js': { raw: 157_080, gzip: 49_388, brotli: 42_667 },
+  // 2026-11-27 (3.0, ADR 0007 row 40: the route belongs to the router): paired Node24.22.3/npm12.0.2; +480/+144/+171 B; prior reserves kept.
+  'client.js': { raw: 157_560, gzip: 49_532, brotli: 42_838 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): gzip 7 018 → 7 028 (+10 B, measured 7 010 → 7 020); brotli 6 322 → 6 425 (measured 6 305, 17 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): raw 20 003 → 20 136 (+133 B, measured 19 916 → 20 049); gzip 7 028 → 7 069 (+41 B, measured 7 020 → 7 061).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 20 136 → 20 368 (+232 B, measured 20 049 → 20 281); gzip 7 069 → 7 122 (+53 B, measured 7 061 → 7 114).

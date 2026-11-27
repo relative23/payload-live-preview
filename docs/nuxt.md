@@ -193,8 +193,11 @@ The element is there while the field is empty too, so the first edit has somewhe
 ## Client navigation and route refreshes
 
 Since 2.4 the module registers a client plugin of its own; a project that loads
-`payload-live-preview/nuxt-module` writes nothing for this. The plugin does two
-things:
+`payload-live-preview/nuxt-module` writes nothing for this. Since 3.0 the
+adapter also carries the route strategy without being asked, as
+`routeStrategy: 'router'`, where neither `routeStrategy` nor `fragments` is set:
+after Payload reports a save, a change no patch can show refreshes the route
+through the plugin, and only through it. The plugin does two things:
 
 - It lends the route strategy `refreshNuxtData()`, so an unbound or conditional
   field is shown by Nuxt re-running the page's `useAsyncData` and `useFetch`

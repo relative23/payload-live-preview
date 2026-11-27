@@ -25,6 +25,8 @@ export interface RuntimeOptions {
   readonly internalLinkPattern?: string;
   /** Hold a route render until Payload reports the save: the route shows what is saved. */
   readonly routeAfterSave?: boolean;
+  /** The route strategy is there only while the page lends a route refresh (`routeStrategy: 'router'`). */
+  readonly routeLentOnly?: boolean;
   /**
    * Sanitizer policy for this instance's rich-text and HTML writes, handed to
    * every renderer through its context. Default `'strict'`; the process default

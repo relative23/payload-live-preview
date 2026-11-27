@@ -17,3 +17,5 @@ export const autoInject = true;
 export const manageCsp: 'frame-ancestors' | 'full' = 'frame-ancestors';
 export const strictDynamic = false;
 export const assetPath = '/payload-live-preview';
+/** On a page a framework hydrates and routes, where no fragment endpoint is set; elsewhere none. */
+export const routeStrategy = 'router';

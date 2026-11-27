@@ -52,6 +52,13 @@ export function inlineScriptConfig(
 ): Parameters<typeof generateInlineScript>[0] {
   assertMergeDepthExplicit(options);
   const resolved = resolvePolicyOptions(options);
+  // A page a framework hydrates belongs to that framework's router: unless the project chose a
+  // route strategy or a fragment endpoint, the route is refreshed through the router alone.
+  const route =
+    options.routeStrategy ??
+    (facts.hydration !== undefined && options.fragments === undefined
+      ? V2_ADAPTER_DEFAULTS.routeStrategy
+      : undefined);
   return {
     ...(options.allowedOrigins !== undefined ? { allowedOrigins: options.allowedOrigins } : {}),
     ...(options.serverURL !== undefined ? { serverURL: options.serverURL } : {}),
@@ -93,9 +100,10 @@ export function inlineScriptConfig(
     // Only when no endpoint is configured: that prelude carries the route
     // strategy already, and asking for both would emit the larger one twice.
     // Fragments carry the route prelude, but only this slot says when it may run.
-    ...(options.routeStrategy === 'after-save' ||
-    (options.routeStrategy === true && options.fragments === undefined)
-      ? { routeStrategy: options.routeStrategy }
+    ...(route === 'after-save' ||
+    route === 'router' ||
+    (route === true && options.fragments === undefined)
+      ? { routeStrategy: route }
       : {}),
     ...(options.onUnfaithfulPatch !== undefined
       ? { onUnfaithfulPatch: options.onUnfaithfulPatch }

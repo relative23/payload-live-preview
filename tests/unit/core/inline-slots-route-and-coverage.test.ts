@@ -6,6 +6,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { bootstrapInlineRuntime } from '@core/session/runtime';
+import { registerRouteRefresh } from '@core/strategies/route-refresh';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
 import { IO } from './lifecycle-startup-harness';
 
@@ -78,6 +79,29 @@ describe('the routeStrategy slot', () => {
     await send({ hero: { title: 'T' }, subtitle: 'a' });
     await send({ hero: { title: 'T' }, subtitle: 'b' });
     expect(route.refreshes()).toBe(expected);
+    stop();
+  });
+
+  it("with 'router' renders the route after the save, and only where the page lent a refresh", async () => {
+    const saved = async (): Promise<void> => {
+      window.dispatchEvent(
+        new MessageEvent('message', { origin: ADMIN, data: { type: 'payload-document-event' } }),
+      );
+      await vi.advanceTimersByTimeAsync(1_200);
+    };
+    const route = withRoutePrelude();
+    const stop = start({ routeStrategy: 'router' });
+    await send({ hero: { title: 'T' }, subtitle: 'a' });
+    await send({ hero: { title: 'T' }, subtitle: 'b' });
+    await saved();
+    expect(route.refreshes()).toBe(0);
+
+    const lent = registerRouteRefresh(() => Promise.resolve());
+    await send({ hero: { title: 'T' }, subtitle: 'c' });
+    expect(route.refreshes()).toBe(0);
+    await saved();
+    expect(route.refreshes()).toBe(1);
+    lent();
     stop();
   });
 });

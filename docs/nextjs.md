@@ -396,6 +396,13 @@ route strategy fetches that render and morphs it into the living page, which on
 a Next page means writing into DOM React's reconciler owns. Give it the
 router's own refresh instead and there is no morph and no second HTML request.
 
+Since 3.0 the adapter carries the route strategy without being asked, as
+`routeStrategy: 'router'`, where neither `routeStrategy` nor `fragments` is set:
+after Payload reports a save, a change no patch can show refreshes the route
+through the router, and only through it. The component below is what lends the
+router to the runtime. A page that renders neither it nor `LivePreviewRouteRefresh`
+is left as it is, and LP0808 says so once.
+
 Since 2.4 the package ships the component for both jobs. Render it once in a
 layout that stays mounted across the preview routes:
 
@@ -439,7 +446,10 @@ from `payload-live-preview/react` with `refresh={useRouter().refresh}`.
 Before 2.4 this guide had the project copy a 20-line client component for the
 same job. It keeps working; replace it with the import above.
 
-When neither is there, the strategy fetches and morphs as before.
+When neither is there, `routeStrategy: true`, `'after-save'` and a fragment
+endpoint fetch and morph as before. Measured on Next.js 16 against a real admin,
+that morph removes `<next-route-announcer>`, the router's own element, from the
+body; the default, `'router'`, does not fetch and morph at all.
 
 ### Rich text React renders itself
 

@@ -22,6 +22,7 @@ import type { RuntimeOptions } from './runtime-options';
 import { RuntimeState, type RuntimeDeps } from './runtime-state';
 import { isDocumentRoot, readDocumentBody, startWhenReady, type StartupHost } from './startup';
 import { ConnectionState, HeartbeatTimer } from './state';
+import { onlyWhileLent } from '../strategies/route-refresh';
 import type { CachedElement } from '../types';
 import { UpdatePipeline } from '../update/update-pipeline';
 import { UpdateScheduler } from '../update/update-scheduler';
@@ -155,6 +156,7 @@ export class LivePreviewRuntime {
       renderRichText: options.renderRichText,
       internalLinkPattern: options.internalLinkPattern,
       routeAfterSave: options.routeAfterSave === true,
+      routeLentOnly: options.routeLentOnly === true,
       sanitizerPolicy: options.sanitizerPolicy ?? V2_RUNTIME_DEFAULTS.sanitizerPolicy,
       root,
       readyTargets:
@@ -178,7 +180,7 @@ export class LivePreviewRuntime {
       lockedOrigin: options.lockedOrigin ?? ((): undefined => undefined),
       skipUnchanged: options.skipUnchanged ?? V2_RUNTIME_DEFAULTS.skipUnchanged,
       dependencies: options.dependencies ?? {},
-      strategies: options.strategies ?? {},
+      strategies: onlyWhileLent(options.strategies ?? {}, options.routeLentOnly === true),
       revealEditedField: options.revealEditedField ?? V2_RUNTIME_DEFAULTS.revealEditedField,
       onUnfaithfulPatch: options.onUnfaithfulPatch ?? V2_RUNTIME_DEFAULTS.onUnfaithfulPatch,
       autoBind: options.autoBind ?? V2_RUNTIME_DEFAULTS.autoBind,
