@@ -9,8 +9,10 @@ import {
   deliveryClaimViolations,
   deliveryFamilies,
   deliveryOverhead,
+  importCeilingViolations,
   sizeClaimViolations,
   type DeliveryFacts,
+  type ImportCeiling,
 } from '../../../scripts/docs-size-claims';
 
 const FULL = 45_515;
@@ -147,5 +149,48 @@ describe('the pinned overheads', () => {
 
   it('refuses a row that is not there', () => {
     expect(() => deliveryOverhead(source, 'Nuxt, nothing')).toThrow(/no overheadBytes/u);
+  });
+});
+
+describe('the one-import ceilings of the benchmarks page', () => {
+  const CEILINGS: readonly ImportCeiling[] = [
+    { symbol: 'escapeHtml', from: 'payload-live-preview', bytes: 223 },
+    { symbol: 'initLivePreview', from: 'payload-live-preview/client', bytes: 53_323 },
+    { symbol: 'escapeHtml', bytes: 576 },
+  ];
+  const TABLES = [
+    '| Consumer imports                                     | gzip ceiling |',
+    '| ---------------------------------------------------- | ------------ |',
+    '| `escapeHtml` from `payload-live-preview`             | 223 B        |',
+    '| `initLivePreview` from `payload-live-preview/client` | 53,323 B     |',
+    '',
+    '| A project takes from `payload-live-preview/client` | raw ceiling |',
+    '| -------------------------------------------------- | ----------- |',
+    '| `escapeHtml`                                       | 576 B       |',
+  ].join('\n');
+
+  it('accepts the tables that state every ceiling as the budget has it', () => {
+    expect(importCeilingViolations(TABLES, 'docs/benchmarks.md', CEILINGS)).toEqual([]);
+  });
+
+  it('reports a stale number with its line, and tells the two tables apart by the entry', () => {
+    const stale = TABLES.replace('53,323 B', '53,304 B').replace('576 B ', '572 B ');
+
+    expect(importCeilingViolations(stale, 'docs/benchmarks.md', CEILINGS)).toEqual([
+      'docs/benchmarks.md:4 says 53304 B for initLivePreview from payload-live-preview/client, the budget is 53323',
+      'docs/benchmarks.md:8 says 572 B for escapeHtml, the budget is 576',
+    ]);
+  });
+
+  it('reports a ceiling without a row and a row without a ceiling', () => {
+    const moved = TABLES.replace(
+      'payload-live-preview/client` |',
+      'payload-live-preview/core`   |',
+    );
+
+    expect(importCeilingViolations(moved, 'docs/benchmarks.md', CEILINGS)).toEqual([
+      'docs/benchmarks.md:4 has a row for initLivePreview from payload-live-preview/core, which the gate does not measure',
+      'docs/benchmarks.md has no row for initLivePreview from payload-live-preview/client, which the tree-shaking gate measures',
+    ]);
   });
 });
