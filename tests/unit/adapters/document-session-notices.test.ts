@@ -7,12 +7,12 @@ import {
 import { OriginDetector } from '@detection/origin';
 
 /**
- * The rows of the ADR 0007 ledger whose default 3.0 changes say so once per
- * page in development (ADR 0026, 2026-11-03): a hook without `document`
- * (row 26), a hook without a merge deadline (row 27), an update without a
- * locale merged by a hook with one (row 31), and a detector that trusts the
- * referrer by default (row 22). `requireLocale` takes row 31's 3.0 behaviour
- * now. Nothing is said in production, and nothing where 3.0 changes nothing.
+ * The rows of the ADR 0007 ledger whose default 3.0 still changes say so once
+ * per page in development (ADR 0026, 2026-11-03): a hook without a merge
+ * deadline (row 27) and a detector that trusts the referrer by default
+ * (row 22). Nothing is said in production, and nothing where 3.0 changes
+ * nothing. Rows 26 and 31 are done: a hook names its document, and one with a
+ * locale leaves alone an update that names none, without a word.
  */
 
 const ADMIN = 'https://admin.example.com';
@@ -50,7 +50,14 @@ const stops: (() => void)[] = [];
 function open(extra: Partial<DocumentSessionOptions> = {}): DocumentSession<Doc> {
   const session = createDocumentSession<Doc>(
     { id: '1', title: 'One' },
-    { serverURL: SERVER, allowedOrigins: [ADMIN], eventSourcePolicy: 'any', fetchFn, ...extra },
+    {
+      document: 'any',
+      serverURL: SERVER,
+      allowedOrigins: [ADMIN],
+      eventSourcePolicy: 'any',
+      fetchFn,
+      ...extra,
+    },
   );
   stops.push(session.subscribe(() => {}));
   return session;
@@ -73,47 +80,34 @@ afterEach(() => {
 });
 
 describe('3.0 notices from a hook', () => {
-  it('names the missing document and the missing deadline once per page, however many hooks', () => {
+  it('names the missing deadline once per page, however many hooks', () => {
     open();
     open();
     expect(said()).toEqual([
-      '[payload-live-preview] A hook without `document` merges any document; 3.0 requires it ' +
-        '(ADR 0007, row 26).',
       '[payload-live-preview] A hook without `timeoutMs` waits for a merge; 3.0 sets a default, ' +
         '`0` keeps none (ADR 0007, row 27).',
     ]);
   });
 
-  it('names each notice by a fixed key on the page, which every copy of the package shares', async () => {
+  it('names each notice by a fixed key on the page, which every copy of the package shares', () => {
     // Two copies on one page, possibly of different versions, must agree on
     // these strings, or each would print its own line.
-    open({ document: { collection: 'pages', id: '1', locale: 'de' } });
-    post({ data: { id: '1', title: 'No locale' } });
-    await settle();
     open();
     new OriginDetector({ referrer: 'https://admin.example.com/admin' });
     const issued = (globalThis as Record<string, unknown>)['__payloadLivePreviewNotices'];
-    expect([...(issued as Set<string>)].sort()).toEqual([
-      'hook-deadline',
-      'hook-document',
-      'hook-locale',
-      'origin-referrer',
-    ]);
-    expect(said()).toHaveLength(4);
+    expect([...(issued as Set<string>)].sort()).toEqual(['hook-deadline', 'origin-referrer']);
+    expect(said()).toHaveLength(2);
   });
 
-  it('says nothing about a hook that names both, including `timeoutMs: 0`', () => {
+  it('says nothing about a hook that names a deadline, including `timeoutMs: 0`', () => {
     open({ document: { collection: 'pages', id: '1' }, timeoutMs: 0 });
     open({ document: { global: 'header' }, timeoutMs: 5_000 });
     expect(said()).toEqual([]);
   });
 
-  it('says nothing in production', async () => {
+  it('says nothing in production', () => {
     vi.stubEnv('NODE_ENV', 'production');
-    open({ document: { collection: 'pages', id: '1', locale: 'de' } });
-    post({ data: { id: '1', title: 'No locale' } });
-    await settle();
-    expect(urls).toHaveLength(1);
+    open();
     expect(said()).toEqual([]);
   });
 });
@@ -121,22 +115,11 @@ describe('3.0 notices from a hook', () => {
 describe('an update without a locale, for a hook with one (row 31)', () => {
   const localized = { collection: 'pages', id: '1', locale: 'de' } as const;
 
-  it('is merged in 2.x, and the hook says once that 3.0 leaves it alone', async () => {
-    const session = open({ document: localized, timeoutMs: 0 });
-    post({ data: { id: '1', title: 'No locale' } });
-    await settle();
-    post({ data: { id: '1', title: 'Still none' } });
-    await settle();
-    expect(urls).toHaveLength(2);
-    expect(session.getSnapshot().data.title).toBe('Still none');
-    expect(said()).toEqual([
-      '[payload-live-preview] A hook for locale "de" merged an update without one; 3.0 skips ' +
-        'it, as `requireLocale: true` does now (ADR 0007, row 31).',
-    ]);
-  });
-
-  it('is left alone with `requireLocale: true`, as in 3.0, and nothing is said', async () => {
-    const session = open({ document: localized, requireLocale: true, timeoutMs: 0 });
+  it.each([
+    ['without being asked', {}],
+    ['with `requireLocale: true`, the opt-in of 2.4', { requireLocale: true }],
+  ] as const)('is left alone %s, and nothing is said', async (_label, asked) => {
+    const session = open({ document: localized, timeoutMs: 0, ...asked });
     post({ data: { id: '1', title: 'No locale' } });
     await settle();
     expect(urls).toEqual([]);
@@ -147,20 +130,16 @@ describe('an update without a locale, for a hook with one (row 31)', () => {
     expect(said()).toEqual([]);
   });
 
-  it('still refuses another locale either way, and says nothing for a named one', async () => {
+  it('refuses another locale, and says nothing for a named one', async () => {
     open({ document: localized, timeoutMs: 0 });
-    post({ locale: 'en', data: { id: '1', title: 'English' } });
-    await settle();
-    expect(urls).toEqual([]);
-    open({ document: localized, requireLocale: true, timeoutMs: 0 });
     post({ locale: 'en', data: { id: '1', title: 'English' } });
     await settle();
     expect(urls).toEqual([]);
     expect(said()).toEqual([]);
   });
 
-  it('changes nothing for a hook without a locale, with or without the opt-in', async () => {
-    open({ document: { collection: 'pages', id: '1' }, requireLocale: true, timeoutMs: 0 });
+  it('changes nothing for a hook without a locale', async () => {
+    open({ document: { collection: 'pages', id: '1' }, timeoutMs: 0 });
     post({ data: { id: '1', title: 'No locale' } });
     await settle();
     expect(urls).toHaveLength(1);
@@ -203,8 +182,8 @@ describe('a page with no bundler and no `process`', () => {
     Reflect.deleteProperty(globalThis, 'process');
     try {
       expect(typeof globalThis.process).toBe('undefined');
-      open({ document: { collection: 'pages', id: '1', locale: 'de' } });
-      post({ data: { id: '1', title: 'No locale' } });
+      open({ document: { collection: 'pages', id: '1' } });
+      post({ data: { id: '1', title: 'Typed' } });
       new OriginDetector({ referrer: 'https://admin.example.com/admin' });
     } finally {
       globalThis.process = saved;

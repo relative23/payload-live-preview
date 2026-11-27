@@ -69,7 +69,13 @@ describe('a merge request that never answers', () => {
     const { fetchFn } = hangingFetch();
     const session = createDocumentSession(
       { id: '1', title: 'From the server' },
-      { serverURL: SERVER, allowedOrigins: [ADMIN], eventSourcePolicy: 'any', fetchFn },
+      {
+        document: 'any',
+        serverURL: SERVER,
+        allowedOrigins: [ADMIN],
+        eventSourcePolicy: 'any',
+        fetchFn,
+      },
     );
     const stop = session.subscribe(() => {});
     window.dispatchEvent(

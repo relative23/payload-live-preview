@@ -19,6 +19,8 @@ const { data, status, error, revision } = useLivePreviewDocument<Homepage>({
   serverURL: admin,
   allowedOrigins: admin === '' ? [] : [admin],
   initialData: { title: 'Composable initial title', subtitle: 'Composable initial subtitle' },
+  // The page shows the homepage global, so the composable merges updates for that one alone.
+  document: { global: 'homepage' },
   depth: 1,
 });
 </script>

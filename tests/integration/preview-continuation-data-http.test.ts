@@ -182,6 +182,7 @@ describe('continuation data over local HTTP', () => {
       let requests = 0;
       const session = createDocumentSession(initial, {
         target,
+        document: 'any',
         serverURL: CONTINUATION_SITE,
         allowedOrigins: [CONTINUATION_SITE],
         fetchFn: async (_input, init) => {

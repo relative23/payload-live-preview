@@ -45,7 +45,10 @@ function post(title: string): void {
 describe('the Svelte store recipe', () => {
   it('takes a document typed by an interface', () => {
     const page: Page = { id: '1', title: 'Typed' };
-    const session = createDocumentSession<Page>(page, { serverURL: 'https://cms.example.com' });
+    const session = createDocumentSession<Page>(page, {
+      document: 'any',
+      serverURL: 'https://cms.example.com',
+    });
     expect(session.getSnapshot().data.title).toBe('Typed');
   });
 
@@ -61,6 +64,7 @@ describe('the Svelte store recipe', () => {
     const store = livePreviewDocument(
       { id: '1', title: 'Server' },
       {
+        document: 'any',
         serverURL: 'https://cms.example.com',
         allowedOrigins: [ADMIN],
         eventSourcePolicy: 'any',

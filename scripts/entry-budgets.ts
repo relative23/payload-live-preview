@@ -465,7 +465,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // retain the prior 27/12/120 B reserves.
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +379/+126/+109 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +211/+79/+46 B; prior reserves kept.
-  'core.cjs': { raw: 170_728, gzip: 53_926, brotli: 46_352 },
+  'core.cjs': { raw: 170_741, gzip: 53_934, brotli: 46_435 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 133 971 → 134 005 (+34 B, measured 133 945 → 133 979).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 134 005 → 134 054 (+49 B, measured 133 979 → 134 028); gzip 42 628 → 42 646 (+18 B, measured 42 628 → 42 646); brotli 36 811 → 36 934 (measured 36 814, -3 B left; ~120 B as the other brotli rows).
   // 2026-09-16 (2.0.1 Version PR): gzip 42 646 → 42 658. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 42 646 against a cushion of 0 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -495,7 +495,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // retain the prior 26/12/120 B reserves.
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +379/+124/+97 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +211/+74/+72 B; prior reserves kept.
-  'core.js': { raw: 170_189, gzip: 53_847, brotli: 46_337 },
+  'core.js': { raw: 170_202, gzip: 53_859, brotli: 46_331 },
   //
   // 2026-09-10 (Z20 acceptance): the `index.cjs` brotli ceiling is restored to
   // the ~120 B cushion the other rows carry. It had been trimmed to ~90 B by a
@@ -551,7 +551,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // retain the prior 22/15/237 B reserves.
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +747/+265/-161 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +420/+147/+153 B; prior reserves kept.
-  'index.cjs': { raw: 354_564, gzip: 110_734, brotli: 72_660 },
+  'index.cjs': { raw: 354_564, gzip: 110_735, brotli: 72_702 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): raw 282 113 → 282 177 (+64 B, measured 282 092 → 282 156); gzip 88 558 → 88 583 (+25 B, measured 88 555 → 88 580).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 282 177 → 282 275 (+98 B, measured 282 156 → 282 254); gzip 88 583 → 88 610 (+27 B, measured 88 580 → 88 607).
   // 2026-09-16 (2.0.1 Version PR): gzip 88 610 → 88 619. The version string changes with every release and gzip is not byte-stable across Node majors; CI (Node 22  "2.0.1") measured 88 607 against a cushion of 3 B. Twelve bytes over that measurement  as the rows that never flipped carry.
@@ -582,7 +582,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // retain the prior 21/13/290 B reserves.
   // 2026-10-25 (a saved-only route render runs again on Payload's save): paired Node24.22.1/npm12.0.2; +747/+248/-131 B; prior reserves kept.
   // 2026-10-26 (LP0808 names the missing boundary): paired Node24.22.1/npm12.0.2; +420/+151/+33 B; prior reserves kept.
-  'index.js': { raw: 353_965, gzip: 110_670, brotli: 71_844 },
+  'index.js': { raw: 353_965, gzip: 110_670, brotli: 71_836 },
   ...PAYLOAD_ENTRY_BUDGETS,
   // Measured 2026-08-27 (12465/4730/4307 and 12292/4670/4212), ~1 % headroom.
   // 2026-09-06 (R8): +~110 B raw for `previewBindingsFromLocals`, the one-line

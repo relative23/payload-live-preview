@@ -22,7 +22,7 @@
   "totals": {
     "files": 529,
     "suites": 1029,
-    "tests": 4631,
+    "tests": 4633,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 430,
       "suites": 917,
-      "tests": 4216,
+      "tests": 4218,
       "benchmarks": 0
     }
   },
@@ -851,14 +851,14 @@
       "path": "tests/unit/adapters/document-session-identity.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 10,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/adapters/document-session-notices.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 12,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -1061,7 +1061,7 @@
       "path": "tests/unit/adapters/react-hook.test.tsx",
       "group": "unit",
       "suites": 1,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {

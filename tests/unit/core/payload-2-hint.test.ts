@@ -61,6 +61,7 @@ describe('the Payload 2 refusal from a hook', () => {
     const session = createDocumentSession<{ title: string }>(
       { title: 'One' },
       {
+        document: 'any',
         serverURL: 'https://cms.example.com',
         allowedOrigins: [ADMIN],
         eventSourcePolicy: 'any',

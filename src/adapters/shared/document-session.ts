@@ -80,21 +80,45 @@ export interface DocumentSessionOptions {
   /** Match `localhost` origins in development. Default `true`. */
   readonly enableLocalhostMatching?: boolean;
   /**
-   * The document this session previews. An update for another document is ignored, and so is
-   * one that does not say which document it is for: Payload 2 sends no collection or global
-   * slug, and a create screen has no id yet. Without it the session merges every update.
+   * The document this session previews. An update for another document is left alone, and so
+   * is one that does not say which document it is for (a create screen has no id yet) and,
+   * with a `locale`, one for another locale or for none. `'any'` follows whichever document an
+   * allowed admin sends, which a session did without `document` until 3.0 required it
+   * (ADR 0007, rows 26 and 31).
    */
-  readonly document?: PreviewDocument;
+  readonly document: PreviewDocument | 'any';
   /**
-   * With a `locale` in `document`, also leave alone an update that names no locale, as 3.0
-   * does for every hook with a `locale` (ADR 0007, row 31). Off by default: such an update is
-   * merged.
+   * What a session with a `locale` does since 3.0 without being asked: it leaves alone an
+   * update that names no locale. The option is left for a configuration that says `true`.
    */
-  readonly requireLocale?: boolean;
+  readonly requireLocale?: true;
   /** Injected for tests. */
   readonly fetchFn?: typeof fetch;
   /** Window to listen on. Default the global one. */
   readonly target?: Window;
+}
+
+/**
+ * The document the options name, `undefined` for `'any'`. A JavaScript caller can still leave
+ * `document` out or ask for the 2.x reading of a locale; both are refused with the way out,
+ * because a session that merged whatever arrived would do other than it was asked. The two
+ * sentences are short on purpose: they are in every production bundle of a hook.
+ */
+function namedDocument(options: DocumentSessionOptions): PreviewDocument | undefined {
+  const given: { readonly document?: unknown; readonly requireLocale?: unknown } = options;
+  if (given.document === undefined) {
+    throw new Error(
+      'payload-live-preview: a hook needs `document` since 3.0: `{ collection, id }`, ' +
+        "`{ global }`, or 'any' to follow whichever the admin sends (ADR 0007, row 26).",
+    );
+  }
+  if (given.requireLocale === false) {
+    throw new Error(
+      'payload-live-preview: `requireLocale: false` was removed in 3.0; leave `locale` out of ' +
+        '`document` to merge updates that name none (ADR 0007, row 31).',
+    );
+  }
+  return options.document === 'any' ? undefined : options.document;
 }
 
 /**
@@ -146,7 +170,6 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
   #lastLog: readonly unknown[] = [];
   #attached = false;
   readonly #document: PreviewDocument | undefined;
-  readonly #requireLocale: boolean;
   readonly #deadline: boolean;
   #warnedUnproven = false;
   #unsupported = false;
@@ -182,8 +205,7 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
       sourcePolicy: options.eventSourcePolicy ?? 'parent-or-opener',
     });
     this.#target = options.target;
-    this.#document = options.document;
-    this.#requireLocale = options.requireLocale === true;
+    this.#document = namedDocument(options);
     this.#deadline = options.timeoutMs !== undefined;
     this.#initial = {
       data: initialData,
@@ -224,12 +246,6 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     // bundler and no `process` the read throws, and nothing is said.
     try {
       if ((process.env as BundlerEnv).NODE_ENV !== 'production') {
-        if (this.#document === undefined) {
-          noticeOnce(
-            'hook-document',
-            'A hook without `document` merges any document; 3.0 requires it (ADR 0007, row 26).',
-          );
-        }
         if (!this.#deadline) {
           noticeOnce(
             'hook-deadline',
@@ -270,9 +286,7 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     const target = this.#document;
     if (target === undefined) return true;
     const { locale, globalSlug, collectionSlug } = message;
-    if (target.locale !== undefined && locale !== target.locale) {
-      if (locale !== undefined || this.#requireLocale) return false;
-    }
+    if (target.locale !== undefined && locale !== target.locale) return false;
     if ('global' in target) {
       if (globalSlug !== undefined) return globalSlug === target.global;
       if (collectionSlug !== undefined) return false;
@@ -319,23 +333,6 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     if (this.#unsupported) return;
     // Before the revision moves: an update for another document must not abort this one's merge.
     if (!this.#accepts(message, data)) return;
-    const target = this.#document;
-    try {
-      // In place, as in `#attach`: a production build drops the notice.
-      if (
-        (process.env as BundlerEnv).NODE_ENV !== 'production' &&
-        target?.locale !== undefined &&
-        message.locale === undefined
-      ) {
-        noticeOnce(
-          'hook-locale',
-          `A hook for locale "${target.locale}" merged an update without one; 3.0 skips it, as ` +
-            '`requireLocale: true` does now (ADR 0007, row 31).',
-        );
-      }
-    } catch {
-      // No bundler replaced `process.env.NODE_ENV`, and this realm has no `process`.
-    }
     const revision = (this.#revision += 1);
     const locale = message.locale;
     this.#publish({ ...this.#snapshot, isLoading: true });

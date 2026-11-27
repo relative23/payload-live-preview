@@ -159,13 +159,13 @@ async function writeConsumer(consumer: string): Promise<void> {
       interface Page extends Record<string, unknown> { id: string; title: string }
       declare const page: Page;
       export function reactContract() {
-        const snapshot = useReact<Page>({ serverURL: 'https://cms.example', initialData: page });
+        const snapshot = useReact<Page>({ serverURL: 'https://cms.example', initialData: page, document: { collection: 'pages', id: page.id } });
         const title: string = snapshot.data.title;
         const status: 'idle' | 'live' | 'unavailable' = snapshot.status;
         return { title, status };
       }
       export function vueContract() {
-        const snapshot = useVue<Page>({ serverURL: 'https://cms.example', initialData: page });
+        const snapshot = useVue<Page>({ serverURL: 'https://cms.example', initialData: page, document: 'any' });
         const title: string = snapshot.data.value.title;
         const status: 'idle' | 'live' | 'unavailable' = snapshot.status.value;
         return { title, status };
@@ -184,7 +184,7 @@ async function writeConsumer(consumer: string): Promise<void> {
       import { useLivePreviewDocument as useVue } from 'payload-live-preview/vue';
       const initialData = { id: '1', title: 'Server title' };
       function ReactPreview() {
-        const { data, status } = useReact({ serverURL: 'https://cms.example', initialData });
+        const { data, status } = useReact({ serverURL: 'https://cms.example', initialData, document: 'any' });
         return React.createElement(React.Fragment, null,
           React.createElement('button', { 'data-testid': 'new-key' }, 'new key'),
           React.createElement('article', null,
@@ -195,7 +195,7 @@ async function writeConsumer(consumer: string): Promise<void> {
       }
       const VuePreview = {
         setup() {
-          const { data, status } = useVue({ serverURL: 'https://cms.example', initialData });
+          const { data, status } = useVue({ serverURL: 'https://cms.example', initialData, document: 'any' });
           return () => h('div', null, [
             h('button', { 'data-testid': 'new-key' }, 'new key'),
             h('article', null, [
@@ -235,6 +235,7 @@ async function writeConsumer(consumer: string): Promise<void> {
           serverURL: location.origin,
           allowedOrigins: [location.origin],
           initialData: document,
+          document: 'any',
           fetchFn: (url, init) => fetch(url, { ...init, headers: { ...Object.fromEntries(new Headers(init?.headers)), 'x-h19-surface': 'react' } }),
         });
         return React.createElement(Stateful, { key: documentKey, data: snapshot.data, status: snapshot.status });
@@ -285,6 +286,7 @@ async function writeConsumer(consumer: string): Promise<void> {
             serverURL: location.origin,
             allowedOrigins: [location.origin],
             initialData: props.document,
+            document: 'any',
             fetchFn: (url, init) => fetch(url, { ...init, headers: { ...Object.fromEntries(new Headers(init?.headers)), 'x-h19-surface': 'vue' } }),
           });
           return () => h(Stateful, { key: props.documentKey, data: snapshot.data.value, status: snapshot.status.value });

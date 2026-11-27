@@ -37,6 +37,7 @@ export function PagePreview({ page }: { page: Page }) {
     serverURL: process.env.NEXT_PUBLIC_PAYLOAD_URL!,
     allowedOrigins: [process.env.NEXT_PUBLIC_PAYLOAD_ADMIN_ORIGIN!],
     initialData: page,
+    document: { collection: 'pages', id: page.id },
     depth: 1,
   });
 
@@ -53,20 +54,20 @@ export function PagePreview({ page }: { page: Page }) {
 Both `NEXT_PUBLIC_` values ship to the browser. They are origins, not
 credentials; keep preview tokens and other secrets in server-only variables.
 
-| Option                    | Default              | What it does                                                                                                             |
-| ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `serverURL`               | required             | Payload origin the update is re-fetched from. A trailing slash is fine                                                   |
-| `initialData`             | required             | The document the page rendered; returned until an update merges                                                          |
-| `depth`                   | `1`                  | Population depth for the merge                                                                                           |
-| `timeoutMs`               | off                  | Milliseconds a merge may wait for the server before the update is `'unavailable'`                                        |
-| `apiRoute`                | `/api`               | REST route prefix                                                                                                        |
-| `allowedOrigins`          | —                    | Admin origins allowed to post updates                                                                                    |
-| `eventSourcePolicy`       | `'parent-or-opener'` | `'any'` accepts a message from any window at an allowed origin                                                           |
-| `enableReferrerDetection` | `false`              | Trust `document.referrer` as an origin source                                                                            |
-| `enableLocalhostMatching` | `true`               | Match `localhost` origins in development                                                                                 |
-| `target`                  | the global `window`  | Window to listen on                                                                                                      |
-| `document`                | —                    | The document this hook previews: `{ collection, id }` or `{ global }`, with an optional `locale`; only its updates merge |
-| `requireLocale`           | `false`              | With a `locale` in `document`, also leave alone an update that names no locale, as 3.0 does                              |
+| Option                    | Default              | What it does                                                                                                                                                                 |
+| ------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `serverURL`               | required             | Payload origin the update is re-fetched from. A trailing slash is fine                                                                                                       |
+| `initialData`             | required             | The document the page rendered; returned until an update merges                                                                                                              |
+| `depth`                   | `1`                  | Population depth for the merge                                                                                                                                               |
+| `timeoutMs`               | off                  | Milliseconds a merge may wait for the server before the update is `'unavailable'`                                                                                            |
+| `apiRoute`                | `/api`               | REST route prefix                                                                                                                                                            |
+| `allowedOrigins`          | —                    | Admin origins allowed to post updates                                                                                                                                        |
+| `eventSourcePolicy`       | `'parent-or-opener'` | `'any'` accepts a message from any window at an allowed origin                                                                                                               |
+| `enableReferrerDetection` | `false`              | Trust `document.referrer` as an origin source                                                                                                                                |
+| `enableLocalhostMatching` | `true`               | Match `localhost` origins in development                                                                                                                                     |
+| `target`                  | the global `window`  | Window to listen on                                                                                                                                                          |
+| `document`                | required             | The document this hook previews: `{ collection, id }` or `{ global }`, with an optional `locale`; only its updates merge. `'any'` follows whichever document the admin sends |
+| `requireLocale`           | `true`               | What a hook with a `locale` does since 3.0: it leaves alone an update that names no locale. Only `true` is taken                                                             |
 
 A hook instance owns one document session. A fresh `initialData` object on an
 ordinary re-render does not replace data that already merged. A changed value
@@ -130,31 +131,33 @@ React wrapper.
 
 ### Five where the results differ
 
-| Measured with                                                                  | `@payloadcms/live-preview` 3.94.2                                              | This hook                                                                                                                                                                         |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                                                                                                                                        |
-| Two messages, the first answered after 40 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands                                                                                                                 |
-| HTTP 403 with Payload's error body, `{"errors":[{"message":…}]}`               | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403                                                                                                                  |
-| Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | the merge for `2` fetches `pages/2`; each hook keeps its own state, requests and errors (ADR 0002), and both follow the document the admin sends unless each names its `document` |
-| `fetch` rejecting with `TypeError: Failed to fetch`                            | the rejection escapes the async listener                                       | last good document kept, `status: 'unavailable'`, `error` names it                                                                                                                |
+| Measured with                                                                  | `@payloadcms/live-preview` 3.94.2                                              | This hook                                                                                                                                      |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `serverURL` `https://cms.example.com/`, message from `https://cms.example.com` | no request at all; every callback hands back the document the page started on  | `POST https://cms.example.com/api/pages/1`                                                                                                     |
+| Two messages, the first answered after 40 ms, the second after 5 ms            | callbacks in the order `NEW`, `OLD` — the older document is the one that stays | `data` is the newer one, and still is after the slow answer lands                                                                              |
+| HTTP 403 with Payload's error body, `{"errors":[{"message":…}]}`               | the callback receives that object; the document's fields are gone              | `data` unchanged, `status: 'unavailable'`, `error` names the 403                                                                               |
+| Two previews on one page, documents `1` and `2`                                | the second one's merge fetches `pages/1` — `previousData` is module-level      | the merge for `2` fetches `pages/2`; each hook keeps its own state, requests and errors (ADR 0002), and each merges only the document it names |
+| `fetch` rejecting with `TypeError: Failed to fetch`                            | the rejection escapes the async listener                                       | last good document kept, `status: 'unavailable'`, `error` names it                                                                             |
 
-3.0 requires `document` (ADR 0007 ledger, row 26). Without it, both follow the
-document the admin sends: a hook takes every
-update from an allowed admin window, whichever document its `initialData` came
-from. On a page that previews document `1`, a second hook started from document
-`2` shows document `1` after the first update. Given
-`document: { collection: 'pages', id: 2 }`, that hook leaves the update for
-`pages/1` alone: it sends no request and keeps its state. `{ global: 'header' }`
-names a global, and `locale` also leaves alone an update the admin sends for
-another locale. One that names no locale still merges; 3.0 leaves that one
-alone too (ADR 0007 ledger, row 31). An update that does not say which
-document it is for is left
-alone as well, with one warning per hook in development: a create screen has
-no id yet, and a Payload 2 admin, which this release does not serve, sends no
-collection or global slug. A changed `document` replaces the session, like the other
-options. Without `document`, give the hook to the component that renders the
-document being edited, and render other documents from the data your server
-loaded.
+A hook names its `document`; 3.0 requires it (ADR 0007 ledger, row 26), and one
+without it does not start. Given `document: { collection: 'pages', id: 2 }`, a
+hook leaves the update for `pages/1` alone: it sends no request and keeps its
+state. `{ global: 'header' }` names a global. With a `locale` the hook also
+leaves alone an update the admin sends for another locale, and one that names
+no locale (row 31): Payload 3 and 4 name the admin's locale in every update
+when the config has localization, and where an admin sends none, leave `locale`
+out. An update that does not say which document it is for is left alone as
+well, with one warning per hook in development: a create screen has no id yet,
+and a Payload 2 admin, which this release does not serve, sends no collection
+or global slug. A changed `document` replaces the session, like the other
+options.
+
+`document: 'any'` is the hook 2.x had by default: it takes every update from an
+allowed admin window, whichever document its `initialData` came from, so on a
+page that previews document `1` a second such hook started from document `2`
+shows document `1` after the first update. It is for a page that renders
+whatever the admin edits, a create screen for one; give it to the one component
+that renders that document.
 
 The failed update is not retried: this hook reports it and catches up on the
 next message. Without `timeoutMs`, a merge request that never answers is not a
@@ -163,7 +166,7 @@ document. With `timeoutMs`, the update becomes `unavailable` once that many
 milliseconds pass, and an answer that comes later is not read
 ([options.md](options.md#serverurl-and-mergedepth)). 3.0 gives the hook a
 default deadline; until then a hook without `timeoutMs` says so once in
-development, and so does one without `document` ([migration.md](migration.md#preparing-for-30)).
+development ([migration.md](migration.md#preparing-for-30)).
 On Payload 3 the hook sends one merge request per accepted
 message, at any typing pace: 18 requests for an 18-keystroke burst. The DOM
 runtime asks less. It sends none for an edit that moves no populated value (the
