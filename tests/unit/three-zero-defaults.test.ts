@@ -1,16 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { livePreviewScriptProps } from '@adapters/nextjs/index';
-import { resolvePolicyOptions } from '@adapters/shared/policy-options';
-import { generateInlineScript } from '@inline/generator';
 import { resetDevWarnings } from '@/types/dev-warning';
 
 /**
- * The server half of "3.0 announces itself" (ADR 0026, 2026-11-03): once per
- * process in development, never in production, an adapter or the generator
- * names a merge without a deadline (ADR 0007, row 27). What 3.0 already did is
- * here too: `livePreviewScriptProps()` builds a bootstrap and refuses inline
- * delivery (row 32). The Astro integration's loader default (row 33) is held
- * where loader mode is, in `adapters/astro-loader-mode.test.ts`.
+ * What 2.4 announced on the server (ADR 0026, 2026-11-03) and 3.0 did:
+ * `livePreviewScriptProps()` builds a bootstrap and refuses inline delivery
+ * (row 32), without a word in development. The Astro integration's loader
+ * default (row 33) is held where loader mode is, in
+ * `adapters/astro-loader-mode.test.ts`, and the merge deadline (row 27) in
+ * `core/merge-deadline.test.ts`.
  */
 
 const ADMIN = 'https://admin.example.com';
@@ -27,26 +25,6 @@ afterEach(() => {
   warn.mockRestore();
   vi.unstubAllEnvs();
   resetDevWarnings();
-});
-
-describe('a merge without a deadline (row 27)', () => {
-  it('is named once, from an adapter or the generator alone', () => {
-    resolvePolicyOptions({ allowedOrigins: [ADMIN] });
-    generateInlineScript({ allowedOrigins: [ADMIN] });
-    expect(said()).toEqual([
-      '[payload-live-preview] `mergeTimeoutMs` is not set, so a merge waits as long as the server ' +
-        'takes; 3.0 gives it a default deadline. Set `mergeTimeoutMs` now, or `0` to keep none ' +
-        '(ADR 0007, row 27).',
-    ]);
-  });
-
-  it('is not named with a deadline, `0` included, or in production', () => {
-    resolvePolicyOptions({ allowedOrigins: [ADMIN], mergeTimeoutMs: 0 });
-    generateInlineScript({ allowedOrigins: [ADMIN], mergeTimeoutMs: 10_000 });
-    vi.stubEnv('NODE_ENV', 'production');
-    generateInlineScript({ allowedOrigins: [ADMIN] });
-    expect(said()).toEqual([]);
-  });
 });
 
 describe('livePreviewScriptProps() without inline delivery (row 32)', () => {

@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 528,
-    "suites": 1026,
-    "tests": 4623,
+    "files": 527,
+    "suites": 1023,
+    "tests": 4617,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 431,
-      "suites": 917,
-      "tests": 4217,
+      "files": 430,
+      "suites": 914,
+      "tests": 4211,
       "benchmarks": 0
     }
   },
@@ -820,13 +820,6 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/unit/adapters/dev-notices-production-build.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 2,
-      "benchmarks": 0
-    },
-    {
       "path": "tests/unit/adapters/document-session-boundary-contracts.test.ts",
       "group": "unit",
       "suites": 1,
@@ -843,8 +836,8 @@
     {
       "path": "tests/unit/adapters/document-session-notices.test.ts",
       "group": "unit",
-      "suites": 4,
-      "tests": 9,
+      "suites": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1723,6 +1716,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/core/merge-deadline.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/core/merge-need-locale-recovery.test.ts",
       "group": "unit",
       "suites": 5,
@@ -1762,13 +1762,6 @@
       "group": "unit",
       "suites": 4,
       "tests": 10,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/merge-without-deadline.test.ts",
-      "group": "unit",
-      "suites": 1,
-      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -3734,8 +3727,8 @@
     {
       "path": "tests/unit/three-zero-defaults.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 5,
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {

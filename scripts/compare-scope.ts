@@ -93,7 +93,9 @@ const THEIR_DIST = resolve(ROOT, 'node_modules/@payloadcms/live-preview/dist');
 // 2026-11-27 (3.0, one table of defaults): 1 121 → 1 126. origin.ts +2 and document-session.ts
 // +3: both read their fallbacks from the defaults table, an import each and the lines the longer
 // names wrap to; a hook leaves an unset referrer switch to the detector. No request path changes.
-export const REVIEWED_SCOPE_LINES = 1126;
+// 2026-11-27 (3.0, ADR 0007 row 27): 1 126 → 1 111. document-session.ts −15: a hook's merge has
+// the table's deadline, and the notice that announced one, with the field it read, is gone.
+export const REVIEWED_SCOPE_LINES = 1111;
 
 interface OurFile {
   readonly file: string;

@@ -19,7 +19,6 @@ import { DataMerger } from '@core/merge/data-merger';
 import { MessageBus } from '@core/protocol/message-bus';
 import { observeCapabilities, PAYLOAD_2_REFUSED } from '@core/protocol/protocol-version';
 import { isDevMode } from '@detection/environment';
-import { noticeOnce, type BundlerEnv } from '@detection/notice';
 import { OriginDetector } from '@detection/origin';
 import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import type { PayloadLivePreviewMessage } from '@/types/payload-protocol';
@@ -65,8 +64,8 @@ export interface DocumentSessionOptions {
   readonly depth?: number;
   /**
    * Milliseconds a merge may wait for the server; after that the update is `unavailable`
-   * and `data` stays the last good document. Off by default: a merge waits as long as the
-   * server takes. `0` keeps it off when 3.0 gives it a default (ADR 0007, row 27).
+   * and `data` stays the last good document. Default `10000` since 3.0 (ADR 0007, row 27);
+   * `0` for no deadline: the merge then waits as long as the server takes.
    */
   readonly timeoutMs?: number;
   /**
@@ -171,7 +170,6 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
   #lastLog: readonly unknown[] = [];
   #attached = false;
   readonly #document: PreviewDocument | undefined;
-  readonly #deadline: boolean;
   #warnedUnproven = false;
   #unsupported = false;
 
@@ -191,7 +189,7 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
       serverURL: options.serverURL,
       ...(options.apiRoute !== undefined ? { apiRoute: options.apiRoute } : {}),
       ...(options.depth !== undefined ? { depth: options.depth } : {}),
-      ...(options.timeoutMs !== undefined ? { timeoutMs: options.timeoutMs } : {}),
+      timeoutMs: options.timeoutMs ?? V2_RUNTIME_DEFAULTS.mergeTimeoutMs,
       ...(options.fetchFn !== undefined ? { fetchFn: options.fetchFn } : {}),
       log: (...args: unknown[]) => {
         this.#lastLog = args;
@@ -209,7 +207,6 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     });
     this.#target = options.target;
     this.#document = namedDocument(options);
-    this.#deadline = options.timeoutMs !== undefined;
     this.#initial = {
       data: initialData,
       isLoading: true,
@@ -244,22 +241,6 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     this.#attached = true;
     this.#bus.attach(this.#target ?? window);
     MessageBus.sendReady(this.#readyTargets(), this.#detector.enumerate());
-    // `process.env.NODE_ENV` is read in place and with a dot, the form a bundler
-    // replaces, so a production build drops the notices and their text. With no
-    // bundler and no `process` the read throws, and nothing is said.
-    try {
-      if ((process.env as BundlerEnv).NODE_ENV !== 'production') {
-        if (!this.#deadline) {
-          noticeOnce(
-            'hook-deadline',
-            'A hook without `timeoutMs` waits for a merge; 3.0 sets a default, `0` keeps none ' +
-              '(ADR 0007, row 27).',
-          );
-        }
-      }
-    } catch {
-      // No bundler replaced `process.env.NODE_ENV`, and this realm has no `process`.
-    }
   }
 
   #detach(): void {

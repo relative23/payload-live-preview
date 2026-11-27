@@ -7,12 +7,12 @@ import {
 import { OriginDetector } from '@detection/origin';
 
 /**
- * The row of the ADR 0007 ledger whose default 3.0 still changes says so once
- * per page in development (ADR 0026, 2026-11-03): a hook without a merge
- * deadline (row 27). Nothing is said in production, and nothing where 3.0
- * changes nothing. Rows 22, 26 and 31 are done: a detector trusts a referrer
- * only when asked to, a hook names its document, and one with a locale leaves
- * alone an update that names none, each without a word.
+ * The defaults 2.4 announced from a hook, once per page in development
+ * (ADR 0026, 2026-11-03), are the defaults now, and a hook says nothing about
+ * them: a detector trusts a referrer only when asked to (row 22), a hook names
+ * its document (row 26), a merge has a deadline (row 27, held in
+ * `core/merge-deadline.test.ts`), and a hook with a locale leaves alone an
+ * update that names none (row 31).
  */
 
 const ADMIN = 'https://admin.example.com';
@@ -77,38 +77,6 @@ afterEach(() => {
   for (const stop of stops.splice(0)) stop();
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
-});
-
-describe('3.0 notices from a hook', () => {
-  it('names the missing deadline once per page, however many hooks', () => {
-    open();
-    open();
-    expect(said()).toEqual([
-      '[payload-live-preview] A hook without `timeoutMs` waits for a merge; 3.0 sets a default, ' +
-        '`0` keeps none (ADR 0007, row 27).',
-    ]);
-  });
-
-  it('names the notice by a fixed key on the page, which every copy of the package shares', () => {
-    // Two copies on one page, possibly of different versions, must agree on
-    // this string, or each would print its own line.
-    open();
-    const issued = (globalThis as Record<string, unknown>)['__payloadLivePreviewNotices'];
-    expect([...(issued as Set<string>)]).toEqual(['hook-deadline']);
-    expect(said()).toHaveLength(1);
-  });
-
-  it('says nothing about a hook that names a deadline, including `timeoutMs: 0`', () => {
-    open({ document: { collection: 'pages', id: '1' }, timeoutMs: 0 });
-    open({ document: { global: 'header' }, timeoutMs: 5_000 });
-    expect(said()).toEqual([]);
-  });
-
-  it('says nothing in production', () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    open();
-    expect(said()).toEqual([]);
-  });
 });
 
 describe('an update without a locale, for a hook with one (row 31)', () => {

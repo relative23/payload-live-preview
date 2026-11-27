@@ -32,6 +32,7 @@ describe('the defaults table covers every readiness row', () => {
       assetPath: '/payload-live-preview',
     });
     expect({ ...V2_RUNTIME_DEFAULTS }).toEqual({
+      mergeTimeoutMs: 10_000,
       debounceMs: 50,
       heartbeatMs: 0,
       enableA11y: true,

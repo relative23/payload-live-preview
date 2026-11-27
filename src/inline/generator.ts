@@ -3,7 +3,6 @@
  * places at most one strategy prelude ahead of it.
  */
 
-import { warnChangingDefaults } from '@/types/dev-warning';
 import { refuseRemovedOptions } from '@/types/removed-options';
 import { assertMergeDepthExplicit } from '@/types/merge-depth';
 import { RUNTIME_SOURCE, RUNTIME_BUILD_INFO, type RuntimeBuildInfo } from './runtime.generated';
@@ -25,7 +24,6 @@ function assertBuilt(source: string, artifact: string): void {
 
 /** The inline script body without `<script>` tags; see `wrapWithScriptTag()`. */
 export function generateInlineScript(config: InlineScriptConfig = {}): string {
-  warnChangingDefaults(config);
   assertBuilt(RUNTIME_SOURCE, 'runtime.generated.ts');
   return [configStatement(config), ...strategyPrelude(config), RUNTIME_SOURCE].join('\n');
 }
