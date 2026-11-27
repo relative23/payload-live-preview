@@ -92,6 +92,7 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 40  | 3.0 (decided 2026-11-27)           | default | no route strategy in an adapter unless `routeStrategy` or `fragments` asks for one, so `onUnfaithfulPatch: 'escalate'`, the default, has nowhere to go                                                                                                                       | `routeStrategy: 'router'` in the Next.js, SvelteKit and Nuxt adapters: after a save, the route is refreshed through the router refresh the page lent, and never fetched and morphed. Astro, the generator and the bootstrap of `livePreviewScriptProps()` keep none                                                       | `pll doctor --v3` names a page without either option      | none: render `LivePreviewNavigation` (Next.js) or call `livePreviewNavigation()` (SvelteKit), which the guides describe since 2.4; the Nuxt module lends the refresh itself. `routeStrategy: false` keeps none                                                                                                                                |
 | 41  | 3.0 (decided 2026-11-27)           | move    | the entry `/payload`, which exports `buildLivePreviewUrl()` and its types, beside `/plugin` and `/plugins`: three names for three things                                                                                                                                     | the entry `/plugin` exports `buildLivePreviewUrl()` and its types under the same names; `/payload` is gone from the exports map                                                                                                                                                                                           | —                                                         | `move-payload-entry` rewrites the specifier wherever a script names the entry as a module: `import`, `export … from`, `import()`, `require()`, an `import()` type                                                                                                                                                                             |
 | 42  | 3.0 (decided 2026-11-27)           | removal | the entries `/doctor` and `/migrate`: the checks and the codemods of the `pll` binary as libraries (`runDoctor()`, `analyzeProbe()`, `migrateSource()`)                                                                                                                      | the `pll` binary alone: `pll doctor <url> --json` prints the findings for a script, `pll migrate <path>` runs the codemods. Neither subpath is in the exports map, so an import of one does not resolve                                                                                                                   | `pll doctor --v3` names a call from either entry          | none: run the binary                                                                                                                                                                                                                                                                                                                          |
+| 43  | 3.0 (decided 2026-11-24)           | removal | ten entries built twice, as ESM and as CommonJS, and every entry a bundle of its own with its own copy of every class and registry it shares with the others                                                                                                                 | one module graph, ESM alone: a shared module is built once as a chunk the entries import. The entries that had a CommonJS build answer `require()` with the ES module `import` gets, which Node 24 loads. No `.cjs` file and no `require` condition are left                                                              | —                                                         | none: an `import` or a `require()` of an entry by its name keeps working. A deep import of a file under `dist/` does not: the shared files change their names with every release                                                                                                                                                              |
 
 2026-09-16 (2.0.1): row 5's "outside local dev" names an exception the runtime
 does not have. `disableReferrerDetection` is `true` everywhere under `'v2'`;
@@ -190,6 +191,27 @@ document to sanitise with, as `sanitizeHtml()` always did. `requireDocument:
 false` is the 2.x behaviour under its name, the markup as rendered with one
 warning, and `sanitize: false` still says that the caller sanitises itself. A
 browser has a document, so nothing changes there.
+
+2026-11-27 (3.0): row 43 is new and carried out: one module graph (the plan's
+A-1, fixed on 2026-11-24).
+
+- Until 3.0 each of the package's entries was bundled alone, ten of them as
+  ESM and as CommonJS. Every class and every registry existed once per entry,
+  which is why a Lexical block registered through one entry was not seen by
+  another and why the authorization mark had to be a registry symbol. Measured
+  on the build before: 2 751 547 bytes of JavaScript in the archive, 1 956 570
+  of them ESM. As one graph it is 541 124 bytes in 66 files.
+- What an entry costs is its closure now, its own file with the chunks it
+  loads. Loaded unbundled, that is more than the single file was, because a
+  chunk carries what any of its entries needs: 3 to 5 % for the adapters, 6 %
+  for the root, 14 % for `/core`, 21 and 23 % for the hooks, 72 % for
+  `/plugins` and 120 % for `/fragment`. What a bundler keeps for one imported
+  name is level with before: the tree-shaking rows moved by a few bytes, and
+  `initLivePreview` from the root lost 286 bytes gzip.
+- `require()` still works for the entries that had a CommonJS build, and for
+  `/nextjs`: Node 24.0.0 and 24.22.3 load them from a CommonJS file, and a
+  CommonJS-loaded `next.config.ts` relies on it. The other entries were
+  import-only before and are.
 
 2026-11-27 (3.0): rows 41 and 42 are new and carried out, the first cut of
 the entry table. Three sites and the examples import 7 of the package's

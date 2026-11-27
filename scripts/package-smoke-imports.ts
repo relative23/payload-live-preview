@@ -232,6 +232,28 @@ const DOMLESS_LEXICAL_PROBES: Readonly<Record<'esm' | 'cjs', string>> = {
   cjs: `const { JSDOM } = require('jsdom'); const root = require(process.argv[1]); const lexical = require(process.argv[2]); (async () => { ${DOMLESS_LEXICAL_BODY} })().catch((error) => { console.error(error); process.exit(1); });`,
 };
 
+/**
+ * One registry for every entry and for both ways of loading one (ADR 0007, row
+ * 43). Until 3.0 an entry was bundled with its own copy of the modules it shared
+ * and `require()` got a second build, so the root entry rendered a placeholder
+ * for a block whose renderer had been registered through `/lexical`. The
+ * CommonJS probe registers through `require()` and renders through `import()`.
+ * The specifiers arrive as arguments.
+ */
+const ONE_REGISTRY_BODY = [
+  "lexical.registerLexicalNode('package-smoke-shared-node', () => '<mark>node</mark>');",
+  "lexical.registerBlockRenderer('package-smoke-shared-block', () => '<aside>block</aside>');",
+  "const content = { root: { type: 'root', children: [{ type: 'package-smoke-shared-node' }, { type: 'block', fields: { blockType: 'package-smoke-shared-block' } }] } };",
+  'const originalWarn = console.warn; console.warn = () => {}; let html;',
+  'try { html = root.lexicalToHtml(content, { requireDocument: false }); } finally { console.warn = originalWarn; }',
+  "if (html !== '<mark>node</mark><aside>block</aside>') throw new Error('the root entry does not know a renderer registered through /lexical: ' + html);",
+].join(' ');
+
+const ONE_REGISTRY_PROBES: Readonly<Record<'esm' | 'cjs', string>> = {
+  esm: `const lexical = await import(process.argv[2]); const root = await import(process.argv[1]); ${ONE_REGISTRY_BODY}`,
+  cjs: `const lexical = require(process.argv[2]); (async () => { const root = await import(process.argv[1]); ${ONE_REGISTRY_BODY} })().catch((error) => { console.error(error); process.exit(1); });`,
+};
+
 /** The Next component may be imported and refuse a request with no React installed. */
 const NEXT_SCRIPT_OPTIONAL_PEER_PROBE = `
 const { strict: assert } = await import('node:assert');
@@ -512,6 +534,25 @@ export async function checkPackedImportSmokes(inputs: {
     if (shared.status !== 0) {
       failures.push(
         `${format} the removed sanitizer document is still exported or read:\n${detailFor(shared)}`,
+      );
+    }
+  }
+
+  for (const format of ['esm', 'cjs'] as const) {
+    const registry = run(
+      process.execPath,
+      [
+        `--input-type=${format === 'esm' ? 'module' : 'commonjs'}`,
+        '--eval',
+        ONE_REGISTRY_PROBES[format],
+        packageSpecifier(inputs.packageName, '.'),
+        packageSpecifier(inputs.packageName, './lexical'),
+      ],
+      inputs.consumer,
+    );
+    if (registry.status !== 0) {
+      failures.push(
+        `${format} entries do not share one renderer registry:\n${detailFor(registry)}`,
       );
     }
   }

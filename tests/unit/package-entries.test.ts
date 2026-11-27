@@ -1,19 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  CORE_ENTRY,
-  DIRECTIVE_ENTRIES,
-  DUAL_FORMAT_ENTRIES,
-  ESM_ONLY_ENTRIES,
-  STANDALONE_ENTRIES,
-} from '../../scripts/package-entries';
+import { CLI_ENTRIES, DIRECTIVE_ENTRIES, LIBRARY_ENTRIES } from '../../scripts/package-entries';
 
 /**
- * Package topology (roadmap 1.4.0): the `exports` map, the build entries and
- * the focused entry modules agree with each other. A subpath in the manifest
- * without a build entry ships a dangling path; a build entry without a
- * subpath ships an unreachable file.
+ * Package topology: the `exports` map and the build entries agree with each
+ * other. A subpath in the manifest without a build entry ships a dangling
+ * path; a build entry without a subpath ships an unreachable file. Since 3.0
+ * the package is one ESM graph (ADR 0007, row 43): no entry has a CommonJS
+ * build, and the ones that had one stay loadable through `require()`.
  */
 
 interface Conditions {
@@ -22,22 +17,18 @@ interface Conditions {
   readonly default?: { readonly types: string; readonly default: string };
 }
 const manifest = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as {
+  main: string;
   exports: Record<string, Conditions | string>;
   peerDependencies: Record<string, string>;
   peerDependenciesMeta: Record<string, { readonly optional?: boolean }>;
 };
-const DUAL: Record<string, string> = {
-  ...DUAL_FORMAT_ENTRIES,
-  ...STANDALONE_ENTRIES,
-  ...CORE_ENTRY,
-};
 const DIRECTIVE: Record<string, string> = Object.fromEntries(
   Object.entries(DIRECTIVE_ENTRIES).map(([name, entry]) => [name, entry.source]),
 );
-const ALL: Record<string, string> = { ...DUAL, ...ESM_ONLY_ENTRIES, ...DIRECTIVE };
+const IMPORTABLE: Record<string, string> = { ...LIBRARY_ENTRIES, ...DIRECTIVE };
 
 function entryName(distPath: string): string {
-  return distPath.replace(/^\.\/dist\//u, '').replace(/\.(?:js|cjs|d\.ts|d\.cts)$/u, '');
+  return distPath.replace(/^\.\/dist\//u, '').replace(/\.(?:js|d\.ts)$/u, '');
 }
 
 describe('package entries', () => {
@@ -45,68 +36,66 @@ describe('package entries', () => {
     (pair): pair is [string, Conditions] => typeof pair[1] !== 'string',
   );
 
-  it('every subpath with a script build resolves to a tsup entry, and dual formats only where the entry is dual', () => {
+  it('every subpath with a script build resolves to a build entry, as ESM alone', () => {
     for (const [subpath, conditions] of scriptExports) {
       const esm = conditions.import;
+      expect(esm, `${subpath} has no import condition`).toBeDefined();
       if (esm === undefined) continue;
       const name = entryName(esm.default);
-      expect(ALL[name], `${subpath} → ${esm.default}`).toBeDefined();
+      expect(IMPORTABLE[name], `${subpath} → ${esm.default}`).toBeDefined();
       expect(entryName(esm.types)).toBe(name);
-      if (conditions.require !== undefined) {
-        expect(
-          DUAL[name],
-          `${subpath} has a require condition; its entry must be dual-format`,
-        ).toBeDefined();
-        expect(entryName(conditions.require.default)).toBe(name);
-        expect(entryName(conditions.require.types)).toBe(name);
-      } else {
-        expect(DUAL[name], `${subpath} is ESM-only in the manifest but built dual`).toBeUndefined();
-      }
+      expect(conditions.require, `${subpath} names a CommonJS build`).toBeUndefined();
+    }
+    expect(manifest.main).toBe('./dist/index.js');
+  });
+
+  it('keeps the entries that had a CommonJS build until 3.0 loadable through require(esm)', () => {
+    // `require()` matches `default`, not `import`. Without it, a CommonJS file that required
+    // one of these in 2.x finds no export in 3.0; with it, every supported Node loads the ES
+    // module. `./nextjs` has had it since a CommonJS-loaded next.config.ts needed it (H12).
+    // The others need a bundler, a framework or a peer that a CommonJS file does not bring.
+    const requirable = scriptExports
+      .filter(([, conditions]) => conditions.default !== undefined)
+      .map(([subpath]) => subpath)
+      .sort();
+    expect(requirable).toEqual([
+      '.',
+      './client',
+      './codegen',
+      './core',
+      './fragment',
+      './lexical',
+      './nextjs',
+      './plugin',
+      './plugins',
+      './server',
+      './structural',
+    ]);
+    for (const [subpath, conditions] of scriptExports) {
+      if (conditions.default === undefined) continue;
+      expect(conditions.default, subpath).toEqual(conditions.import);
     }
   });
 
-  it('lets a CommonJS-loaded next.config.ts require the Next.js entry, through require(esm)', () => {
-    // Next compiles next.config.ts to CommonJS and requires it, and a fresh
-    // project has no "type": "module". `withLivePreview` lives in `./nextjs`,
-    // which is ESM-only: without a `default` condition the require finds no
-    // export and the documented setup fails to build (found in a clean project,
-    // H12). Every supported Node loads the ESM file through require(esm).
-    const nextjs = manifest.exports['./nextjs'] as Conditions;
-    expect(nextjs.require).toBeUndefined();
-    expect(nextjs.default).toEqual(nextjs.import);
-  });
-
-  it('every tsup entry that is not a CLI is reachable through the manifest', () => {
+  it('every build entry that is not a binary is reachable through the manifest', () => {
     const reachable = new Set(
       scriptExports.flatMap(([, conditions]) =>
         conditions.import === undefined ? [] : [entryName(conditions.import.default)],
       ),
     );
-    for (const name of Object.keys(ALL)) {
-      if (name.endsWith('-cli')) continue;
+    for (const name of Object.keys(IMPORTABLE)) {
       expect(reachable.has(name), `dist/${name} has no exports subpath`).toBe(true);
     }
-  });
-
-  it('an entry with a module directive is built alone, so its banner reaches only that file', () => {
-    // A banner applies to every entry in a tsup profile: two directive entries
-    // in one profile would put `'use client'` on both.
-    for (const [name, entry] of Object.entries(DIRECTIVE_ENTRIES)) {
-      expect(entry.directive, name).toMatch(/^'use [a-z]+';$/u);
-      expect(ESM_ONLY_ENTRIES).not.toHaveProperty(name);
-      expect(DUAL).not.toHaveProperty(name);
+    for (const name of Object.keys(CLI_ENTRIES)) {
+      expect(reachable.has(name), `dist/${name} is a binary and has a subpath`).toBe(false);
     }
   });
 
-  it('the focused entries are exactly the documented ones', () => {
-    expect(Object.keys(STANDALONE_ENTRIES).sort()).toEqual([
-      'client',
-      'fragment',
-      'lexical',
-      'plugins',
-      'server',
-      'structural',
-    ]);
+  it('an entry with a module directive is listed apart, so the build writes the directive into that file alone', () => {
+    for (const [name, entry] of Object.entries(DIRECTIVE_ENTRIES)) {
+      expect(entry.directive, name).toMatch(/^'use [a-z]+';$/u);
+      expect(LIBRARY_ENTRIES).not.toHaveProperty(name);
+    }
   });
 
   it('declares no `next` peer, although `./nextjs/client` imports `next/navigation`', () => {

@@ -9,7 +9,8 @@
  * 1.x or 2.0.0-beta.0 — and is read as 1.x, with a line that says so.
  */
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
-import { V2_RUNTIME_DEFAULTS, type EventSourcePolicy } from '@/types/defaults-profile';
+import type { EventSourcePolicy } from '@/types/defaults-profile';
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import type { DoctorFinding, DoctorProbe } from './types';
 
 const CONFIG_NAME = '__LIVE_PREVIEW_CONFIG__';
@@ -93,6 +94,17 @@ const ONE_X_RUNTIME_ROWS: ReadinessRuntimeRows = Object.freeze({
   skipUnchanged: false,
   sanitizerPolicy: 'compat',
 });
+
+/**
+ * The same four rows as 3.0 sets them, read one by one: a row module handed on whole would be
+ * built as an object in the chunk every reader of a row shares.
+ */
+const V3_RUNTIME_ROWS: ReadinessRuntimeRows = {
+  enableReferrerDetection: V2_RUNTIME_DEFAULTS.enableReferrerDetection,
+  eventSourcePolicy: V2_RUNTIME_DEFAULTS.eventSourcePolicy,
+  skipUnchanged: V2_RUNTIME_DEFAULTS.skipUnchanged,
+  sanitizerPolicy: V2_RUNTIME_DEFAULTS.sanitizerPolicy,
+};
 
 /** Where a row's value came from, which decides what the reader can change. */
 type Origin = 'profile' | 'explicit' | 'unmarked';
@@ -262,7 +274,7 @@ function spellingOf(row: ReadinessRow, config: ServedConfig): Spelling {
 }
 
 function remedyFor(origin: Origin, row: ReadinessRow, value: unknown, words: Spelling): string {
-  const wanted = `\`${words.key}: ${words.show(V2_RUNTIME_DEFAULTS[row.key])}\``;
+  const wanted = `\`${words.key}: ${words.show(V3_RUNTIME_ROWS[row.key])}\``;
   switch (origin) {
     case 'profile':
       return (
@@ -322,11 +334,11 @@ export function analyzeV2Readiness(probe: DoctorProbe): readonly DoctorFinding[]
     return [unknownGeneration(marker)];
   }
   const generation = marker ?? (config.source === 'element' ? 'v2' : undefined);
-  const fallback = generation === 'v2' ? V2_RUNTIME_DEFAULTS : ONE_X_RUNTIME_ROWS;
+  const fallback = generation === 'v2' ? V3_RUNTIME_ROWS : ONE_X_RUNTIME_ROWS;
   const findings = ROWS.flatMap((row) => {
     const slot = stated(row, config);
     const value = slot ?? fallback[row.key];
-    if (value === V2_RUNTIME_DEFAULTS[row.key]) return [];
+    if (value === V3_RUNTIME_ROWS[row.key]) return [];
     const origin: Origin =
       generation === 'v1' ? 'profile' : slot === undefined ? 'unmarked' : 'explicit';
     return [gap(row, value, origin, spellingOf(row, config))];

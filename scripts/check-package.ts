@@ -7,15 +7,10 @@
  * its types use a separate consumer that installs the reviewed ts-morph peer.
  */
 
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, resolve } from 'node:path';
-import {
-  checkApiReports,
-  checkDualDeclarationParity,
-  collectTypedApiEntries,
-  type TypedApiEntry,
-} from './api-contracts';
+import { checkApiReports, collectTypedApiEntries, type TypedApiEntry } from './api-contracts';
 import { parsePackageArtifactArguments } from './package-artifact';
 import {
   finalizePackageArtifact,
@@ -313,10 +308,25 @@ async function main(): Promise<void> {
     const packageRootForEntry = (entry: TypedApiEntry): string =>
       resolve(consumerForEntry(entry), 'node_modules/payload-live-preview');
 
+    // API Extractor reads a copy of the installed package that stands outside `node_modules`.
+    // Inside it TypeScript takes the declaration chunks the entries share for an external
+    // library, and a report prints `export { name }` where the signature belongs. The copy
+    // sits in the consumer it came from, so the peers resolve as they do for the original.
+    const reviewRoots = new Map<string, string>();
+    for (const entry of typedApiEntries) {
+      const home = consumerForEntry(entry);
+      if (reviewRoots.has(home)) continue;
+      const copy = resolve(home, 'api-review');
+      await cp(resolve(home, 'node_modules/payload-live-preview'), copy, { recursive: true });
+      reviewRoots.set(home, copy);
+    }
+    const reviewRootForEntry = (entry: TypedApiEntry): string =>
+      reviewRoots.get(consumerForEntry(entry)) ?? packageRootForEntry(entry);
+
     const apiReportFailures = await checkApiReports({
       apiConfigPath: API_EXTRACTOR_CONFIG,
       entries: typedApiEntries,
-      packageRootForEntry,
+      packageRootForEntry: reviewRootForEntry,
       reportFolder: API_REPORT_FOLDER,
       reportTempFolder: resolve(temporaryRoot, 'api-extractor-temp'),
       typescriptCompilerFolder: resolve(ROOT, 'node_modules/typescript'),
@@ -324,13 +334,6 @@ async function main(): Promise<void> {
     });
     for (const failure of apiReportFailures) {
       failures.push(`API Extractor: ${failure}`);
-    }
-    const declarationParityFailures = await checkDualDeclarationParity(
-      typedApiEntries,
-      packageRootForEntry,
-    );
-    for (const failure of declarationParityFailures) {
-      failures.push(`declaration parity: ${failure}`);
     }
     const declaredValueFailures = await checkDeclaredValuesExist({
       targets: typedApiEntries.map((entry) => ({ entry, consumer: consumerForEntry(entry) })),

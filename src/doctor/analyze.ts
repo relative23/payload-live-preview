@@ -5,7 +5,7 @@
  * attributes inside start tags and find the runtime marker; findings say what
  * was observed.
  */
-import { V2_RUNTIME_DEFAULTS } from '@/types/defaults-profile';
+import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
 import { DIAGNOSTIC_CODES } from '../core/diagnostic-codes';
 import { frameAncestorsAdmits, frameAncestorsOf } from './csp';
 import { analyzeV2Readiness, readServedConfig } from './readiness';

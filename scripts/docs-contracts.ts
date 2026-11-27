@@ -15,7 +15,8 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { INLINE_BUDGET } from './bundle-budgets';
-import { V2_ADAPTER_DEFAULTS, V2_RUNTIME_DEFAULTS } from '../src/types/defaults-profile';
+import * as V2_ADAPTER_DEFAULTS from '../src/types/adapter-defaults';
+import * as V2_RUNTIME_DEFAULTS from '../src/types/runtime-defaults';
 import {
   deliveryClaims,
   deliveryClaimViolations,
@@ -335,36 +336,25 @@ export function nullGuardViolations(text: string, file: string): string[] {
 }
 
 /**
- * The paragraph that says which entries are ESM-only, against the manifest.
- * `./annotate` was missing from it: `require('payload-live-preview/annotate')`
- * fails with ERR_PACKAGE_PATH_NOT_EXPORTED, and the sentence said the rest ship
- * CommonJS too. Entries a collective term already covers are passed in as
- * `covered`, so the rule reads the sentence the way a reader does.
+ * Since 3.0 the package has no CommonJS build (ADR 0007, row 43), so a page
+ * that says an entry ships one, or that some entries are "ESM-only" as if the
+ * others were not, describes 2.x. The pages of the decision records are the
+ * history and may say so.
  */
-export function esmOnlyListViolations(
-  text: string,
-  file: string,
-  esmOnly: readonly string[],
-  covered: ReadonlySet<string>,
-): string[] {
-  const paragraph = text.split(/\n\s*\n/u).find((candidate) => candidate.includes('are ESM-only'));
-  if (paragraph === undefined) return [];
-  const line = text.slice(0, text.indexOf(paragraph)).split('\n').length;
-  // The pages spell an entry three ways — `doctor`, `./doctor` and the full
-  // specifier — and all three name it for a reader.
-  const named = (entry: string): boolean => {
-    const bare = entry.slice(2);
-    return [`\`${bare}\``, `\`./${bare}\``, `\`payload-live-preview/${bare}\``].some((form) =>
-      paragraph.includes(form),
-    );
-  };
-  return esmOnly
-    .filter((entry) => !covered.has(entry) && !named(entry))
-    .map(
-      (entry) =>
-        `${file}:${String(line)} the ESM-only paragraph does not name ${entry}, ` +
-        'which the manifest exports without a require condition',
-    );
+export function commonJsClaimViolations(text: string, file: string): string[] {
+  const violations: string[] = [];
+  text.split('\n').forEach((line, index) => {
+    if (
+      /\bare ESM-only\b|\bships? (?:ESM and )?CommonJS\b|\bCommonJS builds?\b.*\bships?\b/u.test(
+        line,
+      )
+    ) {
+      violations.push(
+        `${file}:${String(index + 1)} speaks of a CommonJS build or of ESM-only entries; every entry is one ES module since 3.0`,
+      );
+    }
+  });
+  return violations;
 }
 
 /**
@@ -445,8 +435,6 @@ async function main(): Promise<void> {
   const pkg = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as {
     exports: Record<string, unknown>;
   };
-  const isRequireable = (value: unknown): boolean =>
-    typeof value === 'object' && value !== null && 'require' in value;
   const entries = new Set(
     Object.keys(pkg.exports).map((key) =>
       key === '.' ? 'payload-live-preview' : `payload-live-preview${key.slice(1)}`,
@@ -459,26 +447,6 @@ async function main(): Promise<void> {
     ...[...codeSource.matchAll(/'(LP0\d{3})'/gu)].map((x) => x[1]!),
     ...[...codeSource.matchAll(/\b(LP0\d{3}) is reserved/gu)].map((x) => x[1]!),
   ]);
-  // Subpaths a collective term in that paragraph already covers: the framework
-  // adapters and the two components a consumer writes into an Astro template.
-  const covered = new Set([
-    './astro',
-    './nextjs',
-    './nextjs/client',
-    './nuxt',
-    './nuxt/client',
-    './nuxt-module',
-    './sveltekit',
-    './sveltekit/client',
-    './react',
-    './vue',
-    './astro/middleware-entry',
-    './astro/RichText.astro',
-    './astro/PreviewBoundary.astro',
-  ]);
-  const esmOnly = Object.entries(pkg.exports)
-    .filter(([key, value]) => key !== './package.json' && !isRequireable(value))
-    .map(([key]) => key);
   const clientConfig = await readFile(resolve(ROOT, 'src/client/config.ts'), 'utf8');
   const clientMembers = interfaceMembers(clientConfig, 'LivePreviewClientConfig');
   const preview = await readFile(resolve(ROOT, 'src/server/preview.ts'), 'utf8');
@@ -527,7 +495,9 @@ async function main(): Promise<void> {
       );
     }
     violations.push(...nullGuardViolations(text, name));
-    violations.push(...esmOnlyListViolations(text, name, esmOnly, covered));
+    if (!name.startsWith('docs/architecture/')) {
+      violations.push(...commonJsClaimViolations(text, name));
+    }
     violations.push(...brokenLinks(text, name, linkTarget(file)));
     // A decision record states the numbers of the day it was written ("about 20 KB gzip" is what
     // DOMPurify would have cost in ADR 0016); the guides and the README state the current ones.

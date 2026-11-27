@@ -9,14 +9,13 @@ import { checkDeclaredValuesExist } from '../../scripts/package-smoke-values';
 const ENTRY: TypedApiEntry = {
   exportName: '.',
   importTypesTarget: './index.d.ts',
-  requireTypesTarget: './index.d.cts',
+  requirable: true,
   reportName: 'example-package',
 };
 
-// What the module exports at runtime, under both conditions: the factory only.
+// What the module exports at runtime: the factory only. One ES module, which `import` and,
+// through the `default` condition, `require()` both get.
 const ESM_SOURCE = 'class Session {}\nexport function create() { return new Session(); }\n';
-const CJS_SOURCE =
-  'class Session {}\nexports.create = function create() { return new Session(); };\n';
 
 describe('declared values exist at runtime', () => {
   const temporaryRoots: string[] = [];
@@ -38,16 +37,14 @@ describe('declared values exist at runtime', () => {
         exports: {
           '.': {
             import: { types: './index.d.ts', default: './index.js' },
-            require: { types: './index.d.cts', default: './index.cjs' },
+            default: { types: './index.d.ts', default: './index.js' },
           },
         },
       }),
     );
     await writeFile(resolve(packageRoot, 'index.js'), ESM_SOURCE);
-    await writeFile(resolve(packageRoot, 'index.cjs'), CJS_SOURCE);
     if (declaration !== undefined) {
       await writeFile(resolve(packageRoot, 'index.d.ts'), declaration);
-      await writeFile(resolve(packageRoot, 'index.d.cts'), declaration);
     }
     await writeFile(
       resolve(consumer, 'loader.mjs'),

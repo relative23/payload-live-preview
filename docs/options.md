@@ -369,13 +369,25 @@ entry: `livePreview()` and `buildLivePreviewUrl()` in `/plugin`,
 `createRouteStrategy()` in `/fragment`, `PluginManager` and
 `createUnboundFieldsOverlayPlugin()` in `/plugins`, `registerLexicalNode()` and
 `registerDefaultBlocks()` in `/lexical`, and the structural renderer and keyed
-morph in `/structural`. Every entry is a self-contained bundle with its own type
-declarations and its own copy of the code it shares with the others, so a
-Lexical node or block renderer registered through one entry is not seen by
-another ([docs/renderers.md](renderers.md#renderrichtext-one-renderer-for-ssr-and-preview));
-a server call names the document it sanitises with (`sanitizeHtml(html, { document })`,
-`lexicalToHtml(content, { document })`), and no entry holds one for another since 3.0. The adapters (`react`, `vue` and `nuxt-module` included), `annotate`, `codegen/astro` and
-the `.astro` components are ESM-only; the rest ship ESM and CommonJS builds.
+morph in `/structural`.
+
+Since 3.0 the entries are one module graph (ADR 0007, row 43). A module two
+entries share is built once, as a chunk both import, so a class or a registry
+exists once whichever entries a project imports: a Lexical node or block
+renderer registered through `/lexical` is the one the root entry renders with
+([docs/renderers.md](renderers.md#renderrichtext-one-renderer-for-ssr-and-preview)).
+A server call still names the document it sanitises with
+(`sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`);
+no entry holds one for another. The package is ESM-only: there is no CommonJS
+build. A CommonJS file still loads the entries that had one, and `/nextjs`,
+with `require()`, which every supported Node answers with the same ES module:
+the root, `/core`, `/client`, `/server`, `/plugin`, `/plugins`, `/lexical`,
+`/structural`, `/fragment` and `/codegen`. The other entries are for `import`.
+Import an entry by its name: the files under `dist/` that the entries share
+have names that change with every release. A page that loads an entry in the
+browser without a bundler has to serve those files with it, so it serves the
+package's `dist/` folder and not one copied file; `/client` is 19 files with
+168 kB together.
 
 Every entry has a stability class, stated here and, for the experimental
 ones, as `@beta` on the declarations in the API reports (`etc/api/*.api.md`):

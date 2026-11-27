@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   brokenLinks,
   headingSlugs,
-  esmOnlyListViolations,
+  commonJsClaimViolations,
   interfaceMembers,
   isKnownName,
   nullGuardViolations,
@@ -304,38 +304,23 @@ describe('snippets that reach through a nullable client', () => {
   });
 });
 
-describe('the ESM-only paragraph against the manifest', () => {
-  const paragraph = [
-    'The root import carries everything.',
-    '',
-    'The adapters, `codegen/astro`, `doctor` and `migrate` are ESM-only; the rest',
-    'ship ESM and CommonJS builds.',
-    '',
-  ].join('\n');
-
-  it('names the entry that was missing from it', () => {
-    // `require('payload-live-preview/annotate')` fails with
-    // ERR_PACKAGE_PATH_NOT_EXPORTED, while the sentence promised CommonJS.
-    const violations = esmOnlyListViolations(
-      paragraph,
-      'docs/options.md',
-      ['./annotate', './doctor', './migrate'],
-      new Set(),
-    );
-
-    expect(violations).toEqual([
-      'docs/options.md:3 the ESM-only paragraph does not name ./annotate, which the manifest exports without a require condition',
+describe('a page that still describes a CommonJS build', () => {
+  it.each([
+    ['a list of ESM-only entries', 'The adapters and `annotate` are ESM-only; the rest'],
+    ['two builds', 'the rest ship ESM and CommonJS builds.'],
+    ['one entry with a CommonJS build', 'The root entry ships CommonJS as well.'],
+  ])('is told so for %s', (_label, line) => {
+    expect(commonJsClaimViolations(`# Entries\n\n${line}\n`, 'docs/options.md')).toEqual([
+      'docs/options.md:3 speaks of a CommonJS build or of ESM-only entries; every entry is one ES module since 3.0',
     ]);
   });
 
-  it('says nothing about entries a collective term already covers', () => {
-    const violations = esmOnlyListViolations(
-      paragraph,
-      'docs/options.md',
-      ['./astro', './doctor'],
-      new Set(['./astro']),
-    );
+  it('accepts the 3.0 wording, which names CommonJS only as what loads the entries', () => {
+    const text = [
+      'The package is ESM-only: there is no CommonJS build.',
+      'A CommonJS file loads an entry with `require()`, which every supported Node answers with the ES module.',
+    ].join('\n');
 
-    expect(violations).toEqual([]);
+    expect(commonJsClaimViolations(text, 'docs/options.md')).toEqual([]);
   });
 });

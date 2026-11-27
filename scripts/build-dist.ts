@@ -4,7 +4,8 @@
  * tsup executes array configs concurrently. A `clean: true` profile sharing an
  * output directory can therefore delete files another profile just emitted. The
  * production build instead removes the known `dist` directory once, then emits
- * the dual-format, dedicated core, and ESM-only profiles in declaration order.
+ * the profiles in declaration order. Since 3.0 there is one: every entry as ESM,
+ * with the modules two entries share as chunks (ADR 0012).
  */
 import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
@@ -84,11 +85,10 @@ const DIRECTIVES = new Map<string, string>(
  */
 async function compressJavaScript(path: string): Promise<void> {
   const sourceMapPath = `${path}.map`;
-  const isModule = path.endsWith('.js');
   const source = await readFile(path, 'utf8');
   const directive = DIRECTIVES.get(path);
   const result = await minify(source, {
-    compress: { module: isModule, passes: 2 },
+    compress: { module: true, passes: 2 },
     ecma: 2022,
     // `preamble` rather than a prepended string: terser shifts the source map
     // for it, so the published file still maps back to TypeScript line by line.
@@ -103,7 +103,7 @@ async function compressJavaScript(path: string): Promise<void> {
     keep_classnames: PUBLIC_FUNCTION_NAME_PATTERN,
     keep_fnames: PUBLIC_FUNCTION_NAME_PATTERN,
     mangle: { reserved: [...PUBLIC_FUNCTION_NAMES] },
-    module: isModule,
+    module: true,
     toplevel: true,
     sourceMap: {
       content: await readFile(sourceMapPath, 'utf8'),
@@ -126,10 +126,44 @@ async function compressDirectory(directory: string): Promise<void> {
     const path = resolve(directory, entry.name);
     if (entry.isDirectory()) {
       await compressDirectory(path);
-    } else if (entry.name.endsWith('.js') || entry.name.endsWith('.cjs')) {
+    } else if (entry.name.endsWith('.js')) {
       await compressJavaScript(path);
     }
   }
 }
 
+/**
+ * esbuild emits a chunk for a module that held only types when several entries
+ * import it, and a bare import of that chunk in each of them: an empty file a
+ * consumer resolves and fetches for nothing. Before the minifier, where an
+ * import stands on a line of its own, the import becomes an empty line, so the
+ * source maps of the importing files stay as they are, and the chunk goes.
+ */
+async function dropEmptyChunks(): Promise<void> {
+  const files = (await readdir(DIST, { recursive: true }))
+    .filter((name) => name.endsWith('.js'))
+    .map((name) => resolve(DIST, name));
+  const empty = new Set<string>();
+  for (const file of files) {
+    if (!/^chunk-[A-Z0-9]+\.js$/u.test(basename(file))) continue;
+    const code = await readFile(file, 'utf8');
+    if (code.replace(/^\/\/# sourceMappingURL=.*$/gmu, '').trim() === '') empty.add(file);
+  }
+  if (empty.size === 0) return;
+  for (const file of files) {
+    if (empty.has(file)) continue;
+    const code = await readFile(file, 'utf8');
+    const kept = code.replace(
+      /^import\s*["'](\.{1,2}\/[^"']+)["'];?[ \t]*$/gmu,
+      (line, specifier: string) => (empty.has(resolve(dirname(file), specifier)) ? '' : line),
+    );
+    if (kept !== code) await writeFile(file, kept, 'utf8');
+  }
+  for (const file of empty) {
+    await rm(file);
+    await rm(`${file}.map`, { force: true });
+  }
+}
+
+await dropEmptyChunks();
 await compressDirectory(DIST);

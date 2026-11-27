@@ -5,15 +5,36 @@
 ```ts
 
 import { ComputedRef } from 'vue';
-import { D as DocumentSessionOptions } from '../../document-session-D-BqeHl4.js';
-import { a as DocumentSnapshot } from '../../document-session-D-BqeHl4.js';
-import { b as DocumentStatus } from '../../document-session-D-BqeHl4.js';
 
-export { DocumentSessionOptions }
+// @public (undocumented)
+export interface DocumentSessionOptions {
+    readonly allowedOrigins?: readonly string[];
+    readonly apiRoute?: string;
+    readonly depth?: number;
+    // Warning: (ae-forgotten-export) The symbol "PreviewDocument" needs to be exported by the entry point index.d.ts
+    readonly document: PreviewDocument | 'any';
+    readonly enableLocalhostMatching?: boolean;
+    readonly enableReferrerDetection?: boolean;
+    readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
+    readonly fetchFn?: typeof fetch;
+    readonly requireLocale?: true;
+    readonly serverURL: string;
+    readonly target?: Window;
+    readonly timeoutMs?: number;
+}
 
-export { DocumentSnapshot }
+// @public (undocumented)
+export interface DocumentSnapshot<T> {
+    readonly data: T;
+    readonly error: Error | undefined;
+    readonly isLoading: boolean;
+    readonly revision: number;
+    // (undocumented)
+    readonly status: DocumentStatus;
+}
 
-export { DocumentStatus }
+// @public
+export type DocumentStatus = 'idle' | 'live' | 'unavailable';
 
 // @public
 export interface LivePreviewDocumentRefs<T> {
@@ -24,6 +45,16 @@ export interface LivePreviewDocumentRefs<T> {
     // (undocumented)
     readonly status: ComputedRef<DocumentStatus>;
 }
+
+// @public
+type PreviewDocument = {
+    readonly collection: string;
+    readonly id: string | number;
+    readonly locale?: string;
+} | {
+    readonly global: string;
+    readonly locale?: string;
+};
 
 // @public
 export function useLivePreviewDocument<T>(options: UseLivePreviewDocumentOptions<T>): LivePreviewDocumentRefs<T>;

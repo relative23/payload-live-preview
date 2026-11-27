@@ -9,7 +9,8 @@ import {
   type BundleBudget,
   type BundleMeasurement,
 } from './bundle-measure';
-import { ENTRY_BUDGETS } from './entry-budgets';
+import { ALL_JAVASCRIPT_BUDGET, ENTRY_BUDGETS } from './entry-budgets';
+import { closureBytes, entryClosure, reexportsOnly } from './entry-closure';
 import { improvementNotice } from './size-budget-notice';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -17,13 +18,6 @@ const DIST = resolve(ROOT, 'dist');
 const PACKAGE_JSON = resolve(ROOT, 'package.json');
 
 const STABLE_EXPORT_NAMES: Readonly<Record<string, readonly string[]>> = {
-  'index.cjs': [
-    'EventEmitter',
-    'LivePreviewClient',
-    'OriginDetector',
-    'generateInlineScript',
-    'initLivePreview',
-  ],
   'index.js': [
     'EventEmitter',
     'LivePreviewClient',
@@ -34,7 +28,10 @@ const STABLE_EXPORT_NAMES: Readonly<Record<string, readonly string[]>> = {
 };
 
 /** Core is selectively name-minified, so every callable export is contractual. */
-const ALL_CALLABLE_EXPORT_NAMES = new Set(['core.cjs', 'core.js']);
+const ALL_CALLABLE_EXPORT_NAMES = new Set(['core.js']);
+
+/** A module two entries share, as the build names it. No budget row names one: it is measured with each entry that loads it. */
+const CHUNK = /^chunk-[A-Z0-9]+\.js$/u;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -95,7 +92,7 @@ function resolveManifestTarget(target: string): string | undefined {
 
 function validateExportCondition(
   exportName: string,
-  condition: 'import' | 'require',
+  condition: 'import' | 'default',
   branch: unknown,
 ): readonly string[] {
   const failures: string[] = [];
@@ -111,21 +108,15 @@ function validateExportCondition(
   if (typeof defaultTarget !== 'string') {
     failures.push(`exports.${exportName}.${condition}.default is not a string target`);
   } else {
-    const extension = condition === 'import' ? '.js' : '.cjs';
-    if (!defaultTarget.endsWith(extension)) {
-      failures.push(
-        `exports.${exportName}.${condition}.default must end in ${extension}: ${defaultTarget}`,
-      );
+    if (!defaultTarget.endsWith('.js')) {
+      failures.push(`exports.${exportName}.${condition}.default must end in .js: ${defaultTarget}`);
     }
   }
   if (typeof typesTarget !== 'string') {
     failures.push(`exports.${exportName}.${condition}.types is not a string target`);
   } else {
-    const extension = condition === 'import' ? '.d.ts' : '.d.cts';
-    if (!typesTarget.endsWith(extension)) {
-      failures.push(
-        `exports.${exportName}.${condition}.types must end in ${extension}: ${typesTarget}`,
-      );
+    if (!typesTarget.endsWith('.d.ts')) {
+      failures.push(`exports.${exportName}.${condition}.types must end in .d.ts: ${typesTarget}`);
     }
   }
   return failures;
@@ -136,7 +127,11 @@ function validateExportConditions(exportsValue: unknown): readonly string[] {
   const failures: string[] = [];
   for (const [exportName, descriptor] of Object.entries(exportsValue)) {
     if (!isRecord(descriptor)) continue;
-    for (const condition of ['import', 'require'] as const) {
+    // ESM alone since 3.0: `require()` reaches an entry through `default`, never a build of its own.
+    if ('require' in descriptor) {
+      failures.push(`exports.${exportName} names a CommonJS build, which 3.0 does not have`);
+    }
+    for (const condition of ['import', 'default'] as const) {
       if (condition in descriptor) {
         failures.push(...validateExportCondition(exportName, condition, descriptor[condition]));
       }
@@ -167,7 +162,11 @@ async function validateSourceMap(entry: string): Promise<readonly string[]> {
       );
     }
     const sources = sourceMap['sources'];
-    if (!Array.isArray(sources) || sources.length === 0) {
+    // An entry that only re-exports from chunks has no line of its own to map.
+    const empty = sourceMap['mappings'] === '' && reexportsOnly(code);
+    if (Array.isArray(sources) && sources.length === 0 && empty) {
+      // Nothing to check: the map is empty because the file is.
+    } else if (!Array.isArray(sources) || sources.length === 0) {
       failures.push(`${mapName} has no source list`);
     } else {
       for (const source of sources) {
@@ -195,7 +194,7 @@ async function listJavaScriptFiles(directory: string): Promise<readonly string[]
     const path = resolve(directory, entry.name);
     if (entry.isDirectory()) {
       files.push(...(await listJavaScriptFiles(path)));
-    } else if (entry.name.endsWith('.js') || entry.name.endsWith('.cjs')) {
+    } else if (entry.name.endsWith('.js')) {
       files.push(relative(DIST, path).split(sep).join('/'));
     }
   }
@@ -244,8 +243,7 @@ async function main(): Promise<void> {
   if (!isRecord(manifestValue)) throw new Error('package.json is not an object');
 
   for (const [field, extension] of [
-    ['main', '.cjs'],
-    ['module', '.js'],
+    ['main', '.js'],
     ['types', '.d.ts'],
   ] as const) {
     const value = manifestValue[field];
@@ -261,7 +259,7 @@ async function main(): Promise<void> {
   }
 
   const manifestTargets = new Map<string, string>();
-  for (const field of ['main', 'module', 'types'] as const) {
+  for (const field of ['main', 'types'] as const) {
     collectManifestTargets(manifestValue[field], field, manifestTargets);
   }
   collectManifestTargets(manifestValue['exports'], 'exports', manifestTargets);
@@ -282,7 +280,8 @@ async function main(): Promise<void> {
     }
   }
 
-  const actualEntries = await listJavaScriptFiles(DIST);
+  const actualFiles = await listJavaScriptFiles(DIST);
+  const actualEntries = actualFiles.filter((file) => !CHUNK.test(file));
   const expectedEntries = Object.keys(ENTRY_BUDGETS).sort();
   const unexpected = actualEntries.filter((entry) => !(entry in ENTRY_BUDGETS));
   const missing = expectedEntries.filter((entry) => !actualEntries.includes(entry));
@@ -291,13 +290,38 @@ async function main(): Promise<void> {
   for (const entry of missing) console.error(`FAIL missing JavaScript artifact: ${entry}`);
   failures += unexpected.length + missing.length;
 
+  // An entry's row is its closure: its own file and the chunks it loads.
+  const reached = new Set<string>();
   for (const entry of expectedEntries) {
     if (missing.includes(entry)) continue;
-    const bytes = await readFile(resolve(DIST, entry));
-    failures += printMeasurement(entry, measureBundle(bytes), ENTRY_BUDGETS[entry]!);
+    const file = resolve(DIST, entry);
+    for (const part of await entryClosure(file)) {
+      reached.add(relative(DIST, part).split(sep).join('/'));
+    }
+    failures += printMeasurement(
+      entry,
+      measureBundle(await closureBytes(file)),
+      ENTRY_BUDGETS[entry]!,
+    );
   }
+  for (const file of actualFiles) {
+    if (reached.has(file)) continue;
+    console.error(`FAIL ${file} is loaded by no entry`);
+    failures += 1;
+  }
+  // What the archive carries: every file once, which the closures count several times. Each
+  // file is measured by itself and the sizes are added, so the order of the files, which
+  // follows the hashes in the chunks' names, decides nothing.
+  const whole = { raw: 0, gzip: 0, brotli: 0 };
+  for (const file of actualFiles) {
+    const size = measureBundle(await readFile(resolve(DIST, file)));
+    whole.raw += size.raw;
+    whole.gzip += size.gzip;
+    whole.brotli += size.brotli;
+  }
+  failures += printMeasurement('all JavaScript', whole, ALL_JAVASCRIPT_BUDGET);
 
-  for (const entry of actualEntries) {
+  for (const entry of actualFiles) {
     for (const error of await validateSourceMap(entry)) {
       console.error(`FAIL ${error}`);
       failures += 1;

@@ -1,42 +1,24 @@
 /**
  * The package's build entries, kept apart from `tsup.config.ts` so tests and
- * gates can read them without loading tsup. `tsup.config.ts` turns them into
- * build profiles; `tests/unit/package-entries.test.ts` holds them against the
- * manifest's `exports` map.
+ * gates can read them without loading tsup. Since 3.0 they are one module
+ * graph: every entry is built in one ESM profile with shared chunks, so a class
+ * or a registry exists once whichever entries a project imports (ADR 0012).
+ * `tests/unit/package-entries.test.ts` holds them against the manifest's
+ * `exports` map.
  */
 
-/** Entries built as ESM and CommonJS in one profile. */
-export const DUAL_FORMAT_ENTRIES = {
+/** The entries a project imports, by the name of their file under `dist/`. */
+export const LIBRARY_ENTRIES = {
   index: 'src/index.ts',
-  codegen: 'src/codegen/index.ts',
-  plugin: 'src/payload/plugin.ts',
-} as const;
-
-/**
- * Focused public entries. Each is built alone: they share modules with the
- * root entry, and one profile for several
- * of them would make tsup emit a shared declaration chunk whose file the
- * declaration-parity gate rightly refuses. One profile per entry keeps every
- * `<entry>.d.ts` self-contained.
- */
-export const STANDALONE_ENTRIES = {
-  server: 'src/server/index.ts',
+  core: 'src/core-entry.ts',
   client: 'src/client-entry.ts',
+  server: 'src/server/index.ts',
+  plugin: 'src/payload/plugin.ts',
+  plugins: 'src/plugins-entry.ts',
   structural: 'src/structural-entry.ts',
   lexical: 'src/lexical-entry.ts',
-  plugins: 'src/plugins-entry.ts',
   fragment: 'src/fragment/index.ts',
-} as const;
-
-/** The lighter runtime entry; built unminified so consumers' bundlers tree-shake it. */
-export const CORE_ENTRY = {
-  core: 'src/core-entry.ts',
-} as const;
-
-/** ESM-only entries: the two binaries, the codegen integration and the framework adapters. */
-export const ESM_ONLY_ENTRIES = {
-  'codegen-cli': 'src/codegen/cli.ts',
-  'doctor-cli': 'src/doctor/cli.ts',
+  codegen: 'src/codegen/index.ts',
   'codegen-astro': 'src/codegen/astro-plugin.ts',
   annotate: 'src/codegen/annotate/entry.ts',
   'adapters/astro/index': 'src/adapters/astro/index.ts',
@@ -52,13 +34,20 @@ export const ESM_ONLY_ENTRIES = {
   'adapters/nuxt/module': 'src/adapters/nuxt/module.ts',
 } as const;
 
+/** The two binaries. No exports subpath names them. */
+export const CLI_ENTRIES = {
+  'codegen-cli': 'src/codegen/cli.ts',
+  'doctor-cli': 'src/doctor/cli.ts',
+} as const;
+
 /**
  * Entries whose published file must start with a framework directive.
  *
  * The directive cannot live in the source: esbuild drops a module-level one
  * when it bundles, and a `banner` is dropped with it. `scripts/build-dist.ts`
  * therefore writes it back through terser's `preamble`, which also shifts the
- * source map for it. These entries are built with the other ESM-only ones.
+ * source map for it. The chunks such an entry imports carry none: the
+ * directive marks the boundary, and what it imports belongs to that side.
  */
 export const DIRECTIVE_ENTRIES = {
   'adapters/react/index': { source: 'src/adapters/react/index.ts', directive: "'use client';" },

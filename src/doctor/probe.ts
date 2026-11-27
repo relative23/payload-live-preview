@@ -2,7 +2,7 @@
  * Fetching for `pll doctor`: the two probes, and the default fetch that talks
  * to a real server. Not in the barrel so it stays in the coverage report.
  */
-import { V2_ADAPTER_DEFAULTS } from '@/types/defaults-profile';
+import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
 import { analyzeProbe } from './analyze';
 import type { DoctorReport, DoctorResponse } from './types';
 

@@ -4,8 +4,65 @@
 
 ```ts
 
-import { a } from '../../options-D6jxFb1l.js';
-import { P } from '../../options-D6jxFb1l.js';
+// @public
+const AUTHORIZED_PREVIEW_BRAND_KEY = "payload-live-preview.authorized-preview-context";
+
+// @public
+interface AuthorizedPreviewContext {
+    // Warning: (ae-forgotten-export) The symbol "AUTHORIZED_PREVIEW_BRAND_KEY" needs to be exported by the entry point module.d.ts
+    //
+    // (undocumented)
+    readonly [AUTHORIZED_PREVIEW_BRAND_KEY]: true;
+    readonly authorizedAt: number;
+    readonly expiresAt: number | undefined;
+    readonly payloadHeaders: Readonly<Record<string, string>>;
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewScope" needs to be exported by the entry point module.d.ts
+    //
+    // (undocumented)
+    readonly scope: AuthorizedPreviewScope;
+    // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationStrategyName" needs to be exported by the entry point module.d.ts
+    //
+    // (undocumented)
+    readonly strategy: PreviewAuthorizationStrategyName;
+    readonly subject: string | undefined;
+}
+
+// @public
+type AuthorizedPreviewDocument = {
+    readonly kind: 'collection';
+    readonly slug: string;
+    readonly id: string | number;
+} | {
+    readonly kind: 'global';
+    readonly slug: string;
+};
+
+// @public
+interface AuthorizedPreviewPayloadScope {
+    readonly apiRoute?: string;
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewDocument" needs to be exported by the entry point module.d.ts
+    //
+    // (undocumented)
+    readonly document: AuthorizedPreviewDocument;
+    readonly maxDepth: number;
+    readonly serverURL: string;
+}
+
+// @public
+interface AuthorizedPreviewScope {
+    readonly audience?: string;
+    // (undocumented)
+    readonly locale?: string;
+    readonly path?: string;
+    // Warning: (ae-forgotten-export) The symbol "AuthorizedPreviewPayloadScope" needs to be exported by the entry point module.d.ts
+    readonly payload?: AuthorizedPreviewPayloadScope;
+}
+
+// @public
+type DefaultsProfile = 'v2';
+
+// @public
+type EventSourcePolicy = 'any' | 'parent-or-opener';
 
 // @public
 export function fragmentComponentPlugins(vue: VuePluginFactory, options: {
@@ -32,8 +89,11 @@ namespace livePreviewModule {
 }
 export default livePreviewModule;
 
+// Warning: (ae-forgotten-export) The symbol "PreviewAdapterOptions" needs to be exported by the entry point module.d.ts
+// Warning: (ae-forgotten-export) The symbol "PreviewRequestLike" needs to be exported by the entry point module.d.ts
+//
 // @public
-export type LivePreviewModuleOptions = Omit<P<a>, 'authorizePreview' | 'shouldInject'> & {
+export type LivePreviewModuleOptions = Omit<PreviewAdapterOptions<PreviewRequestLike>, 'authorizePreview' | 'shouldInject'> & {
     readonly authorizePreviewModule?: string;
     readonly navigation?: boolean;
 };
@@ -88,6 +148,89 @@ export const PLUGIN_FILENAME = "payload-live-preview-nitro-plugin.mjs";
 // @internal
 export function pluginSource(options: LivePreviewModuleOptions, rootDir?: string, alias?: Readonly<Record<string, string>>): string;
 
+// @public (undocumented)
+interface PreviewAdapterOptions<Req = Request> {
+    readonly allowedOrigins?: readonly string[];
+    readonly apiRoute?: string;
+    readonly assetPath?: string;
+    // Warning: (ae-forgotten-export) The symbol "PreviewAuthorizationHookResult" needs to be exported by the entry point module.d.ts
+    readonly authorizePreview?: (request: Req) => PreviewAuthorizationHookResult | Promise<PreviewAuthorizationHookResult>;
+    readonly autoBind?: 'off' | 'unique';
+    readonly autoInject?: boolean;
+    readonly debounceMs?: number;
+    readonly debug?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "DefaultsProfile" needs to be exported by the entry point module.d.ts
+    readonly defaults?: DefaultsProfile;
+    readonly delivery?: 'inline' | 'asset';
+    readonly enableLocalhostMatching?: boolean;
+    readonly enableReferrerDetection?: boolean;
+    readonly enableVisibilityGate?: boolean;
+    // Warning: (ae-forgotten-export) The symbol "EventSourcePolicy" needs to be exported by the entry point module.d.ts
+    readonly eventSourcePolicy?: EventSourcePolicy;
+    readonly fragments?: {
+        readonly endpoint: string;
+    };
+    readonly frameAncestorsExtra?: readonly string[];
+    readonly heartbeatMs?: number;
+    readonly hydration?: 'manual';
+    readonly inject?: 'preview-only' | 'always';
+    readonly internalLinkPattern?: string;
+    readonly manageCsp?: boolean | 'frame-ancestors' | 'full';
+    readonly mergeDepth?: number;
+    readonly mergeTimeoutMs?: number;
+    readonly onUnfaithfulPatch?: 'ignore' | 'warn' | 'escalate';
+    readonly previewQueryParams?: readonly string[];
+    // Warning: (ae-forgotten-export) The symbol "PreviewSignal" needs to be exported by the entry point module.d.ts
+    readonly previewSignals?: readonly PreviewSignal[];
+    readonly revealEditedField?: boolean;
+    readonly routeStrategy?: boolean | 'after-save' | 'router';
+    readonly sanitizerPolicy?: 'compat' | 'strict';
+    readonly scopeBindingsByOwner?: boolean;
+    readonly scriptSrcExtra?: readonly string[];
+    readonly serverURL?: string;
+    readonly shouldInject?: (request: Req) => boolean;
+    readonly skipUnchanged?: boolean;
+    readonly strict?: true;
+    readonly strictDynamic?: boolean;
+    readonly subfieldCoverage?: 'descendant' | 'declared';
+    readonly visibilityGateThreshold?: number;
+}
+
+// @public
+type PreviewAuthorization = {
+    readonly authorized: true;
+    readonly outcome: 'authorized';
+    readonly context: AuthorizedPreviewContext;
+} | {
+    readonly authorized: false;
+    readonly outcome: Exclude<PreviewAuthorizationOutcome, 'authorized'>;
+    readonly context: null;
+};
+
+// Warning: (ae-forgotten-export) The symbol "PreviewAuthorization" needs to be exported by the entry point module.d.ts
+//
+// @public
+type PreviewAuthorizationHookResult = PreviewAuthorization | AuthorizedPreviewContext | null | undefined;
+
+// @public
+type PreviewAuthorizationOutcome = 'authorized' | 'missing-credential' | 'invalid' | 'expired' | 'wrong-audience' | 'wrong-path' | 'wrong-locale' | 'wrong-purpose' | 'replayed' | 'unavailable';
+
+// @public (undocumented)
+type PreviewAuthorizationStrategyName = 'payload-session' | 'signed-token' | 'verifier';
+
+// @public
+interface PreviewRequestLike {
+    // (undocumented)
+    readonly headers: {
+        get(name: string): string | null;
+    };
+    // (undocumented)
+    readonly url: string;
+}
+
+// @public
+type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
+
 // @public
 export type VuePluginFactory = (options?: {
     readonly features?: {
@@ -96,6 +239,11 @@ export type VuePluginFactory = (options?: {
 }) => {
     readonly name: string;
 };
+
+// Warnings were encountered during analysis:
+//
+// dist/preview-request-h98Txt_B.d.ts:15:5 - (ae-forgotten-export) The symbol "AuthorizedPreviewContext" needs to be exported by the entry point module.d.ts
+// dist/preview-request-h98Txt_B.d.ts:18:5 - (ae-forgotten-export) The symbol "PreviewAuthorizationOutcome" needs to be exported by the entry point module.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -1,8 +1,10 @@
 /**
- * This local service serves an exact static asset allowlist and private HTML.
+ * This local service serves an exact static asset allowlist and private HTML:
+ * the page's own module and the files of the package the build recorded.
  * The shared lazy Node bridge carries request cancellation into the bounded
  * host reference; credentials remain in the private server configuration.
  */
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createHTMLHostReference } from '../html-host.mjs';
@@ -13,10 +15,15 @@ const origin = new URL(config.audience);
 const handle = createHTMLHostReference({
   ...config, enabled: process.env.PLP_HTML_HOST_ENABLED === 'local-test-only', fetch,
 });
+const built = JSON.parse(readFileSync(new URL('./assets.json', import.meta.url), 'utf8'));
 const assets = new Map([
   ['/preview.js', readFileSync(new URL('./preview.js', import.meta.url))],
-  ['/client.js', readFileSync(new URL('./client.js', import.meta.url))],
+  ...built.assets.map(name => {
+    assert.match(name, /^[A-Za-z0-9._-]+\.js$/u);
+    return ['/' + name, readFileSync(new URL('./' + name, import.meta.url))];
+  }),
 ]);
+assert.ok(assets.has('/client.js'));
 const server = createServer((incoming, outgoing) => {
   void (async () => {
     try {
