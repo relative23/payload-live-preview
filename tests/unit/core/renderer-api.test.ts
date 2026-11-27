@@ -50,6 +50,7 @@ function start(options: {
 }): LivePreviewRuntime {
   const renderers = { ...buildBuiltinRenderers(), ...(options.renderers ?? {}) };
   runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers,
     ...(options.resolveRenderer !== undefined

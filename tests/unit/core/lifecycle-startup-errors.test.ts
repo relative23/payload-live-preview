@@ -10,6 +10,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
       expect(
         () =>
           new LivePreviewRuntime({
+            skipUnchanged: false,
             eventSourcePolicy: 'any',
             renderers: { text: textRenderer() },
             originMatcher: (origin) => origin === TRUSTED,
@@ -37,6 +38,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
         throw new Error('retry transport failed');
       });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -62,6 +64,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
   it('completes startup and remains update-capable when its diagnostic logger throws', async () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: (origin) => origin === TRUSTED,
@@ -95,6 +98,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
       return { then } as never;
     };
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: {},
       originMatcher: () => true,
@@ -115,6 +119,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
   it('destroy is idempotent', () => {
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: {},
       originMatcher: () => true,
@@ -134,6 +139,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
       runtime.destroy();
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -163,6 +169,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
     });
     emitter.on('init', init);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -191,6 +198,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
       runtime.destroy();
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,

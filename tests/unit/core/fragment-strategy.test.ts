@@ -64,6 +64,7 @@ function start(
   } = {},
 ): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     ...options,
     renderers: { text: textRenderer },
@@ -263,6 +264,7 @@ describe('fragment strategy', () => {
       },
     };
     runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer },
       originMatcher: (origin) => origin === TRUSTED,
@@ -310,6 +312,7 @@ describe('fragment strategy', () => {
       },
     };
     runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer },
       transformValue,

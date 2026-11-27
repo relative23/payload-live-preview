@@ -136,6 +136,7 @@ function makeRuntime(
   extra: Record<string, unknown> = {},
 ): LivePreviewRuntime {
   return new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
@@ -196,6 +197,22 @@ describe('the session scope', () => {
     runtime.destroy();
     expectNothingLeft();
     expect(runtime.inspect().started).toBe(false);
+  });
+
+  it('leaves nothing after destroy() while a write still waits in the debounce window', async () => {
+    const runtime = makeRuntime(new EventEmitter(), undefined, { debounceMs: 50 });
+    runtime.start();
+    await vi.advanceTimersByTimeAsync(2_100); // past the ready retries
+    post({ title: 'One' }); // leads, and opens the window
+    await vi.advanceTimersByTimeAsync(20);
+    expect(document.querySelector('h1')?.textContent).toBe('One');
+    post({ title: 'Two' }); // waits in the window, behind its timer and the deadline of a burst
+    await vi.advanceTimersByTimeAsync(10);
+    expect(document.querySelector('h1')?.textContent).toBe('One');
+    runtime.destroy();
+    expectNothingLeft();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(document.querySelector('h1')?.textContent).toBe('One');
   });
 
   it('aborts a route refresh in flight and its trailing retry when the session ends', async () => {

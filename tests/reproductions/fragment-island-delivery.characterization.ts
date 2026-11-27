@@ -58,6 +58,8 @@ describe('PHD-05 fragment completion and island delivery', () => {
       const requests: FragmentRequestBody[] = [];
       const emitter = new EventEmitter();
       runtime = new LivePreviewRuntime({
+        eventSourcePolicy: 'any',
+        skipUnchanged: false,
         root: document.querySelector('main')!,
         renderers: {},
         emitter,

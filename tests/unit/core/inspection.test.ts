@@ -44,6 +44,7 @@ const PAGE = `
 
 function createRuntime(options: Record<string, unknown> = {}): LivePreviewRuntime {
   return new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: textRenderer() },
     originMatcher: (origin) => origin === TRUSTED,

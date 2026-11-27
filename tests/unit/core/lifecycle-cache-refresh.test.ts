@@ -22,6 +22,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       target.element.textContent = String(value);
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: { name: 'text', render } },
       originMatcher: () => true,
@@ -46,6 +47,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     document.body.innerHTML = '<p data-payload-field="title">old</p>';
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -71,6 +73,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     document.body.innerHTML = '<p data-payload-field="title">x</p>';
     const emitter = new EventEmitter();
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -88,6 +91,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
   it('keeps an accepted snapshot across bfcache suspension for the next route commit', async () => {
     document.body.innerHTML = '<p data-payload-field="title">published</p>';
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -115,6 +119,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
   it('follows a replaced document body before replaying a navigation snapshot', async () => {
     document.body.innerHTML = '<p data-payload-field="title">published</p>';
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -144,6 +149,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     const emitter = new EventEmitter();
     emitter.on('connect', connect);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -173,6 +179,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     document.body.innerHTML = '<p data-payload-field="title">published</p>';
     const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -204,6 +211,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     const unsaved = 'unsaved navigation title';
     document.body.innerHTML = '<p data-payload-field="title">published</p>';
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -241,6 +249,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       });
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -286,6 +295,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       .mockImplementationOnce(() => oldVerdict.promise)
       .mockResolvedValueOnce(true);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -325,6 +335,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     const cacheRefresh = vi.fn();
     emitter.on('cacheRefresh', cacheRefresh);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -350,6 +361,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     const afterUpdate = vi.fn();
     emitter.on('afterUpdate', afterUpdate);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -383,6 +395,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     const afterUpdate = vi.fn();
     emitter.on('afterUpdate', afterUpdate);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -416,6 +429,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       target.element.textContent = `html:${String(value)}`;
     });
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: {
         text: { name: 'text', render: textRender },
@@ -459,6 +473,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     const image = document.querySelector('img');
     if (link === null || image === null) throw new Error('bindings missing');
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: buildBuiltinRenderers(),
       originMatcher: () => true,
@@ -510,6 +525,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     const separator = document.querySelector('#separator');
     if (template === null || separator === null) throw new Error('bindings missing');
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: buildBuiltinRenderers(),
       originMatcher: () => true,
@@ -546,6 +562,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
     const richTextRender = vi.fn();
     const numberRender = vi.fn();
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: {
         text: { name: 'text', render: textRender },

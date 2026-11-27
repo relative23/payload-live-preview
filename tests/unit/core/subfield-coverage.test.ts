@@ -33,6 +33,7 @@ function start(
   const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('refreshed');
   const warn = vi.fn();
   const runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: textRenderer(), 'test:json': jsonRenderer },
     originMatcher: (origin) => origin === TRUSTED,

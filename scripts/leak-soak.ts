@@ -157,6 +157,8 @@ function snapshotResources(): ResourceSnapshot {
 
 function createRuntime(emitter = new EventEmitter()): LivePreviewRuntime {
   return new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
+    skipUnchanged: false,
     root: browserWindow.document.body,
     renderers: buildBuiltinRenderers(),
     originMatcher: (origin) => origin === TRUSTED_ORIGIN,

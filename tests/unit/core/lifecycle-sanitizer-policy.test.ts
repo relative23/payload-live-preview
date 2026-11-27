@@ -18,6 +18,7 @@ async function contextSeenBy(options: {
     },
   };
   const runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: renderer },
     originMatcher: (origin) => origin === TRUSTED,

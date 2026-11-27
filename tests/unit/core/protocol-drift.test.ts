@@ -24,6 +24,7 @@ interface Harness {
 function start(): Harness {
   const warnings: string[] = [];
   const runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     renderers: buildBuiltinRenderers(),
     originMatcher: (origin) => origin === ADMIN,
     readyTargets: [],

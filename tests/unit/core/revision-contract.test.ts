@@ -52,6 +52,7 @@ beforeEach(() => {
     '<div data-payload-owner="global:t"><p data-payload-field="title">t</p></div>';
   emitter = new EventEmitter();
   runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,

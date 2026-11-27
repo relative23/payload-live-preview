@@ -88,6 +88,7 @@ let emitter = new EventEmitter();
 function createRuntime(population: Population, skipUnchanged: boolean): LivePreviewRuntime {
   emitter = new EventEmitter();
   return new LivePreviewRuntime({
+    eventSourcePolicy: 'any',
     renderers: population === 'richText' ? buildBuiltinRenderers() : { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,
     readyTargets: [TRUSTED],

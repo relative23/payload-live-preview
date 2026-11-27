@@ -73,6 +73,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
     });
     emitter.on('relationshipUpdate', relationshipUpdate);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -122,6 +123,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
     const emitter = new EventEmitter();
     emitter.on('afterUpdate', afterUpdate);
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -148,6 +150,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
     const element = document.querySelector('p');
     if (element === null) throw new Error('binding missing');
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -210,6 +213,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       </section>
     `;
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -260,6 +264,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
     });
     const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -294,6 +299,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">published first route</h1>';
     const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -332,6 +338,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       refresh,
     };
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -377,6 +384,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       render,
     };
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -431,6 +439,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
         }),
     };
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -479,6 +488,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
     document.body.innerHTML = '<h1 data-payload-field="title">published first route</h1>';
     const refresh = vi.fn<RouteStrategy['refresh']>().mockResolvedValue('failed');
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: buildBuiltinRenderers(),
       originMatcher: () => true,
@@ -509,6 +519,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
   it('sends the retained snapshot to an island that streams in later', async () => {
     document.body.innerHTML = '<p data-testid="loading">Loading</p>';
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,
@@ -543,6 +554,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
   it('replays the retained snapshot when a streamed Astro island finishes hydration', async () => {
     document.body.innerHTML = '<h1 data-payload-field="title">published first route</h1>';
     const runtime = new LivePreviewRuntime({
+      skipUnchanged: false,
       eventSourcePolicy: 'any',
       renderers: { text: textRenderer() },
       originMatcher: () => true,

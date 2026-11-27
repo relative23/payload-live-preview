@@ -44,6 +44,8 @@ describe('a failed start with an announcer that will not detach', () => {
       throw new Error('detach exploded');
     });
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
+      skipUnchanged: false,
       renderers: { text: textRenderer },
       originMatcher: (origin) => origin === TRUSTED,
       readyTargets: [TRUSTED],

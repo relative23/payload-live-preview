@@ -54,6 +54,7 @@ function createRuntime(
   options: Record<string, unknown> = {},
 ): LivePreviewRuntime {
   return new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: recordingRenderer(writes) },
     originMatcher: (origin) => origin === TRUSTED,

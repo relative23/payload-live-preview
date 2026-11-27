@@ -308,7 +308,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, the detector trusts no referrer unasked and Astro delivers through the loader, ADR 0007 rows 22 and 33): paired Node24.22.3/npm12.0.2; -260/-76/-70 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +34/0/-1 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; -400/-132/-116 B; prior reserves kept.
-  'adapters/react/index.js': { raw: 17_912, gzip: 6_029, brotli: 5_542 },
+  // 2026-11-27 (3.0, a hook hands its referrer switch on in one line): paired Node24.22.3/npm12.0.2; -36/+3/-4 B; prior reserves kept.
+  'adapters/react/index.js': { raw: 17_876, gzip: 6_032, brotli: 5_538 },
   // 2026-09-29 (H13, revision display state, ADR 0023): measured +80/+22/+22 B; same 16/12/120 B cushions.
   // 2026-09-29 (PHD-11, the bus's replay drops two unreachable guards): measured -165/-26/-29 B; same 16/12/120 B cushions.
   // 2026-10-04 (combined 2.1: bounded v2 population, locale cache and depth/React integration): paired Node24.19/npm12.0.2, epoch1790957103; measured +7766/+2534/+2343 B; cushions 16/12/120 B.
@@ -330,7 +331,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, the detector trusts no referrer unasked and Astro delivers through the loader, ADR 0007 rows 22 and 33): paired Node24.22.3/npm12.0.2; -260/-80/-65 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; +34/0/0 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; -400/-128/-111 B; prior reserves kept.
-  'adapters/vue/index.js': { raw: 16_853, gzip: 5_733, brotli: 5_261 },
+  // 2026-11-27 (3.0, a hook hands its referrer switch on in one line): paired Node24.22.3/npm12.0.2; -36/0/+2 B; prior reserves kept.
+  'adapters/vue/index.js': { raw: 16_817, gzip: 5_733, brotli: 5_263 },
   //
   // 2026-09-06 (R4, zero-config setup): one new row. `adapters/nuxt/module.js`
   // is the build-time Nuxt module — a few hundred bytes, because all it does is

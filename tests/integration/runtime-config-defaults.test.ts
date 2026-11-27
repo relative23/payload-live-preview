@@ -22,6 +22,18 @@ describe('bootstrapInlineRuntime — config defaults', () => {
     api?.destroy();
     debug.mockRestore();
   });
+  it('logs nothing through console.debug without debug', async () => {
+    document.body.innerHTML = '<p data-payload-field="x">x</p>';
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
+      bakeConfig();
+    const { bootstrapInlineRuntime } = await import('@core/session/runtime');
+    const api = bootstrapInlineRuntime();
+    expect(api).toBeDefined();
+    expect(debug).not.toHaveBeenCalled();
+    api?.destroy();
+    debug.mockRestore();
+  });
   it('observes a rejected console.debug thenable without aborting bootstrap', async () => {
     const then = vi.fn(
       (_resolve: (value: unknown) => void, reject: (reason: unknown) => void): void => {

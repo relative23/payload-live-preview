@@ -73,6 +73,7 @@ function start(render: (title: string) => string): void {
   const fragment: FragmentHandler = (request) =>
     Promise.resolve({ status: 'rendered', html: render(String(request.fields['title'])) });
   runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,

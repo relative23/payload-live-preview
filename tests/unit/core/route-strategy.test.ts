@@ -65,6 +65,7 @@ function start(
   } = {},
 ): LivePreviewRuntime {
   runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: textRenderer },
     originMatcher: (origin) => origin === TRUSTED,

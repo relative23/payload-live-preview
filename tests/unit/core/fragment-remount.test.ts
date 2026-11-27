@@ -70,6 +70,7 @@ function start(
   options: { scopeBindingsByOwner?: boolean } = {},
 ): void {
   runtime = new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     ...options,
     renderers: { text: textRenderer },

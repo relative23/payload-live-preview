@@ -214,6 +214,8 @@ describe('the DOM runtime with a merge deadline', () => {
       <h1 data-payload-field="title">From the server</h1>
       <span data-payload-field="author" data-payload-type="relationship">Ada</span>`;
     const runtime = new LivePreviewRuntime({
+      eventSourcePolicy: 'any',
+      skipUnchanged: false,
       renderers: buildBuiltinRenderers(),
       originMatcher: (origin) => origin === ADMIN,
       readyTargets: [ADMIN],

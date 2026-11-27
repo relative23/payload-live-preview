@@ -139,6 +139,7 @@ function createRuntime(
   options: Record<string, unknown> = {},
 ): LivePreviewRuntime {
   return new LivePreviewRuntime({
+    skipUnchanged: false,
     eventSourcePolicy: 'any',
     renderers: { text: renderer },
     originMatcher: (origin) => origin === TRUSTED,
