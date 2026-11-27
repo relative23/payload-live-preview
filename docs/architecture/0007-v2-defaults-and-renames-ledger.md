@@ -110,6 +110,13 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
+2026-11-27 (3.0): row 23 is carried out. `RouteRefresh` is `() =>
+Promise<void>`. A function a JavaScript caller registers that returns no
+promise is still called, but its refresh counts as failed, not as committed:
+the revision is written onto the markup that stands, the display names the
+route as a shortfall, and `LP0810` says so once under `debug`. The three
+adapters' navigation entries returned the promise already.
+
 2026-11-27 (3.0): row 17 is carried out. A page that sets no
 `subfieldCoverage` runs on `'declared'`: each changed path inside a partly
 bound group needs a binding or a `data-payload-covers` declaration, and

@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ElementCache } from '@core/bindings/cache';
 import { DataMerger } from '@core/merge/data-merger';
-import { registerRouteRefresh } from '@core/strategies/route-refresh';
+import { registerRouteRefresh, type RouteRefresh } from '@core/strategies/route-refresh';
 import { createFieldAddressability, unboundChangedFields } from '@core/update/unbound-fields';
 import type { RouteContext } from '@core/strategies/strategies';
 import { createFragmentEndpointHandler } from '@adapters/shared/fragment-endpoint';
@@ -443,7 +443,7 @@ describe('handoff current-source characterizations', () => {
     expect(merged).toEqual({ status: 'unavailable' });
   });
 
-  it('[H15-CURRENT] a void host refresh is acknowledged before its later commit', async () => {
+  it('[H15-AFTER] a host refresh that returns no promise is not acknowledged before its later commit', async () => {
     document.body.innerHTML = '<main data-testid="route-state">old route</main>';
     let commit = (): void => undefined;
     const refresh = vi.fn(() => {
@@ -453,11 +453,13 @@ describe('handoff current-source characterizations', () => {
         document.body.innerHTML = '<main data-testid="route-state">fresh route</main>';
       };
     });
-    const undo = registerRouteRefresh(refresh);
+    // The type asks for a promise since 3.0 (ADR 0007, row 23); a JavaScript caller can still pass this.
+    const undo = registerRouteRefresh(refresh as unknown as RouteRefresh);
     const strategy = createRouteStrategy({ minIntervalMs: 0, timeoutMs: 25 });
 
     try {
-      expect(await strategy.refresh(routeContext())).toBe('partial');
+      // Until 3.0 this was `partial`: taken as committed while the old route still stood.
+      expect(await strategy.refresh(routeContext())).toBe('failed');
       expect(refresh).toHaveBeenCalledOnce();
       expect(document.body.textContent).toContain('old route');
 

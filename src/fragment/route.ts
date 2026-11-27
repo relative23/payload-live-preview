@@ -51,7 +51,7 @@ export interface RouteStrategyOptions {
 
 const DEFAULT_TIMEOUT_MS = 8_000;
 const UNCONFIRMED_REFRESH =
-  'route refresh returned no promise; re-applied before the host committed (see LivePreviewRouteRefresh)';
+  'route refresh returned no promise, so its commit cannot be waited for; counted as failed (see LivePreviewRouteRefresh)';
 
 const DEFAULT_MIN_INTERVAL_MS = 1_000;
 
@@ -177,15 +177,14 @@ export function createRouteStrategy(options: RouteStrategyOptions = {}): RouteSt
           // The host owns this DOM: it re-renders the route itself, so there is
           // no second HTML request and no morph over a reconciler's own nodes.
           // Awaited, because the runtime re-applies the revision straight after.
-          // A host that returns nothing cannot be waited for (ADR 0028).
+          // A host that returns no promise cannot be waited for, and 2.x took
+          // it as committed; since 3.0 that refresh did not happen (ADR 0028).
           try {
             const settled: unknown = hostRefresh();
-            if (
-              typeof (settled as { then?: unknown } | null | undefined)?.then !== 'function' &&
-              !saidUnconfirmed
-            ) {
+            if (typeof (settled as { then?: unknown } | null | undefined)?.then !== 'function') {
+              if (!saidUnconfirmed) context.log('LP0810', UNCONFIRMED_REFRESH);
               saidUnconfirmed = true;
-              context.log('LP0810', UNCONFIRMED_REFRESH);
+              return 'failed';
             }
             await settled;
           } catch (error) {

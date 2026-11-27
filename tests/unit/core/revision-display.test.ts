@@ -4,7 +4,8 @@ import { LivePreviewRuntime } from '@core/session/lifecycle';
 import type { RouteOutcome, RouteStrategy, StrategyHandlers } from '@core/strategies/strategies';
 import type { FieldRenderer } from '@core/types';
 import type { LivePreviewEventMap } from '@events/types';
-import { fragmentStrategyFrom, type FragmentOutcome } from '@fragment/index';
+import { registerRouteRefresh, type RouteRefresh } from '@core/strategies/route-refresh';
+import { createRouteStrategy, fragmentStrategyFrom, type FragmentOutcome } from '@fragment/index';
 import type { IslandUpdateDetail } from '@core/bindings/islands';
 import { deferred, fireMessage, IO, TRUSTED, textRenderer } from './lifecycle-harness';
 
@@ -170,6 +171,31 @@ describe('a revision that falls short', () => {
       shortfalls: [{ kind: 'route-failed', outcome: 'failed' }],
     });
     runtime.destroy();
+  });
+
+  it('names a host refresh that returns no promise as a route refresh that failed (ADR 0007, row 23)', async () => {
+    // The real strategy with a marker that asks for the route, and a host that starts its
+    // render and returns nothing, as `router.refresh()` does. Until 3.0 this revision was
+    // `route-saved`: the refresh was taken as committed the moment the call returned.
+    const hostRefresh = vi.fn(() => undefined);
+    const undo = registerRouteRefresh(hostRefresh as unknown as RouteRefresh);
+    const { runtime } = start(
+      BOUND + '<aside data-payload-strategy="route" data-payload-depends="title">route</aside>',
+      { strategies: { route: createRouteStrategy({ minIntervalMs: 0 }) } },
+    );
+    try {
+      await send({ title: 'A' });
+      expect(hostRefresh).toHaveBeenCalledOnce();
+      expect(display(runtime)).toMatchObject({
+        state: 'partial',
+        shortfalls: [{ kind: 'route-failed', outcome: 'failed' }],
+      });
+      // The revision is still written, onto the markup that stands.
+      expect(document.querySelector('h1')?.textContent).toBe('A');
+    } finally {
+      undo();
+      runtime.destroy();
+    }
   });
 
   it('stays pending while a refused refresh waits for its window, and settles when it runs', async () => {

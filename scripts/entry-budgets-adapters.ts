@@ -97,7 +97,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; -31/-19/-31 B; prior reserves kept.
   // 2026-11-27 (3.0, the detector trusts no referrer unasked and Astro delivers through the loader, ADR 0007 rows 22 and 33): paired Node24.22.3/npm12.0.2; -543/-168/-64 B; prior reserves kept.
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -498/-221/-239 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 209_689, gzip: 65_608, brotli: 56_040 },
+  // 2026-11-27 (3.0, a route refresh returns a promise, ADR 0007 row 23): paired Node24.22.3/npm12.0.2; +64/+6/+24 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 209_753, gzip: 65_614, brotli: 56_064 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -158,7 +159,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; -31/-17/-41 B; prior reserves kept.
   // 2026-11-27 (3.0, the detector trusts no referrer unasked and Astro delivers through the loader, ADR 0007 rows 22 and 33): paired Node24.22.3/npm12.0.2; +1/+1/+33 B; prior reserves kept.
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -498/-221/-166 B; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 184_859, gzip: 57_874, brotli: 49_151 },
+  // 2026-11-27 (3.0, a route refresh returns a promise, ADR 0007 row 23): paired Node24.22.3/npm12.0.2; +64/+11/-31 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 184_923, gzip: 57_885, brotli: 49_120 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -258,7 +260,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; -31/-20/-4 B; prior reserves kept.
   // 2026-11-27 (3.0, the detector trusts no referrer unasked and Astro delivers through the loader, ADR 0007 rows 22 and 33): paired Node24.22.3/npm12.0.2; +1/+5/+5 B; prior reserves kept.
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -498/-221/-171 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 204_337, gzip: 64_075, brotli: 54_591 },
+  // 2026-11-27 (3.0, a route refresh returns a promise, ADR 0007 row 23): paired Node24.22.3/npm12.0.2; +64/+12/-27 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 204_401, gzip: 64_087, brotli: 54_564 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -404,7 +407,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; -31/-21/-65 B; prior reserves kept.
   // 2026-11-27 (3.0, the detector trusts no referrer unasked and Astro delivers through the loader, ADR 0007 rows 22 and 33): paired Node24.22.3/npm12.0.2; +1/+6/+13 B; prior reserves kept.
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -498/-226/-103 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 204_299, gzip: 64_105, brotli: 54_542 },
+  // 2026-11-27 (3.0, a route refresh returns a promise, ADR 0007 row 23): paired Node24.22.3/npm12.0.2; +64/+11/-46 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 204_363, gzip: 64_116, brotli: 54_496 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -471,5 +475,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a render without a document is refused, ADR 0007 row 18): paired Node24.22.3/npm12.0.2; -31/-19/-5 B; prior reserves kept.
   // 2026-11-27 (3.0, the detector trusts no referrer unasked and Astro delivers through the loader, ADR 0007 rows 22 and 33): paired Node24.22.3/npm12.0.2; +1/+4/-13 B; prior reserves kept.
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -498/-226/-115 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 203_378, gzip: 63_794, brotli: 54_501 },
+  // 2026-11-27 (3.0, a route refresh returns a promise, ADR 0007 row 23): paired Node24.22.3/npm12.0.2; +64/+10/-41 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 203_442, gzip: 63_804, brotli: 54_460 },
 };

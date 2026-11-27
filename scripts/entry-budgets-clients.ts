@@ -303,7 +303,8 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-24 (O-53, the entry's logic in `./strategy` beside a barrel that only re-exports): paired Node22.23.2/zlib1.3.1, main 739ab51 against the change; +0/+12/+0 B. The modules stand in another order inside the bundle and nothing else moved; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+9/+1 B; prior reserves kept.
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -32/-17/-3 B; prior reserves kept.
-  'fragment.cjs': { raw: 17_058, gzip: 6_523, brotli: 5_862 },
+  // 2026-11-27 (3.0, a route refresh returns a promise, ADR 0007 row 23): paired Node24.22.3/npm12.0.2; +33/+12/+2 B; prior reserves kept.
+  'fragment.cjs': { raw: 17_091, gzip: 6_535, brotli: 5_864 },
   // 2026-09-28 (H05 fragment islands, ADR 0021): measured +1311/+429/+364 B; same 20/9/79 B cushions.
   // 2026-09-29 (PHD-02, owner-scoped route planning): measured +22/+16/+17 B; same 20/9/79 B cushions.
   // 2026-09-29 (H13, revision display state, ADR 0023): measured -4/-2/-1 B; same 20/9/79 B cushions.
@@ -317,5 +318,6 @@ export const CLIENT_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-10-31: gated Astro components, route after save, LP0204, LP0711, field factories, the public session factory: paired Node24.22.1/npm12.0.2; +67/+36/+20 B; prior reserves kept.
   // 2026-11-25 (3.0, Payload 2 leaves and its admin is refused with LP0504, ADR 0007 row 25): paired Node24.22.3/npm12.0.2; +26/+8/+2 B; prior reserves kept.
   // 2026-11-27 (3.0, a partly bound group is covered path by path, ADR 0007 row 17): paired Node24.22.3/npm12.0.2; -32/-18/-1 B; prior reserves kept.
-  'fragment.js': { raw: 16_988, gzip: 6_493, brotli: 5_851 },
+  // 2026-11-27 (3.0, a route refresh returns a promise, ADR 0007 row 23): paired Node24.22.3/npm12.0.2; +33/+12/+4 B; prior reserves kept.
+  'fragment.js': { raw: 17_021, gzip: 6_505, brotli: 5_855 },
 };

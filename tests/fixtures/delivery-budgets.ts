@@ -328,6 +328,11 @@ export const DELIVERY_BUDGETS: readonly DeliveryBudget[] = [
  * grows by 111 bytes (158 762 → 158 873), which is the +111 the paired fragment
  * profile measures; 66 of them are in the runtime this row subtracts (the
  * paired runtime profile measures +66) and 45 in what it charges.
+ *
+ * 2026-11-27 (3.0, ADR 0007 row 23): 14 309 → 14 341, measured in Chromium.
+ * The route strategy the prelude carries counts a host refresh that returns
+ * no promise as failed: the paired inline profiles put the fragment profile at
+ * +32 bytes with the runtime unchanged, and this row measures +32.
  */
 export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   name: 'Next.js, script in the root layout, authorized editor',
@@ -336,7 +341,7 @@ export const AUTHORIZED_NEXT_DELIVERY: DeliveryBudget = {
   carries: 'runtime',
   bindings: true,
   scriptElements: 2,
-  overheadBytes: 14_309,
+  overheadBytes: 14_341,
   why: 'the same layout still hands an authorized editor the whole runtime — the zero above is a decision, not a broken adapter',
 };
 

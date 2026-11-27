@@ -66,3 +66,11 @@ committed DOM or the runtime's own events.
 - Acceptance: the route strategy cases for a `void` and a promised refresh;
   the three production configurations in three browsers; the full chain and
   the nightly.
+
+## Addendum (2026-11-27): 3.0 requires the promise
+
+Section 2 is carried out (ADR 0007, row 23). The type is `() =>
+Promise<void>`. What section 1 says of a refresh that returns nothing no longer
+holds: it is not taken as committed. The strategy still calls it, answers
+`failed`, and says `LP0810` once; the runtime writes the revision onto the
+markup that stands and reports the route as a shortfall of that revision.

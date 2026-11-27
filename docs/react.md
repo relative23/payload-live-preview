@@ -227,10 +227,10 @@ renders it with `router.refresh` and also reports client navigations
 ([nextjs.md](nextjs.md#client-navigation-and-route-refreshes)). Outside React
 the same seam is `registerRouteRefresh()`: give it a function whose promise
 settles once the host has committed the fresh render, as the SvelteKit and Nuxt
-navigation entries do. A
-function that returns nothing is taken as already committed; with `debug` the
-runtime says once that it could not wait (`LP0810`), and 3.0 requires the
-promise ([ADR 0028](architecture/0028-host-route-refresh-settles-after-commit.md)).
+navigation entries do. A host that renders synchronously returns
+`Promise.resolve()`. A function that returns no promise cannot be waited for:
+the refresh counts as failed, and with `debug` the runtime says so once
+(`LP0810`; [ADR 0028](architecture/0028-host-route-refresh-settles-after-commit.md)).
 
 ## Vue
 
