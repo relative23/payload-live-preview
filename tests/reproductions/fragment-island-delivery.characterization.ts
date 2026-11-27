@@ -63,7 +63,7 @@ describe('PHD-05 fragment completion and island delivery', () => {
         emitter,
         debounceMs: 0,
         enableA11y: false,
-        disableVisibilityGate: true,
+        enableVisibilityGate: false,
         scopeBindingsByOwner: true,
         heartbeatMs: 600_000,
         originMatcher: (value) => value === origin,

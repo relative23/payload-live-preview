@@ -96,7 +96,7 @@ export function createRuntime(overrides: Partial<RuntimeOptions> = {}): RuntimeH
     readyTargets: [TRUSTED],
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     enableA11y: false,
     warn: (...args: unknown[]) => {
       warnings.push(args.map(String).join(' '));

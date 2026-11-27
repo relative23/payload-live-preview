@@ -267,14 +267,14 @@ describe('UpdateScheduler — offscreen replay queue', () => {
     scheduler.flushNow();
     expect(apply).toHaveBeenCalledOnce();
   });
-  it('disableVisibilityGate forces application regardless of size', () => {
+  it('enableVisibilityGate: false forces application regardless of size', () => {
     const apply = vi.fn();
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 0,
       isVisible: () => false,
       getCacheSize: () => 1000,
       visibilityGateThreshold: 50,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       scheduleFrame: (cb) => {
         cb(0);
         return 1;

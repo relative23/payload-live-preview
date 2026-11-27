@@ -95,13 +95,13 @@ export function restorePreviewPage(): void {
 export function pipelineConfig(overrides: LivePreviewClientConfig = {}): LivePreviewClientConfig {
   return {
     skipUnchanged: false,
-    disableReferrerDetection: false,
+    enableReferrerDetection: true,
     eventSourcePolicy: 'any',
     sanitizerPolicy: 'compat',
     allowedOrigins: [TRUSTED],
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     ...overrides,
   };
 }

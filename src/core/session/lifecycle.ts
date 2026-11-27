@@ -73,8 +73,8 @@ export class LivePreviewRuntime {
       markNoWriteCallback((update) => this.writer.apply(update)),
       {
         ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
-        ...(options.disableVisibilityGate !== undefined
-          ? { disableVisibilityGate: options.disableVisibilityGate }
+        ...(options.enableVisibilityGate !== undefined
+          ? { enableVisibilityGate: options.enableVisibilityGate }
           : {}),
         ...(options.visibilityGateThreshold !== undefined
           ? { visibilityGateThreshold: options.visibilityGateThreshold }

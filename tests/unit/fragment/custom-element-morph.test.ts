@@ -56,7 +56,7 @@ function start(): LivePreviewRuntime {
     debounceMs: 0,
     enableA11y: false,
     autoBind: 'off',
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     scopeBindingsByOwner: true,
     heartbeatMs: 600_000,
     originMatcher: (value) => value === ORIGIN,

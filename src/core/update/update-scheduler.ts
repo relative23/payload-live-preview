@@ -32,8 +32,8 @@ export interface UpdateSchedulerOptions {
   readonly maxWaitMs?: number;
   /** Deferred writes replay when the host reports the element visible via `notifyVisible()`. */
   readonly isVisible: (element: Element) => boolean;
-  /** Apply every write immediately regardless of visibility. Default `false`. */
-  readonly disableVisibilityGate?: boolean;
+  /** Defer a write to an element the host reports off-screen. Default `true`; `false` applies every write at once. */
+  readonly enableVisibilityGate?: boolean;
   /** Cached-element count above which the gate activates. Default 50. */
   readonly visibilityGateThreshold?: number;
   readonly getCacheSize: () => number;
@@ -80,7 +80,7 @@ export class UpdateScheduler {
   private readonly maxWaitMs: number;
   private readonly isVisible: (element: Element) => boolean;
   private readonly gateThresholdValue: number;
-  private readonly gateDisabled: boolean;
+  private readonly gateEnabled: boolean;
   private readonly getCacheSize: () => number;
   private readonly onFlush: ((stats: FlushStats) => void) | undefined;
   private readonly scheduleFrame: (callback: FrameRequestCallback) => number;
@@ -106,7 +106,7 @@ export class UpdateScheduler {
     this.maxWaitMs = options.maxWaitMs ?? this.debounceMs * 4;
     this.isVisible = options.isVisible;
     this.gateThresholdValue = options.visibilityGateThreshold ?? DEFAULT_VISIBILITY_THRESHOLD;
-    this.gateDisabled = options.disableVisibilityGate ?? false;
+    this.gateEnabled = options.enableVisibilityGate ?? true;
     this.getCacheSize = options.getCacheSize;
     this.onFlush = options.onFlush;
     this.scheduleFrame =
@@ -249,7 +249,7 @@ export class UpdateScheduler {
   }
 
   get gateActive(): boolean {
-    return !this.gateDisabled && this.getCacheSize() > this.gateThresholdValue;
+    return this.gateEnabled && this.getCacheSize() > this.gateThresholdValue;
   }
 
   private armDebounce(): void {

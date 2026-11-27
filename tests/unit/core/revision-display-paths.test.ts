@@ -28,7 +28,7 @@ function start(html: string, overrides: Partial<Options> = {}) {
     emitter,
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     warn: () => {},
     ...overrides,
   });

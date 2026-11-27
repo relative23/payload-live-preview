@@ -73,7 +73,7 @@ describe('real Payload 3.x protocol', () => {
       readyTargets: [ADMIN_ORIGIN],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 

@@ -59,7 +59,7 @@ export function makeRuntime(
     readyTargets: [TRUSTED],
     emitter: new EventEmitter(),
     debounceMs: 0,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     ...overrides,
   });
 }

@@ -61,7 +61,7 @@ describe('fragment depth refusal fallback', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 600000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
       strategies: {
         fragment: createFragmentStrategy({

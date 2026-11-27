@@ -50,7 +50,35 @@ describe('an option 3.0 removed is refused, not ignored', () => {
     expect(() => createPreviewPolicy(removed as PreviewPolicyOptions)).toThrow(refusal);
   });
 
+  it.each([
+    ['disableVisibilityGate', 'enableVisibilityGate', true],
+    ['disableReferrerDetection', 'enableReferrerDetection', false],
+    ['disableLocalhostMatching', 'enableLocalhostMatching', false],
+  ] as const)(
+    'refuses `%s` from an adapter, the generator, the loader and the client, whatever its value (row 38)',
+    (before, now, value) => {
+      const refusal =
+        `payload-live-preview: \`${before}\` was removed in 3.0. Name it \`${now}\`, with the ` +
+        'value turned round; `pll migrate` rewrites a literal (ADR 0007, row 38).';
+      const removed = { [before]: value };
+
+      expect(() => resolvePolicyOptions(removed as PreviewPolicyOptions)).toThrow(refusal);
+      expect(() => generateInlineScript(removed as InlineScriptConfig)).toThrow(refusal);
+      expect(() => generateLoaderScript(removed as InlineScriptConfig, target)).toThrow(refusal);
+      expect(() => withProfileDefaults(removed as LivePreviewClientConfig)).toThrow(refusal);
+      // Not set is not given: a config built with the key and no value starts.
+      expect(() => withProfileDefaults({ [before]: undefined })).not.toThrow();
+    },
+  );
+
   it('takes what replaced them, and the names that stayed', () => {
+    expect(() =>
+      resolvePolicyOptions({
+        enableVisibilityGate: false,
+        enableReferrerDetection: true,
+        enableLocalhostMatching: false,
+      }),
+    ).not.toThrow();
     expect(() => resolvePolicyOptions({ onUnfaithfulPatch: 'ignore' })).not.toThrow();
     expect(() => generateInlineScript({ onUnfaithfulPatch: 'ignore' })).not.toThrow();
     expect(() => resolvePolicyOptions({ defaults: 'v2', strict: true })).not.toThrow();

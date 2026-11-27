@@ -12,7 +12,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const apply: ApplyUpdate = (scheduled) => seen.push(scheduled);
     const scheduler = new UpdateScheduler(apply, {
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
     });
     scheduler.schedule(update(entry(document.createElement('p')), 'value'));
@@ -25,7 +25,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 20,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (cb) => {
         cb(0);
@@ -50,7 +50,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(vi.fn(), {
       debounceMs: 0,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (callback) => {
         callback(0);
@@ -72,7 +72,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 100,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (callback) => frames.push(callback),
       cancelFrame: () => {},
@@ -114,7 +114,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 100,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (callback) => frames.push(callback),
       cancelFrame: () => {},
@@ -160,7 +160,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 0,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (callback) => frames.push(callback),
       cancelFrame,
@@ -191,7 +191,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 0,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (callback) => frames.push(callback),
       cancelFrame,
@@ -220,7 +220,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 10,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (cb) => {
         cb(0);
@@ -246,7 +246,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 100,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (cb) => {
         cb(0);
@@ -270,7 +270,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 0,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: () => 73,
       cancelFrame,
@@ -291,7 +291,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(() => {}, {
       debounceMs: 10,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (cb) => {
         cb(0);
@@ -310,7 +310,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 0,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (cb) => {
         cb(0);
@@ -334,7 +334,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 100,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
     });
     const current = { generation: 2, revision: 2 };
@@ -362,7 +362,7 @@ describe('UpdateScheduler — debounce and frame batching', () => {
     const scheduler = new UpdateScheduler(vi.fn(), {
       debounceMs: 0,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: () => (nextHandle += 1),
       cancelFrame,

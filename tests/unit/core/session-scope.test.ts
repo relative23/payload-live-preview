@@ -142,7 +142,7 @@ function makeRuntime(
     emitter,
     debounceMs: 0,
     heartbeatMs: 1_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     enableA11y: false,
     warn: () => {},
     ...(route === undefined ? {} : { strategies: { route }, onUnfaithfulPatch: 'escalate' }),

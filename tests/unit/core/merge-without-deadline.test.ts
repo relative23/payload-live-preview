@@ -118,7 +118,7 @@ describe('a merge request that never answers', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
       warn: () => {},
       dataMerge: { serverURL: SERVER, fetchFn },

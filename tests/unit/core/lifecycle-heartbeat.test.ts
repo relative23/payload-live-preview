@@ -22,7 +22,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       readyTargets: [TRUSTED],
       emitter,
       sendReady: vi.fn(),
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
       log: vi.fn(),
     });
@@ -64,7 +64,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter,
       sendReady,
       heartbeatMs: 25,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
       log: vi.fn(),
       onHeartbeatTimeout: () => {
@@ -94,7 +94,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 25,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       validateToken,
     });
     runtime.start();
@@ -128,7 +128,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 25,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { x: 'zombie' } });
@@ -151,7 +151,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 50,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       onHeartbeatTimeout,
     });
     runtime.start();
@@ -171,7 +171,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 50,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       onHeartbeatTimeout,
     });
     runtime.start();
@@ -203,7 +203,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter,
       sendReady,
       heartbeatMs: 25,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       onHeartbeatTimeout: () => {
         runtime.destroy();
       },
@@ -232,7 +232,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter,
       sendReady,
       heartbeatMs: 25,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     expect(sendReady).toHaveBeenCalledOnce();
@@ -258,7 +258,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 50,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { x: '1' } });
@@ -289,7 +289,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 100,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       onHeartbeatTimeout: () => {
         lockedOrigin = undefined;
       },
@@ -323,7 +323,7 @@ describe('LivePreviewRuntime — disconnect and heartbeat', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { x: '1' } });

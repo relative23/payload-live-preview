@@ -20,7 +20,7 @@ export type EventSourcePolicy = 'any' | 'parent-or-opener';
 export const READINESS_ROWS = Object.freeze({
   strict: 'production response changes require an authorized context',
   previewSignals: 'query-only intent signal',
-  disableReferrerDetection: 'referrer trust off',
+  enableReferrerDetection: 'referrer trust off',
   eventSourcePolicy: 'messages must come from parent/opener',
   skipUnchanged: 'skip unchanged bindings by default',
   sanitizerPolicy: 'hardened sanitizer id/data-* policy',
@@ -34,7 +34,7 @@ export interface AdapterProfileDefaults {
 
 /** Options the browser runtime reads from the profile (through the inline configuration). */
 export interface RuntimeProfileDefaults {
-  readonly disableReferrerDetection: boolean;
+  readonly enableReferrerDetection: boolean;
   readonly eventSourcePolicy: EventSourcePolicy;
   readonly skipUnchanged: boolean;
   readonly sanitizerPolicy: 'compat' | 'strict';
@@ -46,7 +46,7 @@ export const V2_ADAPTER_DEFAULTS: AdapterProfileDefaults = Object.freeze({
 });
 
 export const V2_RUNTIME_DEFAULTS: RuntimeProfileDefaults = Object.freeze({
-  disableReferrerDetection: true,
+  enableReferrerDetection: false,
   eventSourcePolicy: 'parent-or-opener',
   skipUnchanged: true,
   sanitizerPolicy: 'strict',

@@ -28,13 +28,18 @@ type InlineKey = (typeof INLINE_CONFIG_KEYS)[number];
 export interface ServedConfig {
   /** `inline`: the generator's tuple. `element`: the JSON a page writes for a client it starts itself. */
   readonly source: 'inline' | 'element';
-  /** The option under its inline name; `undefined` when the page does not set it. */
+  /**
+   * The option under its inline name; `undefined` when the page does not set it. A switch 3.0
+   * turned round (ADR 0007, row 38) has two names, and a page before 3.0 sets the old one.
+   */
   value(key: InlineKey): unknown;
 }
 
 /** A runtime row of the readiness table, as a finding words it. */
 interface ReadinessRow {
   readonly key: keyof RuntimeProfileDefaults;
+  /** The option before 3.0, where 3.0 turned it round: it said the opposite, and an older page sets it. */
+  readonly before?: InlineKey;
   readonly title: string;
   /** What the 1.x value does. */
   readonly effect: string;
@@ -44,7 +49,8 @@ interface ReadinessRow {
 
 const ROWS: readonly ReadinessRow[] = [
   {
-    key: 'disableReferrerDetection',
+    key: 'enableReferrerDetection',
+    before: 'disableReferrerDetection',
     title: 'Referrer trust is still on',
     effect: 'the runtime accepts the admin referer as a preview signal.',
     condition: 'no preview flow relies on the admin referer alone',
@@ -75,7 +81,7 @@ const ROWS: readonly ReadinessRow[] = [
  * reads both.
  */
 const ONE_X_RUNTIME_ROWS: RuntimeProfileDefaults = Object.freeze({
-  disableReferrerDetection: false,
+  enableReferrerDetection: true,
   eventSourcePolicy: 'any',
   skipUnchanged: false,
   sanitizerPolicy: 'compat',
@@ -232,8 +238,24 @@ function literal(value: unknown): string {
   return typeof value === 'string' ? `'${value}'` : JSON.stringify(value);
 }
 
-function remedyFor(origin: Origin, row: ReadinessRow, value: unknown): string {
-  const wanted = `\`${row.key}: ${literal(V2_RUNTIME_DEFAULTS[row.key])}\``;
+/**
+ * A row as the page's version spells it. Without a value under the 3.0 name the page is older
+ * than 3.0 or leaves the row to its defaults, and both read the name the row had before.
+ */
+interface Spelling {
+  readonly key: string;
+  readonly show: (value: unknown) => string;
+}
+
+function spellingOf(row: ReadinessRow, config: ServedConfig): Spelling {
+  if (row.before === undefined || config.value(row.key) !== undefined) {
+    return { key: row.key, show: literal };
+  }
+  return { key: row.before, show: (value) => literal(value === false) };
+}
+
+function remedyFor(origin: Origin, row: ReadinessRow, value: unknown, words: Spelling): string {
+  const wanted = `\`${words.key}: ${words.show(V2_RUNTIME_DEFAULTS[row.key])}\``;
   switch (origin) {
     case 'profile':
       return (
@@ -241,7 +263,7 @@ function remedyFor(origin: Origin, row: ReadinessRow, value: unknown): string {
         'profile; `pll migrate` writes its rows out, so each can go on its own.'
       );
     case 'explicit':
-      return `Drop the explicit \`${row.key}: ${literal(value)}\` once ${row.condition}; 2.0 defaults to ${wanted}.`;
+      return `Drop the explicit \`${words.key}: ${words.show(value)}\` once ${row.condition}; 2.0 defaults to ${wanted}.`;
     case 'unmarked':
       // 1.8.1 has no `defaults` option and three of the four rows are not
       // inline options there, so the way out is the upgrade itself.
@@ -249,14 +271,22 @@ function remedyFor(origin: Origin, row: ReadinessRow, value: unknown): string {
   }
 }
 
-function gap(row: ReadinessRow, value: unknown, origin: Origin): DoctorFinding {
+function gap(row: ReadinessRow, value: unknown, origin: Origin, words: Spelling): DoctorFinding {
   return {
     code: 'LP0709',
     level: 'warning',
     title: row.title,
-    detail: `${row.key} is ${literal(value)}: ${row.effect} ${ORIGIN_DETAIL[origin]}`,
-    remedy: remedyFor(origin, row, value),
+    detail: `${words.key} is ${words.show(value)}: ${row.effect} ${ORIGIN_DETAIL[origin]}`,
+    remedy: remedyFor(origin, row, value, words),
   };
+}
+
+/** What the page sets for a row, in the row's 3.0 terms: an older page's switch is read turned round. */
+function stated(row: ReadinessRow, config: ServedConfig): unknown {
+  const slot = config.value(row.key);
+  if (slot !== undefined || row.before === undefined) return slot;
+  const before = config.value(row.before);
+  return typeof before === 'boolean' ? !before : undefined;
 }
 
 function unknownGeneration(marker: unknown): DoctorFinding {
@@ -287,12 +317,12 @@ export function analyzeV2Readiness(probe: DoctorProbe): readonly DoctorFinding[]
   const generation = marker ?? (config.source === 'element' ? 'v2' : undefined);
   const fallback = generation === 'v2' ? V2_RUNTIME_DEFAULTS : ONE_X_RUNTIME_ROWS;
   const findings = ROWS.flatMap((row) => {
-    const slot = config.value(row.key);
+    const slot = stated(row, config);
     const value = slot ?? fallback[row.key];
     if (value === V2_RUNTIME_DEFAULTS[row.key]) return [];
     const origin: Origin =
       generation === 'v1' ? 'profile' : slot === undefined ? 'unmarked' : 'explicit';
-    return [gap(row, value, origin)];
+    return [gap(row, value, origin, spellingOf(row, config))];
   });
   return generation === undefined ? [...findings, UNMARKED] : findings;
 }

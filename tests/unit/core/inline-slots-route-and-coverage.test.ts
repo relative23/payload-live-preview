@@ -20,7 +20,7 @@ function start(given: Partial<Record<(typeof INLINE_CONFIG_KEYS)[number], unknow
           allowedOrigins: [ADMIN],
           eventSourcePolicy: 'any',
           debounceMs: 0,
-          disableVisibilityGate: true,
+          enableVisibilityGate: false,
           ...given,
         })[key as string],
     ),

@@ -17,7 +17,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -40,7 +40,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'new' } });
@@ -59,7 +59,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-document-event', action: 'updated' });
@@ -80,7 +80,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -117,7 +117,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -161,7 +161,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -195,7 +195,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -239,7 +239,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -280,7 +280,7 @@ describe('LivePreviewRuntime — supersession and re-entrancy', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 

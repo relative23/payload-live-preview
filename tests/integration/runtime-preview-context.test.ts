@@ -340,8 +340,8 @@ describe('bootstrapInlineRuntime — preview context', () => {
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig({
         additionalOrigins: [],
-        disableReferrerDetection: true,
-        disableLocalhostMatching: true,
+        enableReferrerDetection: false,
+        enableLocalhostMatching: false,
       });
     const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
@@ -357,8 +357,8 @@ describe('bootstrapInlineRuntime — preview context', () => {
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: BakedConfigTuple }).__LIVE_PREVIEW_CONFIG__ =
       bakeConfig({
         additionalOrigins: [],
-        disableReferrerDetection: true,
-        disableLocalhostMatching: true,
+        enableReferrerDetection: false,
+        enableLocalhostMatching: false,
       });
     try {
       const { bootstrapInlineRuntime } = await import('@core/session/runtime');

@@ -9,7 +9,7 @@
     "examples/astro-hybrid/src/document.ts": "cd75a80b756d50171a35eee12a7bbe010c5548355d0f3ab5392c349abc5a8e82",
     "examples/astro-hybrid/src/env.d.ts": "9c9283a414423d9223e5ea86941b142443b8af7a007f77612dc2c098de2d2500",
     "examples/astro-hybrid/src/h05-context.ts": "63de8912cd840d02057fdc3ae57c5d6d824b13c103f288e485cdd1c5ae8025af",
-    "examples/astro-hybrid/src/middleware.ts": "ff8b832edcadf2c43c3ebef8de7f9a3b9e13823df6b6cd116a8dd479bccf0f60",
+    "examples/astro-hybrid/src/middleware.ts": "433453dc0c430b63b4551e302dec3430c562d4d3f3df48f94cecef366d38fc1c",
     "examples/astro-hybrid/src/pages/annotated.astro": "19d68205f8af11220001ceff2a6582d85132803ed89464e766b1bafd9fd1d85f",
     "examples/astro-hybrid/src/pages/bench.astro": "b861a61e4ae96c11084889c1febc25bb104d214f6ceff4c0d99551fd635f147c",
     "examples/astro-hybrid/src/pages/h05/[locale]/[slug].astro": "602a80435700f1a5d76699edc001a50b9b2896b1db23f07aeea45222015a7bcd",

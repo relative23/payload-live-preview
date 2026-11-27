@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 525,
-    "suites": 1023,
-    "tests": 4614,
+    "files": 526,
+    "suites": 1025,
+    "tests": 4622,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 428,
-      "suites": 914,
-      "tests": 4208,
+      "files": 429,
+      "suites": 916,
+      "tests": 4216,
       "benchmarks": 0
     }
   },
@@ -2258,7 +2258,7 @@
       "path": "tests/unit/doctor/analyze-bindings.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 24,
+      "tests": 25,
       "benchmarks": 0
     },
     {
@@ -2286,7 +2286,7 @@
       "path": "tests/unit/doctor/config-element.test.ts",
       "group": "unit",
       "suites": 2,
-      "tests": 12,
+      "tests": 13,
       "benchmarks": 0
     },
     {
@@ -2307,7 +2307,7 @@
       "path": "tests/unit/doctor/v2-readiness.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 15,
+      "tests": 16,
       "benchmarks": 0
     },
     {
@@ -2686,6 +2686,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/rename-disable-switches.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -3441,7 +3448,7 @@
       "path": "tests/unit/removed-options.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 4,
+      "tests": 5,
       "benchmarks": 0
     },
     {

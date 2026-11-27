@@ -8,6 +8,7 @@ import { expandDefaultsV1 } from './codemods/expand-defaults-v1';
 import { moveFetchPreviewHelpers } from './codemods/move-fetch-preview-helpers';
 import { renameAdminOriginsOption } from './codemods/rename-admin-origins-option';
 import { renameBindingsAuthorizedOption } from './codemods/rename-bindings-authorized-option';
+import { renameDisableSwitches } from './codemods/rename-disable-switches';
 import { renameIsPreviewRequest } from './codemods/rename-is-preview-request';
 import { renameOnUnboundChange } from './codemods/rename-on-unbound-change';
 import { scriptBlocks } from './script-blocks';
@@ -27,13 +28,15 @@ export function importsThisPackage(source: string): boolean {
   return PACKAGE_REFERENCE.test(source);
 }
 
-// The option rename follows the function rename so it sees the new binding.
+// The option rename follows the function rename so it sees the new binding, and the profile is
+// expanded last, so it finds a switch another codemod renamed under the name it writes.
 const IMPLEMENTATIONS: readonly CodemodImplementation[] = [
   renameIsPreviewRequest,
   renameAdminOriginsOption,
   renameBindingsAuthorizedOption,
   moveFetchPreviewHelpers,
   renameOnUnboundChange,
+  renameDisableSwitches,
   expandDefaultsV1,
 ];
 

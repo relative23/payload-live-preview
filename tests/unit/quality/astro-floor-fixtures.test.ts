@@ -116,7 +116,7 @@ describe('Astro base floor fixture', () => {
     expect(config).toContain("['none', 'no-integration', 'wrong-origin'].includes(control)");
     expect(config).toContain("output: 'static'");
     // Only the allow-list may admit the mock parent, or the wrong-origin control proves nothing.
-    expect(config).toContain('disableLocalhostMatching: true');
+    expect(config).toContain('enableLocalhostMatching: false');
     expect(config).toContain("['https://refused.example.invalid']");
     const page = template('src/pages/index.astro');
     expect(page).toContain("from 'payload-live-preview/astro/RichText.astro'");

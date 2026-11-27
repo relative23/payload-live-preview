@@ -35,7 +35,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       skipUnchanged: true,
     });
     runtime.start();
@@ -78,7 +78,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       scopeBindingsByOwner: true,
     });
     runtime.start();
@@ -126,7 +126,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       sendReady,
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -179,7 +179,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       skipUnchanged: true,
     });
     runtime.start();
@@ -211,7 +211,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       scopeBindingsByOwner: true,
     });
     runtime.start();
@@ -260,7 +260,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       dependencies,
       strategies: { route: { plan: () => false, refresh } },
     });
@@ -293,7 +293,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       strategies: { route: { plan: () => false, refresh } },
     });
     runtime.start();
@@ -330,7 +330,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       strategies: { route },
     });
     runtime.start();
@@ -366,7 +366,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       strategies: { route: { plan: () => false, refresh } },
     });
     runtime.start();
@@ -405,7 +405,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       strategies: { fragment },
     });
     runtime.start();
@@ -458,7 +458,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       strategies: { fragment },
     });
     runtime.start();
@@ -505,7 +505,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       strategies: { route: { plan: () => false, refresh } },
     });
     runtime.start();
@@ -534,7 +534,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'unsaved island title' } });
@@ -567,7 +567,7 @@ describe('LivePreviewRuntime — navigation replay context', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'unsaved island title' } });

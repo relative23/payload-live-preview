@@ -22,10 +22,6 @@ import { noopDiagnostic, safeConsoleDebug } from '@core/diagnostics';
 /** `T` with every property optional and `undefined`-able, for literals built from optional inputs. */
 type Loose<T> = { readonly [K in keyof T]?: T[K] | undefined };
 
-function invert(value: boolean | undefined): boolean | undefined {
-  return value === undefined ? undefined : !value;
-}
-
 export class LivePreviewClient {
   readonly #emitter = new EventEmitter();
   readonly #detector: OriginDetector;
@@ -52,8 +48,8 @@ export class LivePreviewClient {
     this.#detector = new OriginDetector(
       definedOnly({
         additionalOrigins: config.allowedOrigins,
-        enableReferrerDetection: invert(config.disableReferrerDetection),
-        enableLocalhostMatching: invert(config.disableLocalhostMatching),
+        enableReferrerDetection: config.enableReferrerDetection,
+        enableLocalhostMatching: config.enableLocalhostMatching,
       }),
     );
 
@@ -115,7 +111,7 @@ export class LivePreviewClient {
         eventSourcePolicy: config.eventSourcePolicy,
         dependencies: config.dependencies,
         strategies: config.strategies,
-        disableVisibilityGate: config.disableVisibilityGate,
+        enableVisibilityGate: config.enableVisibilityGate,
         visibilityGateThreshold: config.visibilityGateThreshold,
         enableA11y: config.enableA11y,
         a11yLocale: config.a11yLocale,

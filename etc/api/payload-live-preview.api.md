@@ -498,10 +498,10 @@ export interface InlineScriptConfig {
     readonly debounceMs?: number;
     readonly debug?: boolean;
     readonly defaults?: DefaultsProfile;
-    readonly disableLocalhostMatching?: boolean;
-    readonly disableReferrerDetection?: boolean;
-    readonly disableVisibilityGate?: boolean;
     readonly enableA11y?: boolean;
+    readonly enableLocalhostMatching?: boolean;
+    readonly enableReferrerDetection?: boolean;
+    readonly enableVisibilityGate?: boolean;
     readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
     readonly fragmentEndpoint?: string;
     readonly heartbeatMs?: number;
@@ -759,10 +759,10 @@ export interface LivePreviewClientConfig {
     readonly debug?: boolean;
     readonly defaults?: DefaultsProfile;
     readonly dependencies?: Readonly<Record<string, readonly string[]>>;
-    readonly disableLocalhostMatching?: boolean;
-    readonly disableReferrerDetection?: boolean;
-    readonly disableVisibilityGate?: boolean;
     readonly enableA11y?: boolean;
+    readonly enableLocalhostMatching?: boolean;
+    readonly enableReferrerDetection?: boolean;
+    readonly enableVisibilityGate?: boolean;
     readonly eventSourcePolicy?: EventSourcePolicy;
     readonly heartbeatMs?: number;
     readonly internalLinkPattern?: string;

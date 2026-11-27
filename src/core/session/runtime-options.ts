@@ -125,8 +125,8 @@ export interface RuntimeOptions {
   readonly subfieldCoverage?: 'descendant' | 'declared';
   /** Which windows may post updates. `defaults: 'v2'` sets `'parent-or-opener'`. */
   readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
-  /** Apply every update regardless of visibility. */
-  readonly disableVisibilityGate?: boolean;
+  /** Hold an off-screen update until its element is visible. Default `true`. */
+  readonly enableVisibilityGate?: boolean;
   /** Cache size above which off-screen updates are buffered for replay. Default 50. */
   readonly visibilityGateThreshold?: number;
   /** Mount an `aria-live` region for connection and update announcements. Default `true`. */

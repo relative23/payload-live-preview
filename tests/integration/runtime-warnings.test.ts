@@ -18,8 +18,8 @@ describe('bootstrapInlineRuntime — trust warnings', () => {
     withReferrer(TRUSTED);
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = bakeConfig({
       additionalOrigins: [],
-      disableReferrerDetection: false,
-      disableLocalhostMatching: true,
+      enableReferrerDetection: true,
+      enableLocalhostMatching: false,
     });
     const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
@@ -34,7 +34,7 @@ describe('bootstrapInlineRuntime — trust warnings', () => {
     withReferrer(TRUSTED);
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = bakeConfig({
       additionalOrigins: [TRUSTED],
-      disableReferrerDetection: false,
+      enableReferrerDetection: true,
     });
     const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();

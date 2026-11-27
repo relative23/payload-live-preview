@@ -23,16 +23,16 @@ export interface InlineScriptConfig {
   readonly enableA11y?: boolean;
   /** Heartbeat timeout in ms; `0` disables it (default), because the admin posts only on edits. */
   readonly heartbeatMs?: number;
-  /** Apply every update regardless of viewport position. Default `false`. */
-  readonly disableVisibilityGate?: boolean;
+  /** Hold an off-screen update until its element scrolls into view. Default `true`; `false` applies every update at once. */
+  readonly enableVisibilityGate?: boolean;
   /** Cache size above which off-screen updates wait for intersection. Default `50`. */
   readonly visibilityGateThreshold?: number;
   /** `rootMargin` of the IntersectionObserver. Default `'200px'`. */
   readonly intersectionRootMargin?: string;
-  /** Ignore `document.referrer` as an origin source. Default `true`. */
-  readonly disableReferrerDetection?: boolean;
-  /** Disable the dev-mode localhost matcher (any port on `localhost`/`127.0.0.1`). Default `false`. */
-  readonly disableLocalhostMatching?: boolean;
+  /** Take `document.referrer` as an origin source. Default `false`. */
+  readonly enableReferrerDetection?: boolean;
+  /** The dev-mode localhost matcher (any port on `localhost`/`127.0.0.1`). Default `true`. */
+  readonly enableLocalhostMatching?: boolean;
   /** Update only bindings under a matching `data-payload-owner`. Default `false`. */
   readonly scopeBindingsByOwner?: boolean;
   /** Skip bindings whose value did not change. Default `true`. */
@@ -119,8 +119,14 @@ export interface InlineScriptConfig {
 /**
  * A slot whose option 3.0 removed. It keeps its place and stays empty: a slot's number means the
  * same in every version, which is what lets `pll doctor` read a page another version served.
+ * The three `disable…` switches are here because 3.0 names them by what they turn on (ADR 0007,
+ * row 38); their successors stand at the end of the table.
  */
-export type RetiredInlineKey = 'onUnboundChange';
+export type RetiredInlineKey =
+  | 'onUnboundChange'
+  | 'disableVisibilityGate'
+  | 'disableReferrerDetection'
+  | 'disableLocalhostMatching';
 
 /** Keys that travel in the wire tuple, in slot order. */
 export const INLINE_CONFIG_KEYS = [
@@ -153,4 +159,7 @@ export const INLINE_CONFIG_KEYS = [
   'subfieldCoverage',
   'mergeTimeoutMs',
   'internalLinkPattern',
-] as const satisfies readonly (Exclude<keyof InlineScriptConfig, 'runtime'> | RetiredInlineKey)[];
+  'enableVisibilityGate',
+  'enableReferrerDetection',
+  'enableLocalhostMatching',
+] as const satisfies readonly (keyof InlineScriptConfig | RetiredInlineKey)[];

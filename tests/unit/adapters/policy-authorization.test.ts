@@ -348,13 +348,13 @@ describe('the defaults table and the runtime rows', () => {
     expect(
       inlineScriptConfig({
         eventSourcePolicy: 'any',
-        disableReferrerDetection: false,
-        disableLocalhostMatching: true,
+        enableReferrerDetection: true,
+        enableLocalhostMatching: false,
       }),
     ).toEqual({
       eventSourcePolicy: 'any',
-      disableReferrerDetection: false,
-      disableLocalhostMatching: true,
+      enableReferrerDetection: true,
+      enableLocalhostMatching: false,
     });
   });
 

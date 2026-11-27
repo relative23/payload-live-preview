@@ -50,7 +50,7 @@ function createRuntime(options: Record<string, unknown> = {}): LivePreviewRuntim
     emitter: new EventEmitter(),
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     enableA11y: false,
     warn: () => {},
     ...options,
@@ -274,7 +274,7 @@ describe('inspect() revision accounting', () => {
 describe('inspect() visibility gate', () => {
   it('reports the threshold and whether it is deferring', () => {
     const runtime = createRuntime({
-      disableVisibilityGate: false,
+      enableVisibilityGate: true,
       visibilityGateThreshold: 2,
     });
     runtime.start();
@@ -289,7 +289,7 @@ describe('inspect() visibility gate', () => {
 
   it('reports the gate as inactive below the threshold', () => {
     const runtime = createRuntime({
-      disableVisibilityGate: false,
+      enableVisibilityGate: true,
       visibilityGateThreshold: 50,
     });
     runtime.start();

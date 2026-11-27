@@ -220,7 +220,7 @@ describe('the DOM runtime with a merge deadline', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
       warn: () => undefined,
       dataMerge: { serverURL: SERVER, ...dataMerge },
@@ -293,7 +293,7 @@ describe('mergeTimeoutMs on the way to the merger', () => {
       mergeFetch: fetchFn,
       eventSourcePolicy: 'any',
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     client.start();
     window.dispatchEvent(message());
@@ -314,7 +314,7 @@ describe('mergeTimeoutMs on the way to the merger', () => {
       mergeTimeoutMs: 5_000,
       eventSourcePolicy: 'any',
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     };
     vi.stubGlobal(
       '__LIVE_PREVIEW_CONFIG__',

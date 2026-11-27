@@ -14,7 +14,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       warn,
     });
     runtime.start();
@@ -138,7 +138,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       warn,
     });
     runtime.start();
@@ -172,7 +172,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       // no `log` — production default is noop; diagnostic should still fire.
       warn,
     });
@@ -223,7 +223,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({
@@ -260,7 +260,7 @@ describe('LivePreviewRuntime — the orphan-field diagnostic, one level down', (
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       warn,
       ...(subfieldCoverage === undefined ? {} : { subfieldCoverage }),
     });

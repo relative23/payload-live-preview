@@ -145,7 +145,7 @@ function createRuntime(
     emitter,
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     enableA11y: false,
     warn: (...args: unknown[]) => {
       warnings.push(args.map(String).join(' '));
@@ -189,7 +189,7 @@ describe('codes reach the reader', () => {
   it('stamps LP0301 on the visibility-gate warning', async () => {
     const warnings: string[] = [];
     const runtime = createRuntime(workingRenderer(), new EventEmitter(), warnings, {
-      disableVisibilityGate: false,
+      enableVisibilityGate: true,
       visibilityGateThreshold: 0,
     });
     runtime.start();

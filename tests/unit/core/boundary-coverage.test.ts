@@ -47,7 +47,7 @@ function start(
     emitter: new EventEmitter(),
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     warn: () => {},
     strategies: handlers,
     subfieldCoverage: mode,

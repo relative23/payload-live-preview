@@ -20,8 +20,8 @@ export type PreviewPolicyOptions = PreviewAdapterOptions<never>;
 export interface ResolvedPolicyOptions {
   readonly previewSignals: readonly PreviewSignal[];
   readonly skipUnchanged: boolean | undefined;
-  readonly disableReferrerDetection: boolean | undefined;
-  readonly disableLocalhostMatching: boolean | undefined;
+  readonly enableReferrerDetection: boolean | undefined;
+  readonly enableLocalhostMatching: boolean | undefined;
   readonly eventSourcePolicy: 'any' | 'parent-or-opener' | undefined;
   readonly sanitizerPolicy: 'compat' | 'strict' | undefined;
 }
@@ -33,8 +33,8 @@ export function resolvePolicyOptions(options: PreviewPolicyOptions): ResolvedPol
   return {
     previewSignals: options.previewSignals ?? V2_ADAPTER_DEFAULTS.previewSignals,
     skipUnchanged: options.skipUnchanged,
-    disableReferrerDetection: options.disableReferrerDetection,
-    disableLocalhostMatching: options.disableLocalhostMatching,
+    enableReferrerDetection: options.enableReferrerDetection,
+    enableLocalhostMatching: options.enableLocalhostMatching,
     eventSourcePolicy: options.eventSourcePolicy,
     sanitizerPolicy: options.sanitizerPolicy,
   };
@@ -69,8 +69,8 @@ export function inlineScriptConfig(
     ...(options.debug !== undefined ? { debug: options.debug } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
     ...(options.heartbeatMs !== undefined ? { heartbeatMs: options.heartbeatMs } : {}),
-    ...(options.disableVisibilityGate !== undefined
-      ? { disableVisibilityGate: options.disableVisibilityGate }
+    ...(options.enableVisibilityGate !== undefined
+      ? { enableVisibilityGate: options.enableVisibilityGate }
       : {}),
     ...(options.visibilityGateThreshold !== undefined
       ? { visibilityGateThreshold: options.visibilityGateThreshold }
@@ -79,11 +79,11 @@ export function inlineScriptConfig(
     ...(options.scopeBindingsByOwner !== undefined
       ? { scopeBindingsByOwner: options.scopeBindingsByOwner }
       : {}),
-    ...(resolved.disableReferrerDetection !== undefined
-      ? { disableReferrerDetection: resolved.disableReferrerDetection }
+    ...(resolved.enableReferrerDetection !== undefined
+      ? { enableReferrerDetection: resolved.enableReferrerDetection }
       : {}),
-    ...(resolved.disableLocalhostMatching !== undefined
-      ? { disableLocalhostMatching: resolved.disableLocalhostMatching }
+    ...(resolved.enableLocalhostMatching !== undefined
+      ? { enableLocalhostMatching: resolved.enableLocalhostMatching }
       : {}),
     ...(resolved.eventSourcePolicy !== undefined
       ? { eventSourcePolicy: resolved.eventSourcePolicy }

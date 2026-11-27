@@ -112,7 +112,7 @@ Inbound `postMessage` events are dropped unless `event.origin` matches one of:
 - An explicit origin from `allowedOrigins`. The browser runtime reads no
   environment variable — read `PUBLIC_PAYLOAD_ADMIN_ORIGIN` on the server and
   pass the value in.
-- The captured `document.referrer` origin — **only as a zero-config fallback when no explicit origins are configured**, and only with `disableReferrerDetection: false`. The referrer names whoever actually framed the page, so it must never widen an explicitly pinned allow-list; the detector enforces this.
+- The captured `document.referrer` origin — **only as a zero-config fallback when no explicit origins are configured**, and only with `enableReferrerDetection: true`. The referrer names whoever actually framed the page, so it must never widen an explicitly pinned allow-list; the detector enforces this.
 - A localhost pattern (`/^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i`) — only in development.
 
 After the first accepted data-bearing update, the detector **locks** to that exact origin (the inline runtime and `LivePreviewClient`; the React and Vue hooks keep accepting every allowed origin). Subsequent messages from any other origin (including ones in the original allow-list) are dropped.
