@@ -195,8 +195,8 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
       },
     });
     this.#bus = new MessageBus((origin) => this.#detector.matches(origin), {
-      onUpdate: (message) => {
-        void this.#handle(message);
+      onUpdate: (message, origin) => {
+        void this.#handle(message, origin);
       },
       onDocumentEvent: () => {
         // A save is the admin's business; the document itself arrives as an
@@ -248,6 +248,8 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     this.#revision += 1;
     this.#bus.detach();
     this.#merger.destroy();
+    // Whoever listens next starts with the whole list again.
+    this.#detector.unlockOrigin();
   }
 
   #readyTargets(): Window[] {
@@ -297,7 +299,7 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     );
   }
 
-  async #handle(message: PayloadLivePreviewMessage): Promise<void> {
+  async #handle(message: PayloadLivePreviewMessage, origin: string): Promise<void> {
     const data = message.data;
     if (data === undefined) return;
     // Payload 2 is not served: once its schema showed, the session takes none of the peer's updates.
@@ -316,6 +318,8 @@ export class LiveDocumentSession<T> implements DocumentSession<T> {
     if (this.#unsupported) return;
     // Before the revision moves: an update for another document must not abort this one's merge.
     if (!this.#accepts(message, data)) return;
+    // The admin whose update is accepted first is the one this session listens to from here on.
+    this.#detector.lockOrigin(origin);
     const revision = (this.#revision += 1);
     const locale = message.locale;
     this.#publish({ ...this.#snapshot, isLoading: true });
