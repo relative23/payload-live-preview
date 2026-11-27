@@ -1250,7 +1250,6 @@
         "./client",
         "./codegen",
         "./codegen/astro",
-        "./core",
         "./fragment",
         "./lexical",
         "./nextjs",
@@ -1260,10 +1259,8 @@
         "./nuxt/client",
         "./package.json",
         "./plugin",
-        "./plugins",
         "./react",
         "./server",
-        "./structural",
         "./sveltekit",
         "./sveltekit/client",
         "./vue"

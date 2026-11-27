@@ -418,10 +418,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +2 B gzip; reserve kept.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +112 B gzip; reserve kept.
     // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: -130 B gzip; reserve kept.
+    // 2026-11-27 (3.0, one browser entry and a chunk boundary per public module, ADR 0007 row 46): paired Node24.22.3/npm12.0.2: +65 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_937,
+    gzip: 6_002,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
@@ -444,10 +445,11 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // without the change: +318 B gzip; retain the reserve it had.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -286 B gzip; reserve kept.
     // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: -52 B gzip; reserve kept.
+    // 2026-11-27 (3.0, one browser entry and a chunk boundary per public module, ADR 0007 row 46): paired Node24.22.3/npm12.0.2: +299 B gzip; reserve kept.
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 53_004,
+    gzip: 53_303,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -495,28 +497,31 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // without the change: +326 B gzip; retain the reserve it had.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -235 B gzip; reserve kept.
     // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: -26 B gzip; reserve kept.
-    from: 'payload-live-preview/core',
+    // 2026-11-27 (3.0, one browser entry and a chunk boundary per public module, ADR 0007 row 46): the row of the core entry, measured from `/client`: +290 B gzip; reserve kept.
+    from: 'payload-live-preview/client',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 53_014,
-    why: 'the client from the core entry: the same code, the same size',
+    gzip: 53_304,
+    why: 'the client from the browser entry: the same code, the same size',
   },
   {
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -30 B gzip; reserve kept.
     // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: -130 B gzip; reserve kept.
+    // 2026-11-27 (3.0, one browser entry and a chunk boundary per public module, ADR 0007 row 46): paired Node24.22.3/npm12.0.2: +65 B gzip; reserve kept.
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 5_932,
+    gzip: 5_997,
     why: 'the Lexical renderer from its focused entry',
   },
   {
     // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: +1 B gzip; reserve kept.
-    from: 'payload-live-preview/structural',
+    // 2026-11-27 (3.0, one browser entry and a chunk boundary per public module, ADR 0007 row 46): the row of the structural entry, measured from `/client`: +11 B gzip; reserve kept.
+    from: 'payload-live-preview/client',
     symbol: 'morphElement',
     use: 'export const out = morphElement(document.body, document.body, { keyAttributes: [] });',
-    gzip: 1_516,
-    why: 'the keyed morph alone, without the array renderer',
+    gzip: 1_527,
+    why: 'the keyed morph alone: the browser entry gives a bundler the morph without the client',
   },
   {
     // 2026-10-04: paired combined 2.1 population/locale integration adds +2467 B gzip; retain 72 B cushion.
@@ -543,20 +548,22 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-11-05 (2.4.2, the union also reaches the page's own script-src-elem): paired, same epoch: 62_695 → 62_725, +30 B gzip; reserve kept.
     // 2026-11-24 (each strict refusal names its remedy): paired Node22.23.2: 62_734 → 62_849, +115 B gzip; reserve kept.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; -110 B gzip; reserve kept.
+    // 2026-11-27 (3.0, one browser entry and a chunk boundary per public module, ADR 0007 row 46): paired Node24.22.3/npm12.0.2: -2 B gzip; reserve kept.
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 59_272,
+    gzip: 59_270,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
     // 2026-10-04: paired combined 2.1 population/locale integration adds +3075 B gzip; retain 80 B cushion.
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery -14 B gzip; retain 80 B.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +14 B gzip; reserve kept.
+    // 2026-11-27 (3.0, one browser entry and a chunk boundary per public module, ADR 0007 row 46): paired Node24.22.3/npm12.0.2: +16 B gzip; reserve kept.
     from: 'payload-live-preview/react',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 6_367,
+    gzip: 6_383,
     why: 'the hook: the message bus, the origin detector and the merger, and nothing that touches an element (Vite re-bundles unminified, hence above the 4 637 published bytes)',
   },
   {
@@ -564,19 +571,21 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery -21 B gzip; retain 80 B.
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +17 B gzip; reserve kept.
     // 2026-11-27 (3.0, the internal names leave the entries, ADR 0007 row 15): paired Node24.22.3/npm12.0.2: +2 B gzip; reserve kept.
+    // 2026-11-27 (3.0, one browser entry and a chunk boundary per public module, ADR 0007 row 46): paired Node24.22.3/npm12.0.2: +14 B gzip; reserve kept.
     from: 'payload-live-preview/vue',
     symbol: 'useLivePreviewDocument',
     use: 'export const out = useLivePreviewDocument;',
-    gzip: 6_256,
+    gzip: 6_270,
     why: 'the composable: the same session as the React hook, with Vue reactivity instead',
   },
   {
     // 2026-11-27 (3.0, one module graph, ADR 0007 row 43): paired Node24.22.3/npm12.0.2; +16 B gzip; reserve kept.
-    from: 'payload-live-preview/plugins',
+    // 2026-11-27 (3.0, one browser entry and a chunk boundary per public module, ADR 0007 row 46): the row of the plugins entry, measured from `/client`: -34 B gzip; reserve kept.
+    from: 'payload-live-preview/client',
     symbol: 'PluginManager',
     use: 'export const out = PluginManager;',
-    gzip: 3_333,
-    why: 'the plugin manager without the built-in plugins',
+    gzip: 3_299,
+    why: 'the plugin manager without the built-in plugins and without the client',
   },
   {
     // 2026-11-24 (the URL builder trims its base in a loop): paired Node22.23.2: 1_263 → 1_277, +14 B gzip; the 5 B stay.

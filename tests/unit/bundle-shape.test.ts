@@ -1,48 +1,43 @@
 /**
- * Bundle-shape sanity tests.
- *
- * These tests don't probe behaviour — they assert the *shape* of the
- * narrow `core` entry. The goal is to catch accidental coupling: if
- * someone re-exports the inline-runtime generator or a plugin from
- * `core-entry.ts`, the bundle ratio collapses and these tests fire.
+ * Entry-shape tests. They probe no behaviour: they hold the cut between the two
+ * entries a project chooses between (ADR 0007, row 46). `payload-live-preview/client`
+ * is what runs in a browser, and the root is that entry and what a server needs. A page
+ * that loads an entry without a bundler loads it whole, so a name that pulls the script
+ * generator, which holds the runtime as text, into `client-entry.ts` is paid for by every
+ * such page; that is what fires here.
  */
 
 import { describe, expect, it } from 'vitest';
-import * as fullEntry from '../../src/index';
-import * as coreEntry from '../../src/core-entry';
+import * as rootEntry from '../../src/index';
+import * as clientEntry from '../../src/client-entry';
 
-describe('bundle shape — `core` entry', () => {
-  it('exports the lean live-preview surface', () => {
-    expect(coreEntry.LivePreviewClient).toBeTypeOf('function');
-    expect(coreEntry.initLivePreview).toBeTypeOf('function');
-    expect(coreEntry.OriginDetector).toBeTypeOf('function');
-    expect(coreEntry.EventEmitter).toBeTypeOf('function');
-    expect(coreEntry.sanitizeHtml).toBeTypeOf('function');
-    expect(coreEntry.generateCspNonce).toBeTypeOf('function');
-    expect(coreEntry.negotiateProtocol).toBeTypeOf('function');
+describe('entry shape: the root and `/client`', () => {
+  it('the root has every name of `/client`, as the same binding', () => {
+    const client = clientEntry as Record<string, unknown>;
+    const root = rootEntry as Record<string, unknown>;
+
+    expect(Object.keys(client).filter((name) => root[name] !== client[name])).toEqual([]);
   });
 
-  it('OMITS the heavyweight optional pieces', () => {
-    const exportNames = Object.keys(coreEntry);
-    expect(exportNames).not.toContain('lexicalToHtml');
-    expect(exportNames).not.toContain('lexicalToPlainText');
-    expect(exportNames).not.toContain('highlightPlugin');
-    expect(exportNames).not.toContain('debugPlugin');
-    expect(exportNames).not.toContain('createAnalyticsPlugin');
-    expect(exportNames).not.toContain('generateInlineScript');
-    expect(exportNames).not.toContain('wrapWithScriptTag');
-  });
-
-  it('shares the same VERSION as the full entry', () => {
-    expect(coreEntry.VERSION).toBe(fullEntry.VERSION);
-  });
-});
-
-describe('bundle shape — `full` entry', () => {
-  it('exports Lexical and plugin helpers', () => {
-    expect(fullEntry.lexicalToHtml).toBeTypeOf('function');
-    expect(fullEntry.highlightPlugin).toBeTypeOf('object');
-    expect(fullEntry.debugPlugin).toBeTypeOf('object');
-    expect(fullEntry.generateInlineScript).toBeTypeOf('function');
+  it('what the root adds is the generator and the server helpers, and nothing else', () => {
+    expect(
+      Object.keys(rootEntry)
+        .filter((name) => !(name in clientEntry))
+        .sort(),
+    ).toEqual([
+      'authorizePreviewRequest',
+      'bind',
+      'bindByPath',
+      'buildFrameAncestors',
+      'createPreviewBindings',
+      'generateCspNonce',
+      'generateInlineScript',
+      'hasPreviewIntent',
+      'isAuthorizedPreviewContext',
+      'issuePreviewToken',
+      'mergeCspHeader',
+      'previewBindingsFromLocals',
+      'wrapWithScriptTag',
+    ]);
   });
 });

@@ -95,6 +95,7 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 43  | 3.0 (decided 2026-11-24)           | removal | ten entries built twice, as ESM and as CommonJS, and every entry a bundle of its own with its own copy of every class and registry it shares with the others                                                                                                                 | one module graph, ESM alone: a shared module is built once as a chunk the entries import. The entries that had a CommonJS build answer `require()` with the ES module `import` gets, which Node 24 loads. No `.cjs` file and no `require` condition are left                                                              | —                                                         | none: an `import` or a `require()` of an entry by its name keeps working. A deep import of a file under `dist/` does not: the shared files change their names with every release                                                                                                                                                              |
 | 44  | 3.0 (decided 2026-11-24)           | removal | `AUTHORIZED_PREVIEW_BRAND_KEY` on the root, `/core` and `/server`, and a context marked by a registry symbol, which a frozen copy keeps and a hand-built object can carry                                                                                                    | a context is the object `authorizePreviewRequest()` made: the module keeps a list of them, and a copy, frozen or not, and an object built by hand are refused. The context has no key of that name, and nothing exports one                                                                                               | —                                                         | none: pass the context itself, as `docs/authorization.md` has always said; delete an import of the name                                                                                                                                                                                                                                       |
 | 45  | 3.0 (decided 2026-11-24)           | range   | Nuxt 4, and Nuxt 3 as kept working after its end of life on 2026-07-31: a Nuxt 3 example and a Nuxt 4 twin of it, each run by CI jobs                                                                                                                                        | Nuxt 4. Nuxt 3 is no longer tested: its example left, and the one Nuxt example runs Nuxt 4 in the `app/` layout. The module's code is unchanged, so a Nuxt 3 project keeps the code it has, without a job that proves it. This replaces the Nuxt part of row 29                                                           | —                                                         | none: Nuxt's own upgrade guide moves a project to 4, and the snippets of `docs/nuxt.md` are written for the `app/` layout                                                                                                                                                                                                                     |
+| 46  | 3.0 (decided 2026-11-27)           | move    | the entries `/core`, `/plugins` and `/structural` beside `/client`: four entries for what runs in a browser, each with part of it, and the root with another part                                                                                                            | `/client` exports everything that runs in a browser: the client, the document session, the plugin manager and plugins, the protocol and origin helpers, the sanitizer, the keyed morph. The root exports every name of `/client`, the script generator and the server helpers. The three entries are gone                 | —                                                         | `move-core-entry`, `move-plugins-entry` and `move-structural-entry` rewrite the specifier to `/client`; `/core`'s binding, CSP and authorization names go to the root, and an import that mixes both kinds is reported and left                                                                                                               |
 
 2026-09-16 (2.0.1): row 5's "outside local dev" names an exception the runtime
 does not have. `disableReferrerDetection` is `true` everywhere under `'v2'`;
@@ -118,6 +119,41 @@ of 3.x, and Payload 4.0.0-beta.12 asks for `^24.22.3 || >=26.13.1` itself.
 official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
+
+2026-11-27 (3.0): row 46 is new and carried out, the second cut of the entry
+table. The first plan was to merge `/core`, `/client` and `/plugins` into the
+root. Measured first: a bundler gives the same bytes for a name whichever
+entry it comes from. The tree-shaking rows show it for Vite 7 and 8, and a
+Next.js 16 app that imports `initLivePreview` builds byte for byte the same
+client JavaScript from the root, from `/client` and from the core entry, with
+Turbopack and with webpack. A page that loads an entry without a bundler loads
+it whole, though, and the root holds the script generator with the runtime as
+text. So one browser entry stays, and it is a rule and not a list: `/client`
+is what runs in a browser, and the root is `/client` (`export *`) and what a
+server needs. `tests/unit/bundle-shape.test.ts` holds the thirteen names the
+root adds. Loaded whole, `/client` is 43 files with 203 745 bytes and the root
+50 files with 379 870.
+
+The root gains the six names only the focused entries had
+(`createDocumentSession`, `PluginManager`, `createUnboundFieldsOverlayPlugin`,
+`morphElement`, `isMorphBoundary`, `retainIslandBoundary`). `/structural` held
+three functions after row 15, and no guide or example loaded it on its own.
+Four of its types described functions row 15 removed and are gone:
+`ArrayPatch`, `DependencyMap`, `StructuralApplyOptions` and `StructuralStore`.
+`/core` also exported the binding helpers, two CSP helpers and the
+authorization guard, which a server calls: they are on the root and on
+`/server`, and its codemod sends an import by the names it takes. Every
+function and class `/client` exports keeps its name in the build, as the core
+entry's did.
+
+Merging entries made the chunks coarser, since the build drew them by the
+set of entries that reach a module, and a Next.js app, whose bundlers take a
+file whole, paid 6.8 kB gzip more for `initLivePreview`. The build now draws
+a boundary around every module that defines a public name, and the same app
+ships what it shipped before ([ADR 0012](0012-package-topology-and-delivery-profiles.md)
+has the measurement). With Vite 8, `initLivePreview` from `/client` costs
+53 239 bytes gzip where it cost 52 949 from the core entry, `morphElement`
+1 506 (1 495) and `PluginManager` 3 243 (3 277).
 
 2026-11-27 (3.0): row 45 is new and carried out. The Nuxt 3 example is gone,
 and the Nuxt 4 example has its place and its name, `examples/nuxt-payload`,

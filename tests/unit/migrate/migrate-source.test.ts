@@ -6,6 +6,9 @@ const EVERYTHING = [
   "import { isPreviewRequest, createPreviewBindings, fetchPreviewGlobal } from 'payload-live-preview';",
   "import { livePreview } from 'payload-live-preview/astro';",
   "import { buildLivePreviewUrl } from 'payload-live-preview/payload';",
+  "import { OriginDetector } from 'payload-live-preview/core';",
+  "import { PluginManager } from 'payload-live-preview/plugins';",
+  "import { morphElement } from 'payload-live-preview/structural';",
   'export async function load({ request }) {',
   '  const preview = isPreviewRequest(request, { adminOrigins: [env.ADMIN] });',
   '  const bindings = createPreviewBindings({ authorized: preview });',
@@ -38,6 +41,13 @@ describe('migrateSource', () => {
     expect(once.edits.map((e) => e.codemod)).toEqual(CODEMODS.map((c) => c.id));
     expect(once.output).toContain(
       "import { buildLivePreviewUrl } from 'payload-live-preview/plugin';",
+    );
+    expect(once.output).toContain(
+      [
+        "import { OriginDetector } from 'payload-live-preview/client';",
+        "import { PluginManager } from 'payload-live-preview/client';",
+        "import { morphElement } from 'payload-live-preview/client';",
+      ].join('\n'),
     );
     expect(once.output).toContain('hasPreviewIntent(request, { allowedOrigins: [env.ADMIN] })');
     expect(once.output).toContain('authorization: preview');

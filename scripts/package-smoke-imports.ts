@@ -110,7 +110,6 @@ function cjsProbeSource(
 function esmRuntimeExports(packageName: string): Readonly<Record<string, readonly string[]>> {
   return {
     [packageSpecifier(packageName, '.')]: ['LivePreviewClient', 'createPreviewFocusReporter'],
-    [packageSpecifier(packageName, './core')]: ['EventEmitter', 'initLivePreview'],
     [packageSpecifier(packageName, './astro')]: ['livePreview', 'createLivePreviewMiddleware'],
     [packageSpecifier(packageName, './nextjs')]: ['createLivePreviewMiddleware'],
     [packageSpecifier(packageName, './sveltekit')]: ['livePreviewHandle'],
@@ -119,11 +118,11 @@ function esmRuntimeExports(packageName: string): Readonly<Record<string, readonl
     [packageSpecifier(packageName, './server')]: ['definePreview', 'authorizePreviewRequest'],
     [packageSpecifier(packageName, './client')]: [
       'LivePreviewClient',
-      'createPreviewFocusReporter',
+      'createDocumentSession',
+      'PluginManager',
+      'morphElement',
     ],
-    [packageSpecifier(packageName, './structural')]: ['morphElement', 'isMorphBoundary'],
     [packageSpecifier(packageName, './lexical')]: ['lexicalToHtml', 'isLexicalContent'],
-    [packageSpecifier(packageName, './plugins')]: ['PluginManager', 'createAnalyticsPlugin'],
     [packageSpecifier(packageName, './fragment')]: [
       'createFragmentStrategy',
       'createRouteStrategy',
@@ -136,16 +135,15 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
   return {
     [packageSpecifier(packageName, './nextjs')]: ['withLivePreview', 'createLivePreviewMiddleware'],
     [packageSpecifier(packageName, '.')]: ['LivePreviewClient', 'createPreviewFocusReporter'],
-    [packageSpecifier(packageName, './core')]: ['EventEmitter', 'initLivePreview'],
     [packageSpecifier(packageName, './plugin')]: ['livePreview', 'buildLivePreviewUrl'],
     [packageSpecifier(packageName, './server')]: ['definePreview', 'authorizePreviewRequest'],
     [packageSpecifier(packageName, './client')]: [
       'LivePreviewClient',
-      'createPreviewFocusReporter',
+      'createDocumentSession',
+      'PluginManager',
+      'morphElement',
     ],
-    [packageSpecifier(packageName, './structural')]: ['morphElement', 'isMorphBoundary'],
     [packageSpecifier(packageName, './lexical')]: ['lexicalToHtml', 'isLexicalContent'],
-    [packageSpecifier(packageName, './plugins')]: ['PluginManager', 'createAnalyticsPlugin'],
     [packageSpecifier(packageName, './fragment')]: [
       'createFragmentStrategy',
       'createRouteStrategy',

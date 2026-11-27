@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as clientEntry from '../../src/client-entry';
-import * as structuralEntry from '../../src/structural-entry';
 import * as lexicalEntry from '../../src/lexical-entry';
-import * as pluginsEntry from '../../src/plugins-entry';
 import * as fragmentEntry from '../../src/fragment/index';
 
 /**
@@ -11,17 +9,46 @@ import * as fragmentEntry from '../../src/fragment/index';
  * fails here first, with a readable diff, rather than in the packed gate.
  */
 describe('focused entry surfaces', () => {
-  it('client', () => {
-    expect(typeof clientEntry.LivePreviewClient).toBe('function');
-    expect(typeof clientEntry.initLivePreview).toBe('function');
-  });
   // Since 3.0 an entry exports no name tagged `@internal` at run time (ADR 0007, row 15):
   // the lists are what a project can import, complete.
-  it('structural: the morph and the two boundary rules', () => {
-    expect(Object.keys(structuralEntry).sort()).toEqual([
+  it('client: everything that runs in a browser (row 46)', () => {
+    expect(Object.keys(clientEntry).sort()).toEqual([
+      'CAPABILITY_DECLARATIONS',
+      'CAPABILITY_DOCUMENTATION',
+      'DIAGNOSTIC_CODES',
+      'EventEmitter',
+      'LivePreviewClient',
+      'OriginDetector',
+      'PluginManager',
+      'VERSION',
+      'bindNavigationLifecycle',
+      'createAnalyticsPlugin',
+      'createDocumentSession',
+      'createPreviewFocusReporter',
+      'createUnboundFieldsOverlayPlugin',
+      'debugPlugin',
+      'detectProtocolProfile',
+      'documentSavePlugin',
+      'escapeHtml',
+      'highlightPlugin',
+      'initLivePreview',
+      'isExternalHttpUrl',
+      'isLexicalContent',
       'isMorphBoundary',
+      'isSafeUrl',
+      'lexicalToHtml',
+      'lexicalToPlainText',
+      'markHydrated',
       'morphElement',
+      'negotiateProtocol',
+      'registerBlockRenderer',
+      'registerBuiltinRenderer',
+      'registerRouteRefresh',
+      'reportPreviewFocus',
       'retainIslandBoundary',
+      'sanitizeHtml',
+      'setSanitizerPolicy',
+      'setTrustedTypesPolicy',
     ]);
   });
   it('lexical: the renderer, the shape test and the registrations', () => {
@@ -40,10 +67,5 @@ describe('focused entry surfaces', () => {
       'createFragmentStrategy',
       'createRouteStrategy',
     ]);
-  });
-  it('plugins', () => {
-    expect(typeof pluginsEntry.PluginManager).toBe('function');
-    expect(typeof pluginsEntry.createAnalyticsPlugin).toBe('function');
-    expect(pluginsEntry.highlightPlugin).toBeDefined();
   });
 });

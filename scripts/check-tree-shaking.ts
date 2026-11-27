@@ -4,7 +4,8 @@
  * consumer bundled with Vite through a real `node_modules` resolution, so the
  * manifest's `exports` and `sideEffects` decide what survives. The bundler and
  * the minifier are the installed Vite's own defaults, which is what a project
- * on a supported framework builds with.
+ * on a supported framework builds with. A second set of rows asks what a
+ * bundler ships that takes a file whole, as a Next.js project's does.
  */
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -12,8 +13,10 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { build } from 'vite';
+import { exportClosureBytes } from './entry-closure';
 import { improvementNotice } from './size-budget-notice';
 import { TREE_SHAKING_FIXTURES, type Fixture } from './tree-shaking-budgets';
+import { WHOLE_FILE_ROWS } from './whole-file-budgets';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 /**
  * Library mode keeps whitespace and writes one comment line per module with the module's path, the consumer's
@@ -84,6 +87,17 @@ async function main(): Promise<void> {
     }
   } finally {
     await rm(consumer, { recursive: true, force: true });
+  }
+  // The same question for a bundler that drops nothing inside a file (scripts/whole-file-budgets.ts).
+  for (const row of WHOLE_FILE_ROWS) {
+    const raw = (await exportClosureBytes(resolve(ROOT, 'dist', row.entry), row.symbol)).byteLength;
+    const label = `whole files for { ${row.symbol} } from dist/${row.entry}`;
+    console.log(
+      `${raw <= row.raw ? 'PASS' : 'FAIL'} ${label}: ${String(raw)} raw (budget ${String(row.raw)}) — ${row.why}`,
+    );
+    const notice = improvementNotice(label, raw, row.raw, 'raw');
+    if (notice !== undefined) console.log(notice);
+    if (raw > row.raw) failures.push(`dist/${row.entry} → ${row.symbol}, whole files`);
   }
   if (failures.length > 0) {
     throw new Error(`tree-shaking gate failed for ${failures.join(', ')}`);

@@ -6,7 +6,7 @@ import {
   type FieldRenderer,
   type LivePreviewPlugin,
 } from 'payload-live-preview';
-import { EventEmitter, initLivePreview } from 'payload-live-preview/core';
+import { EventEmitter, initLivePreview } from 'payload-live-preview/client';
 import { buildLivePreviewUrl } from 'payload-live-preview/plugin';
 import { livePreview as payloadLivePreview } from 'payload-live-preview/plugin';
 import { definePreview } from 'payload-live-preview/server';
@@ -58,7 +58,7 @@ async function crossEntryDraftRead(request: Request): Promise<unknown> {
     serverURL: 'https://admin.example.test',
     document,
     maxDepth: 1,
-  } satisfies import('payload-live-preview/core').AuthorizedPreviewPayloadScope;
+  } satisfies import('payload-live-preview').AuthorizedPreviewPayloadScope;
   const scope: import('payload-live-preview').AuthorizedPreviewScope = { payload };
   const verdict = await authorizePreviewRequest(request, {
     type: 'verifier',

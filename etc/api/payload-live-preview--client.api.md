@@ -5,6 +5,29 @@
 ```ts
 
 // @public
+export interface AnalyticsSnapshot {
+    // (undocumented)
+    readonly averageDurationMs: number;
+    // (undocumented)
+    readonly totalDurationMs: number;
+    // (undocumented)
+    readonly totalElements: number;
+    // (undocumented)
+    readonly updateCount: number;
+}
+
+// @public
+export function bindNavigationLifecycle(target: NavigationLifecycleTarget, options?: NavigationLifecycleOptions): () => void;
+
+// @public
+export interface BlockRenderContext {
+    readonly renderChildren: (children: readonly LexicalNode[]) => string;
+}
+
+// @public
+export type BlockRenderer = (fields: Record<string, unknown>, context: BlockRenderContext) => string;
+
+// @public
 export interface CachedElement {
     readonly altField?: string;
     readonly arraySeparator?: string;
@@ -28,16 +51,84 @@ export interface CachedElement {
 }
 
 // @public
+export const CAPABILITY_DECLARATIONS: {
+    readonly basic: {
+        readonly since: 1;
+    };
+    readonly 'schema-json': {
+        readonly since: 2;
+        readonly observed: "schema";
+    };
+    readonly locale: {
+        readonly since: 2;
+        readonly observed: "locale";
+    };
+    readonly 'preview-token': {
+        readonly since: 3;
+        readonly observed: "preview-token";
+    };
+    readonly 'nested-arrays': {
+        readonly since: 4;
+    };
+    readonly 'recursive-diffs': {
+        readonly since: 4;
+    };
+    readonly 'document-events': {
+        readonly since: 4;
+        readonly observed: "document-event";
+    };
+    readonly 'relationship-events': {
+        readonly since: 4;
+        readonly observed: "relationship-event";
+    };
+};
+
+// @public (undocumented)
+export const CAPABILITY_DOCUMENTATION: Readonly<Record<ProtocolCapability, CapabilityDocumentation>>;
+
+// @internal (undocumented)
+export interface CapabilityDeclaration {
+    readonly observed?: 'schema' | 'locale' | 'preview-token' | 'document-event' | 'relationship-event';
+    readonly since: number;
+}
+
+// @public
+export interface CapabilityDocumentation {
+    readonly fallback: string;
+    readonly gates: string;
+}
+
+// @internal
+export type CapabilitySource = 'version' | 'observed';
+
+// @public
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected';
+
+// @public (undocumented)
+export function createAnalyticsPlugin(): LivePreviewPlugin & {
+    readonly getStats: () => AnalyticsSnapshot;
+};
+
+// @beta
+export function createDocumentSession<T>(initialData: T, options: DocumentSessionOptions): DocumentSession<T>;
 
 // @public
 export function createPreviewFocusReporter(resolveTarget: () => FocusReportTarget | null | undefined, targetOrigin: string): (field: string) => void;
 
 // @public
+export function createUnboundFieldsOverlayPlugin(options?: UnboundFieldsOverlayOptions): LivePreviewPlugin;
+
+// @public
 export type CustomRendererKey = `${string}:${string}`;
 
 // @public
+export const debugPlugin: LivePreviewPlugin;
+
+// @public
 export type DefaultsProfile = 'v2';
+
+// @public
+export function detectProtocolProfile(observed: ReadonlySet<ProtocolCapability>): ProtocolProfile;
 
 // @public
 export const DIAGNOSTIC_CODES: Readonly<{
@@ -96,6 +187,65 @@ export const DIAGNOSTIC_CODES: Readonly<{
 
 // @public
 export type DiagnosticCode = (typeof DIAGNOSTIC_CODES)[keyof typeof DIAGNOSTIC_CODES];
+
+// @public
+export type DocumentSaveHandler = {
+    bivarianceHack(signal?: AbortSignal): void | Promise<void>;
+}['bivarianceHack'];
+
+// @public (undocumented)
+export function documentSavePlugin(options?: DocumentSavePluginOptions): LivePreviewPlugin;
+
+// @public (undocumented)
+export interface DocumentSavePluginOptions {
+    readonly handler?: DocumentSaveHandler;
+    readonly onRevalidateFailure?: 'silent' | 'reload';
+    readonly revalidateHeaders?: Readonly<Record<string, string>>;
+    readonly revalidateUrl?: string;
+    readonly strategy?: DocumentSaveStrategy;
+}
+
+// @public
+export type DocumentSaveStrategy = 'silent' | 'reload' | 'revalidate' | 'fetch';
+
+// @beta
+export interface DocumentSession<T> {
+    readonly getServerSnapshot: () => DocumentSnapshot<T>;
+    readonly getSnapshot: () => DocumentSnapshot<T>;
+    readonly subscribe: (listener: () => void) => () => void;
+}
+
+// @public (undocumented)
+export interface DocumentSessionOptions {
+    readonly allowedOrigins?: readonly string[];
+    readonly apiRoute?: string;
+    readonly depth?: number;
+    readonly document: PreviewDocument | 'any';
+    readonly enableLocalhostMatching?: boolean;
+    readonly enableReferrerDetection?: boolean;
+    readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
+    readonly fetchFn?: typeof fetch;
+    readonly requireLocale?: true;
+    readonly serverURL: string;
+    readonly target?: Window;
+    readonly timeoutMs?: number;
+}
+
+// @public (undocumented)
+export interface DocumentSnapshot<T> {
+    readonly data: T;
+    readonly error: Error | undefined;
+    readonly isLoading: boolean;
+    readonly revision: number;
+    // (undocumented)
+    readonly status: DocumentStatus;
+}
+
+// @public
+export type DocumentStatus = 'idle' | 'live' | 'unavailable';
+
+// @public
+export function escapeHtml(text: string): string;
 
 // @public
 export class EventEmitter<TMap extends object = LivePreviewEventMap> {
@@ -183,6 +333,9 @@ export interface FragmentStrategy {
     readonly plan: (root: ParentNode, changedFields: ReadonlySet<string>) => readonly Element[];
     readonly render: (context: FragmentContext, boundaries: readonly Element[]) => Promise<FragmentReport>;
 }
+
+// @public
+export const highlightPlugin: LivePreviewPlugin;
 
 // @public
 export function initLivePreview(config?: LivePreviewClientConfig): LivePreviewClient | null;
@@ -280,6 +433,80 @@ export interface InspectionScheduler {
     readonly visibilityGateActive: boolean;
     readonly visibilityGateThreshold: number;
 }
+
+// @public
+export function isExternalHttpUrl(url: string): boolean;
+
+// @public (undocumented)
+export interface IslandUpdateDetail {
+    readonly displayed: () => void;
+    // (undocumented)
+    readonly fields: Readonly<Record<string, unknown>>;
+    // (undocumented)
+    readonly locale: string | undefined;
+    // (undocumented)
+    readonly receivedAt: number;
+    // (undocumented)
+    readonly revision: number;
+}
+
+// @public
+export function isLexicalContent(value: unknown): value is LexicalRoot;
+
+// @beta
+export function isMorphBoundary(element: Element): boolean;
+
+// @public
+export function isSafeUrl(url: unknown): boolean;
+
+// @public (undocumented)
+export interface LexicalNode {
+    // (undocumented)
+    readonly [extra: string]: unknown;
+    // (undocumented)
+    readonly children?: readonly LexicalNode[];
+    // (undocumented)
+    readonly direction?: 'ltr' | 'rtl' | null;
+    // (undocumented)
+    readonly format?: number | string;
+    // (undocumented)
+    readonly indent?: number;
+    // (undocumented)
+    readonly text?: string;
+    // (undocumented)
+    readonly type: string;
+    // (undocumented)
+    readonly version?: number;
+}
+
+// @public
+export interface LexicalRenderOptions {
+    readonly document?: SanitizerDocument;
+    readonly internalLinkPattern?: string | undefined;
+    readonly locale?: string | undefined;
+    readonly onUnrenderedBlock?: (blockType: string, placeholderClass: string, fields: unknown) => void;
+    readonly requireDocument?: boolean;
+    readonly sanitize?: boolean;
+}
+
+// @public (undocumented)
+export interface LexicalRoot {
+    // (undocumented)
+    readonly root: {
+        readonly type?: string;
+        readonly children: readonly LexicalNode[];
+        readonly direction?: 'ltr' | 'rtl' | null;
+        readonly format?: number | string;
+        readonly indent?: number;
+        readonly [extra: string]: unknown;
+    };
+}
+
+// @public
+export function lexicalToHtml(content: LexicalRoot, options?: LexicalRenderOptions): string;
+
+// @public
+export function lexicalToPlainText(content: LexicalRoot): string;
 
 // @public
 export class LivePreviewClient {
@@ -449,6 +676,64 @@ export interface LivePreviewPlugin {
 }
 
 // @public
+export function markHydrated(): void;
+
+// @beta
+export function morphElement(live: Element, rendered: Element, options: MorphOptions): Element;
+
+// @beta (undocumented)
+export interface MorphOptions {
+    readonly boundary?: (element: Element) => boolean;
+    readonly keyAttributes: readonly string[];
+    readonly onDuplicateKey?: (parent: Element, key: string) => void;
+    readonly retainBoundary?: (live: Element, rendered: Element) => boolean;
+    readonly retainChildrenOf?: (live: Element, rendered: Element) => boolean;
+}
+
+// @public (undocumented)
+export interface NavigationLifecycleOptions {
+    readonly documentTarget?: EventTarget;
+    readonly softNavigationEvents?: readonly string[];
+    readonly windowTarget?: EventTarget;
+}
+
+// @public
+export interface NavigationLifecycleTarget {
+    refreshAfterNavigation?(): void;
+    refreshCache(): void;
+    // (undocumented)
+    resume(): boolean;
+    // (undocumented)
+    suspend(): boolean;
+}
+
+// @public
+export function negotiateProtocol(theirs: number | undefined, observed?: Iterable<ProtocolCapability>): ProtocolNegotiation;
+
+// @public
+export class OriginDetector {
+    constructor(options?: OriginDetectorOptions);
+    enumerate(): string[];
+    get isProductionUnconfigured(): boolean;
+    get isReferrerOnlyTrust(): boolean;
+    // (undocumented)
+    get lockedOrigin(): string | undefined;
+    lockOrigin(origin: string): boolean;
+    matches(origin: string): boolean;
+    get referrerWasAvailable(): boolean;
+    unlockOrigin(): string | undefined;
+}
+
+// @public
+export interface OriginDetectorOptions {
+    readonly additionalOrigins?: readonly string[];
+    readonly enableLocalhostMatching?: boolean;
+    readonly enableReferrerDetection?: boolean;
+    readonly forceDevMode?: boolean;
+    readonly referrer?: string;
+}
+
+// @public
 export interface PayloadDocumentEventDetail {
     // (undocumented)
     readonly [extra: string]: unknown;
@@ -475,6 +760,67 @@ export interface PayloadLivePreviewData {
     readonly globalSlug?: string;
     // (undocumented)
     readonly locale?: string;
+}
+
+// @public
+export interface PayloadLivePreviewMessage {
+    // (undocumented)
+    readonly collectionSlug?: string;
+    // (undocumented)
+    readonly data?: Record<string, unknown>;
+    readonly externallyUpdatedRelationship?: PayloadDocumentEventDetail | null;
+    // (undocumented)
+    readonly globalSlug?: string;
+    // (undocumented)
+    readonly locale?: string;
+    readonly previewToken?: string;
+    readonly protocolVersion?: number;
+    // (undocumented)
+    readonly ready?: boolean;
+    // (undocumented)
+    readonly type: 'payload-live-preview';
+}
+
+// @public
+export interface PayloadMedia {
+    // (undocumented)
+    readonly alt?: string;
+    // (undocumented)
+    readonly filename?: string;
+    // (undocumented)
+    readonly height?: number;
+    // (undocumented)
+    readonly id?: string | number;
+    // (undocumented)
+    readonly mimeType?: string;
+    // (undocumented)
+    readonly sizes?: Readonly<Record<string, {
+        readonly url?: string;
+        readonly width?: number;
+        readonly height?: number;
+    }>>;
+    // (undocumented)
+    readonly url?: string;
+    // (undocumented)
+    readonly width?: number;
+}
+
+// @internal
+export interface PayloadRelationship<TSlug extends string = string> {
+    // (undocumented)
+    readonly [extra: string]: unknown;
+    // (undocumented)
+    readonly id?: string | number;
+    // (undocumented)
+    readonly name?: string;
+    // (undocumented)
+    readonly relationTo?: TSlug;
+    // (undocumented)
+    readonly slug?: string;
+    // (undocumented)
+    readonly title?: string;
+    // (undocumented)
+    readonly url?: string;
 }
 
 // @public
@@ -532,6 +878,45 @@ export interface PluginInspection {
     readonly version: string | undefined;
 }
 
+// @public (undocumented)
+export class PluginManager {
+    constructor(options: PluginManagerOptions);
+    applyTransforms(fieldName: string, value: unknown, context: {
+        readonly element: Element;
+        readonly allFields: Record<string, unknown>;
+    }, isCurrent?: () => boolean): unknown;
+    destroyAll(): Promise<void>;
+    // (undocumented)
+    list(): readonly string[];
+    register(plugin: LivePreviewPlugin): Promise<void>;
+    // (undocumented)
+    get size(): number;
+    snapshot(): readonly PluginInspection[];
+    unregister(name: string): Promise<void>;
+}
+
+// @public
+export interface PluginManagerOptions {
+    // (undocumented)
+    readonly config: Readonly<Record<string, unknown>>;
+    // (undocumented)
+    readonly events: EventEmitter;
+    // (undocumented)
+    readonly log: (...args: unknown[]) => void;
+    readonly onTransformError?: (error: Error) => unknown;
+    readonly registerFieldRenderer: (renderer: FieldRenderer) => void;
+}
+
+// @public
+export type PreviewDocument = {
+    readonly collection: string;
+    readonly id: string | number;
+    readonly locale?: string;
+} | {
+    readonly global: string;
+    readonly locale?: string;
+};
+
 // @internal (undocumented)
 export interface PreviewFocusMessage {
     // (undocumented)
@@ -539,6 +924,33 @@ export interface PreviewFocusMessage {
     // (undocumented)
     readonly type: 'payload-live-preview-focus';
 }
+
+// @public (undocumented)
+export type ProtocolCapability = keyof typeof CAPABILITY_DECLARATIONS;
+
+// @public (undocumented)
+export interface ProtocolNegotiation {
+    readonly capabilities: ReadonlySet<ProtocolCapability>;
+    readonly negotiated: number;
+    readonly observed: ReadonlySet<ProtocolCapability>;
+    readonly ours: number;
+    readonly theirs: number | undefined;
+}
+
+// @public (undocumented)
+export interface ProtocolProfile {
+    readonly documentEvents: boolean;
+    readonly name: ProtocolProfileName;
+}
+
+// @public
+export type ProtocolProfileName = 'unknown' | 'payload-2' | 'payload-3';
+
+// @public
+export function registerBlockRenderer(blockType: string, renderer: BlockRenderer): void;
+
+// @public
+export function registerBuiltinRenderer(renderer: FieldRenderer): void;
 
 // @public
 export function registerRouteRefresh(refresh: RouteRefresh): () => void;
@@ -559,6 +971,9 @@ export type RendererKey = FieldType | CustomRendererKey;
 
 // @public
 export function reportPreviewFocus(target: FocusReportTarget, field: string, targetOrigin: string): void;
+
+// @beta
+export function retainIslandBoundary(live: Element, rendered: Element): boolean;
 
 // @public
 export interface RevisionDisplay {
@@ -634,7 +1049,36 @@ export interface RouteStrategy {
 }
 
 // @public
+export function sanitizeHtml(html: string, options?: SanitizeOptions): string;
+
+// @public (undocumented)
+export interface SanitizeOptions {
+    readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
+    readonly additionalAllowedTags?: readonly string[];
+    readonly allowedDataAttributes?: readonly string[];
+    readonly allowFormControls?: boolean;
+    readonly document?: SanitizerDocument;
+    readonly policy?: SanitizerPolicyMode;
+    readonly templateMode?: boolean;
+}
+
+// @public
+export interface SanitizerDocument {
+    // (undocumented)
+    createElement: (tagName: string) => {
+        innerHTML: string;
+        readonly content: ParentNode;
+    };
+}
+
+// @public
 export type SanitizerPolicyMode = 'compat' | 'strict';
+
+// @public
+export function setSanitizerPolicy(mode: SanitizerPolicyMode): void;
+
+// @public
+export function setTrustedTypesPolicy(policy: TrustedHtmlPolicyLike | null | undefined): void;
 
 // @public (undocumented)
 export interface StrategyHandlers {
@@ -644,11 +1088,27 @@ export interface StrategyHandlers {
     readonly route?: RouteStrategy;
 }
 
+// @public
+export interface TrustedHtmlPolicyLike {
+    // (undocumented)
+    createHTML(input: string): unknown;
+}
+
+// @public
+export interface UnboundFieldsOverlayOptions {
+    readonly onlyWithDebug?: boolean;
+    readonly position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+    readonly root?: Document | Element;
+}
+
 // @public (undocumented)
 export type Unsubscribe = () => void;
 
 // @public
 export type UpdateSource = 'patch' | 'fragment' | 'route';
+
+// @public
+export const VERSION: string;
 
 // (No @packageDocumentation comment for this package)
 

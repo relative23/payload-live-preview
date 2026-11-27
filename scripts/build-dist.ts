@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { minify } from 'terser';
 import { build } from 'tsup';
 import { BUILD_PROFILES } from '../tsup.config';
+import { BOUNDARY_DIRECTORY } from './chunk-boundaries';
 import { DIRECTIVE_ENTRIES } from './package-entries';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -20,38 +21,48 @@ const DIST = resolve(ROOT, 'dist');
 
 /**
  * Callable names that stay observable on the built artefacts (`fn.name`), the
- * contract `scripts/check-bundle-size.ts` asserts. Everything else is mangled.
+ * contract `scripts/check-bundle-size.ts` asserts: every function and class
+ * `payload-live-preview/client` exports, and the root's that were on the list
+ * before 3.0. Everything else is mangled.
  */
 const PUBLIC_FUNCTION_NAMES: readonly string[] = [
-  'EventEmitter',
-  'createDocumentSession',
-  'LivePreviewClient',
-  'OriginDetector',
-  'generateInlineScript',
   'bind',
   'bindByPath',
+  'bindNavigationLifecycle',
   'buildFrameAncestors',
-  'buildScriptSrcWithNonce',
+  'createAnalyticsPlugin',
+  'createDocumentSession',
   'createPreviewBindings',
+  'createPreviewFocusReporter',
+  'createUnboundFieldsOverlayPlugin',
   'detectProtocolProfile',
-  'isAuthorizedPreviewContext',
-  'isInsideIsland',
-  'detectInitialLocale',
+  'documentSavePlugin',
   'escapeHtml',
-  'escapeHtmlAttribute',
+  'EventEmitter',
   'generateCspNonce',
-  'hasCapability',
+  'generateInlineScript',
   'initLivePreview',
-  'isDevMode',
+  'isAuthorizedPreviewContext',
   'isExternalHttpUrl',
-  'isInIframe',
-  'isInPopup',
-  'isInPreviewContext',
+  'isLexicalContent',
+  'isMorphBoundary',
   'isSafeUrl',
+  'lexicalToHtml',
+  'lexicalToPlainText',
+  'LivePreviewClient',
+  'markHydrated',
+  'morphElement',
   'negotiateProtocol',
+  'OriginDetector',
+  'PluginManager',
+  'registerBlockRenderer',
+  'registerBuiltinRenderer',
   'registerRouteRefresh',
+  'reportPreviewFocus',
+  'retainIslandBoundary',
   'sanitizeHtml',
-  'setCspCrypto',
+  'setSanitizerPolicy',
+  'setTrustedTypesPolicy',
 ];
 const PUBLIC_FUNCTION_NAME_PATTERN = new RegExp(`^(?:${PUBLIC_FUNCTION_NAMES.join('|')})$`, 'u');
 
@@ -165,5 +176,7 @@ async function dropEmptyChunks(): Promise<void> {
   }
 }
 
+// The boundary entries drew their chunk boundaries; nothing imports their files.
+await rm(resolve(DIST, BOUNDARY_DIRECTORY), { recursive: true, force: true });
 await dropEmptyChunks();
 await compressDirectory(DIST);

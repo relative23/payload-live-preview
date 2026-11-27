@@ -10,12 +10,9 @@
 /** The entries a project imports, by the name of their file under `dist/`. */
 export const LIBRARY_ENTRIES = {
   index: 'src/index.ts',
-  core: 'src/core-entry.ts',
   client: 'src/client-entry.ts',
   server: 'src/server/index.ts',
   plugin: 'src/payload/plugin.ts',
-  plugins: 'src/plugins-entry.ts',
-  structural: 'src/structural-entry.ts',
   lexical: 'src/lexical-entry.ts',
   fragment: 'src/fragment/index.ts',
   codegen: 'src/codegen/index.ts',
