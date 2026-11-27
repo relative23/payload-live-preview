@@ -437,7 +437,7 @@ export interface WithLivePreviewOptions {
 
 // Warnings were encountered during analysis:
 //
-// dist/preview-request-DtROPiuW.d.ts:18:5 - (ae-forgotten-export) The symbol "PreviewAuthorizationOutcome" needs to be exported by the entry point index.d.ts
+// dist/preview-request-L6LgWp0A.d.ts:79:5 - (ae-forgotten-export) The symbol "PreviewAuthorizationOutcome" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

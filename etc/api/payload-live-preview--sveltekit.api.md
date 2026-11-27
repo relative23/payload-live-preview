@@ -411,7 +411,7 @@ interface VerifierStrategy {
 
 // Warnings were encountered during analysis:
 //
-// dist/adapters/sveltekit/index.d.ts:41:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
+// dist/adapters/sveltekit/index.d.ts:39:5 - (ae-forgotten-export) The symbol "SvelteKitResolve" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

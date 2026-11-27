@@ -39,6 +39,34 @@ export async function closureBytes(entry: string): Promise<Buffer> {
   return Buffer.concat(await Promise.all(files.map((file) => readFile(file))));
 }
 
+/** `export{a as b,c}from"./x.js"`, as the minifier writes it: the list and the specifier. */
+const NAMED_REEXPORT = /\bexport\s*\{([^}]*)\}\s*from\s*["'](\.{1,2}\/[^"']+)["']/gu;
+
+/**
+ * The file an entry takes one export from: the chunk its re-export names, or
+ * the entry itself where it defines the name. A bundler that takes a file
+ * whole once one export of it is used (webpack, Turbopack) ships that file
+ * and everything it imports, whatever else the entry exports.
+ */
+export async function exportSource(entry: string, name: string): Promise<string> {
+  const file = resolve(entry);
+  for (const [, list, specifier] of (await readFile(file, 'utf8')).matchAll(NAMED_REEXPORT)) {
+    const exported = (list ?? '').split(',').map((part) =>
+      part
+        .trim()
+        .split(/\s+as\s+/u)
+        .at(-1),
+    );
+    if (exported.includes(name)) return resolve(dirname(file), specifier!);
+  }
+  return file;
+}
+
+/** The bytes such a bundler takes for one export of an entry: the closure of the file it comes from. */
+export async function exportClosureBytes(entry: string, name: string): Promise<Buffer> {
+  return closureBytes(await exportSource(entry, name));
+}
+
 /**
  * Whether a built module is nothing but imports and re-exports of other
  * modules. Such an entry has no line of its own, so its source map lists no

@@ -171,3 +171,29 @@ committed any more.
 the installed package outside `node_modules`, because it takes a declaration
 chunk under `node_modules` for another package and then prints an entry's
 exports as names without their signatures.
+
+2026-11-27 (3.0, row 46): 20 API reports, and the chunks are drawn on purpose.
+esbuild puts a module into the chunk of the set of entries that reach it, so
+the entry table had also been the chunking. Rollup, Rolldown and esbuild drop
+what a project does not use inside a file; webpack and Turbopack take a file
+whole once one export of it is used. With the core, plugins and structural
+entries merged into `./client`, the client, the plugin manager and the
+built-in plugins had the same set and were one file of 123 596 bytes, and a
+Next.js 16 app paid for it: 6.8 kB gzip more for `initLivePreview` under
+Turbopack and under webpack, 17 kB for `PluginManager` where it had been 2.8.
+The entry a name was imported from made no difference to either bundler; the
+files did.
+
+So every module that defines a name the root exports is built as an entry of
+its own, 35 of them, read off the entries by `scripts/chunk-boundaries.ts`,
+and the file of such an entry is removed after the build: nothing imports it.
+The same app then ships what it shipped before the merge (47.5 kB for
+`initLivePreview`, 2.8 kB for `PluginManager`, 1.2 kB for `morphElement`,
+0.9 kB for one built-in plugin). The tree-shaking gate holds it with rows of
+their own, measured from `dist` without a bundler: the chunk an entry takes a
+name from and everything that chunk imports (`scripts/whole-file-budgets.ts`).
+The cost is at the other end. There are 58 chunks where there were 39, a
+boundary costs the import and export lists on both sides, and a page that
+loads `./client` without a bundler fetches 43 files with 203 745 bytes; Vite
+gives a project about half a percent more for the client and less for the
+plugin manager.

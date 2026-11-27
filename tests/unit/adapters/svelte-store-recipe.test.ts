@@ -10,7 +10,7 @@ import {
   createDocumentSession,
   type DocumentSession,
   type DocumentSessionOptions,
-} from '@/core-entry';
+} from '@/client-entry';
 
 function livePreviewDocument<T>(
   initialData: T,

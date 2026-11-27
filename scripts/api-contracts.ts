@@ -103,7 +103,11 @@ export interface ApiReportCheckOptions {
 // a `unique symbol` nothing exports, which a report prints and does not count.
 // 2026-11-27 (3.0, ADR 0007 row 15): -3, types that only signatures of the internal names reached,
 // which left the entries.
-export const FORGOTTEN_EXPORT_BASELINE = 175;
+// 2026-11-27 (3.0, ADR 0007 row 46): -12. The core entry's report listed 8 and is gone with the
+// entry. `/client` and the root name the option types of what they export (`SanitizeOptions`,
+// `LexicalRenderOptions`, `OriginDetectorOptions`, and on the root `PreviewSignal`), which the root's
+// report listed as 4 of its 5; `/client`'s lists none.
+export const FORGOTTEN_EXPORT_BASELINE = 163;
 
 /**
  * Require an explicit baseline review for both API-debt regressions and improvements.

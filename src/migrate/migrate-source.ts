@@ -29,6 +29,37 @@ export function importsThisPackage(source: string): boolean {
   return PACKAGE_REFERENCE.test(source);
 }
 
+/**
+ * What `payload-live-preview/core` exported and `payload-live-preview/client` does not: the
+ * binding helpers, the CSP header helpers and the authorization guard, with their types.
+ * `tests/unit/migrate/move-browser-entries.test.ts` holds the values against the two entries.
+ */
+const CORE_NAMES_ON_THE_ROOT: readonly string[] = [
+  'bind',
+  'bindByPath',
+  'buildFrameAncestors',
+  'createPreviewBindings',
+  'generateCspNonce',
+  'isAuthorizedPreviewContext',
+  'AuthorizedPreviewContext',
+  'AuthorizedPreviewDocument',
+  'AuthorizedPreviewPayloadScope',
+  'AuthorizedPreviewScope',
+  'BindOptions',
+  'FieldBindingAttributes',
+  'FieldName',
+  'FieldPath',
+  'FragmentBoundaryAttributes',
+  'FragmentBoundaryOptions',
+  'FrameAncestorsOptions',
+  'OwnerBindingAttributes',
+  'PreviewAuthorizationStrategyName',
+  'PreviewBindings',
+  'PreviewBindingsOptions',
+  'SuppressedBinding',
+  'ValueAt',
+];
+
 /** `payload-live-preview/payload` merged into `/plugin` in 3.0 (ADR 0007, row 41). */
 const movePayloadEntry = movedEntry({
   id: 'move-payload-entry',
@@ -39,11 +70,44 @@ const movePayloadEntry = movedEntry({
   to: 'plugin',
 });
 
+/**
+ * `payload-live-preview/client` is the one browser entry since 3.0 (ADR 0007, row 46). `/core`
+ * also exported what a server calls, and that is on the root alone.
+ */
+const moveCoreEntry = movedEntry({
+  id: 'move-core-entry',
+  summary:
+    '`payload-live-preview/core` → `payload-live-preview/client`, which exports its browser names; an import of only its binding, CSP and authorization names goes to the root',
+  ledgerEntry: 46,
+  from: 'core',
+  to: 'client',
+  elsewhere: { names: CORE_NAMES_ON_THE_ROOT, to: '' },
+});
+const movePluginsEntry = movedEntry({
+  id: 'move-plugins-entry',
+  summary:
+    '`payload-live-preview/plugins` → `payload-live-preview/client`, which exports the plugin manager, the plugin types and the built-in plugins under the same names',
+  ledgerEntry: 46,
+  from: 'plugins',
+  to: 'client',
+});
+const moveStructuralEntry = movedEntry({
+  id: 'move-structural-entry',
+  summary:
+    '`payload-live-preview/structural` → `payload-live-preview/client`, which exports `morphElement()` and the two boundary rules under the same names',
+  ledgerEntry: 46,
+  from: 'structural',
+  to: 'client',
+});
+
 // A moved entry comes first, so the codemods that read bindings see the specifier that stays.
 // The option rename follows the function rename so it sees the new binding, and the profile is
 // expanded last, so it finds a switch another codemod renamed under the name it writes.
 const IMPLEMENTATIONS: readonly CodemodImplementation[] = [
   movePayloadEntry,
+  moveCoreEntry,
+  movePluginsEntry,
+  moveStructuralEntry,
   renameIsPreviewRequest,
   renameAdminOriginsOption,
   renameBindingsAuthorizedOption,

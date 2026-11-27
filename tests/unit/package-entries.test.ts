@@ -62,14 +62,11 @@ describe('package entries', () => {
       '.',
       './client',
       './codegen',
-      './core',
       './fragment',
       './lexical',
       './nextjs',
       './plugin',
-      './plugins',
       './server',
-      './structural',
     ]);
     for (const [subpath, conditions] of scriptExports) {
       if (conditions.default === undefined) continue;

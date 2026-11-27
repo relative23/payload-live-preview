@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 532,
-    "suites": 1033,
-    "tests": 4660,
+    "files": 534,
+    "suites": 1038,
+    "tests": 4668,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 435,
-      "suites": 924,
-      "tests": 4253,
+      "files": 437,
+      "suites": 929,
+      "tests": 4261,
       "benchmarks": 0
     }
   },
@@ -1123,8 +1123,8 @@
     {
       "path": "tests/unit/bundle-shape.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 4,
+      "suites": 1,
+      "tests": 2,
       "benchmarks": 0
     },
     {
@@ -2363,7 +2363,7 @@
       "path": "tests/unit/entry-surfaces.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -2686,6 +2686,13 @@
       "group": "unit",
       "suites": 2,
       "tests": 8,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/migrate/move-browser-entries.test.ts",
+      "group": "unit",
+      "suites": 3,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -3116,6 +3123,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/chunk-boundaries.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 4,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/ci-install-fixture.test.ts",
       "group": "unit",
       "suites": 1,
@@ -3223,8 +3237,8 @@
     {
       "path": "tests/unit/quality/entry-closure.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 5,
+      "suites": 3,
+      "tests": 8,
       "benchmarks": 0
     },
     {

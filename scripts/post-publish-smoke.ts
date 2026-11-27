@@ -27,7 +27,6 @@ const manifest = require_(join(ROOT, 'package.json')) as {
  */
 export const ENTRY_REACHABILITY = {
   '.': 'import',
-  './core': 'import',
   './astro': 'import',
   './nextjs': 'import',
   './sveltekit': 'import',
@@ -36,9 +35,7 @@ export const ENTRY_REACHABILITY = {
   './plugin': 'import',
   './server': 'import',
   './client': 'import',
-  './structural': 'import',
   './lexical': 'import',
-  './plugins': 'import',
   './fragment': 'import',
   './codegen': 'needs-ts-morph',
   './codegen/astro': 'needs-ts-morph',

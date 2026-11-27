@@ -26,6 +26,17 @@
  * 372 577 to 370 808, and all of it from 540 911 to 537 218. The inline scripts are byte for
  * byte as before.
  *
+ * 2026-11-27 (3.0, one browser entry, ADR 0007 row 46): the rows of the core, plugins and
+ * structural entries leave with the entries. `client.js` takes their browser names and goes
+ * from 167 213 to 203 745 bytes raw (the core entry was 189 173), and the root, which exports
+ * `client.js` and the server's names, from 370 808 to 379 870. Part of that is the chunking:
+ * every module that defines a public name is a chunk of its own now
+ * (scripts/chunk-boundaries.ts), 58 chunks where there were 39, and a boundary costs the
+ * import and export lists on both sides and the short names the minifier could give across it.
+ * All of it goes from 537 218 to 544 555 bytes. Every function and class the browser entry
+ * exports keeps its name, and ten names kept for the internal exports that row 15 removed no
+ * longer are. Paired on Node 24.22.3 and npm 12.0.2 against the build of the commit before.
+ *
  * A row moves by its measured difference and keeps its reserve; Brotli moves with the commit
  * timestamp, so a row keeps about 120 bytes of it.
  */
@@ -33,36 +44,33 @@
 import type { BundleBudget } from './bundle-measure';
 
 export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
-  'adapters/astro/index.js': { raw: 219_025, gzip: 69_174, brotli: 58_772 },
-  'adapters/astro/middleware-entry.js': { raw: 192_378, gzip: 60_633, brotli: 51_202 },
-  'adapters/nextjs/client.js': { raw: 2_628, gzip: 1_166, brotli: 1_129 },
-  'adapters/nextjs/index.js': { raw: 210_881, gzip: 66_812, brotli: 56_437 },
-  'adapters/nuxt/client.js': { raw: 2_069, gzip: 943, brotli: 949 },
-  'adapters/nuxt/index.js': { raw: 215_068, gzip: 68_139, brotli: 57_453 },
+  'adapters/astro/index.js': { raw: 219_606, gzip: 69_423, brotli: 58_939 },
+  'adapters/astro/middleware-entry.js': { raw: 192_926, gzip: 60_855, brotli: 51_328 },
+  'adapters/nextjs/client.js': { raw: 2_645, gzip: 1_165, brotli: 1_132 },
+  'adapters/nextjs/index.js': { raw: 211_189, gzip: 67_004, brotli: 56_548 },
+  'adapters/nuxt/client.js': { raw: 2_086, gzip: 945, brotli: 951 },
+  'adapters/nuxt/index.js': { raw: 215_666, gzip: 68_413, brotli: 57_637 },
   'adapters/nuxt/module.js': { raw: 5_106, gzip: 2_083, brotli: 1_963 },
-  'adapters/react/index.js': { raw: 21_828, gzip: 7_393, brotli: 6_760 },
-  'adapters/sveltekit/client.js': { raw: 1_880, gzip: 895, brotli: 895 },
-  'adapters/sveltekit/index.js': { raw: 213_702, gzip: 67_642, brotli: 57_182 },
-  'adapters/vue/index.js': { raw: 20_170, gzip: 6_917, brotli: 6_295 },
+  'adapters/react/index.js': { raw: 22_197, gzip: 7_500, brotli: 6_829 },
+  'adapters/sveltekit/client.js': { raw: 1_897, gzip: 895, brotli: 899 },
+  'adapters/sveltekit/index.js': { raw: 214_300, gzip: 67_925, brotli: 57_323 },
+  'adapters/vue/index.js': { raw: 20_539, gzip: 7_038, brotli: 6_393 },
   'annotate.js': { raw: 6_739, gzip: 3_111, brotli: 2_771 },
-  'client.js': { raw: 167_372, gzip: 53_465, brotli: 45_944 },
+  'client.js': { raw: 203_904, gzip: 65_179, brotli: 55_536 },
   'codegen-astro.js': { raw: 13_902, gzip: 4_840, brotli: 4_443 },
-  'codegen-cli.js': { raw: 25_200, gzip: 8_830, brotli: 8_033 },
+  'codegen-cli.js': { raw: 25_200, gzip: 8_807, brotli: 8_006 },
   'codegen.js': { raw: 12_390, gzip: 4_204, brotli: 3_881 },
-  'core.js': { raw: 189_461, gzip: 60_923, brotli: 52_140 },
-  'doctor-cli.js': { raw: 71_160, gzip: 24_127, brotli: 21_398 },
-  'fragment.js': { raw: 36_852, gzip: 13_079, brotli: 11_723 },
-  'index.js': { raw: 371_238, gzip: 117_181, brotli: 77_720 },
-  'lexical.js': { raw: 19_852, gzip: 6_839, brotli: 6_250 },
+  'doctor-cli.js': { raw: 73_264, gzip: 24_744, brotli: 21_925 },
+  'fragment.js': { raw: 37_903, gzip: 13_324, brotli: 11_952 },
+  'index.js': { raw: 380_300, gzip: 119_553, brotli: 80_040 },
+  'lexical.js': { raw: 21_085, gzip: 7_226, brotli: 6_557 },
   'plugin.js': { raw: 2_330, gzip: 1_081, brotli: 972 },
-  'plugins.js': { raw: 38_338, gzip: 13_308, brotli: 11_857 },
-  'server.js': { raw: 19_387, gzip: 6_954, brotli: 6_336 },
-  'structural.js': { raw: 5_880, gzip: 2_297, brotli: 2_133 },
+  'server.js': { raw: 19_790, gzip: 7_095, brotli: 6_448 },
 };
 
 /** Every JavaScript file under `dist/` once, each measured by itself and the sizes added: what the archive carries. */
 export const ALL_JAVASCRIPT_BUDGET: BundleBudget = {
-  raw: 537_706,
-  gzip: 192_677,
-  brotli: 170_070,
+  raw: 545_043,
+  gzip: 197_998,
+  brotli: 174_538,
 };

@@ -27,8 +27,8 @@ const STABLE_EXPORT_NAMES: Readonly<Record<string, readonly string[]>> = {
   ],
 };
 
-/** Core is selectively name-minified, so every callable export is contractual. */
-const ALL_CALLABLE_EXPORT_NAMES = new Set(['core.js']);
+/** The browser entry is selectively name-minified, so every callable export is contractual. */
+const ALL_CALLABLE_EXPORT_NAMES = new Set(['client.js']);
 
 /** A module two entries share, as the build names it. No budget row names one: it is measured with each entry that loads it. */
 const CHUNK = /^chunk-[A-Z0-9]+\.js$/u;

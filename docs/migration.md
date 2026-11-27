@@ -30,6 +30,7 @@ table.
 | the Next.js, SvelteKit and Nuxt adapters hand the route to the router          | `routeStrategy: 'after-save'` with `LivePreviewNavigation` or `livePreviewNavigation()` in place is the nearest 2.x setting                                                       | after a save, a change no patch can show refreshes the route through the router refresh the page lent; a page that lent none is told once (LP0808). `routeStrategy: false` keeps none                                                                                      |
 | the entry of `buildLivePreviewUrl()` merged into `payload-live-preview/plugin` | `npx pll migrate ./src --write`                                                                                                                                                   | the codemod rewrites the import; `buildLivePreviewUrl()` and its types keep their names                                                                                                                                                                                    |
 | the doctor and migrate entries are no longer importable                        | run the binary: `pll doctor <url> --json`, `pll migrate <path>`                                                                                                                   | the checks and codemods stay in the `pll` binary; an import of either entry does not resolve                                                                                                                                                                               |
+| the core, plugins and structural entries merged into `/client`                 | `npx pll migrate ./src --write`; split an import the codemod reports                                                                                                              | `/client` has every name that runs in a browser, the root those and the server's; an import mixing both kinds from the core entry is reported                                                                                                                              |
 | the package is ESM-only, one module graph                                      | nothing: `import` and `require()` of an entry keep working on Node 24                                                                                                             | a file under `dist/` is not an entry; import by the entry's name. A page that loads an entry without a bundler serves it with the chunks it imports: the `dist/` folder, not one copied file                                                                               |
 | an authorized context is the object the package made                           | pass the context itself, never a copy                                                                                                                                             | `AUTHORIZED_PREVIEW_BRAND_KEY` is gone; a frozen copy and a hand-built object are refused                                                                                                                                                                                  |
 | Node 24 or newer                                                               | run the build and the server on Node 24                                                                                                                                           | Node 20 reached end of life on 2026-04-30 and Node 22 follows on 2027-04-30; 2.x runs on Node 20 to 26                                                                                                                                                                     |
@@ -186,7 +187,7 @@ Anything it cannot rewrite safely — an object shorthand, a re-export, a call
 whose options are not a literal — is listed as `file:line` and left as it
 stands. The codemods work one by one. `rename-admin-origins-option`,
 `rename-bindings-authorized-option`, `rename-on-unbound-change`,
-`rename-disable-switches` and `expand-defaults-v1` take each spot on its own, so a spot they list does not
+`rename-disable-switches`, `expand-defaults-v1` and the four that move an entry take each spot on its own, so a spot they list does not
 stop them from rewriting the rest of the file. `rename-is-preview-request` and
 `move-fetch-preview-helpers` make none of their edits in a script that holds a
 spot they cannot rewrite: finish that spot by hand and run them again.
@@ -199,7 +200,14 @@ in their script blocks only; a conflict in one block does not hold back
 another. The codemods are `rename-is-preview-request`,
 `rename-admin-origins-option`, `rename-bindings-authorized-option`,
 `move-fetch-preview-helpers`, `rename-on-unbound-change`,
-`rename-disable-switches` and `expand-defaults-v1`.
+`rename-disable-switches` and `expand-defaults-v1`, and for the entries that
+merged in 3.0 `move-payload-entry`, `move-core-entry`, `move-plugins-entry` and
+`move-structural-entry`. The last three send an import to
+`payload-live-preview/client`. The core entry also exported `bind()`,
+`bindByPath()`, `createPreviewBindings()`, `buildFrameAncestors()`,
+`generateCspNonce()` and `isAuthorizedPreviewContext()` with their types, which
+a browser entry does not carry: an import of only those goes to the root, and
+one that mixes them with browser names is listed for you to split.
 
 `pll doctor --v2` reads the served inline configuration and reports each
 runtime row still at its `'v1'` value as `LP0709`. A script names the defaults

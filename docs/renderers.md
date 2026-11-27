@@ -448,7 +448,7 @@ knowing what is left. `inspect().bindings.orphanFields` answers it in the
 console; this answers it in the preview, next to the markup you are editing:
 
 ```ts
-import { createUnboundFieldsOverlayPlugin } from 'payload-live-preview/plugins';
+import { createUnboundFieldsOverlayPlugin } from 'payload-live-preview/client';
 
 void client.use(createUnboundFieldsOverlayPlugin());
 ```

@@ -169,17 +169,34 @@ size.
 | Consumer imports                                                 | gzip ceiling |
 | ---------------------------------------------------------------- | ------------ |
 | `escapeHtml` from `payload-live-preview`                         | 223 B        |
-| `lexicalToHtml` from `payload-live-preview`                      | 5,937 B      |
-| `initLivePreview` from `payload-live-preview`                    | 53,004 B     |
+| `lexicalToHtml` from `payload-live-preview`                      | 6,002 B      |
+| `initLivePreview` from `payload-live-preview`                    | 53,303 B     |
 | `generateInlineScript` from `payload-live-preview`               | 53,588 B     |
-| `initLivePreview` from `payload-live-preview/core`               | 53,014 B     |
-| `lexicalToHtml` from `payload-live-preview/lexical`              | 5,932 B      |
-| `morphElement` from `payload-live-preview/structural`            | 1,516 B      |
-| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 59,272 B     |
-| `useLivePreviewDocument` from `payload-live-preview/react`       | 6,367 B      |
-| `useLivePreviewDocument` from `payload-live-preview/vue`         | 6,256 B      |
-| `PluginManager` from `payload-live-preview/plugins`              | 3,333 B      |
+| `initLivePreview` from `payload-live-preview/client`             | 53,304 B     |
+| `lexicalToHtml` from `payload-live-preview/lexical`              | 5,997 B      |
+| `morphElement` from `payload-live-preview/client`                | 1,527 B      |
+| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 59,270 B     |
+| `useLivePreviewDocument` from `payload-live-preview/react`       | 6,383 B      |
+| `useLivePreviewDocument` from `payload-live-preview/vue`         | 6,270 B      |
+| `PluginManager` from `payload-live-preview/client`               | 3,299 B      |
 | `livePreview` from `payload-live-preview/plugin`                 | 1,196 B      |
+
+Vite drops what a project does not use inside a file. webpack and Turbopack
+take a file whole once one export of it is used, so for them the same gate
+reads a second set of rows off `dist`, without a bundler: the chunk an entry
+takes a name from and everything that chunk imports, in raw bytes
+(`WHOLE_FILE_ROWS` in `scripts/whole-file-budgets.ts`). The build draws a
+chunk boundary around every module that defines a public name
+(`scripts/chunk-boundaries.ts`), and these rows are what holds it.
+
+| A project takes from `payload-live-preview/client` | raw ceiling |
+| -------------------------------------------------- | ----------- |
+| `escapeHtml`                                       | 576 B       |
+| `highlightPlugin`                                  | 2,310 B     |
+| `PluginManager`                                    | 10,240 B    |
+| `morphElement`                                     | 5,900 B     |
+| `createDocumentSession`                            | 19,700 B    |
+| `initLivePreview`                                  | 168,400 B   |
 
 Before this gate existed, every row was 64 KB gzip: the root barrel
 did not tree-shake at all. Three causes, all fixed in the same change:

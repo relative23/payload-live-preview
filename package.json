@@ -19,16 +19,6 @@
         "default": "./dist/index.js"
       }
     },
-    "./core": {
-      "import": {
-        "types": "./dist/core.d.ts",
-        "default": "./dist/core.js"
-      },
-      "default": {
-        "types": "./dist/core.d.ts",
-        "default": "./dist/core.js"
-      }
-    },
     "./astro": {
       "import": {
         "types": "./dist/adapters/astro/index.d.ts",
@@ -145,16 +135,6 @@
         "default": "./dist/client.js"
       }
     },
-    "./structural": {
-      "import": {
-        "types": "./dist/structural.d.ts",
-        "default": "./dist/structural.js"
-      },
-      "default": {
-        "types": "./dist/structural.d.ts",
-        "default": "./dist/structural.js"
-      }
-    },
     "./lexical": {
       "import": {
         "types": "./dist/lexical.d.ts",
@@ -163,16 +143,6 @@
       "default": {
         "types": "./dist/lexical.d.ts",
         "default": "./dist/lexical.js"
-      }
-    },
-    "./plugins": {
-      "import": {
-        "types": "./dist/plugins.d.ts",
-        "default": "./dist/plugins.js"
-      },
-      "default": {
-        "types": "./dist/plugins.d.ts",
-        "default": "./dist/plugins.js"
       }
     },
     "./fragment": {

@@ -268,11 +268,11 @@ the abuse model: [hybrid.md](hybrid.md).
 
 ## A client-rendered component
 
-The runtime patches what SvelteKit rendered on the server. A component that renders from a document itself, the way React's `useLivePreviewDocument()` does, can use `createDocumentSession()` from `payload-live-preview/core`, which needs no framework. The session's `subscribe` and `getSnapshot` fit a Svelte store:
+The runtime patches what SvelteKit rendered on the server. A component that renders from a document itself, the way React's `useLivePreviewDocument()` does, can use `createDocumentSession()` from `payload-live-preview/client`, which needs no framework. The session's `subscribe` and `getSnapshot` fit a Svelte store:
 
 ```ts
 import { readable } from 'svelte/store';
-import { createDocumentSession, type DocumentSessionOptions } from 'payload-live-preview/core';
+import { createDocumentSession, type DocumentSessionOptions } from 'payload-live-preview/client';
 
 export function livePreviewDocument<T>(initialData: T, options: DocumentSessionOptions) {
   const session = createDocumentSession(initialData, options);

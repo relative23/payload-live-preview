@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   closureBytes,
   entryClosure,
+  exportClosureBytes,
+  exportSource,
   reexportsOnly,
   staticImports,
 } from '../../../scripts/entry-closure';
@@ -97,5 +99,44 @@ describe('a built file that only re-exports', () => {
     ['an import that is used', 'import{a}from"./chunk-A.js";console.log(a);'],
   ])('is not %s', (_label, code) => {
     expect(reexportsOnly(code)).toBe(false);
+  });
+});
+
+describe('what a bundler that takes files whole ships for one export', () => {
+  const FILES = {
+    'entry.js':
+      'export{a as client,b}from"./chunk-BIG.js";export{c as morph}from"./chunk-SMALL.js";import"./chunk-SIDE.js";export{d};const d=4;',
+    'chunk-BIG.js': 'import{x}from"./chunk-DEEP.js";const a=1,b=2;export{a,b};',
+    'chunk-SMALL.js': 'const c=3;export{c};',
+    'chunk-DEEP.js': 'const x=0;export{x};',
+    'chunk-SIDE.js': 'const y=9;',
+  };
+
+  it('finds the chunk a re-export names, by the name the entry exports', async () => {
+    const dist = await build(FILES);
+
+    expect(await exportSource(join(dist, 'entry.js'), 'client')).toBe(join(dist, 'chunk-BIG.js'));
+    expect(await exportSource(join(dist, 'entry.js'), 'morph')).toBe(join(dist, 'chunk-SMALL.js'));
+    // `a` is the chunk's own name for it, not one the entry exports.
+    expect(await exportSource(join(dist, 'entry.js'), 'a')).toBe(join(dist, 'entry.js'));
+  });
+
+  it("counts that chunk and what it imports, and none of the entry's other chunks", async () => {
+    const dist = await build(FILES);
+
+    expect((await exportClosureBytes(join(dist, 'entry.js'), 'client')).toString()).toBe(
+      FILES['chunk-BIG.js'] + FILES['chunk-DEEP.js'],
+    );
+    expect((await exportClosureBytes(join(dist, 'entry.js'), 'morph')).toString()).toBe(
+      FILES['chunk-SMALL.js'],
+    );
+  });
+
+  it('counts the whole entry for a name the entry defines itself', async () => {
+    const dist = await build(FILES);
+
+    expect((await exportClosureBytes(join(dist, 'entry.js'), 'd')).length).toBe(
+      Object.values(FILES).join('').length,
+    );
   });
 });

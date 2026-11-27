@@ -35,7 +35,7 @@ explicit collection/global arguments when present and otherwise reading
 Payload 2's `documentInfo`.
 
 The entry is stable. It is configuration code, separate from the runtime
-plugins in `payload-live-preview/plugins` and from the framework adapters whose
+plugins a page registers in the browser and from the framework adapters whose
 own setup function is also named `livePreview`.
 
 ### 2. Root configuration is the single owner

@@ -183,11 +183,17 @@ export function createAnalyticsPlugin(): LivePreviewPlugin & {
     readonly getStats: () => AnalyticsSnapshot;
 };
 
+// @beta
+export function createDocumentSession<T>(initialData: T, options: DocumentSessionOptions): DocumentSession<T>;
+
 // @public
 export function createPreviewBindings(options: PreviewBindingsOptions): PreviewBindings;
 
 // @public
 export function createPreviewFocusReporter(resolveTarget: () => FocusReportTarget | null | undefined, targetOrigin: string): (field: string) => void;
+
+// @public
+export function createUnboundFieldsOverlayPlugin(options?: UnboundFieldsOverlayOptions): LivePreviewPlugin;
 
 // @public
 export interface CspDirectiveMerge {
@@ -286,6 +292,42 @@ export interface DocumentSavePluginOptions {
 
 // @public
 export type DocumentSaveStrategy = 'silent' | 'reload' | 'revalidate' | 'fetch';
+
+// @beta
+export interface DocumentSession<T> {
+    readonly getServerSnapshot: () => DocumentSnapshot<T>;
+    readonly getSnapshot: () => DocumentSnapshot<T>;
+    readonly subscribe: (listener: () => void) => () => void;
+}
+
+// @public (undocumented)
+export interface DocumentSessionOptions {
+    readonly allowedOrigins?: readonly string[];
+    readonly apiRoute?: string;
+    readonly depth?: number;
+    readonly document: PreviewDocument | 'any';
+    readonly enableLocalhostMatching?: boolean;
+    readonly enableReferrerDetection?: boolean;
+    readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
+    readonly fetchFn?: typeof fetch;
+    readonly requireLocale?: true;
+    readonly serverURL: string;
+    readonly target?: Window;
+    readonly timeoutMs?: number;
+}
+
+// @public (undocumented)
+export interface DocumentSnapshot<T> {
+    readonly data: T;
+    readonly error: Error | undefined;
+    readonly isLoading: boolean;
+    readonly revision: number;
+    // (undocumented)
+    readonly status: DocumentStatus;
+}
+
+// @public
+export type DocumentStatus = 'idle' | 'live' | 'unavailable';
 
 // @public
 export function escapeHtml(text: string): string;
@@ -619,6 +661,9 @@ export interface IslandUpdateDetail {
 // @public
 export function isLexicalContent(value: unknown): value is LexicalRoot;
 
+// @beta
+export function isMorphBoundary(element: Element): boolean;
+
 // @public
 export function isSafeUrl(url: unknown): boolean;
 
@@ -656,7 +701,7 @@ export interface LexicalNode {
 }
 
 // @public
-interface LexicalRenderOptions {
+export interface LexicalRenderOptions {
     readonly document?: SanitizerDocument;
     readonly internalLinkPattern?: string | undefined;
     readonly locale?: string | undefined;
@@ -678,8 +723,6 @@ export interface LexicalRoot {
     };
 }
 
-// Warning: (ae-forgotten-export) The symbol "LexicalRenderOptions" needs to be exported by the entry point index.d.ts
-//
 // @public
 export function lexicalToHtml(content: LexicalRoot, options?: LexicalRenderOptions): string;
 
@@ -859,6 +902,18 @@ export function markHydrated(): void;
 // @public
 export function mergeCspHeader(existing: string, additions: Readonly<Record<string, string | CspDirectiveMerge>>): string;
 
+// @beta
+export function morphElement(live: Element, rendered: Element, options: MorphOptions): Element;
+
+// @beta (undocumented)
+export interface MorphOptions {
+    readonly boundary?: (element: Element) => boolean;
+    readonly keyAttributes: readonly string[];
+    readonly onDuplicateKey?: (parent: Element, key: string) => void;
+    readonly retainBoundary?: (live: Element, rendered: Element) => boolean;
+    readonly retainChildrenOf?: (live: Element, rendered: Element) => boolean;
+}
+
 // @public (undocumented)
 export interface NavigationLifecycleOptions {
     readonly documentTarget?: EventTarget;
@@ -881,7 +936,6 @@ export function negotiateProtocol(theirs: number | undefined, observed?: Iterabl
 
 // @public
 export class OriginDetector {
-    // Warning: (ae-forgotten-export) The symbol "OriginDetectorOptions" needs to be exported by the entry point index.d.ts
     constructor(options?: OriginDetectorOptions);
     enumerate(): string[];
     get isProductionUnconfigured(): boolean;
@@ -895,7 +949,7 @@ export class OriginDetector {
 }
 
 // @public
-interface OriginDetectorOptions {
+export interface OriginDetectorOptions {
     readonly additionalOrigins?: readonly string[];
     readonly enableLocalhostMatching?: boolean;
     readonly enableReferrerDetection?: boolean;
@@ -1070,6 +1124,35 @@ export interface PluginInspection {
 }
 
 // @public (undocumented)
+export class PluginManager {
+    constructor(options: PluginManagerOptions);
+    applyTransforms(fieldName: string, value: unknown, context: {
+        readonly element: Element;
+        readonly allFields: Record<string, unknown>;
+    }, isCurrent?: () => boolean): unknown;
+    destroyAll(): Promise<void>;
+    // (undocumented)
+    list(): readonly string[];
+    register(plugin: LivePreviewPlugin): Promise<void>;
+    // (undocumented)
+    get size(): number;
+    snapshot(): readonly PluginInspection[];
+    unregister(name: string): Promise<void>;
+}
+
+// @public
+export interface PluginManagerOptions {
+    // (undocumented)
+    readonly config: Readonly<Record<string, unknown>>;
+    // (undocumented)
+    readonly events: EventEmitter;
+    // (undocumented)
+    readonly log: (...args: unknown[]) => void;
+    readonly onTransformError?: (error: Error) => unknown;
+    readonly registerFieldRenderer: (renderer: FieldRenderer) => void;
+}
+
+// @public (undocumented)
 type Prev<N extends 0 | 1 | 2 | 3> = N extends 3 ? 2 : N extends 2 ? 1 : N extends 1 ? 0 : 0;
 
 // @public
@@ -1126,6 +1209,16 @@ export interface PreviewBindingsOptions {
     readonly owner?: string;
 }
 
+// @public
+export type PreviewDocument = {
+    readonly collection: string;
+    readonly id: string | number;
+    readonly locale?: string;
+} | {
+    readonly global: string;
+    readonly locale?: string;
+};
+
 // @internal (undocumented)
 export interface PreviewFocusMessage {
     // (undocumented)
@@ -1148,12 +1241,11 @@ export interface PreviewRequestLike {
 export interface PreviewRequestOptions {
     readonly allowedOrigins?: readonly string[];
     readonly queryParams?: readonly string[];
-    // Warning: (ae-forgotten-export) The symbol "PreviewSignal" needs to be exported by the entry point index.d.ts
     readonly signals?: readonly PreviewSignal[];
 }
 
 // @public
-type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
+export type PreviewSignal = 'query' | 'fetch-dest' | 'referer';
 
 // @public
 export interface PreviewTokenClaims {
@@ -1241,6 +1333,9 @@ export type RendererKey = FieldType | CustomRendererKey;
 // @public
 export function reportPreviewFocus(target: FocusReportTarget, field: string, targetOrigin: string): void;
 
+// @beta
+export function retainIslandBoundary(live: Element, rendered: Element): boolean;
+
 // @public
 export interface RevisionDisplay {
     readonly awaitingIslands: number;
@@ -1314,13 +1409,11 @@ export interface RouteStrategy {
     readonly refresh: (context: RouteContext) => Promise<RouteOutcome>;
 }
 
-// Warning: (ae-forgotten-export) The symbol "SanitizeOptions" needs to be exported by the entry point index.d.ts
-//
 // @public
 export function sanitizeHtml(html: string, options?: SanitizeOptions): string;
 
 // @public (undocumented)
-interface SanitizeOptions {
+export interface SanitizeOptions {
     readonly additionalAllowedAttributes?: Readonly<Record<string, readonly string[]>>;
     readonly additionalAllowedTags?: readonly string[];
     readonly allowedDataAttributes?: readonly string[];
@@ -1395,6 +1488,13 @@ export type SuppressedBinding = Readonly<Record<string, never>>;
 export interface TrustedHtmlPolicyLike {
     // (undocumented)
     createHTML(input: string): unknown;
+}
+
+// @public
+export interface UnboundFieldsOverlayOptions {
+    readonly onlyWithDebug?: boolean;
+    readonly position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+    readonly root?: Document | Element;
 }
 
 // @public (undocumented)

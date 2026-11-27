@@ -2,8 +2,7 @@
 // /client entry and starts it itself — the LivePreviewClient class, not the
 // baked inline script. Every JS-framework SPA (Remix, Solid, Vue, Svelte,
 // Qwik) reduces to exactly this call, so proving it here proves them all.
-import { initLivePreview } from 'payload-live-preview/client';
-import { createUnboundFieldsOverlayPlugin } from 'payload-live-preview/plugins';
+import { createUnboundFieldsOverlayPlugin, initLivePreview } from 'payload-live-preview/client';
 
 // initLivePreview returns the client when the page is a preview context, else
 // null. Exposed for the E2E; a real app just keeps the handle (or ignores it).

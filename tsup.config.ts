@@ -1,11 +1,24 @@
 import { defineConfig, type Options } from 'tsup';
 
+import { chunkBoundaries } from './scripts/chunk-boundaries';
 import { CLI_ENTRIES, DIRECTIVE_ENTRIES, LIBRARY_ENTRIES } from './scripts/package-entries';
 
 export { CLI_ENTRIES, DIRECTIVE_ENTRIES, LIBRARY_ENTRIES };
 
+/** What a project imports or runs: the entries that get a file and declarations. */
+const ENTRIES = {
+  ...LIBRARY_ENTRIES,
+  ...CLI_ENTRIES,
+  // Their directive is not a build option: esbuild drops both a source
+  // directive and a banner, so `scripts/build-dist.ts` writes it back.
+  ...Object.fromEntries(
+    Object.entries(DIRECTIVE_ENTRIES).map(([name, entry]) => [name, entry.source]),
+  ),
+};
+
 const SHARED_OPTIONS = {
-  dts: true,
+  // The boundary entries below have no file in the package, so no declarations either.
+  dts: { entry: ENTRIES },
   // One graph: a module two entries share is emitted once, as a chunk both import.
   splitting: true,
   sourcemap: true,
@@ -58,15 +71,9 @@ export const BUILD_PROFILES: Options[] = [
   {
     ...SHARED_OPTIONS,
     name: 'package',
-    entry: {
-      ...LIBRARY_ENTRIES,
-      ...CLI_ENTRIES,
-      // Their directive is not a build option: esbuild drops both a source
-      // directive and a banner, so `scripts/build-dist.ts` writes it back.
-      ...Object.fromEntries(
-        Object.entries(DIRECTIVE_ENTRIES).map(([name, entry]) => [name, entry.source]),
-      ),
-    },
+    // A module that defines a public name is an entry too, for the chunk boundary alone
+    // (scripts/chunk-boundaries.ts); `scripts/build-dist.ts` removes its file.
+    entry: { ...ENTRIES, ...chunkBoundaries() },
     format: ['esm'],
   },
 ];
