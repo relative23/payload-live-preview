@@ -10,9 +10,7 @@ const isCI = process.env['CI'] === 'true';
  * the editor's real session, the plain HTML example (`html`), the Next.js example
  * framed from an admin that keeps its autoLogin (`nextjs-autologin`), or the SvelteKit
  * example's collection pages framed from an admin with three more collections (`create`).
- * `nuxt4` and `nuxt4-composable` are the two Nuxt targets on the Nuxt 4 fixture.
- * `nextjs-production`, `sveltekit-production`, `nuxt-production` and
- * `nuxt4-production` are the session targets
+ * `nextjs-production`, `sveltekit-production` and `nuxt-production` are the session targets
  * built for production and served behind TLS, with the admin behind an HTTPS front too.
  */
 const requested = process.env['PLP_REAL_PAYLOAD_TARGET'] ?? 'astro';
@@ -43,15 +41,13 @@ interface Surface {
   /**
    * Built for production by `command` (a `scripts/*-production-fixture.mjs` launcher) and served
    * behind TLS on `port`; `prefix` names the launcher's variables (`<prefix>_ORIGIN`, …).
-   * `twin` builds `directory` with the launcher of the older major's example.
    */
-  readonly production?: { readonly prefix: string; readonly twin?: boolean };
+  readonly production?: { readonly prefix: string };
 }
 const SESSION_SURFACES: Record<string, Surface> = {
   nextjs: { port: '4474', directory: 'nextjs-payload', command: 'npx next dev --port 4474' },
   sveltekit: { port: '4475', directory: 'sveltekit-payload', command: 'npx vite dev --port 4475' },
   nuxt: { port: '4476', directory: 'nuxt-payload', command: 'npx nuxt dev --port 4476' },
-  nuxt4: { port: '4476', directory: 'nuxt4-payload', command: 'npx nuxt dev --port 4476' },
   // The Astro integration's middleware delivery under the strict default: the hook is
   // `payload-session`, in the module PLP_PAYLOAD_SERVER_URL makes astro.config.mjs name.
   'astro-session': {
@@ -71,13 +67,6 @@ const SESSION_SURFACES: Record<string, Surface> = {
   'nuxt-composable': {
     port: '4476',
     directory: 'nuxt-payload',
-    command: 'npx nuxt dev --port 4476',
-    path: '/composable',
-    spec: 'hook',
-  },
-  'nuxt4-composable': {
-    port: '4476',
-    directory: 'nuxt4-payload',
     command: 'npx nuxt dev --port 4476',
     path: '/composable',
     spec: 'hook',
@@ -117,12 +106,6 @@ const SESSION_SURFACES: Record<string, Surface> = {
     directory: 'nuxt-payload',
     command: 'node ../../scripts/nuxt-production-fixture.mjs',
     production: { prefix: 'PLP_NUXT' },
-  },
-  'nuxt4-production': {
-    port: '4476',
-    directory: 'nuxt4-payload',
-    command: 'node ../../scripts/nuxt-production-fixture.mjs',
-    production: { prefix: 'PLP_NUXT', twin: true },
   },
 };
 /** A plain HTML page has no request time: the runtime is baked in and the origin rule is its gate. */
@@ -200,13 +183,6 @@ const previewServer: WebServer =
             [`${production.prefix}_ORIGIN`]: previewURL,
             // Below the ephemeral range (32768-60999), like the launchers' own defaults.
             [`${production.prefix}_INTERNAL_PORT`]: String(Number(previewPort) + 10_000),
-            ...(production.twin === true
-              ? {
-                  [`${production.prefix}_FIXTURE_DIRECTORY`]: resolve(
-                    `examples/${surface.directory}`,
-                  ),
-                }
-              : {}),
           },
           url: `${previewURL}${surface.path ?? '/'}`,
           ignoreHTTPSErrors: true,

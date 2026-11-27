@@ -211,7 +211,6 @@ jobs:
       - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/vanilla-client
       - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-inline
       - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/astro-middleware
-      - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/nuxt4-payload
       - run: node scripts/audit-gate.ts --package-lock-only --prefix examples/payload-backend
 
   # A job that calls a reusable workflow reports its check as
@@ -270,63 +269,6 @@ jobs:
         if: failure()
         with:
           name: playwright-report-${{ matrix.browser }}
-          path: playwright-report/
-          retention-days: 7
-
-  # The Nuxt example's Nuxt 4 twin (examples/nuxt4-payload, the `app/` layout), beside the Nuxt 3
-  # fixture the E2E job serves. The files that test only Nuxt run whole; the shared ones run their
-  # Nuxt cases. The Nuxt public-response row weighs the page against the runtime the Astro fixture
-  # serves, which this job does not start.
-  nuxt4:
-    name: Nuxt 4 E2E (${{ matrix.browser }})
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        browser: [chromium, firefox, webkit]
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: 24.22.3
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            examples/*/package-lock.json
-      - name: Use repository npm version
-        run: npm install --global "$(node -p "require('./package.json').packageManager")"
-      - run: npm ci
-      - run: bash scripts/ci-install-browser.sh ${{ matrix.browser }}
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: dist-${{ github.sha }}
-          path: dist
-      - run: bash scripts/ci-install-fixture.sh examples/nuxt4-payload
-      - env:
-          PLP_E2E_SERVERS: nuxt
-          PLP_NUXT_FIXTURE: nuxt4-payload
-        run: >-
-          npx playwright test --project=${{ matrix.browser }}
-          tests/e2e/specs/nuxt-asset-delivery.spec.ts
-          tests/e2e/specs/nuxt-fragment.spec.ts
-          tests/e2e/specs/nuxt-live-preview.spec.ts
-      - env:
-          PLP_E2E_SERVERS: nuxt
-          PLP_NUXT_FIXTURE: nuxt4-payload
-        run: >-
-          npx playwright test --project=${{ matrix.browser }} -g "[Nn]uxt"
-          tests/e2e/specs/auto-bind-hit-rate.spec.ts
-          tests/e2e/specs/fragment-request-bounds.spec.ts
-          tests/e2e/specs/navigation-lifecycle-per-framework.spec.ts
-          tests/e2e/specs/reveal.spec.ts
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: failure()
-        with:
-          name: playwright-report-nuxt4-${{ matrix.browser }}
           path: playwright-report/
           retention-days: 7
 
@@ -560,7 +502,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [next, sveltekit, nuxt, nuxt4, html, vue, react]
+        framework: [next, sveltekit, nuxt, html, vue, react]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -683,7 +625,7 @@ jobs:
   # rule) against the real Payload admin; nextjs-autologin frames the Next.js example from an
   # admin that keeps its autoLogin, which issues no cookie; create frames the SvelteKit
   # example's collection pages from an admin that has two collections for the create screen;
-  # nuxt4 and nuxt4-composable are the two Nuxt targets on the Nuxt 4 fixture. The -production targets
+  # The -production targets
   # build the Next.js, SvelteKit and Nuxt examples for production behind TLS, with the admin behind
   # an HTTPS front, since strict mode accepts only https admin origins there.
   # The fixture each target frames is looked up by name.
@@ -706,12 +648,9 @@ jobs:
             astro-session,
             nextjs-autologin,
             create,
-            nuxt4,
-            nuxt4-composable,
             nextjs-production,
             sveltekit-production,
             nuxt-production,
-            nuxt4-production,
             findings,
           ]
         browser: [chromium, firefox, webkit]
@@ -735,7 +674,7 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist
       - env:
-          EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","nuxt4":"nuxt4-payload","nuxt4-composable":"nuxt4-payload","nextjs-production":"nextjs-payload","sveltekit-production":"sveltekit-payload","nuxt-production":"nuxt-payload","nuxt4-production":"nuxt4-payload","findings":"pure-html"}')[matrix.target] }}
+          EXAMPLE: ${{ fromJSON('{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","nextjs-production":"nextjs-payload","sveltekit-production":"sveltekit-payload","nuxt-production":"nuxt-payload","findings":"pure-html"}')[matrix.target] }}
         run: bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"
       - run: bash scripts/ci-install-fixture.sh examples/payload-backend
       - env:

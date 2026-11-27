@@ -96,7 +96,6 @@ jobs:
             main: astro
             peers: ''
             servers: astro
-            nuxt-fixture: nuxt-payload
             specs: tests/e2e/specs/live-preview.spec.ts tests/e2e/specs/island-bridge.spec.ts tests/e2e/specs/navigation-lifecycle.spec.ts tests/e2e/specs/structural-morph.spec.ts
             real-admin: astro
           - integration: next
@@ -104,7 +103,6 @@ jobs:
             main: next
             peers: react@latest react-dom@latest
             servers: nextjs
-            nuxt-fixture: nuxt-payload
             specs: tests/e2e/specs/nextjs-live-preview.spec.ts tests/e2e/specs/nextjs-asset-delivery.spec.ts tests/e2e/specs/nextjs-fragment.spec.ts
             real-admin: nextjs
           - integration: sveltekit
@@ -112,17 +110,15 @@ jobs:
             main: '@sveltejs/kit'
             peers: '@sveltejs/adapter-node@latest @sveltejs/adapter-auto@latest @sveltejs/vite-plugin-svelte@latest svelte@latest vite@latest'
             servers: sveltekit
-            nuxt-fixture: nuxt-payload
             specs: tests/e2e/specs/sveltekit-live-preview.spec.ts tests/e2e/specs/sveltekit-asset-delivery.spec.ts tests/e2e/specs/sveltekit-fragment.spec.ts
             real-admin: sveltekit
           - integration: nuxt
-            fixture: nuxt4-payload
+            fixture: nuxt-payload
             main: nuxt
             peers: vue@latest @vitejs/plugin-vue@latest
             servers: nuxt
-            nuxt-fixture: nuxt4-payload
             specs: tests/e2e/specs/nuxt-live-preview.spec.ts tests/e2e/specs/nuxt-asset-delivery.spec.ts tests/e2e/specs/nuxt-fragment.spec.ts
-            real-admin: nuxt4
+            real-admin: nuxt
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -157,7 +153,6 @@ jobs:
       - if: steps.channel.outputs.tag != ''
         env:
           PLP_E2E_SERVERS: ${{ matrix.servers }}
-          PLP_NUXT_FIXTURE: ${{ matrix.nuxt-fixture }}
         run: npx playwright test --project=chromium ${{ matrix.specs }}
       # The package declares no `next` peer and leaves `next/navigation` to the bundler. The channel
       # builds and develops with both bundlers in a pnpm workspace where Node finds another copy of

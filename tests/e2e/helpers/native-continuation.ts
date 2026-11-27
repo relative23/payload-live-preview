@@ -48,12 +48,8 @@ interface NativeACLFixture extends ACLFixture {
 type StartACLFixture = (options: { versionedRelated: boolean }) => Promise<NativeACLFixture>;
 const checksum = (value: Uint8Array | string): string =>
   createHash('sha256').update(value).digest('hex');
-type ContinuationFramework =
-  'next' | 'sveltekit' | 'nuxt' | 'nuxt4' | 'astro' | 'html' | 'vue' | 'react';
-/**
- * Each host's public port. Nuxt 4 is a host of its own, built from its example and template,
- * but the host contract treats it as its family.
- */
+type ContinuationFramework = 'next' | 'sveltekit' | 'nuxt' | 'astro' | 'html' | 'vue' | 'react';
+/** Each host's public port. */
 const PORTS: Readonly<Record<ContinuationFramework, string>> = {
   next: '4284',
   sveltekit: '4285',
@@ -62,7 +58,6 @@ const PORTS: Readonly<Record<ContinuationFramework, string>> = {
   html: '4288',
   vue: '4289',
   react: '4291',
-  nuxt4: '4293',
 };
 /** The hosts a continuation config may name; Next.js has its own starter (next-continuation.ts). */
 export const NATIVE_HOSTS = (Object.keys(PORTS) as ContinuationFramework[]).filter(
@@ -74,9 +69,8 @@ export async function startNativeContinuation(
   baseline = false,
   profile: 'continuation' | 'astro-resources' = 'continuation',
 ) {
-  const family = framework === 'nuxt4' ? 'nuxt' : framework;
   const isNext = framework === 'next';
-  const isNuxt = family === 'nuxt';
+  const isNuxt = framework === 'nuxt';
   const isAstro = framework === 'astro';
   const isHTML = framework === 'html';
   const isVue = framework === 'vue';
@@ -419,21 +413,25 @@ export async function startNativeContinuation(
       { mode: 0o600 },
     );
     const certificatePath = join(directory, 'public-certificate.pem');
-    child = spawn(process.execPath, [resolve(ROOT, `scripts/${family}-production-fixture.mjs`)], {
-      cwd: ROOT,
-      env: {
-        ...environment,
-        NEXT_TELEMETRY_DISABLED: '1',
-        [`${prefix}_ORIGIN`]: origin,
-        [`${prefix}_INTERNAL_PORT`]: internalPort,
-        [`${prefix}_FIXTURE_DIRECTORY`]: app,
-        PLP_LIFETIME_CERTIFICATE: certificatePath,
-        [`${prefix}_HOST_CONFIG`]: configPath,
-        PLP_NEXT_PRIVATE_PREFIX: '/continuation/',
-        ...(!baseline ? { [`${prefix}_HOST_ENABLED`]: 'local-test-only' } : {}),
+    child = spawn(
+      process.execPath,
+      [resolve(ROOT, `scripts/${framework}-production-fixture.mjs`)],
+      {
+        cwd: ROOT,
+        env: {
+          ...environment,
+          NEXT_TELEMETRY_DISABLED: '1',
+          [`${prefix}_ORIGIN`]: origin,
+          [`${prefix}_INTERNAL_PORT`]: internalPort,
+          [`${prefix}_FIXTURE_DIRECTORY`]: app,
+          PLP_LIFETIME_CERTIFICATE: certificatePath,
+          [`${prefix}_HOST_CONFIG`]: configPath,
+          PLP_NEXT_PRIVATE_PREFIX: '/continuation/',
+          ...(!baseline ? { [`${prefix}_HOST_ENABLED`]: 'local-test-only' } : {}),
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
       },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    );
     child.stdout!.on('data', (data) => logs.push(String(data)));
     child.stderr!.on('data', (data) => logs.push(String(data)));
     const ready = async (): Promise<boolean> => {
@@ -517,8 +515,7 @@ export async function startNativeContinuation(
     );
     return {
       origin,
-      // What the host contract branches on: Nuxt 4 answers as its family.
-      framework: family,
+      framework,
       backend,
       close,
       async token(editor: 'a' | 'b', locale: 'de' | 'en', ttlMs = 60_000) {

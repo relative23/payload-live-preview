@@ -175,7 +175,6 @@ describe('workspace package-lock identity contract', () => {
       'examples/nextjs-payload',
       'examples/sveltekit-payload',
       'examples/nuxt-payload',
-      'examples/nuxt4-payload',
       'examples/payload-backend',
       'examples/astro-hybrid',
       'examples/astro-inline',

@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     if (response.ok) data = (await response.json()).data;
   }
   const decide = defineLivePreviewServerHandler({
-    allowedOrigins: [active?.origin ?? 'https://localhost:4286'], defaults: 'v2',
+    allowedOrigins: [active?.origin ?? 'https://localhost:4293'], defaults: 'v2',
     // The actual Vue composable owns this tree; an injected DOM writer would compete.
     autoInject: false, authorizePreview: () => authorization,
   });
@@ -36,6 +36,6 @@ export default defineEventHandler(async (event) => {
   event.context.previewView = {
     data: event.context.livePreviewAuthorization ? data : null,
     path: url?.pathname ?? '', locale: url?.searchParams.get('locale') ?? '',
-    origin: active?.origin ?? 'https://localhost:4286',
+    origin: active?.origin ?? 'https://localhost:4293',
   };
 });

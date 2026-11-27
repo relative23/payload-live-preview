@@ -60,23 +60,23 @@ Outside CI:
 
 Every version in the README's framework table is what the fixture lockfile or the matrix job installs, checked by `npm run compat:check`.
 
-Of the 54 feature rows of `quality/compat-matrix.json`, 13 passed in the CI run the last Version PR recorded (commit `6367809`, 2026-11-24, `quality/compat-results.json`); the other 41 have no recorded result.
+Of the 49 feature rows of `quality/compat-matrix.json`, 10 passed in the CI run the last Version PR recorded (commit `6367809`, 2026-11-24, `quality/compat-results.json`); the other 39 have no recorded result.
 
-Vite 7 through 8: that is what the supported framework majors install (Astro 7 → 8, SvelteKit 3 → 8, Nuxt 4 → 8, Nuxt 3 → 7), measured 2026-11-25. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
+Vite 8: that is what the supported framework majors install (Astro 7 → 8, SvelteKit 3 → 8, Nuxt 4 → 8), measured 2026-11-27. `npm run compat:check` keeps the devDependency and the fixture lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.
 
 The framework hooks and fragment renderers run twice on every push: at the floor of each peer range, as unit tests in jsdom that the `hook-matrix` job runs after installing the floors over the lockfile (React 18.0.0, Vue 3.3.0, Svelte 5.0.0), and at what the lockfile installs (React 19.3.1, Vue 3.5.46, Svelte 5.59.1), in the unit tests and the browser suites; the SvelteKit renderer is measured against a component compiled by `svelte/compiler` and rendered by the real `svelte/server`.
 
 <!-- compat-evidence:end -->
 
-## Nuxt 4
+## Nuxt
 
-The `nuxt4` job runs the Nuxt example in Nuxt 4.6.3's `app/` layout, on the
+The `e2e` job runs the Nuxt example, in Nuxt 4's `app/` layout, on the
 development server against the mock admin in Chromium, Firefox and WebKit, and
 `real-payload-surfaces` drives it from the real admin in the same three
-engines. `real-payload-surfaces` also drives its production build, and the
-`production-lifecycle` job builds a Nuxt 4 host from the stored package
-archive, beside the Nuxt 3 one ([testing.md](testing.md#production-hosts)).
-The package needed no change for it.
+engines, its production build included. The `production-lifecycle` job builds
+a Nuxt 4 host from the stored package archive
+([testing.md](testing.md#production-hosts)). Nuxt 3 reached its end of life on
+31 July 2026 and left the suite with 3.0: nothing runs against it.
 
 ## SvelteKit 2
 

@@ -23,7 +23,6 @@ import {
   fixtureAudit,
   fixtureInstall,
   sourceDate,
-  twinFixtureJob,
 } from './workflow-expectations-shared';
 
 export const CI: WorkflowSpec = {
@@ -125,7 +124,7 @@ export const CI: WorkflowSpec = {
         CHECKOUT,
         SETUP_NODE,
         NPM_VERSION,
-        ...[...CI_FIXTURES, 'nuxt4-payload', 'payload-backend'].map(fixtureAudit),
+        ...[...CI_FIXTURES, 'payload-backend'].map(fixtureAudit),
       ],
     },
     build: callBuild,
@@ -140,22 +139,6 @@ export const CI: WorkflowSpec = {
         { run: 'npx playwright test --project=${{ matrix.browser }}' },
       ],
     },
-    // The Nuxt 4 twin of the Nuxt example: the Nuxt-only files whole, the shared files' Nuxt cases.
-    // The Nuxt public-response row needs the runtime the Astro fixture serves, which the job does not start.
-    nuxt4: twinFixtureJob(
-      'nuxt4-payload',
-      { PLP_E2E_SERVERS: 'nuxt', PLP_NUXT_FIXTURE: 'nuxt4-payload' },
-      ['nuxt-asset-delivery', 'nuxt-fragment', 'nuxt-live-preview'],
-      {
-        grep: '-g "[Nn]uxt"',
-        files: [
-          'auto-bind-hit-rate',
-          'fragment-request-bounds',
-          'navigation-lifecycle-per-framework',
-          'reveal',
-        ],
-      },
-    ),
     // Next.js 15 over the Next.js fixture, whose lockfile pins 16. The production build is webpack
     // there and the base path is where an older Next differs from the newest, so both run beside the
     // development suite.
@@ -214,7 +197,7 @@ export const CI: WorkflowSpec = {
       'playwright.${{ matrix.framework }}-continuation.config.ts',
       30,
       {
-        framework: ['next', 'sveltekit', 'nuxt', 'nuxt4', 'html', 'vue', 'react'],
+        framework: ['next', 'sveltekit', 'nuxt', 'html', 'vue', 'react'],
       },
     ),
     'real-payload-e2e': {
@@ -267,12 +250,9 @@ export const CI: WorkflowSpec = {
           'astro-session',
           'nextjs-autologin',
           'create',
-          'nuxt4',
-          'nuxt4-composable',
           'nextjs-production',
           'sveltekit-production',
           'nuxt-production',
-          'nuxt4-production',
           'findings',
         ],
         browser: [...BROWSERS],
@@ -285,7 +265,7 @@ export const CI: WorkflowSpec = {
           run: 'bash scripts/ci-install-fixture.sh "examples/$EXAMPLE"',
           env: {
             EXAMPLE:
-              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","nuxt4":"nuxt4-payload","nuxt4-composable":"nuxt4-payload","nextjs-production":"nextjs-payload","sveltekit-production":"sveltekit-payload","nuxt-production":"nuxt-payload","nuxt4-production":"nuxt4-payload","findings":"pure-html"}\')[matrix.target] }}',
+              '${{ fromJSON(\'{"nextjs":"nextjs-payload","nextjs-hook":"nextjs-payload","sveltekit":"sveltekit-payload","nuxt":"nuxt-payload","nuxt-composable":"nuxt-payload","html":"pure-html","astro-session":"astro-middleware","nextjs-autologin":"nextjs-payload","create":"sveltekit-payload","nextjs-production":"nextjs-payload","sveltekit-production":"sveltekit-payload","nuxt-production":"nuxt-payload","findings":"pure-html"}\')[matrix.target] }}',
           },
         },
         fixtureInstall('payload-backend'),

@@ -4,7 +4,7 @@ import { fixture } from '../utils/host';
 
 export default defineNitroPlugin(nitro => {
   livePreviewNitroPlugin({
-    allowedOrigins: [fixture()?.origin ?? 'https://localhost:4286'], defaults: 'v2',
+    allowedOrigins: [fixture()?.origin ?? 'https://localhost:4293'], defaults: 'v2',
     autoInject: false, authorizePreview: () => null,
   })(nitro);
   nitro.hooks.hook('render:html', (_html, { event }) => {

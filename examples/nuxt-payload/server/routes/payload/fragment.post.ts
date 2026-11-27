@@ -8,8 +8,8 @@
  * the route it renders for (ADR 0006).
  */
 import { createFragmentEndpoint } from 'payload-live-preview/nuxt';
-import Hero from '../../../components/Hero.vue';
-import Notice from '../../../components/Notice.vue';
+import Hero from '../../../app/components/Hero.vue';
+import Notice from '../../../app/components/Notice.vue';
 import { heroProps } from '../../../lib/hero';
 import { PREVIEW_AUDIENCE, PREVIEW_TOKEN_SECRET } from '../../../lib/preview';
 

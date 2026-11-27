@@ -102,10 +102,6 @@ export const HARNESS_INSTALLS: readonly HarnessInstall[] = [
     fixtures: ['tests/fixtures/payload-acl', 'examples/nuxt-payload'],
   },
   {
-    config: 'playwright.nuxt4-continuation.config.ts',
-    fixtures: ['tests/fixtures/payload-acl', 'examples/nuxt4-payload'],
-  },
-  {
     config: 'playwright.html-continuation.config.ts',
     fixtures: ['tests/fixtures/payload-acl', 'examples/pure-html'],
   },

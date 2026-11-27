@@ -3161,7 +3161,7 @@
       "path": "tests/unit/quality/compat-vite.test.ts",
       "group": "unit",
       "suites": 4,
-      "tests": 13,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -3329,7 +3329,7 @@
       "path": "tests/unit/quality/nuxt-fixture-layout.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 4,
       "benchmarks": 0
     },
     {

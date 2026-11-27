@@ -151,8 +151,10 @@ export function renderViteLine(facts: ViteFacts, measured: string): string {
       (entry) => `${entry.framework} ${String(entry.major)} → ${majorsIn(entry.range).join('/')}`,
     )
     .join(', ');
+  const majors =
+    span.min === span.max ? String(span.max) : `${String(span.min)} through ${String(span.max)}`;
   return (
-    `Vite ${String(span.min)} through ${String(span.max)}: that is what the supported framework majors install ` +
+    `Vite ${majors}: that is what the supported framework majors install ` +
     `(${brings}), measured ${measured}. \`npm run compat:check\` keeps the devDependency and the fixture ` +
     'lockfiles inside that span; `npm run compat:refresh` re-reads it from the registry.'
   );

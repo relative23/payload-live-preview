@@ -471,7 +471,7 @@
       "feature": "Nitro integration, base live preview and asset delivery",
       "version": {
         "kind": "exact",
-        "value": "3.21.11",
+        "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
@@ -483,43 +483,10 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "e2e"
-        },
-        "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
-      "id": "nuxt4-base-current",
-      "surface": "Nuxt",
-      "feature": "Nitro integration, base live preview and asset delivery",
-      "version": {
-        "kind": "exact",
-        "value": "4.7.0",
-        "package": "nuxt",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/nuxt4-payload"
-        }
-      },
-      "mode": "development",
-      "packageForm": "copied-local-package",
-      "backend": "mock admin",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
         "status": "configured",
         "workflow": {
           "file": "ci.yml",
-          "job": "nuxt4"
+          "job": "e2e"
         },
         "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"]
       }
@@ -530,7 +497,7 @@
       "feature": "native Vue fragment rendering",
       "version": {
         "kind": "exact",
-        "value": "3.21.11",
+        "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
@@ -542,43 +509,10 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "e2e"
-        },
-        "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
-      "id": "nuxt4-fragment-current",
-      "surface": "Nuxt",
-      "feature": "native Vue fragment rendering",
-      "version": {
-        "kind": "exact",
-        "value": "4.7.0",
-        "package": "nuxt",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/nuxt4-payload"
-        }
-      },
-      "mode": "development",
-      "packageForm": "copied-local-package",
-      "backend": "mock admin and signed fragment endpoint",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
         "status": "configured",
         "workflow": {
           "file": "ci.yml",
-          "job": "nuxt4"
+          "job": "e2e"
         },
         "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"]
       }
@@ -589,7 +523,7 @@
       "feature": "production build/start, native navigation and reload, unsaved related drafts under a real Payload login",
       "version": {
         "kind": "exact",
-        "value": "3.21.11",
+        "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
@@ -620,43 +554,11 @@
       "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
       "version": {
         "kind": "exact",
-        "value": "3.21.11",
-        "package": "nuxt",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/nuxt-payload"
-        }
-      },
-      "mode": "production",
-      "packageForm": "copied-local-package",
-      "backend": "Payload 3.94.2 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
-        "status": "configured",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "real-payload-surfaces"
-        },
-        "sources": [
-          "playwright.real-payload.config.ts",
-          "scripts/admin-tls-front.mjs",
-          "scripts/nuxt-production-fixture.mjs",
-          "tests/real-payload/surface-smoke.spec.ts",
-          "tests/real-payload/surface-session.spec.ts"
-        ]
-      }
-    },
-    {
-      "id": "nuxt4-production-admin",
-      "surface": "Nuxt",
-      "feature": "real Payload admin UI on the production build: runtime only under the editor session, typed edits, relationship and upload population, sign-out",
-      "version": {
-        "kind": "exact",
         "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
-          "fixture": "examples/nuxt4-payload"
+          "fixture": "examples/nuxt-payload"
         }
       },
       "mode": "production",
@@ -1162,41 +1064,11 @@
       "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
       "version": {
         "kind": "exact",
-        "value": "3.21.11",
-        "package": "nuxt",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/nuxt-payload"
-        }
-      },
-      "mode": "development",
-      "packageForm": "copied-local-package",
-      "backend": "Payload 3.94.2 admin",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
-        "status": "configured",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "real-payload-surfaces"
-        },
-        "sources": [
-          "tests/real-payload/surface-smoke.spec.ts",
-          "tests/real-payload/surface-session.spec.ts",
-          "playwright.real-payload.config.ts"
-        ]
-      }
-    },
-    {
-      "id": "nuxt4-real-admin-session-current",
-      "surface": "Nuxt",
-      "feature": "live preview against the real Payload admin, with the editor's real session (payload-session)",
-      "version": {
-        "kind": "exact",
         "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
-          "fixture": "examples/nuxt4-payload"
+          "fixture": "examples/nuxt-payload"
         }
       },
       "mode": "development",
@@ -1544,7 +1416,7 @@
       "feature": "route commit, refresh ordering and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "3.21.11",
+        "value": "4.7.0",
         "package": "nuxt",
         "source": {
           "kind": "lockfile",
@@ -1556,48 +1428,10 @@
       "backend": "mock admin and hydrated Nuxt route",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "passed",
-        "workflow": {
-          "file": "ci.yml",
-          "job": "e2e"
-        },
-        "sources": [
-          "src/adapters/nuxt/module.ts",
-          "src/adapters/nuxt/client.ts",
-          "tests/e2e/specs/nuxt-live-preview.spec.ts",
-          "playwright.config.ts"
-        ],
-        "result": {
-          "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
-          "conclusion": "success"
-        }
-      }
-    },
-    {
-      "id": "nuxt4-navigation-replay-current",
-      "surface": "Nuxt",
-      "feature": "route commit, refresh ordering and accepted-document replay",
-      "version": {
-        "kind": "exact",
-        "value": "4.7.0",
-        "package": "nuxt",
-        "source": {
-          "kind": "lockfile",
-          "fixture": "examples/nuxt4-payload"
-        }
-      },
-      "mode": "development",
-      "packageForm": "copied-local-package",
-      "backend": "mock admin and hydrated Nuxt route",
-      "browsers": ["chromium", "firefox", "webkit"],
-      "evidence": {
         "status": "configured",
         "workflow": {
           "file": "ci.yml",
-          "job": "nuxt4"
+          "job": "e2e"
         },
         "sources": [
           "src/adapters/nuxt/module.ts",
@@ -1742,23 +1576,15 @@
     {
       "name": "Nuxt",
       "package": "nuxt",
-      "supported": "4.x; 3.x (end of life since 31 July 2026: kept working, not officially supported)",
+      "supported": "4.x",
       "fixture": "examples/nuxt-payload",
       "tested": [
         {
           "version": "4.7.0",
           "source": "lockfile",
-          "fixture": "examples/nuxt4-payload",
-          "browsers": ["chromium", "firefox", "webkit"],
-          "job": "nuxt4",
-          "vite": "^8.3.8"
-        },
-        {
-          "version": "3.21.11",
-          "source": "lockfile",
           "browsers": ["chromium", "firefox", "webkit"],
           "job": "E2E",
-          "vite": "^7.3.6"
+          "vite": "^8.3.8"
         }
       ],
       "vite": {
@@ -1822,7 +1648,7 @@
     }
   ],
   "vite": {
-    "measured": "2026-11-25"
+    "measured": "2026-11-27"
   },
   "hooks": [
     {
