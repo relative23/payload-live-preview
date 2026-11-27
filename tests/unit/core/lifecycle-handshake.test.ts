@@ -188,7 +188,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       emitter,
       log,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -227,7 +227,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       emitter,
       log,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -265,7 +265,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -293,7 +293,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -334,7 +334,7 @@ describe('LivePreviewRuntime — the ready handshake and revision metadata', () 
       readyTargets: [],
       emitter: new EventEmitter(),
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();

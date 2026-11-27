@@ -295,7 +295,11 @@ interface ServedGate {
  */
 function servedGate(body: string): ServedGate {
   const config = readServedConfig(body);
-  if (config?.value('disableVisibilityGate') === true) {
+  // The second name is the switch before 3.0 turned it round: the page may be an older one.
+  if (
+    config?.value('enableVisibilityGate') === false ||
+    config?.value('disableVisibilityGate') === true
+  ) {
     return { threshold: undefined, configured: true };
   }
   const threshold = config?.value('visibilityGateThreshold');
@@ -357,7 +361,8 @@ function bindingFindings(
         'scheduler stops writing offscreen elements and buffers them until they scroll into ' +
         'view. On a page nobody scrolls, that is never.',
       remedy:
-        'Raise visibilityGateThreshold, or set disableVisibilityGate, on the adapter, ' +
+        'Raise visibilityGateThreshold, or set `enableVisibilityGate: false` ' +
+        '(`disableVisibilityGate: true` before 3.0), on the adapter, ' +
         'LivePreviewClient or generateInlineScript() if the whole page must stay live, or ' +
         'confirm that deferring below the fold is acceptable here.',
     });

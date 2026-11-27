@@ -71,7 +71,7 @@ function start(
     emitter,
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     enableA11y: false,
     warn: (message) => {
       warnings.push(String(message));
@@ -267,7 +267,7 @@ describe('fragment strategy', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
       onUnfaithfulPatch: 'ignore',
       warn: () => {
@@ -314,7 +314,7 @@ describe('fragment strategy', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
       strategies: { fragment },
     });

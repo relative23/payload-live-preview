@@ -174,7 +174,22 @@ describe('binding health', () => {
     });
 
     it('stays quiet when the script turns the gate off', () => {
-      expect(served({ disableVisibilityGate: true }, 120)).toBeUndefined();
+      expect(served({ enableVisibilityGate: false }, 120)).toBeUndefined();
+    });
+
+    // 2.x wrote `disableVisibilityGate: true` into slot 8; the doctor reads a page any version served.
+    it('stays quiet when a page 2.x served turns the gate off', () => {
+      const from2x = (slot8: string) =>
+        analyzeProbe(
+          withPreview(
+            `<script>var __LIVE_PREVIEW_CONFIG__=[["${ADMIN}"],,,,,,,,${slot8},,,,,,,,,,,,,,,,"v2"];</script>` +
+              Array.from({ length: 120 }, (_, i) => field(i)).join(''),
+            CSP,
+          ),
+          context,
+        ).findings.find((f) => f.code === 'LP0705');
+      expect(from2x('true')).toBeUndefined();
+      expect(from2x('false')?.title).toBe('120 bindings exceed the default visibility gate');
     });
 
     it('names the configured threshold when the page exceeds it', () => {

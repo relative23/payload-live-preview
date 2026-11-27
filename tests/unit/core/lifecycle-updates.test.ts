@@ -15,7 +15,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       emitter,
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'new' } });
@@ -35,7 +35,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       readyTargets: [],
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     } as const;
     const main = new LivePreviewRuntime({ ...base, root: document, emitter: new EventEmitter() });
     const other = new LivePreviewRuntime({
@@ -72,7 +72,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'updated' } });
@@ -111,7 +111,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'x' } });
@@ -144,7 +144,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -185,7 +185,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -237,7 +237,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -288,7 +288,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -325,7 +325,7 @@ describe('LivePreviewRuntime — applying an update and emitting its events', ()
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       strategies: { route },
     });
     runtime.start();

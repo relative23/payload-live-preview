@@ -47,7 +47,7 @@ describe('LivePreviewClient — end-to-end', () => {
     // No allowedOrigins, no localhost matching, and jsdom names no referrer: nothing can be trusted.
     const unconfigured = new LivePreviewClient({
       debug: true,
-      disableLocalhostMatching: true,
+      enableLocalhostMatching: false,
       autoStart: false,
     });
     try {
@@ -55,7 +55,7 @@ describe('LivePreviewClient — end-to-end', () => {
 
       debug.mockClear();
       const configured = new LivePreviewClient(
-        pipelineConfig({ debug: true, disableLocalhostMatching: true, autoStart: false }),
+        pipelineConfig({ debug: true, enableLocalhostMatching: false, autoStart: false }),
       );
       await configured.destroy();
       expect(namesTheOption()).toBe(false);

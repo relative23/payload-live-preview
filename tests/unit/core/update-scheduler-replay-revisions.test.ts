@@ -46,7 +46,7 @@ describe('UpdateScheduler — replay across revisions', () => {
       {
         debounceMs: 100,
         isVisible: () => true,
-        disableVisibilityGate: true,
+        enableVisibilityGate: false,
         getCacheSize: () => 2,
       },
     );
@@ -71,7 +71,7 @@ describe('UpdateScheduler — replay across revisions', () => {
       {
         debounceMs: 100,
         isVisible: () => true,
-        disableVisibilityGate: true,
+        enableVisibilityGate: false,
         getCacheSize: () => 2,
       },
     );
@@ -96,7 +96,7 @@ describe('UpdateScheduler — reentrant host cancellation', () => {
       debounceMs: 0,
       isVisible: () => true,
       getCacheSize: () => 1,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       scheduleFrame: () => 1,
       cancelFrame: () => {
         const callback = onCancel;
@@ -182,7 +182,7 @@ describe('UpdateScheduler — reentrant host cancellation', () => {
         isVisible: () => false,
         getCacheSize: () => 100,
         visibilityGateThreshold: 1,
-        disableVisibilityGate: operation === 'flush',
+        enableVisibilityGate: operation !== 'flush',
         scheduleFrame: () => 1,
         cancelFrame: () => {
           const callback = onCancel;
@@ -227,7 +227,7 @@ describe('UpdateScheduler — reentrant host cancellation', () => {
         debounceMs: 0,
         isVisible: () => true,
         getCacheSize: () => 1,
-        disableVisibilityGate: true,
+        enableVisibilityGate: false,
         onFlush,
         scheduleFrame: (callback) => {
           const handle = ++nextHandle;

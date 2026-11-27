@@ -11,7 +11,7 @@ const EVERYTHING = [
   "  const site = await fetchPreviewGlobal({ serverURL: env.CMS, global: 'site', depth: 1, authorization });",
   '  return { site, bindings };',
   '}',
-  "export const integration = livePreview({ defaults: 'v1', onUnboundChange: 'route' });",
+  "export const integration = livePreview({ defaults: 'v1', onUnboundChange: 'route', disableVisibilityGate: true });",
   '',
 ].join('\n');
 
@@ -42,8 +42,8 @@ describe('migrateSource', () => {
     );
     expect(once.output).toContain(
       "livePreview({ previewSignals: ['query', 'fetch-dest'], " +
-        "disableReferrerDetection: false, eventSourcePolicy: 'any', skipUnchanged: false, " +
-        "sanitizerPolicy: 'compat', onUnfaithfulPatch: 'escalate' })",
+        "enableReferrerDetection: true, eventSourcePolicy: 'any', skipUnchanged: false, " +
+        "sanitizerPolicy: 'compat', onUnfaithfulPatch: 'escalate', enableVisibilityGate: false })",
     );
     const twice = migrateSource(once.output);
     expect(twice.output).toBe(once.output);

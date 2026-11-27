@@ -119,7 +119,7 @@ describe('LivePreviewClient — transforms', () => {
     if (element === null) throw new Error('binding missing');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const client = new LivePreviewClient(
-      pipelineConfig({ disableVisibilityGate: false, visibilityGateThreshold: 0 }),
+      pipelineConfig({ enableVisibilityGate: true, visibilityGateThreshold: 0 }),
     );
     try {
       await fireUpdate({ title: 'first' });
@@ -150,7 +150,7 @@ describe('LivePreviewClient — transforms', () => {
     const element = document.querySelector('p');
     if (element === null) throw new Error('binding missing');
     const client = new LivePreviewClient(
-      pipelineConfig({ disableVisibilityGate: false, visibilityGateThreshold: 0 }),
+      pipelineConfig({ enableVisibilityGate: true, visibilityGateThreshold: 0 }),
     );
     try {
       await fireUpdate({ title: 'revision value' });

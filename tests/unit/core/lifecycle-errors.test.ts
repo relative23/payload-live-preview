@@ -19,7 +19,7 @@ describe('LivePreviewRuntime — error handling', () => {
       emitter,
       validateToken: () => false,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -54,7 +54,7 @@ describe('LivePreviewRuntime — error handling', () => {
       emitter,
       transformValue: () => Promise.resolve('async replacement'),
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -86,7 +86,7 @@ describe('LivePreviewRuntime — error handling', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -123,7 +123,7 @@ describe('LivePreviewRuntime — error handling', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -149,7 +149,7 @@ describe('LivePreviewRuntime — error handling', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -230,7 +230,7 @@ describe('LivePreviewRuntime — error handling', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: false,
     });
     runtime.start();
@@ -267,7 +267,7 @@ describe('LivePreviewRuntime — error handling', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'x' } });
@@ -303,7 +303,7 @@ describe('LivePreviewRuntime — error handling', () => {
       readyTargets: [TRUSTED],
       emitter: new EventEmitter(),
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
 
     try {
@@ -334,7 +334,7 @@ describe('LivePreviewRuntime — error handling', () => {
       emitter: new EventEmitter(),
       sendReady,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
 
     try {

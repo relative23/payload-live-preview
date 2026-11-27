@@ -12,7 +12,7 @@ export function mountPreview(root: HTMLElement): () => void {
   const lifetime = new AbortController();
   const client = new LivePreviewClient({
     root, allowedOrigins: [origin], defaults: 'v2', autoStart: false, debug: false,
-    autoBind: 'off', disableLocalhostMatching: true, scopeBindingsByOwner: true,
+    autoBind: 'off', enableLocalhostMatching: false, scopeBindingsByOwner: true,
     strategies: { fragment: createFragmentStrategy({ endpoint: '/payload/resource-fragment' }) },
   });
   // A read-only fixture probe exposes counts, not editor fields or credentials.

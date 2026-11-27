@@ -17,7 +17,7 @@ function schedulerWith(frames: FrameRequestCallback[], apply: () => void): Updat
   return new UpdateScheduler(apply, {
     debounceMs: 50,
     isVisible: () => true,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     getCacheSize: () => 1,
     scheduleFrame: (callback) => frames.push(callback),
     cancelFrame: () => {},
@@ -87,7 +87,7 @@ describe('UpdateScheduler — leading edge', () => {
     const scheduler = new UpdateScheduler(vi.fn(), {
       debounceMs: 50,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 2,
       scheduleFrame: (callback) => frames.push(callback),
       cancelFrame: () => {},

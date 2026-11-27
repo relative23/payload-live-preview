@@ -25,7 +25,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -57,7 +57,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       warn,
     });
     runtime.start();
@@ -90,7 +90,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
       emitter,
       debounceMs: 200,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -133,7 +133,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
       emitter: new EventEmitter(),
       debounceMs: 200,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       scopeBindingsByOwner: true,
     });
     runtime.start();
@@ -175,7 +175,7 @@ describe('LivePreviewRuntime — cache refresh — retargeting buffered work', (
       emitter,
       debounceMs: 50,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 

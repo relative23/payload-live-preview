@@ -175,10 +175,25 @@ describe('analyzeV2Readiness', () => {
     ]);
   });
 
+  it('words the referrer row as 3.0 spells it for a page 3.0 generated', () => {
+    const inline = generateInlineScript({ allowedOrigins: [CMS], enableReferrerDetection: true });
+    expect(analyzeV2Readiness(probe(inline))).toEqual([
+      {
+        code: 'LP0709',
+        level: 'warning',
+        title: 'Referrer trust is still on',
+        detail:
+          'enableReferrerDetection is true: the runtime accepts the admin referer as a preview signal. The script sets it explicitly.',
+        remedy:
+          'Drop the explicit `enableReferrerDetection: true` once no preview flow relies on the admin referer alone; 2.0 defaults to `enableReferrerDetection: false`.',
+      },
+    ]);
+  });
+
   it('reports nothing when the inline config already carries the v2 runtime rows', () => {
     const inline = generateInlineScript({
       allowedOrigins: ['https://cms.example.com'],
-      disableReferrerDetection: true,
+      enableReferrerDetection: false,
       eventSourcePolicy: 'parent-or-opener',
       sanitizerPolicy: 'strict',
       skipUnchanged: true,

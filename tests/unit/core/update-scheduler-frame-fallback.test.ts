@@ -15,7 +15,7 @@ function schedulerWith(frames: FrameRequestCallback[], apply: () => void): Updat
   return new UpdateScheduler(apply, {
     debounceMs: 50,
     isVisible: () => true,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     getCacheSize: () => 1,
     scheduleFrame: (callback) => frames.push(callback),
     cancelFrame: () => {},
@@ -91,7 +91,7 @@ describe('UpdateScheduler — a frame that does not come', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 50,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (callback) => frames.push(callback),
       cancelFrame,
@@ -110,7 +110,7 @@ describe('UpdateScheduler — a frame that does not come', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 50,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (callback) => {
         callback(0);
@@ -133,7 +133,7 @@ describe('UpdateScheduler — a frame that does not come', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 50,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
     });
 

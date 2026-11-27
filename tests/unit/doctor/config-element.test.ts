@@ -39,8 +39,8 @@ const SALA = {
   serverURL: 'https://cms.example.com',
   mergeDepth: 2,
   debug: false,
-  disableReferrerDetection: true,
-  disableLocalhostMatching: true,
+  enableReferrerDetection: false,
+  enableLocalhostMatching: false,
   scopeBindingsByOwner: true,
   revealEditedField: true,
   visibilityGateThreshold: Number.MAX_SAFE_INTEGER,
@@ -157,14 +157,52 @@ describe('the doctor on a page with a configuration element', () => {
       analyzeProbe(page(head, 120), context).findings.find((f) => f.code === 'LP0705');
     expect(lp0705(element(SALA))).toBeUndefined();
     expect(
-      lp0705(element({ ...SALA, visibilityGateThreshold: undefined, disableVisibilityGate: true })),
+      lp0705(element({ ...SALA, visibilityGateThreshold: undefined, enableVisibilityGate: false })),
     ).toBeUndefined();
     expect(lp0705(element({ allowedOrigins: [ADMIN] }))?.title).toBe(
       '120 bindings exceed the default visibility gate',
     );
-    expect(lp0705(`<!-- ${element({ disableVisibilityGate: true })} -->`)?.title).toBe(
+    expect(lp0705(`<!-- ${element({ enableVisibilityGate: false })} -->`)?.title).toBe(
       '120 bindings exceed the default visibility gate',
     );
+    // A page written for a 2.x client names the switch by what it turns off.
+    expect(
+      lp0705(element({ allowedOrigins: [ADMIN], disableVisibilityGate: true })),
+    ).toBeUndefined();
+    expect(lp0705(element({ allowedOrigins: [ADMIN], disableVisibilityGate: false }))?.title).toBe(
+      '120 bindings exceed the default visibility gate',
+    );
+  });
+
+  it('reads the referrer row under either name, and answers in the one the page uses', () => {
+    const row = (options: Record<string, unknown>) =>
+      analyzeV2Readiness(page(element({ allowedOrigins: [ADMIN], ...options })));
+    expect(row({ enableReferrerDetection: false })).toEqual([]);
+    expect(row({ disableReferrerDetection: true })).toEqual([]);
+    expect(row({ enableReferrerDetection: true })).toEqual([
+      {
+        code: 'LP0709',
+        level: 'warning',
+        title: 'Referrer trust is still on',
+        detail:
+          'enableReferrerDetection is true: the runtime accepts the admin referer as a preview signal. The script sets it explicitly.',
+        remedy:
+          'Drop the explicit `enableReferrerDetection: true` once no preview flow relies on the admin referer alone; 2.0 defaults to `enableReferrerDetection: false`.',
+      },
+    ]);
+    expect(row({ disableReferrerDetection: false })).toEqual([
+      {
+        code: 'LP0709',
+        level: 'warning',
+        title: 'Referrer trust is still on',
+        detail:
+          'disableReferrerDetection is false: the runtime accepts the admin referer as a preview signal. The script sets it explicitly.',
+        remedy:
+          'Drop the explicit `disableReferrerDetection: false` once no preview flow relies on the admin referer alone; 2.0 defaults to `disableReferrerDetection: true`.',
+      },
+    ]);
+    // The 3.0 name wins where a page carries both, as it does in the runtime that reads it.
+    expect(row({ enableReferrerDetection: false, disableReferrerDetection: false })).toEqual([]);
   });
 
   it('says the configuration, not the runtime, reaches visitors when only the element does', () => {

@@ -108,12 +108,12 @@ describe('inlineScriptConfig', () => {
     ['debug', true, 'debug', true],
     ['debounceMs', 5, 'debounceMs', 5],
     ['heartbeatMs', 1000, 'heartbeatMs', 1000],
-    ['disableVisibilityGate', true, 'disableVisibilityGate', true],
+    ['enableVisibilityGate', false, 'enableVisibilityGate', false],
     ['visibilityGateThreshold', 200, 'visibilityGateThreshold', 200],
     ['skipUnchanged', false, 'skipUnchanged', false],
     ['scopeBindingsByOwner', true, 'scopeBindingsByOwner', true],
-    ['disableReferrerDetection', false, 'disableReferrerDetection', false],
-    ['disableLocalhostMatching', true, 'disableLocalhostMatching', true],
+    ['enableReferrerDetection', true, 'enableReferrerDetection', true],
+    ['enableLocalhostMatching', false, 'enableLocalhostMatching', false],
     ['eventSourcePolicy', 'any', 'eventSourcePolicy', 'any'],
     ['sanitizerPolicy', 'compat', 'sanitizerPolicy', 'compat'],
     ['fragments', { endpoint: '/payload/fragment' }, 'fragmentEndpoint', '/payload/fragment'],
@@ -136,7 +136,7 @@ describe('inlineScriptConfig', () => {
 
   it('has the script refuse a gate threshold it could only write as null', () => {
     const config = inlineScriptConfig({ visibilityGateThreshold: Number.POSITIVE_INFINITY });
-    expect(() => generateInlineScript(config)).toThrow(/disableVisibilityGate: true/u);
+    expect(() => generateInlineScript(config)).toThrow(/enableVisibilityGate: false/u);
   });
 
   it('forwards only the options that were given, so runtime defaults stay the single source', () => {

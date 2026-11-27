@@ -76,7 +76,7 @@ function start(
     emitter,
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     enableA11y: false,
     warn: () => {},
     log,

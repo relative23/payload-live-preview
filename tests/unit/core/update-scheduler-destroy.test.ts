@@ -9,7 +9,7 @@ describe('UpdateScheduler — destroy', () => {
       debounceMs: 50,
       isVisible: () => true,
       getCacheSize: () => 1,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     scheduler.schedule(update(entry(document.createElement('p')), 'v'));
     scheduler.destroy();
@@ -25,7 +25,7 @@ describe('UpdateScheduler — destroy', () => {
       debounceMs: 0,
       isVisible: () => true,
       getCacheSize: () => 1,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     scheduler.schedule(update(entry(document.createElement('p')), 'v'));
     vi.advanceTimersByTime(0);

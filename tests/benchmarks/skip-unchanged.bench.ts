@@ -94,7 +94,7 @@ function createRuntime(population: Population, skipUnchanged: boolean): LivePrev
     emitter,
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     enableA11y: false,
     warn: () => {},
     skipUnchanged,

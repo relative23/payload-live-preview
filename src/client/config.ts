@@ -10,7 +10,7 @@ import {
   type DefaultsProfile,
   type EventSourcePolicy,
 } from '@/types/defaults-profile';
-import { refuseRemovedProfile } from '@/types/removed-options';
+import { refuseRemovedProfile, refuseTurnedSwitches } from '@/types/removed-options';
 
 export interface LivePreviewClientConfig {
   /** Explicit trusted admin origins. */
@@ -62,8 +62,8 @@ export interface LivePreviewClientConfig {
   readonly dependencies?: Readonly<Record<string, readonly string[]>>;
   /** Strategy handlers beyond patching; `createFragmentStrategy()` from `payload-live-preview/fragment` builds one. */
   readonly strategies?: StrategyHandlers;
-  /** Apply every update regardless of visibility. Default `false`. */
-  readonly disableVisibilityGate?: boolean;
+  /** Hold an off-screen update until its element is visible. Default `true`; `false` applies every update at once. */
+  readonly enableVisibilityGate?: boolean;
   /** Cache size above which off-screen updates wait for intersection. Default `50`. */
   readonly visibilityGateThreshold?: number;
   /** Mount an `aria-live` region for connections, applied updates and heartbeat disconnects. Default `true`. */
@@ -79,10 +79,10 @@ export interface LivePreviewClientConfig {
   ) => FieldRenderer | undefined;
   /** The project's rich-text renderer, shared with SSR. Its output is sanitized. */
   readonly renderRichText?: RichTextRenderer;
-  /** Ignore `document.referrer` as an origin source. Default `true`. */
-  readonly disableReferrerDetection?: boolean;
-  /** Disable the dev-mode localhost matcher. Default `false`. */
-  readonly disableLocalhostMatching?: boolean;
+  /** Take `document.referrer` as an origin source. Default `false`. */
+  readonly enableReferrerDetection?: boolean;
+  /** The dev-mode localhost matcher. Default `true`. */
+  readonly enableLocalhostMatching?: boolean;
   /** Which windows may post updates. Default `'parent-or-opener'`. */
   readonly eventSourcePolicy?: EventSourcePolicy;
   /**
@@ -105,13 +105,14 @@ export interface LivePreviewClientConfig {
 /** The configuration with the defaults table applied: explicit options win. */
 export function withProfileDefaults(config: LivePreviewClientConfig): LivePreviewClientConfig {
   refuseRemovedProfile(config);
+  refuseTurnedSwitches(config);
   // The bare runtime's own fallbacks are older than the table for three of these rows, so the
   // client fills every one it was not given.
   const rows = V2_RUNTIME_DEFAULTS;
   return {
     ...config,
     skipUnchanged: config.skipUnchanged ?? rows.skipUnchanged,
-    disableReferrerDetection: config.disableReferrerDetection ?? rows.disableReferrerDetection,
+    enableReferrerDetection: config.enableReferrerDetection ?? rows.enableReferrerDetection,
     eventSourcePolicy: config.eventSourcePolicy ?? rows.eventSourcePolicy,
     sanitizerPolicy: config.sanitizerPolicy ?? rows.sanitizerPolicy,
   };

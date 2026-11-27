@@ -24,7 +24,7 @@ describe('the defaults table covers every readiness row', () => {
     // The 1.x table that `defaults: 'v1'` restored until 3.0 had the opposite in each row.
     expect(V2_ADAPTER_DEFAULTS).toEqual({ strict: true, previewSignals: ['query'] });
     expect(V2_RUNTIME_DEFAULTS).toEqual({
-      disableReferrerDetection: true,
+      enableReferrerDetection: false,
       eventSourcePolicy: 'parent-or-opener',
       skipUnchanged: true,
       sanitizerPolicy: 'strict',
@@ -43,7 +43,7 @@ describe('withProfileDefaults (client)', () => {
     for (const named of [{}, { defaults: 'v2' }] as const) {
       expect(withProfileDefaults(named)).toMatchObject({
         skipUnchanged: true,
-        disableReferrerDetection: true,
+        enableReferrerDetection: false,
         eventSourcePolicy: 'parent-or-opener',
         sanitizerPolicy: 'strict',
       });
@@ -52,7 +52,7 @@ describe('withProfileDefaults (client)', () => {
       withProfileDefaults({ defaults: 'v2', skipUnchanged: false, eventSourcePolicy: 'any' }),
     ).toMatchObject({
       skipUnchanged: false,
-      disableReferrerDetection: true,
+      enableReferrerDetection: false,
       eventSourcePolicy: 'any',
     });
   });

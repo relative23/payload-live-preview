@@ -79,7 +79,7 @@ function start(render: (title: string) => string): void {
     emitter,
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     enableA11y: false,
     warn: (message) => {
       warnings.push(String(message));

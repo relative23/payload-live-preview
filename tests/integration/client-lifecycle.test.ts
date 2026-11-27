@@ -41,7 +41,7 @@ describe('LivePreviewClient — lifecycle', () => {
     const other = 'https://staging-admin.example.com';
     // Localhost matching off: in dev mode `enumerate()` would add 24 dev ports.
     const client = new LivePreviewClient(
-      pipelineConfig({ allowedOrigins: [TRUSTED, other], disableLocalhostMatching: true }),
+      pipelineConfig({ allowedOrigins: [TRUSTED, other], enableLocalhostMatching: false }),
     );
 
     try {
@@ -274,7 +274,7 @@ describe('LivePreviewClient — lifecycle', () => {
     const client = new LivePreviewClient(
       pipelineConfig({
         allowedOrigins: [TRUSTED, other],
-        disableLocalhostMatching: true,
+        enableLocalhostMatching: false,
         heartbeatMs: 1_000,
       }),
     );

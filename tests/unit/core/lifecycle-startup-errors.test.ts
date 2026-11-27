@@ -42,7 +42,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
       emitter,
       sendReady,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
 
     try {
@@ -65,7 +65,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
       readyTargets: [TRUSTED],
       emitter: new EventEmitter(),
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       log: () => {
         throw new Error('consumer logger failed');
       },
@@ -134,7 +134,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
       readyTargets: [TRUSTED],
       emitter,
       sendReady,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
 
     runtime.start();
@@ -162,7 +162,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
       readyTargets: [TRUSTED],
       emitter,
       sendReady,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
 
     runtime.start();
@@ -189,7 +189,7 @@ describe('LivePreviewRuntime — error handling during startup and teardown', ()
       readyTargets: [TRUSTED],
       emitter,
       sendReady,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
 
     runtime.start();

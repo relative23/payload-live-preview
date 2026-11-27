@@ -28,7 +28,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -51,7 +51,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     const span = document.createElement('span');
@@ -73,7 +73,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       originMatcher: () => true,
       readyTargets: [],
       emitter,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     expect(runtime.cache.fieldCount).toBe(1);
@@ -91,7 +91,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'unsaved before bfcache' } });
@@ -117,7 +117,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'unsaved next route' } });
@@ -145,7 +145,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter,
       debounceMs: 0,
       heartbeatMs: 20,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'unsaved' } });
@@ -173,7 +173,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       strategies: { route: { plan: () => false, refresh } },
     });
     runtime.start();
@@ -203,7 +203,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       autoBind: 'unique',
     });
     runtime.start();
@@ -240,7 +240,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       strategies: { route: { plan: () => false, refresh } },
     });
     runtime.start();
@@ -283,7 +283,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       validateToken,
     });
     runtime.start();
@@ -319,7 +319,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       originMatcher: () => true,
       readyTargets: [],
       emitter,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     expect(cacheRefresh).toHaveBeenCalledOnce();
@@ -377,7 +377,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter,
       debounceMs: 50,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -412,7 +412,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -451,7 +451,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -501,7 +501,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -540,7 +540,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -580,7 +580,7 @@ describe('LivePreviewRuntime — cache refresh', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 

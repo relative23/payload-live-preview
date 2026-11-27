@@ -54,7 +54,7 @@ export function createSchedulerReal(): SchedulerReal {
     {
       debounceMs: 1_000_000,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => targets.length,
     },
   );

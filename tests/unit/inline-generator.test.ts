@@ -207,7 +207,7 @@ describe('generateInlineScript', () => {
   });
 
   it('writes the slots in INLINE_CONFIG_KEYS order, the one table the runtime destructures', () => {
-    expect(INLINE_CONFIG_KEYS).toHaveLength(29);
+    expect(INLINE_CONFIG_KEYS).toHaveLength(32);
     expect(INLINE_CONFIG_KEYS.indexOf('fragmentEndpoint')).toBe(17);
     expect(INLINE_CONFIG_KEYS.indexOf('revealEditedField')).toBe(18);
     expect(INLINE_CONFIG_KEYS.indexOf('routeStrategy')).toBe(19);
@@ -219,16 +219,27 @@ describe('generateInlineScript', () => {
     expect(INLINE_CONFIG_KEYS.indexOf('softNavigationEvents')).toBe(25);
     expect(INLINE_CONFIG_KEYS.indexOf('subfieldCoverage')).toBe(26);
     expect(INLINE_CONFIG_KEYS.indexOf('mergeTimeoutMs')).toBe(27);
-    // Slot 20 is retired: it held `onUnboundChange` until 3.0, keeps its number and stays empty.
-    const retired = INLINE_CONFIG_KEYS.indexOf('onUnboundChange');
+    expect(INLINE_CONFIG_KEYS.indexOf('internalLinkPattern')).toBe(28);
+    expect(INLINE_CONFIG_KEYS.indexOf('enableVisibilityGate')).toBe(29);
+    expect(INLINE_CONFIG_KEYS.indexOf('enableReferrerDetection')).toBe(30);
+    expect(INLINE_CONFIG_KEYS.indexOf('enableLocalhostMatching')).toBe(31);
+    // Four slots are retired: `onUnboundChange` and the three `disable…` switches held them until
+    // 3.0. Each keeps its number and stays empty.
+    const retired = [
+      INLINE_CONFIG_KEYS.indexOf('disableVisibilityGate'),
+      INLINE_CONFIG_KEYS.indexOf('disableReferrerDetection'),
+      INLINE_CONFIG_KEYS.indexOf('disableLocalhostMatching'),
+      INLINE_CONFIG_KEYS.indexOf('onUnboundChange'),
+    ];
+    expect(retired).toEqual([8, 11, 12, 20]);
     const every = Object.fromEntries(
       INLINE_CONFIG_KEYS.flatMap((key, index) =>
-        index === retired ? [] : [[key, `slot-${String(index)}`]],
+        retired.includes(index) ? [] : [[key, `slot-${String(index)}`]],
       ),
     ) as unknown as InlineScriptConfig;
     expect(generatedConfig(generateInlineScript({ ...every, mergeDepth: 1 }))).toEqual(
       INLINE_CONFIG_KEYS.map((key, index) =>
-        key === 'mergeDepth' ? 1 : index === retired ? undefined : `slot-${String(index)}`,
+        key === 'mergeDepth' ? 1 : retired.includes(index) ? undefined : `slot-${String(index)}`,
       ),
     );
   });
@@ -255,13 +266,14 @@ describe('generateInlineScript', () => {
     // `null` counts as omitted.
     const written = generatedConfig(
       generateInlineScript({
-        disableReferrerDetection: false,
+        enableReferrerDetection: true,
         eventSourcePolicy: 'any',
         sanitizerPolicy: 'compat',
         skipUnchanged: null,
       } as unknown as InlineScriptConfig),
     );
-    expect(row(written, 'disableReferrerDetection')).toBe(false);
+    expect(row(written, 'enableReferrerDetection')).toBe(true);
+    expect(row(written, 'disableReferrerDetection')).toBeUndefined();
     expect(row(written, 'eventSourcePolicy')).toBe('any');
     expect(row(written, 'sanitizerPolicy')).toBe('compat');
     expect(row(written, 'skipUnchanged')).toBeUndefined();
@@ -337,12 +349,13 @@ describe('generateInlineScript', () => {
 
   it('forwards visibility-gate options into the runtime config', () => {
     const script = generateInlineScript({
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       visibilityGateThreshold: 200,
       intersectionRootMargin: '500px',
     });
     const config = generatedConfig(script);
-    expect(config[8]).toBe(true);
+    expect(config[29]).toBe(false);
+    expect(config[8]).toBeUndefined();
     expect(config[9]).toBe(200);
     expect(config[10]).toBe('500px');
   });
@@ -351,7 +364,7 @@ describe('generateInlineScript', () => {
   it('refuses a number the wire cannot carry, and names the option', () => {
     for (const threshold of [Number.POSITIVE_INFINITY, Number.NaN]) {
       expect(() => generateInlineScript({ visibilityGateThreshold: threshold })).toThrow(
-        /`visibilityGateThreshold` is (Infinity|NaN).*`disableVisibilityGate: true`/u,
+        /`visibilityGateThreshold` is (Infinity|NaN).*`enableVisibilityGate: false`/u,
       );
     }
     expect(() => generateInlineScript({ debounceMs: Number.POSITIVE_INFINITY })).toThrow(
@@ -364,12 +377,14 @@ describe('generateInlineScript', () => {
 
   it('forwards origin-detection toggles into the runtime config', () => {
     const script = generateInlineScript({
-      disableReferrerDetection: true,
-      disableLocalhostMatching: true,
+      enableReferrerDetection: true,
+      enableLocalhostMatching: false,
     });
     const config = generatedConfig(script);
-    expect(config[11]).toBe(true);
-    expect(config[12]).toBe(true);
+    expect(config[30]).toBe(true);
+    expect(config[31]).toBe(false);
+    expect(config[11]).toBeUndefined();
+    expect(config[12]).toBeUndefined();
   });
 
   it('includes the build-time runtime IIFE', () => {
@@ -404,9 +419,9 @@ describe('generateInlineScript', () => {
         debounceMs: 0,
         enableA11y: false,
         heartbeatMs: 0,
-        disableVisibilityGate: true,
-        disableReferrerDetection: true,
-        disableLocalhostMatching: true,
+        enableVisibilityGate: false,
+        enableReferrerDetection: false,
+        enableLocalhostMatching: false,
       });
 
       runInNewContext(script, {

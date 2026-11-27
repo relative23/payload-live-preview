@@ -55,7 +55,7 @@ const establishPreviewToken = defineMiddleware(async (context, next) => {
 const COMMON = {
   authorizePreview: (request: Request) => authorizePreviewRequest(request, strategy),
   previewSignals: ['query', 'fetch-dest'],
-  disableReferrerDetection: false,
+  enableReferrerDetection: true,
   eventSourcePolicy: 'any',
   skipUnchanged: false,
   sanitizerPolicy: 'compat',

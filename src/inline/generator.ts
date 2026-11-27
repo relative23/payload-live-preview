@@ -90,7 +90,7 @@ function buildConfigLiteral(config: InlineScriptConfig): string {
 function assertSerializable(key: string, value: unknown): void {
   if (typeof value !== 'number' || Number.isFinite(value)) return;
   const instead =
-    key === 'visibilityGateThreshold' ? ' To never defer, set `disableVisibilityGate: true`.' : '';
+    key === 'visibilityGateThreshold' ? ' To never defer, set `enableVisibilityGate: false`.' : '';
   throw new Error(
     `[live-preview] \`${key}\` is ${String(value)}, which the inline configuration writes as null, ` +
       `so the runtime would never see it. Pass a finite number.${instead}`,

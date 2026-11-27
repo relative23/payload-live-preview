@@ -163,7 +163,7 @@ function createRuntime(emitter = new EventEmitter()): LivePreviewRuntime {
     readyTargets: [TRUSTED_ORIGIN],
     emitter,
     debounceMs: 0,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     enableA11y: true,
     sendReady: () => undefined,
     log: () => undefined,

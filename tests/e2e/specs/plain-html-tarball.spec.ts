@@ -204,7 +204,7 @@ async function createFixture(): Promise<PackedHtmlFixture> {
       // A page served from localhost counts as development and trusts any
       // localhost origin (docs/security.md); this one opts out, as a page on a
       // production host is anyway.
-      const strict = generateInlineScript({ ...options, disableLocalhostMatching: true });
+      const strict = generateInlineScript({ ...options, enableLocalhostMatching: false });
       const route = generateInlineScript({ ...options, routeStrategy: true });
       const routePage = (head) =>
         '<!doctype html><html><head><meta charset="utf-8">' + wrapWithScriptTag(route) +

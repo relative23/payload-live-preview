@@ -16,6 +16,7 @@ table.
 | `strict: false` is removed                                                   | pass `authorizePreview` and remove the option                                                                                                                                     | no response changes on intent alone; an adapter given `strict: false` refuses to start ([authorization.md](authorization.md))                                                                                                                                              |
 | the lean runtime (`LEAN_RUNTIME` and the `runtime` option) is removed        | delete the import and the option                                                                                                                                                  | one runtime; for fewer bytes on a visitor's page deliver it as an asset (`delivery: 'asset'`, Astro's `mode: 'loader'`)                                                                                                                                                    |
 | `onUnboundChange`, `isPreviewRequest()` and `adminOrigins` are removed       | `npx pll migrate ./src --write`                                                                                                                                                   | the codemods rename them: `onUnfaithfulPatch` (`'route'` is `'escalate'`), `hasPreviewIntent()`, `allowedOrigins`                                                                                                                                                          |
+| the `disable…` switches are named by what they turn on                       | `npx pll migrate ./src --write`                                                                                                                                                   | `enableVisibilityGate`, `enableReferrerDetection` and `enableLocalhostMatching`, each with the value turned round; the codemod rewrites a literal `true` or `false` and lists any other value                                                                              |
 | the `signed-token` replay store `{ isUsed, markUsed }` is removed            | implement `consume(id, expiresAt)`                                                                                                                                                | one check-and-record step; [security.md](security.md) has a Redis example                                                                                                                                                                                                  |
 | `new OriginDetector()` no longer trusts `document.referrer` by default       | `new OriginDetector({ enableReferrerDetection: false })`                                                                                                                          | pass `enableReferrerDetection: true` where a detector you build yourself relies on the referrer                                                                                                                                                                            |
 | a route refresh that returns nothing is no longer taken as committed         | return a promise that settles after the host's commit; `LP0810` names a refresh that returns no promise, under `debug`                                                            | `LivePreviewNavigation` (Next.js), `livePreviewNavigation()` (SvelteKit) and the Nuxt module's client plugin do it; a host that renders synchronously returns `Promise.resolve()`                                                                                          |
@@ -39,14 +40,15 @@ an update naming none, `lexicalToHtml()` returning unsanitised markup where it
 has no document, a detector that trusts a referrer without being asked to,
 Astro's inline delivery as the default, a partly bound group covered by its one
 bound path, a route refresh without a promise taken as committed, the lean
-runtime, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
+runtime, the three `disable…` switches, Payload 2 and `fieldSchemaJSON`. A name that is gone fails the
 import or the type check.
 What a JavaScript config can still pass is refused at startup with the reason
 and the codemod, in production too: `onUnboundChange` and `defaults: 'v1'` by
 the adapters and the generator (the profile by the client as well),
-`strict: false` by the adapters, a replay store without `consume` by the first
-request it would guard, `livePreviewScriptProps()` without `delivery: 'asset'`
-by the call, a hook or `createDocumentSession()` without `document` or with
+`disableVisibilityGate`, `disableReferrerDetection` and
+`disableLocalhostMatching` by all three, `strict: false` by the adapters, a
+replay store without `consume` by the first request it would guard,
+`livePreviewScriptProps()` without `delivery: 'asset'` by the call, a hook or `createDocumentSession()` without `document` or with
 `requireLocale: false` when it is created.
 `adminOrigins` is the one that is not refused: it is no longer read.
 
@@ -172,8 +174,8 @@ if you do not already have it. It rewrites only names a file binds from
 Anything it cannot rewrite safely — an object shorthand, a re-export, a call
 whose options are not a literal — is listed as `file:line` and left as it
 stands. The codemods work one by one. `rename-admin-origins-option`,
-`rename-bindings-authorized-option`, `rename-on-unbound-change` and
-`expand-defaults-v1` take each spot on its own, so a spot they list does not
+`rename-bindings-authorized-option`, `rename-on-unbound-change`,
+`rename-disable-switches` and `expand-defaults-v1` take each spot on its own, so a spot they list does not
 stop them from rewriting the rest of the file. `rename-is-preview-request` and
 `move-fetch-preview-helpers` make none of their edits in a script that holds a
 spot they cannot rewrite: finish that spot by hand and run them again.
@@ -185,8 +187,8 @@ file needs manual attention. `.astro`, `.vue` and `.svelte` files are rewritten
 in their script blocks only; a conflict in one block does not hold back
 another. The codemods are `rename-is-preview-request`,
 `rename-admin-origins-option`, `rename-bindings-authorized-option`,
-`move-fetch-preview-helpers`, `rename-on-unbound-change` and
-`expand-defaults-v1`.
+`move-fetch-preview-helpers`, `rename-on-unbound-change`,
+`rename-disable-switches` and `expand-defaults-v1`.
 
 `pll doctor --v2` reads the served inline configuration and reports each
 runtime row still at its `'v1'` value as `LP0709`. A script names the defaults
@@ -209,7 +211,7 @@ single option moves one row, except the first, which 3.0 fixed.
 | ------------------ | ---------------------------------- | ---------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Authorization      | response changes on intent alone   | `authorizePreview` required              | `authorizePreview`; `strict: false` until 3.0 | a page that showed preview to anyone now needs a real editor session or token                                                                    |
 | Intent signals     | `['query','fetch-dest','referer']` | `['query']`                              | `previewSignals`                              | a flow that relied on the admin referer alone must add `?preview=true`                                                                           |
-| Referrer trust     | on                                 | off                                      | `disableReferrerDetection: true`              | same as above                                                                                                                                    |
+| Referrer trust     | on                                 | off                                      | `enableReferrerDetection: false`              | same as above                                                                                                                                    |
 | Message source     | any origin-valid window            | parent/opener only                       | `eventSourcePolicy: 'parent-or-opener'`       | a custom embedding that posts from another window                                                                                                |
 | Unchanged bindings | re-applied                         | skipped                                  | `skipUnchanged: true`                         | a renderer with side effects that expected every message                                                                                         |
 | Sanitizer          | `id` and every `data-*` pass       | `id`, `name` and every `data-*` stripped | `sanitizerPolicy: 'strict'`                   | rich text that relies on `id` or `data-*`; a site that enforces Trusted Types also lists `payload-live-preview` in its `trusted-types` directive |

@@ -26,7 +26,7 @@ export default defineConfig({
             // On localhost the runtime trusts every localhost origin by default, which would admit
             // the mock parent whatever the allow-list says. Off, only `allowedOrigins` decides, so the
             // wrong-origin control differs from the real build in that one value.
-            disableLocalhostMatching: true,
+            enableLocalhostMatching: false,
             debounceMs: 25,
             scopeBindingsByOwner: true,
           }),

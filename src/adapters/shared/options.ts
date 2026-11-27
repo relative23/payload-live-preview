@@ -70,12 +70,12 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly debounceMs?: number;
   /** Heartbeat timeout in ms. Default `0` (off): the Payload admin sends no keepalive. */
   readonly heartbeatMs?: number;
-  /** Apply every update regardless of viewport position. Default `false`. */
-  readonly disableVisibilityGate?: boolean;
+  /** Hold an off-screen update until its element scrolls into view. Default `true`; `false` applies every update at once. */
+  readonly enableVisibilityGate?: boolean;
   /**
    * Binding count above which off-screen updates wait until their element
    * scrolls into view. Default `50`. A preview nobody scrolls needs it raised,
-   * or `disableVisibilityGate`.
+   * or `enableVisibilityGate: false`.
    */
   readonly visibilityGateThreshold?: number;
   /** Skip bindings whose value did not change. Default `true`. */
@@ -143,10 +143,10 @@ export interface PreviewAdapterOptions<Req = Request> {
   readonly sanitizerPolicy?: 'compat' | 'strict';
   /** Which windows may post updates. Default `'parent-or-opener'`. */
   readonly eventSourcePolicy?: EventSourcePolicy;
-  /** Ignore `document.referrer` for origin detection. Default `true`. */
-  readonly disableReferrerDetection?: boolean;
-  /** Turn off the dev-mode `localhost` origin matcher. Default `false`. */
-  readonly disableLocalhostMatching?: boolean;
+  /** Take `document.referrer` as an origin source. Default `false`. */
+  readonly enableReferrerDetection?: boolean;
+  /** The dev-mode `localhost` origin matcher. Default `true`. */
+  readonly enableLocalhostMatching?: boolean;
   /**
    * Verify an intent-bearing request before anything privileged is decided:
    * return the result of `authorizePreviewRequest()` (or its context), and

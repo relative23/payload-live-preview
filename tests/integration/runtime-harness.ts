@@ -46,11 +46,11 @@ export interface BakedConfig {
   readonly debounceMs: number;
   readonly enableA11y: boolean;
   readonly heartbeatMs: number;
-  readonly disableVisibilityGate: boolean;
+  readonly enableVisibilityGate: boolean;
   readonly visibilityGateThreshold: number;
   readonly intersectionRootMargin: string;
-  readonly disableReferrerDetection: boolean;
-  readonly disableLocalhostMatching: boolean;
+  readonly enableReferrerDetection: boolean;
+  readonly enableLocalhostMatching: boolean;
   readonly scopeBindingsByOwner?: boolean;
   readonly skipUnchanged?: boolean;
   readonly eventSourcePolicy?: 'any' | 'parent-or-opener';
@@ -67,11 +67,11 @@ export function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfigTup
     debounceMs: 0,
     enableA11y: false,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     visibilityGateThreshold: 50,
     intersectionRootMargin: '200px',
-    disableReferrerDetection: true,
-    disableLocalhostMatching: true,
+    enableReferrerDetection: false,
+    enableLocalhostMatching: false,
     // These pipeline tests predate the 2.0 default flip and assert v1 behaviour
     // (any message source, no skip-unchanged, compat sanitizer). The flip
     // itself is covered by defaults-profile, dual-mode and the adapter suites.
@@ -89,19 +89,20 @@ export function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfigTup
     config.debounceMs,
     config.enableA11y,
     config.heartbeatMs,
-    config.disableVisibilityGate,
+    // Slots 8, 11 and 12 held the `disable…` switches of 2.x and stay empty.
+    undefined,
     config.visibilityGateThreshold,
     config.intersectionRootMargin,
-    config.disableReferrerDetection,
-    config.disableLocalhostMatching,
+    undefined,
+    undefined,
     config.scopeBindingsByOwner,
     config.skipUnchanged,
     config.eventSourcePolicy,
     config.sanitizerPolicy,
   ];
-  if (config.softNavigationEvents === undefined) return establishedSlots;
   // Slots 17–24 predate the navigation row. In particular, `defaults` stays
-  // at 24; the event list is the append-only slot 25.
+  // at 24; the event list is the append-only slot 25, and the three switches
+  // 3.0 turned round follow the rows 26 to 28 at 29, 30 and 31.
   return [
     ...establishedSlots,
     undefined,
@@ -113,6 +114,12 @@ export function bakeConfig(overrides: Partial<BakedConfig> = {}): BakedConfigTup
     undefined,
     undefined,
     config.softNavigationEvents,
+    undefined,
+    undefined,
+    undefined,
+    config.enableVisibilityGate,
+    config.enableReferrerDetection,
+    config.enableLocalhostMatching,
   ];
 }
 

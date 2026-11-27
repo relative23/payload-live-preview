@@ -20,9 +20,32 @@ export function refuseRemovedProfile(options: object): void {
   }
 }
 
+/** The switches 3.0 names by what they turn on, under their 2.x names (ADR 0007, row 38). */
+const TURNED_SWITCHES = [
+  ['disableVisibilityGate', 'enableVisibilityGate'],
+  ['disableReferrerDetection', 'enableReferrerDetection'],
+  ['disableLocalhostMatching', 'enableLocalhostMatching'],
+] as const;
+
+/**
+ * A switch under its 2.x name. The client takes these too, and the value would be lost without
+ * a word: `disableReferrerDetection: false` asked for the referrer, the new name is not set.
+ */
+export function refuseTurnedSwitches(options: object): void {
+  const given = options as Readonly<Record<string, unknown>>;
+  for (const [before, now] of TURNED_SWITCHES) {
+    if (given[before] === undefined) continue;
+    throw new Error(
+      `payload-live-preview: \`${before}\` was removed in 3.0. Name it \`${now}\`, with the ` +
+        'value turned round; `pll migrate` rewrites a literal (ADR 0007, row 38).',
+    );
+  }
+}
+
 /** Throws for an option that 3.0 removed; `options` is whatever the caller was handed. */
 export function refuseRemovedOptions(options: object): void {
   refuseRemovedProfile(options);
+  refuseTurnedSwitches(options);
   const given: { readonly onUnboundChange?: unknown; readonly strict?: unknown } = options;
   if (given.strict === false) {
     throw new Error(

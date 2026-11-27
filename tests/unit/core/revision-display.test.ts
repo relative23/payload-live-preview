@@ -38,7 +38,7 @@ function start(html: string, overrides: Partial<Options> = {}): Harness {
     emitter,
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     warn: () => {},
     ...overrides,
   });
@@ -105,7 +105,7 @@ describe('a revision the page shows completely', () => {
 
   it('counts writes the visibility gate holds as landed, and reports their number', async () => {
     const { runtime } = start(BOUND + '<p data-payload-field="note">N</p>', {
-      disableVisibilityGate: false,
+      enableVisibilityGate: true,
       visibilityGateThreshold: 0,
     });
     await send({ title: 'A', note: 'B' });

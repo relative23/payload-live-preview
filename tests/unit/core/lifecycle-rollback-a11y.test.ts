@@ -50,7 +50,7 @@ describe('a failed start with an announcer that will not detach', () => {
       emitter: new EventEmitter(),
       debounceMs: 0,
       heartbeatMs: 10 * 60_000,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       enableA11y: true,
       warn: () => {},
       log: (...args: unknown[]) => {

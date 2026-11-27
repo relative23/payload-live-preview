@@ -21,7 +21,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     const setAttribute = element.setAttribute.bind(element);
@@ -62,7 +62,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -92,7 +92,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -122,7 +122,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       readyTargets: [],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -145,7 +145,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 50,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -174,7 +174,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       readyTargets: [],
       emitter,
       debounceMs: 50,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
 
@@ -202,7 +202,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'zombie' } });
@@ -227,7 +227,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 0,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'applied', untouched: 42 } });
@@ -251,7 +251,7 @@ describe('LivePreviewRuntime — flush accounting and replay', () => {
       readyTargets: [TRUSTED],
       emitter,
       debounceMs: 20,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
     });
     runtime.start();
     fireMessage({ type: 'payload-live-preview', data: { title: 'A', marker: 'old' } });

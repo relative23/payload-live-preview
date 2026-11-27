@@ -7,7 +7,8 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
     vi.stubGlobal('__LIVE_PREVIEW_FRAGMENT__', { createFragmentStrategy, createRouteStrategy });
     document.body.innerHTML =
       '<section data-payload-fragment="hero"><h1 data-payload-field="title">old</h1></section>';
-    const tuple = [...bakeConfig(), '/payload/fragment'];
+    const tuple = [...bakeConfig()];
+    tuple[17] = '/payload/fragment';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
     const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
@@ -20,7 +21,8 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
     vi.stubGlobal('__LIVE_PREVIEW_ROUTE__', { createRouteStrategy });
     document.body.innerHTML =
       '<h1 data-payload-field="title" data-payload-strategy="route">old</h1>';
-    const tuple = [...bakeConfig(), undefined, undefined, true];
+    const tuple = [...bakeConfig()];
+    tuple[19] = true;
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
     const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
@@ -34,7 +36,8 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
     vi.stubGlobal('__LIVE_PREVIEW_ROUTE__', undefined);
     vi.stubGlobal('__LIVE_PREVIEW_FRAGMENT__', undefined);
     document.body.innerHTML = '';
-    const tuple = [...bakeConfig(), undefined, undefined, true];
+    const tuple = [...bakeConfig()];
+    tuple[19] = true;
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
     const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();
@@ -46,7 +49,8 @@ describe('bootstrapInlineRuntime — fragments (ADR 0011)', () => {
   it('has no fragment client without the prelude, whatever the wire slot says', async () => {
     vi.stubGlobal('__LIVE_PREVIEW_FRAGMENT__', undefined);
     document.body.innerHTML = '';
-    const tuple = [...bakeConfig(), '/payload/fragment'];
+    const tuple = [...bakeConfig()];
+    tuple[17] = '/payload/fragment';
     (globalThis as { __LIVE_PREVIEW_CONFIG__?: unknown }).__LIVE_PREVIEW_CONFIG__ = tuple;
     const { bootstrapInlineRuntime } = await import('@core/session/runtime');
     const api = bootstrapInlineRuntime();

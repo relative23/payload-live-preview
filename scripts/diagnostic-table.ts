@@ -51,7 +51,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0202:
     "The message carries neither a global slug nor a collection slug, so owner scoping cannot route it; nothing was applied. Check the admin's live-preview setup for that collection, or turn `scopeBindingsByOwner` off on that page.",
   LP0301:
-    'Raise `visibilityGateThreshold` (or set `disableVisibilityGate`) on the adapter, `LivePreviewClient` or `generateInlineScript()`, or accept that below-the-fold updates wait for a scroll.',
+    'Raise `visibilityGateThreshold` (or set `enableVisibilityGate: false`) on the adapter, `LivePreviewClient` or `generateInlineScript()`, or accept that below-the-fold updates wait for a scroll.',
   LP0401:
     'The attribute (`on*`, `style`, `srcdoc`, `formaction`, `id`, `name`, …) or the value (a `javascript:` or `data:` URL) is refused by design. Bind a different attribute or fix the value; the rules are in [security.md](security.md).',
   LP0402:
@@ -93,7 +93,7 @@ export const REMEDIES: Readonly<Record<string, string>> = Object.freeze({
   LP0704:
     'Gate binding emission on an authorized preview context with `createPreviewBindings()`; its suppressed form emits nothing at all.',
   LP0705:
-    'The threshold is the one the served inline script sets, else the default 50; a script that sets `disableVisibilityGate` gets no finding. Raise `visibilityGateThreshold` (or set `disableVisibilityGate`) on the adapter, `LivePreviewClient` or `generateInlineScript()` if the whole page must stay live, or confirm that deferring below the fold is acceptable here.',
+    'The threshold is the one the served inline script sets, else the default 50; a script that turns the gate off gets no finding. Raise `visibilityGateThreshold` (or set `enableVisibilityGate: false`) on the adapter, `LivePreviewClient` or `generateInlineScript()` if the whole page must stay live, or confirm that deferring below the fold is acceptable here.',
   LP0706:
     'Give every binding an owning `data-payload-owner` ancestor, or leave `scopeBindingsByOwner` off until they all have one.',
   LP0707:

@@ -154,7 +154,7 @@ describe('the runtime', () => {
         allowedOrigins: [TRUSTED],
         eventSourcePolicy: 'any',
         debounceMs: 0,
-        disableVisibilityGate: true,
+        enableVisibilityGate: false,
         internalLinkPattern: pattern,
       };
       vi.stubGlobal(
@@ -172,7 +172,7 @@ describe('the runtime', () => {
         allowedOrigins: [TRUSTED],
         eventSourcePolicy: 'any',
         debounceMs: 0,
-        disableVisibilityGate: true,
+        enableVisibilityGate: false,
         internalLinkPattern: '/{slug}/',
       });
       client.start();

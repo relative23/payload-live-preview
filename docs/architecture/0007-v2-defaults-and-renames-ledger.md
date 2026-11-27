@@ -87,6 +87,7 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 35  | 3.0                                | range   | `peerDependencies.astro` `>=4.0.0 <8.0.0`; Astro 4, 5 and 6 each installed by a CI job                                                                                                                                                                                       | `>=7.2.8 <8.0.0`. Astro releases only its current major, and Astro 4 to 6 carry a critical advisory that is patched only in 7.2.8 (GHSA-26w7-cxv4-gfx2), which is why the range begins there and not at 7.0.0. The base adapter runs at 7.2.8 on every push. This replaces the Astro part of row 29                       | —                                                         | none: update Astro to 7.2.8 or newer with Astro's own upgrade guides; a project that stays on Astro 4 to 6 stays on 2.x                                                                                                                                                                                                                       |
 | 36  | 3.0 (decided 2026-11-25)           | removal | `strict: false`: an adapter that changes a response on preview intent alone, without `authorizePreview`                                                                                                                                                                      | omitted from the type, which keeps `strict?: true`; an adapter that decides per request needs `authorizePreview`, non-empty `allowedOrigins` (`https:` in production) and no `'referer'` signal, and one given `strict: false` refuses to start                                                                           | —                                                         | none: only the site can say who may see a preview; `pll doctor --v3` names the places and docs/authorization.md has the strategies                                                                                                                                                                                                            |
 | 37  | 3.0 (decided 2026-11-24)           | removal | the lean runtime: `LEAN_RUNTIME` from the `/lean` entry and the `runtime` option, a second artifact of about 36 KiB gzip against 44 that leaves out the strategies, the keyed morph, structural arrays, item templates, the announcer and auto-binding                       | one runtime. The entry, the option, `RuntimeArtifact` and the diagnostic for a feature it left out are gone. Fewer bytes for a visitor come from delivering the runtime as an asset, where a page carries a bootstrap of a few hundred bytes: `delivery: 'asset'`, and Astro's `mode: 'loader'`, the default since row 33 | `pll doctor --v3` names a `runtime` option                | none: delete the import and the option; the build fails on the import until then                                                                                                                                                                                                                                                              |
+| 38  | 3.0 (decided 2026-11-24)           | rename  | `disableVisibilityGate`, `disableReferrerDetection` and `disableLocalhostMatching`: three switches named by what they turn off                                                                                                                                               | `enableVisibilityGate` (default `true`), `enableReferrerDetection` (default `false`) and `enableLocalhostMatching` (default `true`), each with the value turned round, as the hooks and `OriginDetector` already spell the origin switches. An adapter, the generator or the client given an old name refuses to start    | —                                                         | `rename-disable-switches` rewrites a literal `true` or `false`; any other value, a JSX attribute, or both names at once is a conflict                                                                                                                                                                                                         |
 
 2026-09-16 (2.0.1): row 5's "outside local dev" names an exception the runtime
 does not have. `disableReferrerDetection` is `true` everywhere under `'v2'`;
@@ -111,6 +112,19 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
+2026-11-27 (3.0): row 38 is added and carried out. An option that names
+what it turns off reads twice negated wherever it is off by default:
+`disableReferrerDetection: false` turned referrer trust on. The three switches
+are named by what they turn on, as `enableA11y`, the hooks and `OriginDetector`
+already were. Only a literal is rewritten by `pll migrate`: any other value may
+be `undefined`, which meant the default under the old name and would read as
+"on" once negated. The inline tuple is not reordered, though a major could:
+`pll doctor` of one version reads the page another version served by slot
+number, and a new order would need a generation marker and a second key table
+to save four commas. The three old slots stay empty, as the slot of
+`onUnboundChange` does, and the new ones are appended; the doctor reads either
+and words a finding in the spelling of the version that wrote the page.
+
 2026-11-27 (3.0): row 37 is added and carried out: the lean runtime leaves.
 It saved a visitor about a fifth of the script, and since row 33 a visitor of
 an Astro site downloads a bootstrap, not the script; the adapters deliver the
@@ -118,7 +132,7 @@ same way with `delivery: 'asset'`. What it cost was a second artifact with a
 second behaviour: a build flag read at six places, a runner of its own, a
 diagnostic for what it left out, and the one generated file that had to be
 committed, with the gate that kept it current. All of that goes with it. The
-branch that parked the Nuxt 3 example takes row 38.
+branch that parked the Nuxt 3 example takes the next free row.
 
 2026-11-27 (3.0): row 23 is carried out. `RouteRefresh` is `() =>
 Promise<void>`. A function a JavaScript caller registers that returns no

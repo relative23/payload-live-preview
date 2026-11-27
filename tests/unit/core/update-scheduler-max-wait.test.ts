@@ -22,7 +22,7 @@ describe('UpdateScheduler — max wait', () => {
     const scheduler = new UpdateScheduler(apply, {
       debounceMs: 50,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (callback) => {
         callback(0);
@@ -46,7 +46,7 @@ describe('UpdateScheduler — max wait', () => {
       debounceMs: 50,
       maxWaitMs: 120,
       isVisible: () => true,
-      disableVisibilityGate: true,
+      enableVisibilityGate: false,
       getCacheSize: () => 1,
       scheduleFrame: (callback) => {
         callback(0);

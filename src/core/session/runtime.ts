@@ -73,11 +73,11 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     debounceMs = 50,
     enableA11y = true,
     heartbeatMs = 0,
-    disableVisibilityGate = false,
+    _disableVisibilityGate,
     visibilityGateThreshold = 50,
     intersectionRootMargin = '200px',
-    disableReferrerDetection = true,
-    disableLocalhostMatching = false,
+    _disableReferrerDetection,
+    _disableLocalhostMatching,
     scopeBindingsByOwner = false,
     skipUnchanged = true,
     eventSourcePolicy = 'parent-or-opener',
@@ -94,6 +94,9 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     subfieldCoverage,
     mergeTimeoutMs,
     internalLinkPattern,
+    enableVisibilityGate = true,
+    enableReferrerDetection = false,
+    enableLocalhostMatching = true,
   ] = readBuildConfig();
   // Which prelude the generator emitted is what the runtime can observe of
   // `routeStrategy`, whose slot adds only when a route may run.
@@ -101,8 +104,8 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
 
   const detector = new OriginDetector({
     additionalOrigins,
-    enableReferrerDetection: !disableReferrerDetection,
-    enableLocalhostMatching: !disableLocalhostMatching,
+    enableReferrerDetection,
+    enableLocalhostMatching,
   });
 
   if (detector.isProductionUnconfigured) {
@@ -142,7 +145,7 @@ export function bootstrapInlineRuntime(): LivePreviewGlobalApi | undefined {
     debounceMs,
     heartbeatMs,
     intersectionRootMargin,
-    disableVisibilityGate,
+    enableVisibilityGate,
     visibilityGateThreshold,
     enableA11y,
     scopeBindingsByOwner,

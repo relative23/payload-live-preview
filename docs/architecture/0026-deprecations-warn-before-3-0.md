@@ -218,3 +218,15 @@ referrer only when asked to, a hook names its document and leaves alone an
 update without its locale, and the Astro integration delivers through
 `'loader'`. Row 18's warning stays for a render that asks for `requireDocument:
 false`, and row 27's notice stays until the deadline is set.
+
+**3.0 turns three switches round (2026-11-27).** `disableVisibilityGate`,
+`disableReferrerDetection` and `disableLocalhostMatching` become
+`enableVisibilityGate`, `enableReferrerDetection` and `enableLocalhostMatching`
+(ADR 0007, row 38). A third option codemod, `rename-disable-switches`, rewrites
+a literal `true` or `false` in the same options literals; it lists any other
+value, because one that may be `undefined` meant the default under the old name
+and would read as "on" once negated. It runs before `expand-defaults-v1`, which
+now writes the referrer row as `enableReferrerDetection: true` and leaves it
+out where the literal still sets the row under its old name. These three had no
+warning in 2.x: the names were not deprecated there, so the startup refusal is
+the first a JavaScript config hears of it.

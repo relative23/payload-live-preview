@@ -24,7 +24,7 @@ async function contextSeenBy(options: {
     emitter: new EventEmitter(),
     debounceMs: 0,
     heartbeatMs: 10 * 60_000,
-    disableVisibilityGate: true,
+    enableVisibilityGate: false,
     ...options,
   });
   runtime.start();

@@ -16,6 +16,7 @@ import {
   type OptionsUse,
 } from '../option-literals';
 import type { CodemodImplementation, CodemodConflict, TextEdit } from '../types';
+import { TURNED_SWITCHES } from './rename-disable-switches';
 
 const ID = 'expand-defaults-v1';
 const KEY = 'defaults';
@@ -25,7 +26,7 @@ const REQUEST_ROWS: readonly (readonly [string, (q: string) => string])[] = [
   ['previewSignals', (q) => `[${[`${q}query${q}`, `${q}fetch-dest${q}`].join(', ')}]`],
 ];
 const RUNTIME_ROWS: readonly (readonly [string, (q: string) => string])[] = [
-  ['disableReferrerDetection', () => 'false'],
+  ['enableReferrerDetection', () => 'true'],
   ['eventSourcePolicy', (q) => `${q}any${q}`],
   ['skipUnchanged', () => 'false'],
   ['sanitizerPolicy', (q) => `${q}compat${q}`],
@@ -34,7 +35,13 @@ const ROWS: Readonly<Record<OptionsKind, readonly (readonly [string, (q: string)
   adapter: [...REQUEST_ROWS, ...RUNTIME_ROWS],
   runtime: RUNTIME_ROWS,
 };
-const ROW_KEYS: ReadonlySet<string> = new Set(ROWS.adapter.map(([key]) => key));
+/** The 2.x name of a row, where it had another: a value the other codemod could not turn round still sets the row. */
+const BEFORE: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.entries(TURNED_SWITCHES).map(([before, now]) => [now, before]),
+);
+const ROW_KEYS: ReadonlySet<string> = new Set(
+  ROWS.adapter.flatMap(([key]) => [key, BEFORE[key] ?? key]),
+);
 const BY_HAND = "write the rows `defaults: 'v1'` stands for by hand (docs/migration.md)";
 
 export const expandDefaultsV1: CodemodImplementation = {
@@ -131,7 +138,7 @@ function expansion(
     part.getProperties().some((member) => Node.isSpreadAssignment(member) && !known.has(member)),
   );
   const rows = ROWS[kind]
-    .filter(([key]) => !present.has(key))
+    .filter(([key]) => !present.has(key) && !present.has(BEFORE[key]))
     .map(([key, value]) => `${key}: ${value(quote)}`);
   // `'v1'` read an omitted depth as the 1.x default of 1; 2.0 asks for it with `serverURL`.
   if (!has('mergeDepth') && (has('serverURL') || opaque)) rows.push('mergeDepth: 1');
