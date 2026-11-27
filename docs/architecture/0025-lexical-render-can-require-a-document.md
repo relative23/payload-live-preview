@@ -78,3 +78,7 @@ document, or opt in now and let the build say where one is missing.
   and the warning; the packed ESM and CommonJS DOM-less probes; the native
   Astro render; the full chain, nightly and the core mutation scope, since
   the sanitizer's message changed.
+
+2026-11-27 (3.0): the default is flipped as section 2 said. A call without a
+document throws; `requireDocument: false` returns the markup as rendered and
+warns once, and its warning no longer names an opt-in.

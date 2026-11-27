@@ -423,7 +423,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 6_020,
+    gzip: 6_000,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
@@ -447,7 +447,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 55_225,
+    gzip: 55_208,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -471,7 +471,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 53_500,
+    gzip: 53_482,
     why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
   },
   {
@@ -495,14 +495,14 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 55_165,
+    gzip: 55_149,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
     from: 'payload-live-preview/lexical',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 6_164,
+    gzip: 6_145,
     why: 'the Lexical renderer from its focused entry',
   },
   {
@@ -539,7 +539,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 59_216,
+    gzip: 59_197,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
   },
   {
@@ -561,7 +561,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/lean',
     symbol: 'LEAN_RUNTIME',
     use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 36_568,
+    gzip: 36_549,
     why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {

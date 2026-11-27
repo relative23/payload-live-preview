@@ -110,6 +110,13 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
+2026-11-27 (3.0): row 18 is carried out. `lexicalToHtml()` and the Astro
+`RichText` component throw `SanitizerEnvironmentError` where they have no
+document to sanitise with, as `sanitizeHtml()` always did. `requireDocument:
+false` is the 2.x behaviour under its name, the markup as rendered with one
+warning, and `sanitize: false` still says that the caller sanitises itself. A
+browser has a document, so nothing changes there.
+
 2026-11-27 (3.0): rows 26 and 31 are carried out. `document` is required on
 `useLivePreviewDocument()` and `createDocumentSession()`, and a hook with a
 `locale` leaves alone an update that names none.

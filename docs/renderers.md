@@ -306,8 +306,8 @@ through the root entry, so block renderers registered with the root's
 
 The runtime passes the renderer's output through the sanitizer, and the server
 render goes through the same `sanitizeHtml()` with the document it is handed.
-With `requireDocument: true` a server call that has no document throws instead
-of returning the custom node's markup unsanitized. The client gets a wrapper
+A server call that has no document throws instead of returning the custom
+node's markup unsanitized. The client gets a wrapper
 because the runtime calls `renderRichText` with a context object as its second
 argument. The inline runtime (adapters) cannot carry a function;
 `renderRichText` is a `LivePreviewClient` / `initLivePreview` option.
@@ -320,10 +320,11 @@ custom node cannot introduce a script or an event handler however it is
 written. On the server `lexicalToHtml` sanitizes when it has a sanitizer document
 (`{ document }` with the call, from linkedom or jsdom; linkedom needs 2.2.1 or
 later, see [docs/security.md](security.md#html-sanitization)); **without one it
-returns the HTML as rendered and warns once**, because silently unsanitized
-output is the worse failure. `{ requireDocument: true }` makes it throw
-instead, which 3.0 does by default
-([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)). The built-in nodes escape their own output;
+throws `SanitizerEnvironmentError`**, since 3.0, because unsanitized output is
+the worse failure
+([ADR 0025](architecture/0025-lexical-render-can-require-a-document.md)).
+`{ requireDocument: false }` is the 2.x behaviour: the HTML as rendered, with
+one warning. The built-in nodes escape their own output;
 custom nodes are responsible for theirs — see [docs/security.md](security.md).
 Pass `{ sanitize: false }` when the caller sanitizes downstream itself; that
 opts out of the warning too.

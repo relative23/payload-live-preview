@@ -77,39 +77,39 @@ describe('alignment and indent', () => {
 });
 
 describe('server rendering without a sanitizer document', () => {
-  it('returns the rendered HTML and warns once', () => {
+  it('refuses to return unsanitised HTML, as sanitizeHtml does, and says nothing (ADR 0007, row 18)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.stubGlobal('document', undefined);
     __resetSanitizerWarningForTests();
     const doc = makeRoot([{ type: 'paragraph', children: [{ type: 'text', text: 'x' }] }]);
 
-    expect(lexicalToHtml(doc)).toBe('<p>x</p>');
-    expect(lexicalToHtml(doc)).toBe('<p>x</p>');
-
-    expect(warn).toHaveBeenCalledOnce();
-    // ADR 0025: the warning names the per-call document, the opt-in and 3.0,
-    // not the process-wide setter 2.1 deprecated.
-    const message = String(warn.mock.calls[0]?.[0]);
-    expect(message).toContain('{ document }');
-    expect(message).toContain('requireDocument: true');
-    expect(message).toContain('3.0');
-    expect(message).not.toContain('setSanitizerDocument');
-  });
-
-  it('refuses to return unsanitised HTML under requireDocument, as sanitizeHtml does', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.stubGlobal('document', undefined);
-    __resetSanitizerWarningForTests();
-    const doc = makeRoot([{ type: 'paragraph', children: [{ type: 'text', text: 'x' }] }]);
-
+    // Until 3.0 this call returned `<p>x</p>` with a warning; `requireDocument: true` was the opt-in.
+    expect(() => lexicalToHtml(doc)).toThrow(SanitizerEnvironmentError);
     expect(() => lexicalToHtml(doc, { requireDocument: true })).toThrow(SanitizerEnvironmentError);
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('lets an explicit sanitize: false win over requireDocument', () => {
+  it('returns the rendered HTML and warns once where `requireDocument: false` asks for it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubGlobal('document', undefined);
+    __resetSanitizerWarningForTests();
+    const doc = makeRoot([{ type: 'paragraph', children: [{ type: 'text', text: 'x' }] }]);
+
+    expect(lexicalToHtml(doc, { requireDocument: false })).toBe('<p>x</p>');
+    expect(lexicalToHtml(doc, { requireDocument: false })).toBe('<p>x</p>');
+
+    expect(warn.mock.calls.map(([message]) => String(message))).toEqual([
+      '[live-preview] lexicalToHtml() has no sanitizer document and returned unsanitised HTML, ' +
+        'as { requireDocument: false } asked; pass { document } (linkedom, jsdom) per call. ' +
+        'See "HTML sanitization" in docs/security.md.',
+    ]);
+  });
+
+  it('lets an explicit sanitize: false win over the required document', () => {
     vi.stubGlobal('document', undefined);
     const doc = makeRoot([{ type: 'paragraph', children: [{ type: 'text', text: 'x' }] }]);
 
+    expect(lexicalToHtml(doc, { sanitize: false })).toBe('<p>x</p>');
     expect(lexicalToHtml(doc, { requireDocument: true, sanitize: false })).toBe('<p>x</p>');
   });
 

@@ -164,19 +164,19 @@ function cjsRuntimeExports(packageName: string): Readonly<Record<string, readonl
 /**
  * 3.0 removed `setSanitizerDocument()` and the document it held on the realm
  * (ADR 0007, row 16): no entry exports the setter, and a render that names no
- * document does not read the slot. A 2.x copy of the package in the same
- * process can still fill it, which is what the probe does.
+ * document does not read the slot but refuses, as every render without a
+ * document does since 3.0 (row 18). A 2.x copy of the package in the same
+ * process can still fill the slot, which is what the probe does.
  *
  * The probe is a fixed text; the two specifiers arrive as arguments
  * (`process.argv[1]` and `[2]`), so no value is spliced into code.
  */
 const REMOVED_SANITIZER_DOCUMENT_BODY = [
   "if ('setSanitizerDocument' in root || 'setSanitizerDocument' in lexical) throw new Error('setSanitizerDocument() is still exported');",
-  'let calls = 0; const warnings = [];',
-  'console.warn = (message) => { warnings.push(String(message)); };',
+  'let calls = 0; let refused;',
   "globalThis[Symbol.for('payload-live-preview.sanitizer-document')] = { createElement: () => { calls += 1; throw new Error('the realm slot was read'); } };",
-  "lexical.lexicalToHtml({ root: { type: 'root', children: [{ type: 'paragraph', children: [{ type: 'text', text: 'x', format: 0 }] }] } });",
-  "if (calls !== 0 || warnings.length !== 1) throw new Error('a render without a document read the realm slot or did not warn once: ' + calls + ' call(s), ' + JSON.stringify(warnings));",
+  "try { lexical.lexicalToHtml({ root: { type: 'root', children: [{ type: 'paragraph', children: [{ type: 'text', text: 'x', format: 0 }] }] } }); } catch (error) { refused = error; }",
+  "if (calls !== 0 || refused?.name !== 'SanitizerEnvironmentError') throw new Error('a render without a document read the realm slot or did not refuse: ' + calls + ' call(s), ' + String(refused));",
 ].join(' ');
 
 const REMOVED_SANITIZER_DOCUMENT_PROBES: Readonly<Record<'esm' | 'cjs', string>> = {
@@ -186,8 +186,9 @@ const REMOVED_SANITIZER_DOCUMENT_PROBES: Readonly<Record<'esm' | 'cjs', string>>
 
 /**
  * Characterise the public `/lexical` entry in Node, where no DOM is global.
- * Built-ins escape their inputs, while custom renderers are trusted code and
- * stay unsanitised when the caller supplies no parser; that path must warn.
+ * Without a parser a render is refused. Under `requireDocument: false` the
+ * built-ins still escape their inputs, while custom renderers are trusted code
+ * and stay unsanitised; that path must warn.
  * Explicit per-call documents isolate concurrent requests.
  *
  * The executable markup below is a fixed probe string. Package specifiers are
@@ -202,15 +203,15 @@ const DOMLESS_LEXICAL_BODY = [
   'const warnings = []; const originalWarn = console.warn;',
   'console.warn = (message) => { warnings.push(String(message)); };',
   'let withoutDocument;',
-  'try { withoutDocument = lexical.lexicalToHtml(content); } finally { console.warn = originalWarn; }',
+  'try { withoutDocument = lexical.lexicalToHtml(content, { requireDocument: false }); } finally { console.warn = originalWarn; }',
   "if (!withoutDocument.includes('&lt;img src&#x3D;x onerror&#x3D;alert(1)&gt;')) throw new Error('built-in text did not escape markup without a DOM');",
   "if (!withoutDocument.includes('&lt;svg onload&#x3D;alert(1)&gt;')) throw new Error('built-in block did not escape fields without a DOM');",
   "if (!withoutDocument.includes('<script data-plp-smoke=\"node\">') || !withoutDocument.includes(' onerror=\"globalThis.__plpPackageSmoke = true\"')) throw new Error('DOM-less trusted custom markup contract changed');",
-  "if (warnings.length !== 1 || !warnings[0].includes('returned unsanitised HTML') || !warnings[0].includes('requireDocument: true')) throw new Error('DOM-less render did not emit its warning exactly once: ' + JSON.stringify(warnings));",
-  // ADR 0025: under requireDocument the same call refuses, with the sanitizer's own error.
+  "if (warnings.length !== 1 || !warnings[0].includes('returned unsanitised HTML') || !warnings[0].includes('requireDocument: false')) throw new Error('DOM-less render did not emit its warning exactly once: ' + JSON.stringify(warnings));",
+  // ADR 0025: without the opt-out the same call refuses, with the sanitizer's own error.
   'let refused;',
-  'try { lexical.lexicalToHtml(content, { requireDocument: true }); } catch (error) { refused = error; }',
-  "if (refused?.name !== 'SanitizerEnvironmentError') throw new Error('requireDocument did not refuse a DOM-less render: ' + String(refused));",
+  'try { lexical.lexicalToHtml(content); } catch (error) { refused = error; }',
+  "if (refused?.name !== 'SanitizerEnvironmentError') throw new Error('a DOM-less render was not refused: ' + String(refused));",
   "const documentFacade = () => { const dom = new JSDOM('<!doctype html><html><body></body></html>'); let calls = 0; return { value: { createElement: (tag) => { calls += 1; return dom.window.document.createElement(tag); } }, calls: () => calls, close: () => { dom.window.close(); } }; };",
   'const first = documentFacade(); const second = documentFacade();',
   "const assertSanitised = (html, label) => { if (html.includes('<script') || html.includes(' onerror=\"') || html.includes('href=\"javascript:')) throw new Error(label + ' kept active custom markup: ' + html); };",

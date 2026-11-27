@@ -100,14 +100,14 @@ const RULES: readonly Rule[] = [
     title:
       '`lexicalToHtml()` without a document throws `SanitizerEnvironmentError`; 2.x returns unsanitised markup with a warning',
     remedy:
-      'Pass `{ document }` to the call, or `{ requireDocument: true }` to take the 3.0 behaviour now.',
+      'Pass `{ document }` to the call. `{ requireDocument: true }` takes the 3.0 behaviour now, `false` keeps the 2.x one.',
     judge: (call) => {
       if (call.name !== 'lexicalToHtml') return undefined;
       const { options } = at(call, 1);
       if (options === undefined) return 'unread';
       const settled =
         options.keys.has('document') ||
-        options.keys.get('requireDocument') === true ||
+        typeof options.keys.get('requireDocument') === 'boolean' ||
         options.keys.get('sanitize') === false;
       if (settled) return undefined;
       const perhaps = ['document', 'requireDocument', 'sanitize'].some((key) =>

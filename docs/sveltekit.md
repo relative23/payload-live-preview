@@ -130,7 +130,7 @@ export const load: PageServerLoad = async ({ locals, params, request }) => {
 
 ### Rich text on the server
 
-`lexicalToHtml()` sanitizes with a DOM, and `load` runs where there is none. Hand it a document for each render, from jsdom (your own dependency), in a module under `src/lib/server` so it never reaches the browser bundle. With `requireDocument: true` a render without one throws instead of returning a custom node's markup unsanitized:
+`lexicalToHtml()` sanitizes with a DOM, and `load` runs where there is none. Hand it a document for each render, from jsdom (your own dependency), in a module under `src/lib/server` so it never reaches the browser bundle. A render without one throws instead of returning a custom node's markup unsanitized; `requireDocument: true` in the call below says what 3.0 does by default:
 
 ```ts
 // src/lib/server/rich-text.ts

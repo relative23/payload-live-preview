@@ -2,6 +2,10 @@
 /**
  * Static Astro markup must compile the shipped components at the exact peer floor.
  * A fixed owner keeps an unrelated document from patching the page.
+ *
+ * The floor installs Astro and nothing that parses HTML, so the build has no
+ * document to sanitise with. `requireDocument={false}` says so: the body is the
+ * constant below, which the built-in renderers escape.
  */
 import RichText from 'payload-live-preview/astro/RichText.astro';
 import PreviewBoundary from 'payload-live-preview/astro/PreviewBoundary.astro';
@@ -17,7 +21,7 @@ const body = { root: { type: 'root', children: [
     <article data-payload-owner="collection:pages:7">
       <h1 data-payload-field="title" data-payload-type="text">Saved title</h1>
       <PreviewBoundary field="subtitle" value="" as="p" data-testid="subtitle" />
-      <RichText field="body" value={body} />
+      <RichText field="body" value={body} requireDocument={false} />
     </article>
   </body>
 </html>

@@ -165,7 +165,7 @@ On a public response the helpers return empty objects, and the markup carries no
 
 ### Rich text on the server
 
-`lexicalToHtml()` sanitizes with a DOM, and Nitro has none. Render the HTML in server code, with a document for each render from jsdom (your own dependency), so the DOM library stays out of the browser bundle. With `requireDocument: true` a render without one throws instead of returning a custom node's markup unsanitized:
+`lexicalToHtml()` sanitizes with a DOM, and Nitro has none. Render the HTML in server code, with a document for each render from jsdom (your own dependency), so the DOM library stays out of the browser bundle. A render without one throws instead of returning a custom node's markup unsanitized; `requireDocument: true` in the call below says what 3.0 does by default:
 
 ```ts
 // server/utils/rich-text.ts
