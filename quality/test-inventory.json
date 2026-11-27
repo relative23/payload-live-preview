@@ -20,8 +20,8 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 526,
-    "suites": 1025,
+    "files": 527,
+    "suites": 1026,
     "tests": 4622,
     "benchmarks": 12
   },
@@ -63,8 +63,8 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 429,
-      "suites": 916,
+      "files": 430,
+      "suites": 917,
       "tests": 4216,
       "benchmarks": 0
     }
@@ -1859,7 +1859,7 @@
       "path": "tests/unit/core/navigation-replay-context.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 15,
+      "tests": 14,
       "benchmarks": 0
     },
     {
@@ -1867,6 +1867,13 @@
       "group": "unit",
       "suites": 1,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/unit/core/navigation-replay-rebound.test.ts",
+      "group": "unit",
+      "suites": 1,
+      "tests": 1,
       "benchmarks": 0
     },
     {
