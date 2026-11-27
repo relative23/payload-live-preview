@@ -147,3 +147,29 @@ notice of 2.4 leaves with the default it named. A page that sets neither the opt
 meets the rule of section 2 as it is: the `id` of an array row or of a related
 document is a changed path too, so a moved row or a switched relationship is
 reported on a page that binds into it and covers nothing else.
+
+## Addendum (2026-11-27): an `id` is a change, and not a field
+
+The question after the flip was whether `id`, `createdAt` and `updatedAt`
+should be left out below the top level as they are at it. Three variants of
+the comparison ran against thirteen scenarios in the runtime, and the real
+admin (Payload 3.94.2) gave the shapes: a row is `{ id, label }`, a populated
+user `{ id, updatedAt, createdAt, email, sessions, collection }`.
+
+Left out by name at every depth, three scenarios end as a full update with a
+stale page: a link built from the related document's `id` that no binding
+holds, and a date field an editor named `updatedAt` or `createdAt`, in a group
+or in a row. The gain is small: a switched relationship still differs in every
+other field of the two documents the page does not bind, and a moved row is
+handed over by its own rule. So the comparison stays as section 2 has it. A
+changed `id` says that another row or document stands at the path, which is
+the reason `moved-rows.ts` gives for a moved row, and a page that shows a
+related document in part declares it: `data-payload-covers="author"`.
+
+What changes is the read of a document, where nothing has changed yet. With
+the declared rule as the default, a page that binds its rows field by field
+heard `LP0203: field "rows.0.id" has a value and no anchor` for every row, and
+the overlay listed the same paths, with a block's `blockType` beside them.
+Neither is a field an editor types into. LP0203 and the overlay leave out a
+path that ends in a system field name or in `blockType`; the comparison of two
+messages keeps it.

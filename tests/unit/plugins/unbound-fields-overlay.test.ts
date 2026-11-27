@@ -68,6 +68,18 @@ describe('unboundFieldNames', () => {
       unboundFieldNames({ id: '1', updatedAt: 'now', _status: 'draft', title: 'a' }, ['title']),
     ).toEqual([]);
   });
+
+  it("never lists a row's `id` or a block's `blockType` inside rows the page binds field by field", () => {
+    expect(
+      unboundFieldNames(
+        {
+          rows: [{ id: 'r1', label: 'First' }],
+          layout: [{ id: 'b1', blockType: 'hero', blockName: 'Top', heading: 'Hello' }],
+        },
+        ['rows.0.label', 'layout.0.heading'],
+      ),
+    ).toEqual(['layout.0.blockName']);
+  });
 });
 
 describe('the unbound-fields overlay', () => {

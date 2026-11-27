@@ -17,6 +17,7 @@ import type { ElementCache } from '../bindings/cache';
 import type { RuntimeDeps } from '../session/runtime-state';
 import {
   createFieldAddressability,
+  isSystemFieldPath,
   ownsAnyBinding,
   stripLocaleSuffix,
   SYSTEM_FIELD_NAMES,
@@ -70,7 +71,7 @@ export function diagnoseOrphanFields(
     // on exactly these fields, and this says the same thing more precisely.
     const group = stripLocaleSuffix(rawName, locale);
     for (const [childName, childValue] of Object.entries(value)) {
-      if (!isBindableScalar(childValue) || SYSTEM_FIELD_NAMES.has(childName)) continue;
+      if (!isBindableScalar(childValue)) continue;
       report(context, isAddressable, `${group}.${childName}`, locale, childValue);
     }
   }
@@ -97,7 +98,8 @@ function report(
   value: unknown,
 ): void {
   const { warned, warn } = context;
-  if (warned.has(name) || isAddressable(name)) return;
+  // A row's `id` or a block's `blockType` is not a field an editor types into.
+  if (warned.has(name) || isSystemFieldPath(name) || isAddressable(name)) return;
   warned.add(name);
   const attribute = `data-payload-field="${stripLocaleSuffix(name, locale)}"`;
   if (value === '') {

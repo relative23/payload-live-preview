@@ -161,4 +161,27 @@ describe('a field with no binding', () => {
     await done;
     expect(lines('LP0203')).toEqual([]);
   });
+
+  it("does not take a row's `id` or a block's `blockType` for a field, bound row by row or not", async () => {
+    // Payload writes both into every row. Read off a document they are not what a page left
+    // out; what an editor types and the page does not show still is.
+    runtime?.destroy();
+    document.body.innerHTML =
+      '<p data-payload-field="rows.0.label">old</p><p data-payload-field="layout.0.heading">old</p>';
+    start('declared');
+    const done = afterUpdate();
+    post({
+      rows: [
+        { id: 'r1', label: 'First', note: 'not shown' },
+        { id: 'r2', label: 'Second' },
+      ],
+      layout: [{ id: 'b1', blockType: 'hero', blockName: 'Top', heading: 'Hello' }],
+    });
+    await done;
+    expect(lines('LP0203').map((line) => /field "([^"]+)"/u.exec(line)?.[1])).toEqual([
+      'rows.0.note',
+      'rows.1.label',
+      'layout.0.blockName',
+    ]);
+  });
 });

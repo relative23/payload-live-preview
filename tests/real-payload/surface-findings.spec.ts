@@ -77,6 +77,9 @@ test.describe('real Payload admin → the field findings', () => {
     await expect
       .poll(() => session.lines.join('\n'))
       .toMatch(/LP0203: field "seo\.description" has a value and no/u);
+    // The page binds `rows.0.label` and `rows.1.label` too. The `id` Payload gives each row is
+    // not a field the page left out, so the same read does not name it.
+    expect(session.lines.join('\n')).not.toMatch(/LP0203: field "rows\.\d+\.id"/u);
   });
 
   test('an edit inside closed details opens them', async ({ page }) => {

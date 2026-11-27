@@ -103,7 +103,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a rebound binding is written again): paired Node24.22.3/npm12.0.2; +40/+17/-6 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -243/-84/-23 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; -249/-101/-170 B; prior reserves kept.
-  'adapters/astro/index.js': { raw: 209_176, gzip: 65_402, brotli: 55_866 },
+  // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +74/+22/+45 B; prior reserves kept.
+  'adapters/astro/index.js': { raw: 209_250, gzip: 65_424, brotli: 55_911 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 39 900 → 40 030 (measured 39 910, -10 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 147 776 → 147 825 (+49 B, measured 147 742 → 147 791); gzip 46 671 → 46 681 (+10 B, measured 46 665 → 46 675).
   // 2026-09-17 (2.0.2: the shared sanitizer document, annotate's loop-item refusal, the doctor's token rule and help texts): gzip 46 681 → 46 688 (+7 B, measured 46 675 → 46 682).
@@ -170,7 +171,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a rebound binding is written again): paired Node24.22.3/npm12.0.2; +40/+13/-15 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -235/-71/-79 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; -218/-58/-68 B; prior reserves kept.
-  'adapters/astro/middleware-entry.js': { raw: 184_426, gzip: 57_729, brotli: 48_949 },
+  // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +74/+23/+57 B; prior reserves kept.
+  'adapters/astro/middleware-entry.js': { raw: 184_500, gzip: 57_752, brotli: 49_006 },
   //
   // 2026-09-07 (Z8, an async server component for Next): one row moves, and only
   // this one. `adapters/nextjs/index.js` rises +177 B raw / +43 B gzip for
@@ -276,7 +278,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a rebound binding is written again): paired Node24.22.3/npm12.0.2; +40/+15/+8 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -277/-90/-141 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; -218/-54/-30 B; prior reserves kept.
-  'adapters/nextjs/index.js': { raw: 203_862, gzip: 63_923, brotli: 54_371 },
+  // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +74/+25/+33 B; prior reserves kept.
+  'adapters/nextjs/index.js': { raw: 203_936, gzip: 63_948, brotli: 54_404 },
   //
   // 2026-09-06 (`./react`, `./vue`): two new rows, measured at 14 045 / 13 814
   // raw and 4 637 / 4 621 gzip. Both entries carry the message bus, the origin
@@ -434,7 +437,8 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a rebound binding is written again): paired Node24.22.3/npm12.0.2; +40/+14/-65 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -239/-73/-23 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; -218/-51/-48 B; prior reserves kept.
-  'adapters/nuxt/index.js': { raw: 203_862, gzip: 63_969, brotli: 54_353 },
+  // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +74/+22/+8 B; prior reserves kept.
+  'adapters/nuxt/index.js': { raw: 203_936, gzip: 63_991, brotli: 54_361 },
   // 2026-09-14 (2.0.1, three diagnostics that said what did not happen): brotli 42 740 → 42 835 (measured 42 715, 25 B left, inside brotli's run-to-run swing; ~120 B as the other brotli rows).
   // 2026-09-15 (2.0.1: merge-race fix, doctor --header, migrate notice): raw 157 966 → 158 015 (+49 B, measured 157 932 → 157 981).
   // 2026-09-17 (2.0.3: the Trusted Types policy on the realm, islands hearing every change, the owed route refresh, the doctor's --token-param): raw 158 015 → 158 466 (+451 B, measured 157 999 → 158 450); gzip 49 998 → 50 123 (+125 B, measured 49 983 → 50 108).
@@ -507,5 +511,6 @@ export const ADAPTER_ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
   // 2026-11-27 (3.0, a rebound binding is written again): paired Node24.22.3/npm12.0.2; +40/+14/-120 B; prior reserves kept.
   // 2026-11-27 (3.0, the defaults are written once): paired Node24.22.3/npm12.0.2; -239/-74/+29 B; prior reserves kept.
   // 2026-11-27 (3.0, a merge has a deadline, ADR 0007 row 27): paired Node24.22.3/npm12.0.2; -218/-50/-80 B; prior reserves kept.
-  'adapters/sveltekit/index.js': { raw: 202_941, gzip: 63_652, brotli: 54_302 },
+  // 2026-11-27 (3.0, a row id is not a field in the reports): paired Node24.22.3/npm12.0.2; +74/+25/+23 B; prior reserves kept.
+  'adapters/sveltekit/index.js': { raw: 203_015, gzip: 63_677, brotli: 54_325 },
 };
