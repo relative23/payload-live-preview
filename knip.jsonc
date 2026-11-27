@@ -19,7 +19,6 @@
     "src/lexical-entry.ts",
     "src/plugins-entry.ts",
     "src/fragment/index.ts",
-    "src/lean.ts",
     "src/adapters/astro/index.ts",
     "src/adapters/astro/middleware-entry.ts",
     "src/adapters/nextjs/index.ts",

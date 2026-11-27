@@ -2,8 +2,8 @@
  * The runtime as a servable, cacheable asset — the request-time half of
  * `mode: 'loader'`.
  *
- * Name and integrity are constants of the package build (the artifact carries
- * both), so nothing here hashes anything per request and this module stays
+ * Name and integrity are constants of the package build, so nothing here
+ * hashes anything per request and this module stays
  * reachable from a browser entry: no `node:crypto`, no Node builtins at all.
  *
  * The content hash is in the file name, which is what makes `immutable` honest:
@@ -14,7 +14,6 @@
  */
 
 import { RUNTIME_CONTENT_HASH, RUNTIME_INTEGRITY, RUNTIME_SOURCE } from '@inline/runtime.generated';
-import type { RuntimeArtifact } from '@/types/inline-config';
 
 /** Where the asset route is mounted when nothing says otherwise. */
 export const DEFAULT_ASSET_PATH = '/payload-live-preview';
@@ -27,8 +26,6 @@ export interface RuntimeAssetOptions {
    * when the app is not served from the site root.
    */
   readonly assetPath?: string;
-  /** The artifact to serve; the default runtime when omitted. */
-  readonly runtime?: RuntimeArtifact;
 }
 
 export interface RuntimeAsset {
@@ -58,16 +55,14 @@ function normalizePath(path: string): string {
   return trimmed === '' ? '' : `/${trimmed}`;
 }
 
-/** Describe the asset for these options; deterministic per package version and artifact. */
+/** Describe the asset for these options; deterministic per package version. */
 export function runtimeAsset(options: RuntimeAssetOptions = {}): RuntimeAsset {
-  const artifact = options.runtime;
-  const hash = artifact?.contentHash ?? RUNTIME_CONTENT_HASH;
-  const fileName = `runtime.${hash}.js`;
+  const fileName = `runtime.${RUNTIME_CONTENT_HASH}.js`;
   return {
     fileName,
     urlPath: `${normalizePath(options.assetPath ?? DEFAULT_ASSET_PATH)}/${fileName}`,
-    integrity: artifact?.integrity ?? RUNTIME_INTEGRITY,
-    source: artifact?.source ?? RUNTIME_SOURCE,
+    integrity: RUNTIME_INTEGRITY,
+    source: RUNTIME_SOURCE,
   };
 }
 

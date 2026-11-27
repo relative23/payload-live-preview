@@ -176,7 +176,6 @@ size.
 | `lexicalToHtml` from `payload-live-preview/lexical`              | 5,840 B      |
 | `morphElement` from `payload-live-preview/structural`            | 1,581 B      |
 | `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 58,812 B     |
-| `LEAN_RUNTIME` from `payload-live-preview/lean`                  | 37,404 B     |
 | `useLivePreviewDocument` from `payload-live-preview/react`       | 8,603 B      |
 | `useLivePreviewDocument` from `payload-live-preview/vue`         | 8,585 B      |
 | `PluginManager` from `payload-live-preview/plugins`              | 3,373 B      |

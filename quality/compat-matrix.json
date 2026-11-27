@@ -700,7 +700,7 @@
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["examples/pure-html/package.json", "tests/e2e/specs/lean-profile.spec.ts"],
+        "sources": ["examples/pure-html/package.json", "tests/e2e/specs/subfield-coverage.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
           "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
@@ -1381,7 +1381,6 @@
         "./core",
         "./doctor",
         "./fragment",
-        "./lean",
         "./lexical",
         "./migrate",
         "./nextjs",

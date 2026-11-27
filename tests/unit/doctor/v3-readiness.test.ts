@@ -120,6 +120,22 @@ describe('pll doctor --v3: adapter options (rows 21, 27, 32, 33 and strict: fals
     ).toEqual([]);
   });
 
+  it('lists the lean runtime where an integration or the generator is given it (row 37)', async () => {
+    const report = await check({
+      'src/preview.config.ts': [
+        "import { livePreview } from 'payload-live-preview/astro';",
+        "import { LEAN_RUNTIME } from 'payload-live-preview/lean';",
+        'export const withLean = livePreview({ runtime: LEAN_RUNTIME });',
+        "export const without = livePreview({ mode: 'loader' });",
+      ].join('\n'),
+    });
+
+    expect(places(report, 'lean-runtime')).toEqual(['preview.config.ts:3']);
+    expect(formatV3Readiness(report)).toContain(
+      'Row 37: The lean runtime, `runtime: LEAN_RUNTIME` from `payload-live-preview/lean`, is removed',
+    );
+  });
+
   it("lists `strict: false` and `defaults: 'v1'` where an adapter is given them", async () => {
     const report = await check({
       'src/middleware.ts': [

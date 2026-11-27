@@ -423,7 +423,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'lexicalToHtml',
     use: 'export const out = lexicalToHtml({ root: { children: [] } });',
-    gzip: 6_000,
+    gzip: 5_998,
     why: 'the Lexical renderer from the root barrel, on par with payload-live-preview/lexical',
   },
   {
@@ -447,7 +447,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 55_003,
+    gzip: 54_371,
     why: 'the client with its built-in renderers from the root barrel, on par with payload-live-preview/client',
   },
   {
@@ -471,8 +471,8 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview',
     symbol: 'generateInlineScript',
     use: 'export const out = generateInlineScript({});',
-    gzip: 53_270,
-    why: 'the generator carries the inline runtime source and nothing of the client (the lean one lives behind payload-live-preview/lean)',
+    gzip: 53_089,
+    why: 'the generator carries the inline runtime source and nothing of the client',
   },
   {
     // 2026-10-04: paired combined 2.1 population/locale integration adds +3144 B gzip; retain 24 B cushion.
@@ -495,7 +495,7 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/core',
     symbol: 'initLivePreview',
     use: 'export const out = initLivePreview({});',
-    gzip: 54_946,
+    gzip: 54_329,
     why: 'the client from the core entry: the same code, the same size',
   },
   {
@@ -539,30 +539,8 @@ export const TREE_SHAKING_FIXTURES: readonly Fixture[] = [
     from: 'payload-live-preview/nextjs',
     symbol: 'createLivePreviewMiddleware',
     use: 'export const out = createLivePreviewMiddleware({});',
-    gzip: 58_983,
+    gzip: 58_778,
     why: 'the Next.js middleware without the fragment endpoint: ~2.4 KB gzip less than the whole entry, so a project that registers no fragment ships none of it. It does carry the bootstrap source, because delivery is decided where the script body is built',
-  },
-  {
-    // 2026-10-04: paired combined 2.1 population/locale integration adds +2445 B gzip; retain 60 B cushion.
-    // 2026-10-04 (2.1.0): paired owner/scheduler and bounded v2/locale integration, +2578 B gzip.
-    // Node24.19/npm12.0.2, epoch1791096072; retain the original 60 B gzip reserve.
-    // 2026-10-04 (2.1.0, epoch1791096072): merger reentrancy and locale recovery +42 B gzip; retain 60 B.
-    // 2026-10-25 (a saved-only route render runs again on Payload's save): Node24.22.1, the same HEAD with and
-    // without the change: +37 B gzip; retain the reserve it had.
-    // 2026-10-26 (the merge decision reads rich text by its shape): Node24.22.1, the same HEAD with and
-    // without the change: +200 B gzip; retain the reserve it had.
-    // 2026-10-26 (the 2.2 review fixes): Node24.22.1, the same HEAD with and
-    // without the change: +11 B gzip; retain the reserve it had.
-    // 2026-10-28 (format and locale reach the binding): paired, same epoch: +37 B gzip; reserve kept.
-    // 2026-10-28 (the renderers write what the element expects): paired, same epoch: +385 B gzip; reserve kept.
-    // 2026-10-28 (fidelity escalates again on a new value): paired, same epoch: +261 B gzip; reserve kept.
-    // 2026-10-29 (the route renders only for real changes): Node24.22.1, the same HEAD with and
-    // without the change: +151 B gzip; retain the reserve it had.
-    from: 'payload-live-preview/lean',
-    symbol: 'LEAN_RUNTIME',
-    use: 'export const out = LEAN_RUNTIME.source.length;',
-    gzip: 36_525,
-    why: 'the lean artifact as a value: the embedded script and nothing else, so a project that never imports it pays nothing',
   },
   {
     // 2026-10-04: paired combined 2.1 population/locale integration adds +3075 B gzip; retain 80 B cushion.

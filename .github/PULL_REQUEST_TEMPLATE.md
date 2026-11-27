@@ -12,4 +12,3 @@
 - [ ] Changeset added (`npx changeset`) if published behavior changed
 - [ ] Tests added/updated for behavior changes (security-sensitive changes have tests in `tests/unit/security`)
 - [ ] Docs updated (`docs/`, README) if public API or behavior changed
-- [ ] `npm run build:runtime` re-run if `src/core/session/runtime.ts` or its imports changed, and `src/inline/runtime-lean.generated.ts` committed with it (`npm run check:generated`)

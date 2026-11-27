@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 528,
-    "suites": 1028,
-    "tests": 4632,
+    "files": 525,
+    "suites": 1023,
+    "tests": 4614,
     "benchmarks": 12
   },
   "groups": {
@@ -39,15 +39,15 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 60,
-      "suites": 63,
-      "tests": 260,
+      "files": 59,
+      "suites": 62,
+      "tests": 256,
       "benchmarks": 0
     },
     "integration": {
-      "files": 25,
-      "suites": 30,
-      "tests": 113,
+      "files": 24,
+      "suites": 28,
+      "tests": 107,
       "benchmarks": 0
     },
     "real-payload": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 429,
-      "suites": 916,
-      "tests": 4216,
+      "files": 428,
+      "suites": 914,
+      "tests": 4208,
       "benchmarks": 0
     }
   },
@@ -306,13 +306,6 @@
       "group": "e2e",
       "suites": 1,
       "tests": 1,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/e2e/specs/lean-profile.spec.ts",
-      "group": "e2e",
-      "suites": 1,
-      "tests": 4,
       "benchmarks": 0
     },
     {
@@ -575,13 +568,6 @@
       "benchmarks": 0
     },
     {
-      "path": "tests/integration/lean-profile.test.ts",
-      "group": "integration",
-      "suites": 2,
-      "tests": 6,
-      "benchmarks": 0
-    },
-    {
       "path": "tests/integration/preview-continuation-data-http.test.ts",
       "group": "integration",
       "suites": 1,
@@ -767,7 +753,7 @@
       "path": "tests/unit/adapters/asset-delivery.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 13,
+      "tests": 11,
       "benchmarks": 0
     },
     {
@@ -1047,7 +1033,7 @@
       "path": "tests/unit/adapters/policy.test.ts",
       "group": "unit",
       "suites": 7,
-      "tests": 35,
+      "tests": 34,
       "benchmarks": 0
     },
     {
@@ -1131,7 +1117,7 @@
       "path": "tests/unit/bundle-budgets.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 6,
+      "tests": 5,
       "benchmarks": 0
     },
     {
@@ -1573,13 +1559,6 @@
       "group": "unit",
       "suites": 1,
       "tests": 4,
-      "benchmarks": 0
-    },
-    {
-      "path": "tests/unit/core/lean-profile-runner.test.ts",
-      "group": "unit",
-      "suites": 2,
-      "tests": 3,
       "benchmarks": 0
     },
     {
@@ -2342,7 +2321,7 @@
       "path": "tests/unit/doctor/v3-readiness.test.ts",
       "group": "unit",
       "suites": 6,
-      "tests": 21,
+      "tests": 22,
       "benchmarks": 0
     },
     {
@@ -2559,14 +2538,14 @@
       "path": "tests/unit/inline-generator-unbuilt.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 5,
+      "tests": 4,
       "benchmarks": 0
     },
     {
       "path": "tests/unit/inline-generator.test.ts",
       "group": "unit",
       "suites": 3,
-      "tests": 37,
+      "tests": 36,
       "benchmarks": 0
     },
     {

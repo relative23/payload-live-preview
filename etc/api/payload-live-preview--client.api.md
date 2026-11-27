@@ -44,7 +44,6 @@ export const DIAGNOSTIC_CODES: Readonly<{
     readonly NoTrustedOrigin: "LP0101";
     readonly ReferrerOnlyTrust: "LP0102";
     readonly PluginIncompatible: "LP0103";
-    readonly ProfileFeatureOmitted: "LP0104";
     readonly OrphanField: "LP0201";
     readonly UnattributableUpdate: "LP0202";
     readonly UnboundField: "LP0203";

@@ -78,9 +78,9 @@ matching changeset; it is not a formatter.
 
 ## The single-source runtime
 
-The browser runtime lives in `src/core/session/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into six files under `src/inline/` that adapters inline into pages:
+The browser runtime lives in `src/core/session/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into five files under `src/inline/` that adapters inline into pages:
 
-- `runtime.generated.ts` and `runtime-lean.generated.ts` — the full and the lean runtime
+- `runtime.generated.ts` — the runtime
 - `loader.generated.ts` and `loader-react.generated.ts` — the bootstrap loader, and its variant that waits for React hydration
 - `fragment.generated.ts` and `route.generated.ts` — the fragment and route preludes
 
@@ -90,7 +90,7 @@ If you touch `src/core/session/runtime.ts` or anything it imports, regenerate th
 npm run build:runtime
 ```
 
-Five of them are build outputs and gitignored. Do not stage those: a
+They are build outputs and gitignored. Do not stage them: a
 committed copy drifts from its source the moment somebody edits the runtime
 without rebuilding, and a stale one is indistinguishable from a reviewed one in
 a diff. `npm run build:runtime` and `npm run build` regenerate them, `pretest`
@@ -98,13 +98,6 @@ regenerates them before `npm test`, and every CI job that type-checks or runs
 tests regenerates them first. The completed build embeds them in the published
 artifacts; consumer installation deliberately runs no package lifecycle build,
 because published archives already contain the reviewed output.
-
-`runtime-lean.generated.ts` is the exception, and it is committed: `src/lean.ts`
-imports it as a module. That is the drift the paragraph above describes, so a
-gate holds it — after `npm run build:runtime`, `npm run check:generated` fails
-when the committed copy is not what the source builds. When a change alters it,
-commit the rebuilt file with that change. It carries the package version as
-well, which is why `npm run version` rebuilds it.
 
 ## Gates and their baselines
 
@@ -127,7 +120,6 @@ the number it reports.
 | `release-gate.ts` · Release workflow                                                       | Only a completed, successful CI push run on `main`, `release/1.x` or `release/2.x` of this repository is published; only `main` gets a Version PR                                                                  | None; the verdict is computed from Git, npm and GitHub state               | `workflow_dispatch` with the CI `run_id` re-enters a certified run; a tag on another commit is an error, not repaired                                                                                 |
 | `api-contracts.ts` · `npm run test:package`                                                | One API Extractor report per entry and the exact `ae-forgotten-export` count                                                                                                                                       | `etc/api/*.api.md`, `FORGOTTEN_EXPORT_BASELINE` in the script              | `npm run api:update`, review the diff, change the constant with a comment on what moved; include a changeset                                                                                          |
 | `check-fixture-freshness.ts` · `npm run check:fixtures`                                    | The copy-installed fixtures carry the build in `dist/`                                                                                                                                                             | None; `dist/index.js` is hashed against each installed copy                | `rm -rf examples/<name>/node_modules/payload-live-preview && npm install --prefix examples/<name>`                                                                                                    |
-| `check-generated-runtime.ts` · `npm run check:generated`                                   | The committed `src/inline/runtime-lean.generated.ts` is what the source builds, down to the package version a Version PR changes                                                                                   | None; `npm run build:runtime` makes it again and git compares the two      | `npm run build:runtime`, then commit the file with the change that altered it                                                                                                                         |
 | `check-trusted-core.ts` · `npm run test:architecture`                                      | The trusted core's line count and its imports from outside itself, at the measured numbers                                                                                                                         | `quality/trusted-core.json`                                                | Raise the line limit or add the import with the reason in the same file; `docs/audit.md` explains what the core is                                                                                    |
 | `check-complexity.ts` · `npm run test:architecture`                                        | The size of the public surface: exported names per API report, entry subpaths, adapter and inline options, diagnostic codes, source modules; a report without a budget or a budget without a report fails          | `quality/complexity-budget.json`                                           | Raise the limit and write why next to it; a total more than 2 % under its limit prints a notice to lower it                                                                                           |
 | `compare-scope.ts --check` · `npm run test:architecture`                                   | The code-line count of the scope compared with `@payloadcms/live-preview`, the number the comparison quotes                                                                                                        | `REVIEWED_SCOPE_LINES` in the script                                       | Move the constant with the count, in either direction, and say why in the commit                                                                                                                      |

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { markHydrated } from '@/index';
 import { HYDRATION_WAIT_CAP_MS } from '@core/hydration/hydration';
 import { MANUAL_HYDRATION_SLOT, whenMarkedHydrated } from '@core/hydration/hydration-manual';
-import { RUNTIME_LEAN_SOURCE } from '@inline/runtime-lean.generated';
+import { RUNTIME_SOURCE } from '@inline/runtime.generated';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 
 /**
@@ -65,7 +65,7 @@ describe('whenMarkedHydrated', () => {
   });
 
   it('names the same slot in the built runtime as the entry a page imports', () => {
-    expect(RUNTIME_LEAN_SOURCE).toContain(MANUAL_HYDRATION_SLOT);
+    expect(RUNTIME_SOURCE).toContain(MANUAL_HYDRATION_SLOT);
   });
 
   it('does nothing on a server, where a shared module may import it', () => {

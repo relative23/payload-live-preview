@@ -11,7 +11,6 @@ import {
   runtimeAssetResponse,
 } from '@adapters/shared/runtime-asset';
 import { RUNTIME_CONTENT_HASH, RUNTIME_INTEGRITY, RUNTIME_SOURCE } from '@inline/runtime.generated';
-import { LEAN_RUNTIME } from '@/lean';
 
 /**
  * `delivery: 'asset'` is a promise about bytes: the page carries a bootstrap
@@ -30,14 +29,6 @@ describe('the runtime asset', () => {
     expect(asset.urlPath).toBe(`${DEFAULT_ASSET_PATH}/${asset.fileName}`);
     expect(asset.integrity).toBe(RUNTIME_INTEGRITY);
     expect(asset.source).toBe(RUNTIME_SOURCE);
-  });
-
-  it('describes the lean artifact when that is the one being served', () => {
-    const asset = runtimeAsset({ runtime: LEAN_RUNTIME });
-
-    expect(asset.source).toBe(LEAN_RUNTIME.source);
-    expect(asset.integrity).toBe(LEAN_RUNTIME.integrity);
-    expect(asset.fileName).not.toBe(runtimeAsset().fileName);
   });
 
   it.each([
@@ -114,17 +105,6 @@ describe('serving it', () => {
         .status,
     ).toBe(404);
     expect(nuxtAssetRoute()(new Request('https://site.example.com/nope.js')).status).toBe(404);
-  });
-
-  it('serves the artifact the page was configured with', async () => {
-    const { GET } = createRuntimeAssetRoute({ runtime: LEAN_RUNTIME });
-    const lean = runtimeAsset({ runtime: LEAN_RUNTIME });
-
-    const response = GET(new Request(`https://site.example.com${lean.urlPath}`));
-
-    expect(await response.text()).toBe(LEAN_RUNTIME.source);
-    // And not under the full runtime's name, which it no longer serves.
-    expect(GET(new Request(`https://site.example.com${runtimeAsset().urlPath}`)).status).toBe(404);
   });
 });
 

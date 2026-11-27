@@ -1,14 +1,8 @@
 import { access, readdir, readFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { LEAN_RUNTIME } from '../src/lean';
 import { generateInlineScript } from '../src/inline/generator';
-import {
-  INLINE_BUDGET,
-  INLINE_LEAN_BUDGET,
-  INLINE_FRAGMENT_BUDGET,
-  INLINE_ROUTE_BUDGET,
-} from './bundle-budgets';
+import { INLINE_BUDGET, INLINE_FRAGMENT_BUDGET, INLINE_ROUTE_BUDGET } from './bundle-budgets';
 import {
   findBudgetViolations,
   measureBundle,
@@ -235,11 +229,6 @@ async function main(): Promise<void> {
     'default inline script',
     measureBundle(generateInlineScript()),
     INLINE_BUDGET,
-  );
-  failures += printMeasurement(
-    'inline script, lean profile',
-    measureBundle(generateInlineScript({ runtime: LEAN_RUNTIME })),
-    INLINE_LEAN_BUDGET,
   );
   failures += printMeasurement(
     'inline script with the route strategy',

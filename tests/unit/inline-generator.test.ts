@@ -8,7 +8,7 @@ import {
   type InlineScriptConfig,
 } from '@inline/generator';
 import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
-import { LEAN_RUNTIME } from '@/lean';
+import { ROUTE_SOURCE } from '@inline/route.generated';
 
 class InlineIntersectionObserver implements IntersectionObserver {
   readonly root: Element | Document | null = null;
@@ -165,29 +165,17 @@ describe('generateInlineScript', () => {
     );
   });
 
-  it("carries the route prelude for routeStrategy: 'after-save', and refuses it with the lean runtime", () => {
-    expect(generateInlineScript({ routeStrategy: 'after-save' })).toContain(
-      '__LIVE_PREVIEW_ROUTE__',
-    );
-    expect(() =>
-      generateInlineScript({ runtime: LEAN_RUNTIME, routeStrategy: 'after-save' }),
-    ).toThrow(/exclude/u);
+  it("carries the route prelude for routeStrategy: 'after-save', and not without a strategy", () => {
+    // The prelude's own bytes, not the global's name: the runtime names that global as well.
+    expect(generateInlineScript({ routeStrategy: 'after-save' })).toContain(ROUTE_SOURCE);
+    expect(generateInlineScript({ routeStrategy: false })).not.toContain(ROUTE_SOURCE);
+    expect(generateInlineScript()).not.toContain(ROUTE_SOURCE);
   });
 
   it('no longer accepts the 1.x nonce option; the nonce belongs to wrapWithScriptTag', () => {
     // @ts-expect-error -- removed in 2.0 (ADR 0007 §2); ignored at runtime.
     const withNonce = generateInlineScript({ nonce: 'abc123' });
     expect(withNonce).toBe(generateInlineScript());
-  });
-
-  it('refuses a strategy with the lean runtime, which has nothing to answer it', () => {
-    expect(() => generateInlineScript({ runtime: LEAN_RUNTIME, routeStrategy: true })).toThrow(
-      new Error(
-        '[live-preview] the lean runtime and the fragment or route strategy exclude each other: ' +
-          'it carries no strategy runner, so the prelude would have nothing to talk to. ' +
-          'Drop the runtime option, or drop `fragmentEndpoint`/`routeStrategy`.',
-      ),
-    );
   });
 
   it('refuses serverURL without mergeDepth under the 2.0 defaults, like the client and the adapters', () => {
@@ -289,7 +277,6 @@ describe('generateInlineScript', () => {
   it('carries the marker on every path that writes a configuration', () => {
     const paths: Readonly<Record<string, string>> = {
       inline: generateInlineScript(),
-      lean: generateInlineScript({ runtime: LEAN_RUNTIME }),
       'fragment prelude': generateInlineScript({ fragmentEndpoint: '/payload/fragment' }),
       'route prelude': generateInlineScript({ routeStrategy: true }),
       loader: generateLoaderScript({}, { runtimeSrc: '/runtime.js' }),

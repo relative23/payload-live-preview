@@ -213,6 +213,14 @@ const RULES: readonly Rule[] = [
     remedy: 'Remove it and pass `authorizePreview` and `allowedOrigins`.',
     judge: (call) => (setup(call)?.options?.keys.get('strict') === false ? 'changes' : undefined),
   },
+  {
+    id: 'lean-runtime',
+    row: 37,
+    title: 'The lean runtime, `runtime: LEAN_RUNTIME` from `payload-live-preview/lean`, is removed',
+    remedy:
+      "Remove the option and the import. For fewer bytes on a visitor's page, deliver the runtime as an asset: `delivery: 'asset'`, or Astro's `mode: 'loader'`.",
+    judge: (call) => (setup(call)?.options?.keys.has('runtime') === true ? 'changes' : undefined),
+  },
 ];
 
 /** The rules in the order a report names them: by ledger row. */

@@ -31,7 +31,6 @@ export function reportMovedRow(
   fields: Readonly<Record<string, unknown>>,
   navigated: boolean,
 ): void {
-  if (typeof __LEAN_BUILD__ !== 'undefined' && __LEAN_BUILD__) return;
   const rows = rowsOnPath(fields, target.fieldName);
   if (rows === undefined) return;
   // A replay still shows the page being left: the next message starts afresh.

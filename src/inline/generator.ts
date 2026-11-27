@@ -13,7 +13,7 @@ import { LOADER_SOURCE } from './loader.generated';
 import { LOADER_REACT_SOURCE } from './loader-react.generated';
 import { INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/types/inline-config';
 
-export type { InlineScriptConfig, RuntimeArtifact } from '@/types/inline-config';
+export type { InlineScriptConfig } from '@/types/inline-config';
 
 function assertBuilt(source: string, artifact: string): void {
   if (source.length === 0) {
@@ -26,34 +26,12 @@ function assertBuilt(source: string, artifact: string): void {
 /** The inline script body without `<script>` tags; see `wrapWithScriptTag()`. */
 export function generateInlineScript(config: InlineScriptConfig = {}): string {
   warnChangingDefaults(config);
-  const runtime = runtimeFor(config);
-  return [configStatement(config), ...strategyPrelude(config), runtime].join('\n');
+  assertBuilt(RUNTIME_SOURCE, 'runtime.generated.ts');
+  return [configStatement(config), ...strategyPrelude(config), RUNTIME_SOURCE].join('\n');
 }
 
 function hasRouteStrategy(config: InlineScriptConfig): boolean {
   return config.routeStrategy === true || config.routeStrategy === 'after-save';
-}
-
-/**
- * The full runtime, or the artifact the consumer imported. The lean one leaves
- * out the strategies (docs/options.md), so the two preludes are refused with it
- * rather than emitted against a runtime that could never answer them.
- */
-function runtimeFor(config: InlineScriptConfig): string {
-  const artifact = config.runtime;
-  if (artifact === undefined) {
-    assertBuilt(RUNTIME_SOURCE, 'runtime.generated.ts');
-    return RUNTIME_SOURCE;
-  }
-  assertBuilt(artifact.source, `the ${artifact.profile} runtime`);
-  if (config.fragmentEndpoint != null || hasRouteStrategy(config)) {
-    throw new Error(
-      `[live-preview] the ${artifact.profile} runtime and the fragment or route strategy exclude ` +
-        'each other: it carries no strategy runner, so the prelude would have nothing to talk to. ' +
-        'Drop the runtime option, or drop `fragmentEndpoint`/`routeStrategy`.',
-    );
-  }
-  return artifact.source;
 }
 
 /**

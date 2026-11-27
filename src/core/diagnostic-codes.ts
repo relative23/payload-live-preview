@@ -26,8 +26,6 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   ReferrerOnlyTrust: 'LP0102',
   /** A plugin declares a runtime range this runtime does not satisfy; it was refused. */
   PluginIncompatible: 'LP0103',
-  /** The page carries the lean runtime and needs a feature that profile leaves out. */
-  ProfileFeatureOmitted: 'LP0104',
 
   /** An update named an empty field with no binding anchor on the page; an edit to it has nowhere to land. */
   OrphanField: 'LP0201',

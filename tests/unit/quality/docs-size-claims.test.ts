@@ -14,7 +14,6 @@ import {
 } from '../../../scripts/docs-size-claims';
 
 const FULL = 45_515;
-const LEAN = 36_937;
 const facts: DeliveryFacts = {
   runtime: 144_576,
   nextBootstrap: 1_344,
@@ -36,30 +35,13 @@ describe('the gzip size claims', () => {
     ['the default script, in KiB', 'every visitor downloads about 44 KiB gzip with it', 0],
     ['the default script, a kilobyte off', 'about 43 KB gzip', 0],
     ['the default script, stale', 'costs about 42 KB gzip on every page that carries it', 1],
-    ['the lean artifact', 'about 44 KB gzip, 36 KB with the lean artifact', 0],
-    ['the lean artifact, stale', 'about 44 KB gzip, 33 KB with the lean artifact', 1],
-    [
-      'the lean inline script, stale',
-      'about 44 KiB gzip. A site: 30 KiB with the lean inline script',
-      1,
-    ],
-    [
-      'a LEAN_RUNTIME sentence',
-      '`LEAN_RUNTIME` from `x/lean` is about 36 KiB gzip against 44 KiB',
-      0,
-    ],
-    [
-      'a LEAN_RUNTIME sentence, stale',
-      '`LEAN_RUNTIME` from `x/lean` is about 30 KiB gzip against 44 KiB',
-      1,
-    ],
     ['no figure', 'nothing here', 0],
   ])('%s', (_case, text, count) => {
-    expect(sizeClaimViolations(text, 'docs/x.md', FULL, LEAN)).toHaveLength(count);
+    expect(sizeClaimViolations(text, 'docs/x.md', FULL)).toHaveLength(count);
   });
 
   it('says which artifact, where and by how much', () => {
-    expect(sizeClaimViolations('\n\nabout 42 KB gzip', 'docs/html.md', FULL, LEAN)).toEqual([
+    expect(sizeClaimViolations('\n\nabout 42 KB gzip', 'docs/html.md', FULL)).toEqual([
       'docs/html.md:3 says 42 KB gzip for the default inline script, the budget is 44 KB',
     ]);
   });

@@ -27,7 +27,7 @@ const tag = wrapWithScriptTag(script); // `<script>…</script>`; pass { nonce }
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">${tag}</head><body>…</body></html>`;
 ```
 
-The tag goes into `<head>`. The script stays inert outside the admin's preview iframe and costs about 44 KB gzip on every page that carries it, 35 KB with the lean artifact (`runtime: LEAN_RUNTIME`, [options.md](options.md)). `generateInlineScript()` returns the script body and accepts the runtime options ([options.md](options.md)); `wrapWithScriptTag()` adds the tag and an optional `nonce`.
+The tag goes into `<head>`. The script stays inert outside the admin's preview iframe and costs about 44 KB gzip on every page that carries it. `generateInlineScript()` returns the script body and accepts the runtime options ([options.md](options.md)); `wrapWithScriptTag()` adds the tag and an optional `nonce`.
 
 ## Annotate the markup
 
@@ -42,7 +42,7 @@ The tag goes into `<head>`. The script stays inert outside the admin's preview i
 ></ul>
 ```
 
-Render an element even when its field is empty: the runtime patches elements that exist, and an edit to an initially empty field needs somewhere to land. Rich text is written from the value shape, in the lean artifact too, and so is the decision to ask Payload for the uploads and relationships inside it ([bindings.md](bindings.md)). Every attribute, the field types and the owner marker for pages with several documents: [bindings.md](bindings.md).
+Render an element even when its field is empty: the runtime patches elements that exist, and an edit to an initially empty field needs somewhere to land. Rich text is written from the value shape, and so is the decision to ask Payload for the uploads and relationships inside it ([bindings.md](bindings.md)). Every attribute, the field types and the owner marker for pages with several documents: [bindings.md](bindings.md).
 
 ## Content Security Policy
 

@@ -588,10 +588,6 @@ option only names a path the runtime posts to, whoever serves it.
 `{ fragment: createFragmentStrategy({ endpoint }), route: createRouteStrategy() }`
 from `payload-live-preview/fragment`.
 
-The lean runtime carries no strategy runner: `runtime: LEAN_RUNTIME` together
-with `fragments` (`fragmentEndpoint`) or `routeStrategy` throws when the script
-is generated ([options.md](options.md)).
-
 ### The route strategy on its own
 
 A page that wants route refreshes and no server-rendered boundaries sets

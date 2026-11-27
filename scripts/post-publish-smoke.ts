@@ -43,7 +43,6 @@ export const ENTRY_REACHABILITY = {
   './lexical': 'import',
   './plugins': 'import',
   './fragment': 'import',
-  './lean': 'import',
   './codegen': 'needs-ts-morph',
   './codegen/astro': 'needs-ts-morph',
   './annotate': 'import',

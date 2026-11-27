@@ -7,7 +7,6 @@ import { mkdir, writeFile, copyFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { generateInlineScript } from 'payload-live-preview';
-import { LEAN_RUNTIME } from 'payload-live-preview/lean';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, 'dist');
@@ -24,9 +23,6 @@ const options = {
 };
 
 const inline = generateInlineScript(options);
-// The lean artifact: same options, fewer features baked in. `lean.html` is what
-// `tests/e2e/specs/lean-profile.spec.ts` measures and drives.
-const lean = generateInlineScript({ ...options, runtime: LEAN_RUNTIME });
 // Two documents and the route strategy: an update reaches only what the
 // document it names owns, the route included (`route-owner-scope.spec.ts`).
 const ownersRoute = generateInlineScript({
@@ -68,8 +64,9 @@ const revealBody =
   '<div style="height:2200px">scroll down for the footer</div>' +
   '<p data-payload-field="footer" data-testid="footer">old footer</p>';
 
-// One page per profile, same markup: what differs in the browser is the runtime.
-const leanBody =
+// The index page with a templated array, for the cases that need one
+// (`strict-style-csp.spec.ts`).
+const arrayBody =
   indexBody +
   '<ul data-payload-field="tags" data-payload-type="array" ' +
   'data-payload-array-template="<li>{{value}}</li>" data-testid="tags"><li>one</li></ul>';
@@ -111,8 +108,7 @@ const revisionDisplayBody =
 await mkdir(dist, { recursive: true });
 await writeFile(join(dist, 'index.html'), shell('Pure HTML preview', indexBody), 'utf8');
 await writeFile(join(dist, 'reveal.html'), shell('Reveal fixture', revealBody), 'utf8');
-await writeFile(join(dist, 'lean.html'), shell('Lean profile', leanBody, lean), 'utf8');
-await writeFile(join(dist, 'full.html'), shell('Full profile', leanBody), 'utf8');
+await writeFile(join(dist, 'full.html'), shell('Index with an array', arrayBody), 'utf8');
 await writeFile(
   join(dist, 'groups-declared.html'),
   shell('Groups, declared', groupsBody, groupsDeclared),
@@ -153,4 +149,4 @@ await writeFile(
   'utf8',
 );
 await copyFile(join(here, 'admin.html'), join(dist, 'admin.html'));
-console.log(`pure-html built to dist/ (inline ${inline.length} bytes, lean ${lean.length} bytes)`);
+console.log(`pure-html built to dist/ (inline ${inline.length} bytes)`);
