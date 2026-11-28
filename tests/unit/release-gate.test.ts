@@ -8,6 +8,7 @@ import {
   type CommandResult,
   type ReleaseFacts,
 } from '../../scripts/release-gate';
+import { SECURITY_SUITE } from '../../scripts/security-suite';
 
 const REPOSITORY = 'relative23/payload-live-preview';
 const TESTED = 'a'.repeat(40);
@@ -44,6 +45,13 @@ const watchRun = (id: number, conclusion: string, createdAt: string) => ({
   html_url: `https://github.com/${REPOSITORY}/actions/runs/${String(id)}`,
 });
 const WATCH_PASSED = ok(JSON.stringify([watchRun(7, 'success', '2026-11-03T14:31:58Z')]));
+const jobLines = (conclusions: Readonly<Record<string, string | null>> = {}): CommandResult =>
+  ok(
+    SECURITY_SUITE.flatMap((entry) => entry.names)
+      .filter((name) => conclusions[name] !== null)
+      .map((name) => JSON.stringify({ name, conclusion: conclusions[name] ?? 'success' }))
+      .join('\n'),
+  );
 
 interface FakeWorld {
   readonly run?: Record<string, unknown>;
@@ -55,6 +63,8 @@ interface FakeWorld {
   readonly release?: CommandResult;
   /** The finished Latest Watch runs on the tested commit, as the gate's `--jq` prints them. */
   readonly latestWatch?: CommandResult;
+  /** The jobs of the certified run, one object per line as the gate's `--jq` prints them. */
+  readonly jobs?: CommandResult;
   readonly commands?: string[];
 }
 
@@ -62,6 +72,9 @@ function runner(world: FakeWorld): (executable: string, args: readonly string[])
   return (executable, args) => {
     const command = `${executable} ${args.join(' ')}`;
     world.commands?.push(command);
+    if (command.startsWith('gh api') && command.includes('/actions/runs/42/jobs')) {
+      return world.jobs ?? jobLines();
+    }
     if (command.startsWith('gh api') && command.includes('/actions/runs/')) {
       return ok(JSON.stringify(world.run ?? run()));
     }
@@ -460,5 +473,53 @@ describe('the Latest Watch run on the commit main publishes', () => {
     for (const commands of [maintenance, versionPr]) {
       expect(commands.some((command) => command.includes('latest-watch.yml'))).toBe(false);
     }
+  });
+});
+
+describe('the security suite of the run main publishes', () => {
+  const gate = (world: FakeWorld) =>
+    runReleaseGate({ repository: REPOSITORY, runId: '42', run: runner(world) });
+  const CORE = 'Release Gates / Trusted Core Mutation';
+
+  it('publishes when every job of the suite ended success, and reads them by name', () => {
+    const commands: string[] = [];
+    expect(gate({ commands })).toMatchObject({ publish: 'true' });
+    expect(commands).toContainEqual(
+      `gh api --paginate repos/${REPOSITORY}/actions/runs/42/jobs?per_page=100 --jq .jobs[] | {name, conclusion}`,
+    );
+  });
+
+  it('refuses a run that ended success with a job of the suite skipped, and names the job', () => {
+    expect(() => gate({ jobs: jobLines({ [CORE]: 'skipped' }) })).toThrow(
+      `"${CORE}" ended skipped (the mutation score of the trusted core, on the commit to be published)`,
+    );
+  });
+
+  it('refuses a run that lacks a job of the suite', () => {
+    expect(() => gate({ jobs: jobLines({ 'Production lifecycle (nuxt)': null }) })).toThrow(
+      '"Production lifecycle (nuxt)" did not run',
+    );
+  });
+
+  it('refuses a job that was started again and failed', () => {
+    const lines = `${jobLines().stdout}\n${JSON.stringify({ name: 'Coverage', conclusion: 'failure' })}`;
+    expect(() => gate({ jobs: ok(lines) })).toThrow('"Coverage" ended failure');
+  });
+
+  it('fails closed when GitHub cannot list the jobs', () => {
+    expect(() => gate({ jobs: failed('HTTP 502') })).toThrow(
+      'cannot list the jobs of CI run 42; refusing to publish',
+    );
+  });
+
+  it('asks nothing of a maintenance branch, or of a Version PR', () => {
+    const commands: string[] = [];
+    gate({ run: run({ head_branch: 'release/2.x' }), commands });
+    gate({
+      registry: ok('2.0.0\n'),
+      changesets: '.changeset/README.md\n.changeset/one.md\n',
+      commands,
+    });
+    expect(commands.some((command) => command.includes('/jobs'))).toBe(false);
   });
 });

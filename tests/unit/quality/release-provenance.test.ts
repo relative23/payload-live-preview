@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { runReleaseGate, type CommandResult } from '../../../scripts/release-gate';
+import { SECURITY_SUITE } from '../../../scripts/security-suite';
 import { parseWorkflow } from '../../../scripts/workflow-contracts';
 
 const REPOSITORY = 'relative23/payload-live-preview';
@@ -66,6 +67,14 @@ function gate(branch: string, runId = '42') {
           JSON.stringify([
             { id: 7, conclusion: 'success', created_at: '2026-11-03T14:31:58Z', html_url: '' },
           ]),
+        );
+      }
+      // And for every job of the security suite in the certified run (release-gate.test.ts).
+      if (command.includes('/actions/runs/42/jobs?')) {
+        return ok(
+          SECURITY_SUITE.flatMap((entry) => entry.names)
+            .map((name) => JSON.stringify({ name, conclusion: 'success' }))
+            .join('\n'),
         );
       }
       throw new Error(`unexpected release command ${command}`);

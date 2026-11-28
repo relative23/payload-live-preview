@@ -5,6 +5,7 @@ import { appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { releaseTagForVersion } from './release-version';
+import { runJobsFrom, securitySuiteProblem } from './security-suite';
 
 export interface CommandResult {
   readonly status: number;
@@ -336,6 +337,23 @@ export function runReleaseGate(environment: ReleaseGateEnvironment): ReleaseGate
       String(certified.id),
     );
     if (problem !== undefined) throw new Error(problem);
+
+    // The run's conclusion is `success` with a job skipped, so the suite is read by name.
+    const jobs = run('gh', [
+      'api',
+      '--paginate',
+      `repos/${repository}/actions/runs/${String(certified.id)}/jobs?per_page=100`,
+      '--jq',
+      '.jobs[] | {name, conclusion}',
+    ]);
+    if (jobs.status !== 0) {
+      throw new Error(
+        `cannot list the jobs of CI run ${String(certified.id)}; refusing to publish without the ` +
+          `security suite's verdict:\n${detail(jobs)}`,
+      );
+    }
+    const missing = securitySuiteProblem(runJobsFrom(jobs.stdout), String(certified.id));
+    if (missing !== undefined) throw new Error(missing);
   }
   return {
     run_id: String(certified.id),

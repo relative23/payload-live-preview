@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 542,
-    "suites": 1044,
-    "tests": 4706,
+    "files": 543,
+    "suites": 1047,
+    "tests": 4717,
     "benchmarks": 12
   },
   "groups": {
@@ -63,9 +63,9 @@
       "benchmarks": 0
     },
     "unit": {
-      "files": 439,
-      "suites": 934,
-      "tests": 4279,
+      "files": 440,
+      "suites": 937,
+      "tests": 4290,
       "benchmarks": 0
     }
   },
@@ -3459,6 +3459,13 @@
       "benchmarks": 0
     },
     {
+      "path": "tests/unit/quality/security-suite.test.ts",
+      "group": "unit",
+      "suites": 2,
+      "tests": 5,
+      "benchmarks": 0
+    },
+    {
       "path": "tests/unit/quality/serialize-source.test.ts",
       "group": "unit",
       "suites": 1,
@@ -3545,8 +3552,8 @@
     {
       "path": "tests/unit/release-gate.test.ts",
       "group": "unit",
-      "suites": 5,
-      "tests": 33,
+      "suites": 6,
+      "tests": 39,
       "benchmarks": 0
     },
     {
