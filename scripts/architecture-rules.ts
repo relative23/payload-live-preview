@@ -59,6 +59,17 @@ const NODE_BUILTINS = new Set(
 );
 
 /**
+ * What a zone may never import at run time. The tree is the first layer rule:
+ * nothing that may reach a browser imports an adapter, a server helper or a
+ * tool, and no adapter imports a tool. A domain needs no entry for that, so a
+ * new one under `src/runtime` is held to it before it has a list.
+ */
+const FORBIDDEN_ZONES: Readonly<Record<string, ReadonlySet<string>>> = {
+  adapters: new Set(['tools']),
+  runtime: new Set(['adapters', 'server', 'tools']),
+};
+
+/**
  * These rules protect the low-level runtime/security layers from convenient
  * upward imports while allowing type-only references, which are erased and
  * cannot create runtime coupling or cycles.
@@ -68,10 +79,13 @@ const NODE_BUILTINS = new Set(
  * and it may not pull an adapter or the client in; `types` is the leaf every
  * bundle shares, so a runtime import there would be paid by all of them; and
  * `adapters` take only the runtime seam, never the client or a tool.
+ *
+ * A list of a domain under `src/runtime` names runtime domains only: what
+ * crosses a zone is in `FORBIDDEN_ZONES`.
  */
 const FORBIDDEN_RUNTIME_DOMAINS: Readonly<Record<string, ReadonlySet<string>>> = {
-  adapters: new Set(['client', 'codegen', 'doctor', 'migrate', 'payload']),
-  client: new Set(['adapters', 'codegen', 'inline', 'payload']),
+  adapters: new Set(['client', 'payload']),
+  client: new Set(['inline']),
   codegen: new Set([
     'adapters',
     'client',
@@ -87,73 +101,42 @@ const FORBIDDEN_RUNTIME_DOMAINS: Readonly<Record<string, ReadonlySet<string>>> =
     'schema',
     'security',
   ]),
-  core: new Set(['adapters', 'client', 'codegen', 'fragment', 'inline', 'payload', 'plugins']),
-  detection: new Set([
-    'adapters',
-    'client',
-    'codegen',
-    'core',
-    'field-types',
-    'inline',
-    'lexical',
-    'payload',
-    'plugins',
-    'schema',
-  ]),
+  core: new Set(['client', 'fragment', 'inline', 'plugins']),
+  detection: new Set(['client', 'core', 'field-types', 'inline', 'lexical', 'plugins', 'schema']),
   dsl: new Set([
-    'adapters',
     'client',
-    'codegen',
     'core',
     'detection',
     'events',
     'field-types',
     'inline',
     'lexical',
-    'payload',
     'plugins',
     'schema',
     'security',
   ]),
-  events: new Set([
-    'adapters',
-    'client',
-    'codegen',
-    'field-types',
-    'inline',
-    'lexical',
-    'payload',
-    'plugins',
-    'schema',
-    'security',
-  ]),
-  'field-types': new Set(['adapters', 'client', 'codegen', 'inline', 'payload', 'plugins']),
-  fragment: new Set(['adapters', 'client', 'codegen', 'inline', 'payload', 'plugins']),
+  events: new Set(['client', 'field-types', 'inline', 'lexical', 'plugins', 'schema', 'security']),
+  'field-types': new Set(['client', 'inline', 'plugins']),
+  fragment: new Set(['client', 'inline', 'plugins']),
   inline: new Set([
-    'adapters',
     'client',
-    'codegen',
     'core',
     'detection',
     'dsl',
     'events',
     'field-types',
     'lexical',
-    'payload',
     'plugins',
     'schema',
     'security',
   ]),
   lexical: new Set([
-    'adapters',
     'client',
-    'codegen',
     'core',
     'detection',
     'events',
     'field-types',
     'inline',
-    'payload',
     'plugins',
     'schema',
   ]),
@@ -172,21 +155,10 @@ const FORBIDDEN_RUNTIME_DOMAINS: Readonly<Record<string, ReadonlySet<string>>> =
     'schema',
     'security',
   ]),
-  plugins: new Set(['adapters', 'client', 'codegen', 'inline', 'payload']),
-  schema: new Set([
-    'adapters',
-    'client',
-    'codegen',
-    'field-types',
-    'inline',
-    'lexical',
-    'payload',
-    'plugins',
-  ]),
+  plugins: new Set(['client', 'inline']),
+  schema: new Set(['client', 'field-types', 'inline', 'lexical', 'plugins']),
   security: new Set([
-    'adapters',
     'client',
-    'codegen',
     'core',
     'detection',
     'dsl',
@@ -194,29 +166,22 @@ const FORBIDDEN_RUNTIME_DOMAINS: Readonly<Record<string, ReadonlySet<string>>> =
     'field-types',
     'inline',
     'lexical',
-    'payload',
     'plugins',
     'schema',
   ]),
   types: new Set([
-    'adapters',
     'client',
-    'codegen',
     'core',
     'detection',
-    'doctor',
     'dsl',
     'events',
     'field-types',
     'fragment',
     'inline',
     'lexical',
-    'migrate',
-    'payload',
     'plugins',
     'schema',
     'security',
-    'server',
   ]),
 };
 
@@ -356,7 +321,10 @@ export function findArchitectureViolations(
           message: `${module.path} imports server-only ${dependency.target}`,
         });
       }
-      if (FORBIDDEN_RUNTIME_DOMAINS[sourceDomain]?.has(targetDomain) === true) {
+      if (
+        FORBIDDEN_ZONES[zoneFor(module.path)]?.has(zoneFor(dependency.target)) === true ||
+        FORBIDDEN_RUNTIME_DOMAINS[sourceDomain]?.has(targetDomain) === true
+      ) {
         violations.push({
           kind: 'layer-boundary',
           module: module.path,

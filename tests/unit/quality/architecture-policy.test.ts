@@ -117,6 +117,23 @@ describe('architecture policy', () => {
     ]);
   });
 
+  it('refuses an import out of the runtime zone for a domain no list names', () => {
+    const modules: readonly ArchitectureModule[] = [
+      {
+        path: 'src/runtime/outline/index.ts',
+        dependencies: [dependency('src/adapters/astro/index.ts')],
+        capabilities: [],
+      },
+      { path: 'src/adapters/astro/index.ts', dependencies: [], capabilities: [] },
+    ];
+
+    expect(
+      findArchitectureViolations(modules).map(({ kind, message }) => `${kind}: ${message}`),
+    ).toEqual([
+      'layer-boundary: src/runtime/outline/index.ts crosses the outline -> adapters runtime boundary',
+    ]);
+  });
+
   it('rejects upward layer imports, browser-to-server imports and Node builtins', () => {
     const modules: readonly ArchitectureModule[] = [
       {
