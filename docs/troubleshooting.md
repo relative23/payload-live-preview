@@ -194,7 +194,7 @@ PLP_DOCTOR_HEADER="Cookie: payload-token=$PAYLOAD_TOKEN" \
 
 `pll doctor --v3 ./src` is a different check under the same command: it reads a
 project's source, not a deployment, and lists the calls that 3.0 changes. See
-[Preparing for 3.0](migration.md#list-the-places-first-pll-doctor---v3).
+[Upgrading to 3.0](migration.md#list-the-places-pll-doctor---v3).
 
 Run a command that carries a credential as `node_modules/.bin/pll`, with the
 credential in an environment variable. npm 12's `npx` and `npm exec` print the

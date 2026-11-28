@@ -20,7 +20,7 @@ admin Next.js 16.4 or a later 16.x release.
 Payload 2: this release applies nothing of an admin that sends `fieldSchemaJSON`,
 which only Payload 2 does, and reports `LP0504` when it refuses
 ([ADR 0007 ledger, entry 25](architecture/0007-v2-defaults-and-renames-ledger.md#ledger),
-[Preparing for 3.0](migration.md#preparing-for-30)).
+[Upgrading to 3.0](migration.md#upgrading-to-30)).
 
 The manifest declares `payload` as an optional peer,
 `^3.0.0 || ^4.0.0-0`: npm never installs it, and a project that has
