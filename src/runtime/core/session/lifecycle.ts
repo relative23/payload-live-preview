@@ -6,7 +6,7 @@
 import * as V2_RUNTIME_DEFAULTS from '@/runtime/types/runtime-defaults';
 import { createA11y, defaultSendReady } from './runtime-wiring';
 import { BindingWriter } from '../bindings/binding-writer';
-import { ElementCache, hasSameBindingIdentity } from '../bindings/cache';
+import { ElementCache } from '../bindings/cache';
 import { DataMerger } from '../merge/data-merger';
 import type { DiagnosticCode } from '../diagnostic-codes';
 import { isolateDiagnostic, noopDiagnostic, safeConsoleWarn } from '../diagnostics';
@@ -16,14 +16,15 @@ import { markNoWriteCallback } from '../internal-outcome';
 import { isInsideIsland } from '../bindings/islands';
 import { MessageBus } from '../protocol/message-bus';
 import { ObserverManager } from '../bindings/observers';
+import { buildCacheAndObserve, rebuildCache } from './cache-rebuild';
 import { LifetimeScope } from './lifetime-scope';
 import type { ProtocolNegotiation } from '../protocol/protocol-version';
+import { reportInvalidMessage } from './refused-message';
 import type { RuntimeOptions } from './runtime-options';
 import { RuntimeState, type RuntimeDeps } from './runtime-state';
 import { isDocumentRoot, readDocumentBody, startWhenReady, type StartupHost } from './startup';
 import { ConnectionState, HeartbeatTimer } from './state';
 import { onlyWhileLent, routeIsLentOnly } from '../strategies/lent-route';
-import type { CachedElement } from '../types';
 import { UpdatePipeline } from '../update/update-pipeline';
 import { UpdateScheduler } from '../update/update-scheduler';
 
@@ -106,32 +107,7 @@ export class LivePreviewRuntime {
         if (this.deps.revealEditedField) this.pipeline.revealField(field);
       },
       onInvalid: (reason, origin) => {
-        if (reason === 'token') {
-          const error = new Error(`Preview token rejected (origin: ${origin})`);
-          void emitter.emit('error', { error, context: 'token', code: 'LP0502' });
-        }
-        // An unknown shape from a trusted origin is protocol drift, not an attack.
-        // Report it here once: without `debug`, no other boundary makes it visible.
-        if ((reason === 'shape' || reason === 'type') && !this.state.warnedProtocolShape) {
-          this.state.warnedProtocolShape = true;
-          warn(
-            `[live-preview] LP0503: ${origin} posted a message this runtime does not recognise ` +
-              `(${reason === 'type' ? 'unknown message type' : 'unexpected shape'}); it was ` +
-              'ignored. A newer Payload or a custom sender: check that the versions match.',
-          );
-        }
-        // This refusal default changed in 2.0. An admin posting from outside the
-        // framing or opening window silently stops updates, so report it once.
-        if (reason === 'source' && !this.state.warnedForeignSource) {
-          this.state.warnedForeignSource = true;
-          warn(
-            `[live-preview] LP0501: a message from ${origin} was ignored because it did not come ` +
-              'from the window that framed or opened this page. `eventSourcePolicy` is ' +
-              "'parent-or-opener' by default since 2.0, where 1.x accepted any window on a " +
-              "trusted origin. Set `eventSourcePolicy: 'any'` if the admin posts from elsewhere.",
-          );
-        }
-        log('LP0501 message rejected:', reason, origin);
+        reportInvalidMessage(this.deps, this.state, reason, origin);
       },
       ...(options.validateToken !== undefined ? { validateToken: options.validateToken } : {}),
       sourcePolicy: options.eventSourcePolicy ?? V2_RUNTIME_DEFAULTS.eventSourcePolicy,
@@ -262,7 +238,7 @@ export class LivePreviewRuntime {
     this.observedRoot = observerRoot;
     this.watchRootReplacement();
     // Observers first: the cache scan registers its elements with them.
-    this.buildCacheAndObserve();
+    buildCacheAndObserve(deps, state);
     if (!state.isRunning()) return;
     deps.bus.attach();
     void deps.emitter.emitWhile('init', { timestamp: Date.now() }, () => state.isRunning());
@@ -473,57 +449,8 @@ export class LivePreviewRuntime {
     return buildInspection(this.deps, this.state);
   }
 
-  private buildCacheAndObserve(): void {
-    const { state, deps } = this;
-    if (!state.isRunning()) return;
-    const stats = deps.cache.buildFromRoot(deps.root);
-    deps.log('cache', stats);
-    if (!state.isRunning()) return;
-    void deps.emitter.emitWhile('cacheRefresh', stats, () => state.isRunning());
-    if (!state.isRunning()) return;
-    for (const entry of deps.cache.values()) {
-      if (!state.isRunning()) return;
-      deps.observers.observeElement(entry.element);
-    }
-  }
-
   private rebuildCache(): void {
-    const { state, deps } = this;
-    if (!state.isRunning()) return;
-    const previous = new Map<Element, CachedElement>();
-    const previousIslandOwners = deps.cache.islandOwners;
-    const previousNavigationRoots = new Set(deps.cache.navigationReplayRoots);
-    for (const entry of deps.cache.values()) {
-      previous.set(entry.element, entry);
-      deps.observers.unobserveElement(entry.element);
-    }
-    this.buildCacheAndObserve();
-    if (!state.isRunning()) return;
-    const added = new Set<Element>(
-      deps.cache.navigationReplayRoots.filter((root) => !previousNavigationRoots.has(root)),
-    );
-    // Buffered work survives only while the same element is bound to the same field.
-    for (const entry of deps.cache.values()) {
-      const before = previous.get(entry.element);
-      if (before !== undefined && hasSameBindingIdentity(before, entry)) {
-        deps.scheduler.retarget(entry);
-      } else {
-        deps.scheduler.forget(entry.element);
-        // Its stamp was written for another binding, or by nobody: the value is written again.
-        state.lastAppliedIdentity.delete(entry.element);
-        added.add(entry.element);
-      }
-      previous.delete(entry.element);
-    }
-    for (const removed of previous.values()) deps.scheduler.forget(removed.element);
-    if (added.size > 0) this.pipeline.reapplyNavigationBindings(added);
-    const addedIslands = deps.cache.islands.filter(
-      (island) =>
-        !previousIslandOwners.has(island) ||
-        (deps.scopeBindingsByOwner &&
-          previousIslandOwners.get(island) !== deps.cache.islandOwners.get(island)),
-    );
-    if (addedIslands.length > 0) this.pipeline.reapplyNavigationIslands(addedIslands);
+    rebuildCache(this.deps, this.state, this.pipeline);
   }
 
   private onHeartbeatTimeout(): void {

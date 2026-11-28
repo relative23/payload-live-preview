@@ -170,12 +170,12 @@ size.
 | ---------------------------------------------------------------- | ------------ |
 | `escapeHtml` from `payload-live-preview`                         | 223 B        |
 | `lexicalToHtml` from `payload-live-preview`                      | 6,002 B      |
-| `initLivePreview` from `payload-live-preview`                    | 53,322 B     |
-| `generateInlineScript` from `payload-live-preview`               | 53,613 B     |
-| `initLivePreview` from `payload-live-preview/client`             | 53,323 B     |
+| `initLivePreview` from `payload-live-preview`                    | 53,374 B     |
+| `generateInlineScript` from `payload-live-preview`               | 53,830 B     |
+| `initLivePreview` from `payload-live-preview/client`             | 53,379 B     |
 | `lexicalToHtml` from `payload-live-preview/lexical`              | 5,997 B      |
 | `morphElement` from `payload-live-preview/client`                | 1,527 B      |
-| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 59,299 B     |
+| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 59,511 B     |
 | `useLivePreviewDocument` from `payload-live-preview/react`       | 6,383 B      |
 | `useLivePreviewDocument` from `payload-live-preview/vue`         | 6,270 B      |
 | `PluginManager` from `payload-live-preview/client`               | 3,299 B      |
@@ -196,7 +196,7 @@ chunk boundary around every module that defines a public name
 | `PluginManager`                                    | 10,240 B    |
 | `morphElement`                                     | 5,900 B     |
 | `createDocumentSession`                            | 19,700 B    |
-| `initLivePreview`                                  | 168,400 B   |
+| `initLivePreview`                                  | 168,116 B   |
 
 Before this gate existed, every row was 64 KB gzip: the root barrel
 did not tree-shake at all. Three causes, all fixed in the same change:

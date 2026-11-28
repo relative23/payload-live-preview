@@ -1,12 +1,14 @@
 /**
- * Runs the fragment and route strategies for a revision. A strategy that
- * throws or rejects is treated as failed, never left to reject the runtime.
+ * Plans the strategies of a revision and runs its fragments; the route's own
+ * run is in `./route-run`. A strategy that throws or rejects is treated as
+ * failed, never left to reject the runtime.
  */
 
 import type { PayloadLivePreviewData } from '@/runtime/types/payload-protocol';
 import { trustedHtml } from '@security/trusted-types';
 import { isBindingInScope } from '../bindings/binding-owner';
 import { resolveBindingOwner } from '../bindings/cache';
+import { revealPending } from '../update/after-flush';
 import { reportUnboundChange } from '../update/fidelity';
 import { bindingValue } from '../update/field-value';
 import {
@@ -24,9 +26,9 @@ import {
   planBoundaries,
   type FragmentContext,
   type FragmentPlan,
-  type RouteOutcome,
   type RouteStrategy,
 } from './strategies';
+import { refreshRoute } from './route-run';
 import { KEY_ATTRIBUTE } from '../bindings/structural-applier';
 import {
   warnEscalationUnavailable,
@@ -55,15 +57,13 @@ export interface StrategyHost {
   readonly rebuildCache: () => void;
   /** A server render — the route, or a fragment boundary — dropped the stamps a guess lives by; look for the baseline's guesses again (ADR 0014). */
   readonly restoreGuesses: (transaction: UpdateTransaction, data: PayloadLivePreviewData) => void;
-  /** Scroll to the binding this revision marked, if it has not been revealed yet. */
-  readonly revealPending: (transaction: UpdateTransaction) => void;
 }
 
 export class StrategyRunner {
   constructor(
-    private readonly deps: RuntimeDeps,
-    private readonly state: RuntimeState,
-    private readonly host: StrategyHost,
+    readonly deps: RuntimeDeps,
+    readonly state: RuntimeState,
+    readonly host: StrategyHost,
   ) {}
 
   /**
@@ -124,7 +124,7 @@ export class StrategyRunner {
       return;
     }
     this.state.escalatedCount += targets.length;
-    void this.refreshRoute(transaction, data, route);
+    void refreshRoute(this, transaction, data, route);
   }
 
   /** Patches that fell short and stay as they are: the revision does not show those fields. */
@@ -325,7 +325,7 @@ export class StrategyRunner {
     }
     // The edited field may be one the server just rendered: its element is only
     // in place now, so this is the earliest point it can be scrolled to.
-    this.host.revealPending(transaction);
+    revealPending(deps, state, transaction);
     if (!isCurrent()) return;
     if (report.rendered === 0 || emitter.listenerCount('afterUpdate') === 0) return;
     void emitter.emitWhile(
@@ -340,182 +340,6 @@ export class StrategyRunner {
       },
       isCurrent,
     );
-  }
-
-  /** Refresh the route once per revision, then re-apply the revision onto the fresh markup. */
-  async refreshRoute(
-    transaction: UpdateTransaction,
-    data: PayloadLivePreviewData,
-    strategy: RouteStrategy,
-  ): Promise<void> {
-    const { deps, state } = this;
-    if (transaction.routeRefreshed) {
-      state.routeStats.loopStopped += 1;
-      deps.log(
-        'route',
-        'LP0805',
-        `revision ${String(transaction.revision.revision)} asked for a second refresh`,
-      );
-      return;
-    }
-    // A refusal counts as asked as well: the trailing run below is this
-    // revision's one refresh, and nothing else may start a second.
-    transaction.routeRefreshed = true;
-    await this.runRoute(transaction, data, strategy, false).catch((error: unknown) => {
-      this.routeFailed(error);
-    });
-  }
-
-  /**
-   * Payload saved the document, and the route was last rendered from the older
-   * save (`routeAwaitsSave`): render it again, now that the server has the edits.
-   * Payload posts the event once the save landed, so no delay is guessed at.
-   */
-  refreshAfterSave(): void {
-    const { deps, state } = this;
-    const { route } = deps.strategies;
-    const current = state.activeUpdate;
-    // A stopped runtime has no active update, so this also refuses after stop().
-    if (!state.routeAwaitsSave || route === undefined || current?.renderData === undefined) return;
-    deps.log('route', 'document saved; refreshing the route');
-    this.runRoute(current, current.renderData, route, true).catch((error: unknown) => {
-      this.routeFailed(error);
-    });
-  }
-
-  /**
-   * Nothing awaits a refresh, so an unexpected throw after it returned, while
-   * the page is re-applied onto the fresh markup, would otherwise escape as an
-   * unhandled rejection. The strategy's own throw is an outcome (LP0801).
-   */
-  private routeFailed(error: unknown): void {
-    this.deps.log('route refresh failed:', error);
-  }
-
-  /**
-   * The trailing run of a refused refresh: the strategy's window closes and the
-   * request it held back runs, once. It cannot loop — a refresh re-renders the
-   * page from the server and produces no message, so nothing asks again.
-   */
-  private armRouteRetry(
-    transaction: UpdateTransaction,
-    data: PayloadLivePreviewData,
-    strategy: RouteStrategy,
-    delayMs: number,
-    forSave: boolean,
-  ): void {
-    const { state } = this;
-    if (state.routeRetry !== null) clearTimeout(state.routeRetry);
-    state.routeRetry = setTimeout(() => {
-      state.routeRetry = null;
-      if (!state.isCurrent(transaction)) return;
-      this.runRoute(transaction, data, strategy, forSave).catch((error: unknown) => {
-        this.routeFailed(error);
-      });
-    }, delayMs);
-  }
-
-  /**
-   * One trip through the strategy, whether the revision asked for it or the
-   * window did. It replaces a refresh still in flight, and it lands for the
-   * revision that is current when it returns, which need not be the one that
-   * asked (ADR 0004 §4d).
-   */
-  private async runRoute(
-    transaction: UpdateTransaction,
-    data: PayloadLivePreviewData,
-    strategy: RouteStrategy,
-    forSave: boolean,
-  ): Promise<void> {
-    const { deps, state } = this;
-    if (deps.routeAfterSave && !forSave) {
-      state.routeAwaitsSave = true;
-      state.display.shortfall(transaction, { kind: 'route-saved' });
-      return;
-    }
-    const stats = state.routeStats;
-    const controller = new AbortController();
-    state.routeController?.abort();
-    state.routeController = controller;
-    // A stop aborts it too, so the signal alone says whether it may still land.
-    const lands = (): boolean => !controller.signal.aborted;
-    let outcome: RouteOutcome;
-    try {
-      outcome = await strategy.refresh({
-        revision: transaction.revision.revision,
-        receivedAt: transaction.receivedAt,
-        signal: controller.signal,
-        isCurrent: lands,
-        log: (code, detail) => {
-          deps.log('route', code, detail);
-        },
-        retryAfter: (delayMs) => {
-          this.armRouteRetry(transaction, data, strategy, delayMs, forSave);
-        },
-      });
-    } catch (error) {
-      deps.log('route', 'LP0801', error);
-      outcome = 'failed';
-    }
-    if (!lands()) return;
-    // Whatever replaces this refresh, ends the route or stops the session
-    // aborts it first, so it is still the one in flight and a revision is
-    // current; the null check only narrows the type.
-    state.routeController = null;
-    const current = state.activeUpdate;
-    if (current === null) return;
-    // The current revision's latest data, which a merge may have refined since
-    // the refresh started. One still resolving its fields has none yet: it
-    // applies itself onto whatever the route shows when it gets there.
-    const currentData = current.renderData;
-    const isCurrent = (): boolean => state.isCurrent(current);
-    if (outcome === 'partial') state.display.shortfall(current, { kind: 'route-saved' });
-    // A refusal with its trailing run armed is not an outcome yet: that run is.
-    else if (
-      outcome === 'failed' ||
-      outcome === 'superseded' ||
-      (outcome === 'refused' && state.routeRetry === null)
-    ) {
-      state.display.shortfall(current, { kind: 'route-failed', outcome });
-    }
-    if (outcome === 'refreshed' || outcome === 'partial') {
-      stats.refreshes += 1;
-      if (outcome === 'partial') stats.partial += 1;
-      state.routeAwaitsSave = outcome === 'partial' && !forSave;
-      // Route markup has no local application identities; every prior stamp is stale.
-      state.lastAppliedIdentity = new WeakMap();
-      // The fresh markup carries no stamp: the guesses go back on before the
-      // cache is rebuilt from it, or the rebuild would not know them.
-      if (currentData !== undefined) this.host.restoreGuesses(current, currentData);
-      this.host.rebuildCache();
-      if (currentData === undefined || !isCurrent()) return;
-      this.host.reapply(current, currentData);
-      if (deps.emitter.listenerCount('afterUpdate') > 0) {
-        void deps.emitter.emitWhile(
-          'afterUpdate',
-          {
-            data: currentData,
-            // The strategy replaced the whole route, so every binding now on
-            // the page carries new markup; the unsaved fields scheduled just
-            // above report themselves in their own `patch` batch.
-            updatedCount: deps.cache.elementCount,
-            durationMs: Date.now() - current.receivedAt,
-            revision: current.revision.revision,
-            receivedAt: current.receivedAt,
-            source: 'route',
-          },
-          isCurrent,
-        );
-      }
-      return;
-    }
-    // A refusal is a pause, not a breakage; counting the two together is how
-    // `failed: 3` came to stand in an inspection where nothing was wrong.
-    if (outcome === 'failed') stats.failed += 1;
-    else if (outcome === 'refused') stats.refused += 1;
-    // Either way the page shows what it can now: the window holds back the
-    // server, not the bindings this revision could already have written.
-    if (currentData !== undefined) this.host.reapply(current, currentData);
   }
 
   /** LP0806, once: a fragment boundary with no handler is patched instead. */

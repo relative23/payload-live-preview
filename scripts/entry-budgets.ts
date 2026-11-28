@@ -44,25 +44,25 @@
 import type { BundleBudget } from './bundle-measure';
 
 export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
-  'adapters/astro/index.js': { raw: 219_653, gzip: 69_461, brotli: 58_942 },
-  'adapters/astro/middleware-entry.js': { raw: 192_973, gzip: 60_887, brotli: 51_362 },
+  'adapters/astro/index.js': { raw: 219_375, gzip: 69_630, brotli: 59_065 },
+  'adapters/astro/middleware-entry.js': { raw: 192_695, gzip: 61_066, brotli: 51_399 },
   'adapters/nextjs/client.js': { raw: 2_426, gzip: 1_069, brotli: 1_045 },
-  'adapters/nextjs/index.js': { raw: 211_236, gzip: 67_040, brotli: 56_581 },
+  'adapters/nextjs/index.js': { raw: 210_958, gzip: 67_219, brotli: 56_640 },
   'adapters/nuxt/client.js': { raw: 1_867, gzip: 847, brotli: 856 },
-  'adapters/nuxt/index.js': { raw: 215_713, gzip: 68_452, brotli: 57_681 },
+  'adapters/nuxt/index.js': { raw: 215_435, gzip: 68_627, brotli: 57_711 },
   'adapters/nuxt/module.js': { raw: 5_106, gzip: 2_083, brotli: 1_963 },
   'adapters/react/index.js': { raw: 21_978, gzip: 7_408, brotli: 6_758 },
   'adapters/sveltekit/client.js': { raw: 1_678, gzip: 795, brotli: 803 },
-  'adapters/sveltekit/index.js': { raw: 214_347, gzip: 67_960, brotli: 57_385 },
+  'adapters/sveltekit/index.js': { raw: 214_069, gzip: 68_131, brotli: 57_491 },
   'adapters/vue/index.js': { raw: 20_539, gzip: 7_038, brotli: 6_393 },
   'annotate.js': { raw: 6_739, gzip: 3_111, brotli: 2_771 },
-  'client.js': { raw: 203_940, gzip: 65_154, brotli: 55_556 },
+  'client.js': { raw: 203_656, gzip: 65_236, brotli: 55_587 },
   'codegen-astro.js': { raw: 13_902, gzip: 4_840, brotli: 4_443 },
   'codegen-cli.js': { raw: 25_200, gzip: 8_807, brotli: 8_006 },
   'codegen.js': { raw: 12_390, gzip: 4_204, brotli: 3_881 },
   'doctor-cli.js': { raw: 73_924, gzip: 24_883, brotli: 22_068 },
   'fragment.js': { raw: 37_684, gzip: 13_237, brotli: 11_862 },
-  'index.js': { raw: 380_383, gzip: 119_597, brotli: 80_073 },
+  'index.js': { raw: 379_821, gzip: 119_867, brotli: 80_154 },
   'lexical.js': { raw: 21_085, gzip: 7_226, brotli: 6_557 },
   'plugin.js': { raw: 2_330, gzip: 1_081, brotli: 972 },
   'server.js': { raw: 19_790, gzip: 7_095, brotli: 6_448 },
@@ -70,7 +70,7 @@ export const ENTRY_BUDGETS: Readonly<Record<string, BundleBudget>> = {
 
 /** Every JavaScript file under `dist/` once, each measured by itself and the sizes added: what the archive carries. */
 export const ALL_JAVASCRIPT_BUDGET: BundleBudget = {
-  raw: 545_786,
-  gzip: 198_175,
-  brotli: 174_677,
+  raw: 545_224,
+  gzip: 198_468,
+  brotli: 174_784,
 };
