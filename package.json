@@ -172,6 +172,7 @@
   "files": [
     "dist",
     "README.md",
+    "llms.txt",
     "LICENSE"
   ],
   "sideEffects": false,

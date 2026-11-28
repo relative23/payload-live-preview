@@ -412,6 +412,8 @@ Full details in [docs/security.md](docs/security.md). Report vulnerabilities per
 
 The reading path, with a glossary: [docs/README.md](docs/README.md).
 
+The setup in short: [llms.txt](llms.txt), which ships in the package beside this file.
+
 - Framework guides: [Astro](docs/astro.md) · [Next.js](docs/nextjs.md) · [SvelteKit](docs/sveltekit.md) · [Nuxt](docs/nuxt.md) · [Plain HTML](docs/html.md) · [React hook](docs/react.md) · [Vue composable](docs/vue.md)
 - [docs/bindings.md](docs/bindings.md) — data attributes, field types, owners, typed bindings and codegen
 - [docs/payload.md](docs/payload.md) — Payload config plugin, merge rules and URL conflicts

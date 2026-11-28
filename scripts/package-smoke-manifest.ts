@@ -9,7 +9,7 @@ import { basename, relative, resolve, sep } from 'node:path';
 import { exists, isRecord, ROOT, type JsonRecord } from './package-smoke-support';
 import { reexportsOnly } from './entry-closure';
 
-const PUBLIC_TOP_LEVEL_FILES = new Set(['LICENSE', 'README.md', 'package.json']);
+const PUBLIC_TOP_LEVEL_FILES = new Set(['LICENSE', 'README.md', 'llms.txt', 'package.json']);
 const INTERNAL_ASSETS = { astroBridge: './dist/adapters/astro/FragmentBridge.astro' } as const;
 /** ESM alone since 3.0: a `.cjs` file, its map or a `.d.cts` in the archive is outside the list. */
 const PUBLIC_DIST_SUFFIXES = ['.js', '.js.map', '.d.ts', '.astro'] as const;
