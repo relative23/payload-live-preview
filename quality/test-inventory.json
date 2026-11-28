@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 535,
+    "files": 536,
     "suites": 1042,
-    "tests": 4683,
+    "tests": 4686,
     "benchmarks": 12
   },
   "groups": {
@@ -39,9 +39,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 59,
+      "files": 60,
       "suites": 62,
-      "tests": 256,
+      "tests": 259,
       "benchmarks": 0
     },
     "integration": {
@@ -397,6 +397,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 5,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/specs/quickstart-html.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 3,
       "benchmarks": 0
     },
     {
