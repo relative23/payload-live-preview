@@ -60,7 +60,7 @@
     },
     "src/runtime/core/update/update-scheduler.ts::setTimeout(() => {": {
       "release": "scope",
-      "why": "The frame fallback where requestAnimationFrame is missing; fires within a frame, and UpdateScheduler.destroy() cancels a pending one \u2014 the scope owns that destroy."
+      "why": "The frame fallback where requestAnimationFrame is missing; fires within a frame, and UpdateScheduler.destroy() cancels a pending one — the scope owns that destroy."
     },
     "src/runtime/core/update/update-scheduler.ts::const next = setTimeout(() => {": {
       "release": "scope",
@@ -68,7 +68,7 @@
     },
     "src/runtime/core/update/update-scheduler.ts::this.frameFallback = setTimeout(run, FRAME_FALLBACK_MS);": {
       "release": "scope",
-      "why": "The fallback for an animation frame the browser does not give; the frame that comes first clears it, and UpdateScheduler.destroy() clears a pending one \u2014 the scope owns that destroy."
+      "why": "The fallback for an animation frame the browser does not give; the frame that comes first clears it, and UpdateScheduler.destroy() clears a pending one — the scope owns that destroy."
     },
     "src/runtime/core/update/update-scheduler.ts::this.deadlineTimer = setTimeout(() => {": {
       "release": "scope",
@@ -76,9 +76,13 @@
     },
     "src/runtime/core/strategies/strategy-runner.ts::const controller = new AbortController();": {
       "release": "scope",
-      "why": "A fragment or route request in flight; RuntimeState.abortStrategies() aborts both, and the scope owns that call."
+      "why": "A fragment request in flight; RuntimeState.abortStrategies() aborts it, and the scope owns that call."
     },
-    "src/runtime/core/strategies/strategy-runner.ts::state.routeRetry = setTimeout(() => {": {
+    "src/runtime/core/strategies/route-run.ts::const controller = new AbortController();": {
+      "release": "scope",
+      "why": "A route refresh in flight; RuntimeState.abortStrategies() aborts it, and the scope owns that call."
+    },
+    "src/runtime/core/strategies/route-run.ts::state.routeRetry = setTimeout(() => {": {
       "release": "scope",
       "why": "The trailing route run a refusal asked for; RuntimeState.abortStrategies() clears it, and the scope owns that call."
     },

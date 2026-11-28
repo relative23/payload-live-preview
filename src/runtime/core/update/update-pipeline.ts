@@ -7,12 +7,13 @@ import type {
   PayloadLivePreviewData,
   PayloadLivePreviewMessage,
 } from '@/runtime/types/payload-protocol';
+import { afterFlush, notifyIslands, revealPending } from './after-flush';
 import { adoptUniqueBindings, restoreUniqueBindings } from '../bindings/auto-bind';
 import { isBindingInScope } from '../bindings/binding-owner';
 import type { MergeResult } from '../merge/data-merger';
 import { mergeDependencyMaps } from './dependencies';
 import { bindingIdentity, bindingValue } from './field-value';
-import { type MessageRevision, sameRevision } from '../protocol/message-bus';
+import type { MessageRevision } from '../protocol/message-bus';
 import { reportMovedRow } from './moved-rows';
 import { NavigationReplay } from '../strategies/navigation-replay';
 import { diagnoseOrphanFields } from './orphan-diagnostics';
@@ -25,6 +26,7 @@ import {
   type RuntimeState,
   type UpdateTransaction,
 } from '../session/runtime-state';
+import { refreshAfterSave, refreshRoute } from '../strategies/route-run';
 import { resolveStrategy } from '../strategies/strategies';
 import { StrategyRunner } from '../strategies/strategy-runner';
 import { transformForBinding } from './transform-value';
@@ -56,9 +58,6 @@ export class UpdatePipeline {
       rebuildCache,
       restoreGuesses: (transaction, data) => {
         this.restoreGuesses(transaction, data);
-      },
-      revealPending: (transaction) => {
-        this.revealPending(transaction);
       },
     });
     this.navigationReplay = new NavigationReplay(deps, state, {
@@ -347,7 +346,7 @@ export class UpdatePipeline {
       !transaction.routeRefreshed &&
       this.navigationReplay.hasLateRouteBinding(onlyElements, ownerKeys, transaction, data)
     ) {
-      if (isCurrent()) void this.strategies.refreshRoute(transaction, data, route);
+      if (isCurrent()) void refreshRoute(this.strategies, transaction, data, route);
       return;
     }
     const unbound = !lateBindings && this.strategies.hasUnboundChange(transaction, ownerKeys);
@@ -361,7 +360,7 @@ export class UpdatePipeline {
       isCurrent()
     ) {
       state.routeRefreshOwed = false;
-      void this.strategies.refreshRoute(transaction, data, route);
+      void refreshRoute(this.strategies, transaction, data, route);
       return;
     }
     const fragmentTouched = lateBindings
@@ -461,16 +460,10 @@ export class UpdatePipeline {
     if (scheduled === 0) {
       if (transaction.pendingFragments === 0 && deps.scheduler.pendingCount === 0) {
         state.complete(transaction);
-        this.revealPending(transaction);
+        revealPending(deps, state, transaction);
       }
-      this.notifyIslands(transaction, data);
+      notifyIslands(deps, this.navigationReplay, transaction, data);
     }
-  }
-
-  /** Islands hear every revision that carried a change, whether or not a write landed outside them. */
-  private notifyIslands(transaction: UpdateTransaction, data: PayloadLivePreviewData): void {
-    if (transaction.touched.size === 0) return;
-    this.navigationReplay.dispatchIslands(transaction, data, this.deps.cache.islands);
   }
 
   /**
@@ -489,77 +482,7 @@ export class UpdatePipeline {
 
   /** Scheduler callback after every flush, including one that applied nothing. */
   onFlush(stats: FlushStats): void {
-    const { deps, state } = this;
-    state.lastFlush = stats;
-    if (stats.deferred > 0 && !state.warnedVisibilityGate) {
-      state.warnedVisibilityGate = true;
-      deps.warn(
-        `[live-preview] LP0301: visibility gate held ${String(stats.deferred)} off-screen update(s) until scrolled into view; see visibilityGateThreshold`,
-      );
-    }
-    const { revision, data } = stats;
-    if (revision === undefined) return;
-    const transaction = state.activeUpdate;
-    if (
-      transaction === null ||
-      !state.isCurrent(transaction) ||
-      !sameRevision(transaction.revision, revision)
-    ) {
-      return;
-    }
-    state.display.deferred(transaction, stats.deferred);
-    if (transaction.pendingFragments === 0) state.complete(transaction);
-    const isCurrent = (): boolean =>
-      state.isCurrent(transaction) && sameRevision(transaction.revision, revision);
-    const renderData = data ?? transaction.renderData;
-    // Reveal first: scrolling to a deferred off-screen edit is what replays it.
-    this.revealPending(transaction);
-    if (!isCurrent()) return;
-    // Before the applied check: a flush that applied nothing is where every renderer refused.
-    const unfaithful = state.unfaithfulPatches;
-    if (unfaithful.length > 0) {
-      state.unfaithfulPatches = [];
-      if (renderData !== undefined) {
-        const scope = ownerKeysForUpdate(deps, state, transaction, renderData.fields);
-        this.strategies.escalateUnfaithful(transaction, renderData, unfaithful, scope);
-      }
-      if (!isCurrent()) return;
-    }
-    if (data === undefined) return;
-    if (stats.applied > 0) deps.a11y?.announceUpdate(stats.applied);
-    if (!isCurrent()) return;
-    // An island still needs its event when `skipUnchanged` leaves every outer binding untouched.
-    this.notifyIslands(transaction, data);
-    if (!isCurrent() || stats.applied === 0 || deps.emitter.listenerCount('afterUpdate') === 0) {
-      return;
-    }
-    void deps.emitter.emitWhile(
-      'afterUpdate',
-      {
-        data,
-        updatedCount: stats.applied,
-        durationMs: stats.durationMs,
-        revision: revision.revision,
-        receivedAt: transaction.receivedAt,
-        source: 'patch',
-      },
-      isCurrent,
-    );
-  }
-
-  /**
-   * Reveal the binding this revision marked, once. Called from the patch flush
-   * and again once fragments land, because only one of the two runs for any
-   * given field, and a fragment-rendered element is in place only afterwards.
-   */
-  revealPending(transaction: UpdateTransaction): void {
-    const target = this.state.revealLedger.commit(transaction);
-    if (target === undefined) return;
-    try {
-      revealBinding(this.state.revealer, target);
-    } catch (error) {
-      this.deps.log('reveal', error);
-    }
+    afterFlush(this.deps, this.state, this.strategies, this.navigationReplay, stats);
   }
 
   /**
@@ -574,6 +497,6 @@ export class UpdatePipeline {
 
   /** Payload saved the document; a route rendered from the older save may render again. */
   documentSaved(): void {
-    this.strategies.refreshAfterSave();
+    refreshAfterSave(this.strategies);
   }
 }

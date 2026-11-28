@@ -61,7 +61,7 @@ export const WHOLE_FILE_ROWS: readonly WholeFileRow[] = [
   {
     entry: 'client.js',
     symbol: 'initLivePreview',
-    raw: 168_400,
+    raw: 168_116,
     why: 'the client with its renderers: what it needs, and not what the entry exports beside it',
   },
 ];

@@ -51,9 +51,9 @@ describe('release bundle budgets', () => {
     // -9897/-3418/-2708 fragments; reserves unchanged.
     // 2026-11-27 (3.0, ADR 0007 row 47, the route of a hydrated page goes through the router
     // alone): +47/+32/+41 default, +47/+30/+55 route, +47/+30/+41 fragments; reserves unchanged.
-    expect(INLINE_BUDGET).toEqual({ raw: 143_799, gzip: 45_446, brotli: 39_990 });
-    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 152_426, gzip: 47_991, brotli: 42_016 });
-    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 158_011, gzip: 49_913, brotli: 43_824 });
+    expect(INLINE_BUDGET).toEqual({ raw: 143_521, gzip: 45_634, brotli: 40_041 });
+    expect(INLINE_ROUTE_BUDGET).toEqual({ raw: 152_148, gzip: 48_152, brotli: 42_050 });
+    expect(INLINE_FRAGMENT_BUDGET).toEqual({ raw: 157_733, gzip: 50_069, brotli: 43_869 });
   });
 
   it('keeps the route prelude the cheaper of the two strategy preludes', () => {
