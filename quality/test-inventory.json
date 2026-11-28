@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 536,
+    "files": 537,
     "suites": 1042,
-    "tests": 4686,
+    "tests": 4689,
     "benchmarks": 12
   },
   "groups": {
@@ -39,9 +39,9 @@
       "benchmarks": 0
     },
     "e2e": {
-      "files": 60,
+      "files": 61,
       "suites": 62,
-      "tests": 259,
+      "tests": 262,
       "benchmarks": 0
     },
     "integration": {
@@ -215,6 +215,13 @@
       "group": "e2e",
       "suites": 1,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/e2e/quickstart/astro.spec.ts",
+      "group": "e2e",
+      "suites": 0,
+      "tests": 3,
       "benchmarks": 0
     },
     {
