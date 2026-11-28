@@ -1,0 +1,70 @@
+# payload-live-preview
+
+> Live preview for Payload CMS 3 and 4 on Astro, Next.js (App Router), SvelteKit, Nuxt and plain HTML. The Payload
+> admin posts the document an editor is typing to the page in its preview frame, and this package patches the bound
+> elements, re-renders server fragments or refreshes the route. ESM only, Node 24 or newer.
+
+This file is the short path through a setup. Every snippet is in
+[README.md](README.md), which ships beside this file; the guides it links are in the `docs/` folder of the
+repository, https://github.com/relative23/payload-live-preview, and are not part of the package.
+Take option names from [docs/options.md](docs/options.md) and nothing else: an option that is not in that table
+does not exist, and an adapter refuses at startup what 3.0 removed.
+
+## Set up a project, in this order
+
+1. `npm install payload-live-preview` in the project that holds `payload.config.ts` and in the site.
+2. Payload: add `livePreview()` from `payload-live-preview/plugin` to `plugins` in `payload.config.ts`, with the
+   site's origin as `baseUrl` and one path per previewed collection and global (README, "Configure Payload").
+3. The site, by framework (README, "Quick start"):
+   - Astro: the integration `livePreview()` from `payload-live-preview/astro` in `astro.config.mjs`.
+   - Next.js: `await LivePreviewScript({ request, ...options })` from `payload-live-preview/nextjs` in the root
+     layout, its result rendered in `<head>`, and `<LivePreviewNavigation />` from
+     `payload-live-preview/nextjs/client` in a layout that stays mounted.
+   - SvelteKit: `livePreviewHandle()` from `payload-live-preview/sveltekit` in `src/hooks.server.ts`, and
+     `livePreviewNavigation({ afterNavigate, invalidateAll })` from `payload-live-preview/sveltekit/client` in the
+     root layout.
+   - Nuxt: `modules: ['payload-live-preview/nuxt-module']` and a `livePreview` block in `nuxt.config.ts`.
+   - Plain HTML: `generateInlineScript()` and `wrapWithScriptTag()` from `payload-live-preview` at build time, the
+     tag in `<head>`.
+4. Authorize: a preview response is served only for a request `authorizePreview` accepts. Next.js, SvelteKit and
+   Nuxt need the hook, built with `authorizePreviewRequest()` from `payload-live-preview/server`
+   ([docs/authorization.md](docs/authorization.md)). Give every adapter the admin's origin as `allowedOrigins`.
+5. Mark what updates: `data-payload-field="<field path>"` on the element that shows the field, or a
+   `data-payload-fragment` boundary around a region the server renders (README, "Mark what should update";
+   [docs/bindings.md](docs/bindings.md)).
+6. Verify against the running site: `npx pll doctor <preview URL> --admin <admin origin> --json`. It exits `0`
+   with no error-level finding, `1` when the URL could not be fetched and `2` with an error-level finding. Every
+   finding has a code, `LP` and four digits, with its remedy in [docs/troubleshooting.md](docs/troubleshooting.md).
+
+## Entries
+
+Import an entry by its name, never a file under `dist/`.
+
+- `payload-live-preview`: everything `payload-live-preview/client` exports, the script generator and the server
+  helpers.
+- `payload-live-preview/client`: what runs in a browser: `initLivePreview()`, `LivePreviewClient`,
+  `createDocumentSession()`, the plugins, the sanitizer.
+- `payload-live-preview/server`: `definePreview()`, `authorizePreviewRequest()`, `issuePreviewToken()`, `bind()`.
+- `payload-live-preview/plugin`: `livePreview()` for `payload.config.ts`, and `buildLivePreviewUrl()`.
+- `payload-live-preview/astro`, `/nextjs`, `/sveltekit`, `/nuxt`: one adapter each; `/nuxt-module` is the Nuxt
+  module; `/nextjs/client`, `/sveltekit/client` and `/nuxt/client` lend the framework's router to the runtime.
+- `payload-live-preview/react` and `/vue`: `useLivePreviewDocument()`, the merged document as a hook.
+- `payload-live-preview/lexical`, `/fragment`: the rich-text renderer and the fragment strategies on their own.
+- `payload-live-preview/codegen`, `/codegen/astro`, `/annotate`: build plugins; the binary `pll-codegen` generates
+  types from a Payload config and adds bindings (`pll-codegen annotate <path...> --config <path>`).
+
+## Upgrade from 2.x
+
+1. `npx pll doctor --v3 ./src` lists each call that 3.0 changes, with the ledger row and what to write; it exits
+   `3` when it lists a place.
+2. `npx pll migrate ./src` reports what it would rewrite, and `--write` applies it; it exits `3` when a place needs
+   a person. Both need `ts-morph` installed.
+3. [docs/migration.md](docs/migration.md) has one row per change.
+
+## Things that do not work
+
+- `strict: false`, `defaults: 'v1'` and Payload 2: removed in 3.0.
+- A CommonJS build: the package is ESM only. `require()` of the root, `/client`, `/server`, `/plugin`, `/lexical`,
+  `/fragment`, `/codegen` and `/nextjs` loads the same ES module.
+- A route refresh on a Next.js, SvelteKit or Nuxt page that does not lend its router: nothing is fetched and morphed
+  there, and the diagnostic LP0808 names the line to add.

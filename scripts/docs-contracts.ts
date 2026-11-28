@@ -119,7 +119,8 @@ async function sourceLiterals(pattern: RegExp): Promise<Set<string>> {
 }
 
 async function docFiles(): Promise<string[]> {
-  const files = [resolve(ROOT, 'README.md')];
+  // `llms.txt` ships in the package beside the README and names entries, options and codes as the guides do.
+  const files = [resolve(ROOT, 'README.md'), resolve(ROOT, 'llms.txt')];
   const walk = async (dir: string): Promise<void> => {
     for (const entry of await readdir(dir, { withFileTypes: true })) {
       const full = resolve(dir, entry.name);

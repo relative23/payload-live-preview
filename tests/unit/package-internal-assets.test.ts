@@ -14,7 +14,7 @@ import {
 } from '../../scripts/package-smoke-manifest';
 
 const ASSET = 'dist/adapters/astro/FragmentBridge.astro';
-const publicFiles = ['LICENSE', 'README.md', 'package.json'];
+const publicFiles = ['LICENSE', 'README.md', 'llms.txt', 'package.json'];
 
 describe('internal Astro bridge asset', () => {
   it('requires the non-exported template in the archive', async () => {
