@@ -28,7 +28,7 @@ The ADR 0007 ledger has every row with its reasoning.
 | Module format | ESM only, one module graph           | nothing to do: `import` and `require()` of an entry keep working |
 
 The 2.x line stays the one for Payload 2 ([compatibility.md](compatibility.md))
-and is a supported version ([SECURITY.md](../SECURITY.md)).
+and gets fixes until 3.1.0 is published ([SECURITY.md](../SECURITY.md)).
 
 ### List the places: `pll doctor --v3`
 
