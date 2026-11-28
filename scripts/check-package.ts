@@ -52,7 +52,7 @@ import {
 import { checkDeclaredValuesExist } from './package-smoke-values';
 import { findForbiddenPackageLifecycleScripts } from './release-contracts';
 
-const PAYLOAD_PLUGIN_TYPE_VERSIONS = ['3.89.0'] as const;
+const PAYLOAD_PLUGIN_TYPE_VERSIONS = ['3.90.0'] as const;
 
 async function createPayloadPluginTypeConsumer(options: {
   readonly archiveDirectory: string;
@@ -201,12 +201,12 @@ async function main(): Promise<void> {
     const packageName = manifestValue['name'];
 
     const payloadTypeArchives = resolve(temporaryRoot, 'payload-plugin-type-archives');
-    const payload3TypeConsumer = resolve(temporaryRoot, 'payload-3.89.0-type-consumer');
+    const payload3TypeConsumer = resolve(temporaryRoot, 'payload-3.90.0-type-consumer');
     await createPayloadPluginTypeConsumer({
       archiveDirectory: payloadTypeArchives,
       consumer: payload3TypeConsumer,
       packageArchive: tarball,
-      version: '3.89.0',
+      version: '3.90.0',
     });
 
     const peerDependencies = manifestValue['peerDependencies'];
@@ -376,7 +376,7 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      `[package] PASS ${String(evidence.files.length)} packed files; publint, ATTW, ${String(typedApiEntries.length)} API reports, isolated script-free strict installs, peer-free and explicit-peer ESM/CJS, every declared value present at runtime, exact Payload 3.89.0 plugin types, DOM-less Lexical sanitizer contexts, CLI, and positive/negative strict NodeNext types verified`,
+      `[package] PASS ${String(evidence.files.length)} packed files; publint, ATTW, ${String(typedApiEntries.length)} API reports, isolated script-free strict installs, peer-free and explicit-peer ESM/CJS, every declared value present at runtime, exact Payload 3.90.0 plugin types, DOM-less Lexical sanitizer contexts, CLI, and positive/negative strict NodeNext types verified`,
     );
 
     await finalizePackageArtifact({

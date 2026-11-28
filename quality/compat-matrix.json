@@ -847,7 +847,7 @@
       "feature": "packed config plugin type compatibility",
       "version": {
         "kind": "exact",
-        "value": "3.89.0",
+        "value": "3.90.0",
         "package": "payload",
         "source": {
           "kind": "script-pin",
@@ -857,7 +857,7 @@
       },
       "mode": "package-smoke",
       "packageForm": "packed-tarball",
-      "backend": "Payload 3.89.0 package declarations",
+      "backend": "Payload 3.90.0 package declarations",
       "browsers": ["node"],
       "evidence": {
         "status": "passed",
