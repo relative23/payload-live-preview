@@ -1,6 +1,6 @@
 /**
  * The diagnostic-code table in docs/troubleshooting.md, rendered from
- * `src/core/diagnostic-codes.ts` and held against it. The source owns a
+ * `src/runtime/core/diagnostic-codes.ts` and held against it. The source owns a
  * code's meaning; the "what to do" column is prose the source cannot carry,
  * kept in REMEDIES below. `--write` updates the block; `--check` fails on any
  * drift, on a code without a remedy, and on a remedy for a code that no
@@ -17,7 +17,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCE = resolve(ROOT, 'src/core/diagnostic-codes.ts');
+const SOURCE = resolve(ROOT, 'src/runtime/core/diagnostic-codes.ts');
 const DOC = resolve(ROOT, 'docs/troubleshooting.md');
 const START = '<!-- diagnostic-codes:start -->';
 const END = '<!-- diagnostic-codes:end -->';
@@ -237,7 +237,7 @@ export function validate(
   for (const code of Object.keys(remedies)) {
     if (!seen.has(code)) {
       problems.push(
-        `REMEDIES names ${code}, which src/core/diagnostic-codes.ts does not define; remove it`,
+        `REMEDIES names ${code}, which src/runtime/core/diagnostic-codes.ts does not define; remove it`,
       );
     }
   }
@@ -283,7 +283,7 @@ async function main(): Promise<void> {
     );
   } else if (!same) {
     problems.push(
-      'docs/troubleshooting.md diagnostic block differs from src/core/diagnostic-codes.ts; run npx tsx scripts/diagnostic-table.ts --write',
+      'docs/troubleshooting.md diagnostic block differs from src/runtime/core/diagnostic-codes.ts; run npx tsx scripts/diagnostic-table.ts --write',
     );
   }
   for (const problem of problems) console.error(`FAIL ${problem}`);
@@ -292,7 +292,7 @@ async function main(): Promise<void> {
   }
   if (mode === '--check') {
     console.log(
-      `diagnostic-table: docs/troubleshooting.md agrees with src/core/diagnostic-codes.ts (${String(catalog.entries.length)} codes)`,
+      `diagnostic-table: docs/troubleshooting.md agrees with src/runtime/core/diagnostic-codes.ts (${String(catalog.entries.length)} codes)`,
     );
   }
 }

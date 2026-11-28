@@ -5,7 +5,7 @@ import {
   type SanitizerDocument,
   type SanitizerPolicyMode,
 } from '@security/sanitizer';
-import { resetDevWarnings } from '@/types/dev-warning';
+import { resetDevWarnings } from '@/runtime/types/dev-warning';
 
 /**
  * The sanitizer's output is a fixed point by construction (PHD-19): it

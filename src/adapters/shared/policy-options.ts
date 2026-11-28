@@ -5,10 +5,10 @@
  */
 
 import type { generateInlineScript } from '@inline/generator';
-import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
-import { refuseRemovedOptions } from '@/types/removed-options';
-import { assertMergeDepthExplicit } from '@/types/merge-depth';
-import type { InlineScriptConfig } from '@/types/inline-config';
+import * as V2_ADAPTER_DEFAULTS from '@/runtime/types/adapter-defaults';
+import { refuseRemovedOptions } from '@/runtime/types/removed-options';
+import { assertMergeDepthExplicit } from '@/runtime/types/merge-depth';
+import type { InlineScriptConfig } from '@/runtime/types/inline-config';
 import type { PreviewSignal } from './preview-request';
 import type { PreviewAdapterOptions } from './options';
 

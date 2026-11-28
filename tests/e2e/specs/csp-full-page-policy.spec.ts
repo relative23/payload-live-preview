@@ -5,7 +5,7 @@ import {
   buildFrameAncestors,
   buildScriptSrcWithNonce,
   mergeCspHeader,
-} from '../../../src/security/csp';
+} from '../../../src/runtime/security/csp';
 
 /**
  * `manageCsp: 'full'` merges a nonce'd `script-src` into the page's own policy.

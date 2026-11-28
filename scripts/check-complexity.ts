@@ -17,7 +17,7 @@
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DIAGNOSTIC_CODES } from '../src/core/diagnostic-codes';
+import { DIAGNOSTIC_CODES } from '../src/runtime/core/diagnostic-codes';
 import { readArchitectureModules } from './architecture-graph';
 import { improvementNotice } from './size-budget-notice';
 
@@ -165,7 +165,7 @@ export async function measureComplexity(): Promise<ComplexityMeasurement> {
     'PreviewAdapterOptions',
   );
   const inlineOptions = countInterfaceMembers(
-    await readFile(resolve(ROOT, 'src/types/inline-config.ts'), 'utf8'),
+    await readFile(resolve(ROOT, 'src/runtime/types/inline-config.ts'), 'utf8'),
     'InlineScriptConfig',
   );
   const modules = await readArchitectureModules(ROOT);

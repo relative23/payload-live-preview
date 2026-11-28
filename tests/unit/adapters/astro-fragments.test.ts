@@ -7,7 +7,7 @@ import {
   type AuthorizedPreviewContext,
 } from '@security/preview-authorization';
 import type { PreviewAuthorizationHookResult } from '@adapters/shared/options';
-import { parseFragmentRequest } from '@/types/fragment-protocol';
+import { parseFragmentRequest } from '@/runtime/types/fragment-protocol';
 import tableRequest from '../../fixtures/fragment/lexical-table-request.json' with { type: 'json' };
 
 // `astro` is a peer this package does not install; the default renderer

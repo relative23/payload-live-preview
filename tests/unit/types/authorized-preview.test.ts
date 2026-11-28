@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createAuthorizedPreviewContext,
   isAuthorizedPreviewContext,
-} from '@/types/authorized-preview';
+} from '@/runtime/types/authorized-preview';
 
 /**
  * A context is authorized because `authorizePreviewRequest()` made it, and for

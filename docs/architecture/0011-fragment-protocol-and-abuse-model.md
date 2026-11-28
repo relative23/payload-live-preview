@@ -33,7 +33,7 @@ the part that needs a threat model before an endpoint.
   not patched; the boundary is the server's. Measured: the seam costs the
   plain inline runtime +1 050 B gzip (24 936 → 25 986); the client is a small prelude the
   generator emits ahead of the runtime only for a page with `fragments`
-  (`src/fragment/inline.ts`, looked up as `__LIVE_PREVIEW_FRAGMENT__`), so a
+  (`src/runtime/fragment/inline.ts`, looked up as `__LIVE_PREVIEW_FRAGMENT__`), so a
   patch-only page carries none of it and every page shares one runtime.
 - The client (`payload-live-preview/fragment`) posts one request per
   boundary and revision, shares identical requests within that revision's abort
@@ -292,7 +292,7 @@ a binding of the shared handler in `src/adapters/shared/fragment-endpoint.ts`.
 ## Route strategy (1.7.0)
 
 A binding in `<head>` or one marked `data-payload-strategy="route"` refreshes
-the whole route once per revision (`src/fragment/route.ts`): a same-origin
+the whole route once per revision (`src/runtime/fragment/route.ts`): a same-origin
 GET with `x-payload-live-preview: route`, the head synced, `<body>` morphed
 with the top-level boundaries keyed (`data-payload-fragment`,
 `data-payload-island`) so they pair by identity, scroll restored, then the

@@ -4,7 +4,7 @@
 
 ## Context
 
-`src/security/sanitizer.ts` is 462 lines of allow-lists and one walk over a
+`src/runtime/security/sanitizer.ts` is 462 lines of allow-lists and one walk over a
 `<template>` fragment. It is the package's own, because "zero dependencies"
 is a promise on the box and because the inline runtime carries the sanitizer
 into every page (docs/audit.md §7). Two reviews of 2.0.x asked the same

@@ -31,37 +31,43 @@ export type HtmlSinkJustification = 'inert-parse' | 'sanitised' | 'escaped' | 't
 // ADR 0002); `sanitizeHtmlWithPolicy` is `sanitizeHtml` with that one extra input.
 export const HTML_SINKS: ReadonlyMap<string, HtmlSinkJustification> = new Map([
   [
-    'src/field-types/html.ts::trustedHtml(sanitizeHtmlWithPolicy(html, context.sanitizerPolicy))',
+    'src/runtime/field-types/html.ts::trustedHtml(sanitizeHtmlWithPolicy(html, context.sanitizerPolicy))',
     'sanitised',
   ],
   // `templateOptions` is `templateSanitizeOptions(template)`: the author's item template.
   [
-    'src/field-types/array.ts::trustedHtml(sanitizeHtmlWithPolicy(html, policy, templateOptions))',
+    'src/runtime/field-types/array.ts::trustedHtml(sanitizeHtmlWithPolicy(html, policy, templateOptions))',
     'sanitised',
   ],
-  ['src/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(html, policy))', 'sanitised'],
-  ['src/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(value, policy))', 'sanitised'],
+  [
+    'src/runtime/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(html, policy))',
+    'sanitised',
+  ],
+  [
+    'src/runtime/field-types/rich-text.ts::trustedHtml(sanitizeHtmlWithPolicy(value, policy))',
+    'sanitised',
+  ],
   // `html` is `sanitizeHtmlWithPolicy(lexicalToHtml(value, { sanitize: false }),
   // policy)`: Lexical no longer sanitises on its own here, because it would do
   // so with the process default. The caller does it with the instance's policy,
   // and that is what covers a project's own `registerBlockRenderer`, whose
   // string this package never inspects. The element parsed into is a childless
   // clone of the bound one, detached until its children are moved across.
-  ['src/field-types/rich-text.ts::trustedHtml(html)', 'sanitised'],
+  ['src/runtime/field-types/rich-text.ts::trustedHtml(html)', 'sanitised'],
   [
-    'src/field-types/upload.ts::trustedHtml(`<a href="${escapeHtmlAttribute(url)}">${label}</a>`)',
+    'src/runtime/field-types/upload.ts::trustedHtml(`<a href="${escapeHtmlAttribute(url)}">${label}</a>`)',
     'escaped',
   ],
-  ['src/field-types/text.ts::trustedHtml(escapeAndLinebreak(text))', 'escaped'],
+  ['src/runtime/field-types/text.ts::trustedHtml(escapeAndLinebreak(text))', 'escaped'],
   // Sanitised first, then parsed inertly to be adopted — safe twice over.
-  ['src/core/bindings/structural-applier.ts::trustedHtml(safe)', 'sanitised'],
+  ['src/runtime/core/bindings/structural-applier.ts::trustedHtml(safe)', 'sanitised'],
   // The sanitizer's own parse. Untrusted markup by definition on the first pass,
   // and its own previous output on the passes after (ADR 0016, 2026-10-02); it
   // is read back only after the fragment has been walked and stripped.
-  ['src/security/sanitizer.ts::trustedHtml(markup)', 'inert-parse'],
+  ['src/runtime/security/sanitizer.ts::trustedHtml(markup)', 'inert-parse'],
   // A fragment the project's server rendered, parsed here and morphed into the
   // boundary. Sanitising it would strip the page's own legitimate markup.
-  ['src/core/strategies/strategy-runner.ts::trustedHtml(html)', 'trusted-origin'],
+  ['src/runtime/core/strategies/strategy-runner.ts::trustedHtml(html)', 'trusted-origin'],
 ]);
 
 /**
@@ -85,66 +91,84 @@ export type AttributeSinkJustification =
   'gated' | 'copied' | 'binding-stamp' | 'url-validated' | 'constant';
 
 export const ATTRIBUTE_SINKS: ReadonlyMap<string, AttributeSinkJustification> = new Map([
-  ['src/core/bindings/attribute-binding.ts::element.setAttribute(name, stringValue)', 'gated'],
+  [
+    'src/runtime/core/bindings/attribute-binding.ts::element.setAttribute(name, stringValue)',
+    'gated',
+  ],
   // The keyed morph mirrors the rendered node's attributes onto the live one;
   // the rendered node is a sanitised item or a fragment the page's own server
   // rendered (`HTML_SINKS` says which, per caller).
-  ['src/core/bindings/morph.ts::live.setAttribute(attribute.name, attribute.value)', 'copied'],
   [
-    'src/core/bindings/structural-applier.ts::target.setAttribute(attribute.name, attribute.value)',
+    'src/runtime/core/bindings/morph.ts::live.setAttribute(attribute.name, attribute.value)',
+    'copied',
+  ],
+  [
+    'src/runtime/core/bindings/structural-applier.ts::target.setAttribute(attribute.name, attribute.value)',
     'copied',
   ],
   // What every existing item of the list already carried, filtered through
   // `isWritableAttribute` before it is inherited by a rebuilt one.
-  ['src/core/bindings/array-template.ts::item.setAttribute(name, value)', 'copied'],
+  ['src/runtime/core/bindings/array-template.ts::item.setAttribute(name, value)', 'copied'],
   // `<meta>`/`<link>` attributes from the fresh route document, which the
   // page's own server rendered.
-  ['src/fragment/route.ts::current.setAttribute(attribute.name, attribute.value)', 'copied'],
   [
-    'src/core/bindings/structural-applier.ts::first.setAttribute(KEY_ATTRIBUTE, key)',
+    'src/runtime/fragment/route.ts::current.setAttribute(attribute.name, attribute.value)',
+    'copied',
+  ],
+  [
+    'src/runtime/core/bindings/structural-applier.ts::first.setAttribute(KEY_ATTRIBUTE, key)',
     'binding-stamp',
   ],
   // The auto-binding search stamps the `data-payload-*` names it derived and
   // the field it matched (ADR 0014). Its rollback journal contains only those
   // same package-owned names and restores their previous values on supersession.
-  ['src/core/bindings/auto-bind.ts::element.setAttribute(name, value)', 'binding-stamp'],
-  ['src/core/bindings/auto-bind.ts::mutation.element.setAttribute(name, before)', 'binding-stamp'],
-  ["src/field-types/url.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
-  ["src/field-types/relationship.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
-  ["src/field-types/upload.ts::element.setAttribute('href', url)", 'url-validated'],
+  ['src/runtime/core/bindings/auto-bind.ts::element.setAttribute(name, value)', 'binding-stamp'],
+  [
+    'src/runtime/core/bindings/auto-bind.ts::mutation.element.setAttribute(name, before)',
+    'binding-stamp',
+  ],
+  ["src/runtime/field-types/url.ts::element.setAttribute('href', outcome.url)", 'url-validated'],
+  [
+    "src/runtime/field-types/relationship.ts::element.setAttribute('href', outcome.url)",
+    'url-validated',
+  ],
+  ["src/runtime/field-types/upload.ts::element.setAttribute('href', url)", 'url-validated'],
   // Both callers (`image.ts`, `upload.ts`) hand over `outcome.url` from
   // `acceptUrl`; a size chosen in its place and every `srcset` candidate is
   // checked here again (`sizeSources`).
-  ['src/field-types/media.ts::img.src = chosen?.url ?? url', 'url-validated'],
-  ["src/field-types/media.ts::img.setAttribute('srcset', srcset)", 'url-validated'],
+  ['src/runtime/field-types/media.ts::img.src = chosen?.url ?? url', 'url-validated'],
+  ["src/runtime/field-types/media.ts::img.setAttribute('srcset', srcset)", 'url-validated'],
   // `escapeCssUrl` stops the break-out from `url(...)`; `acceptUrl` before it
   // stopped the scheme.
   [
-    "src/field-types/image.ts::(element as HTMLElement).style.backgroundImage = `url('${escapeCssUrl(outcome.url)}')`",
+    "src/runtime/field-types/image.ts::(element as HTMLElement).style.backgroundImage = `url('${escapeCssUrl(outcome.url)}')`",
     'url-validated',
   ],
-  ["src/field-types/image.ts::(element as HTMLElement).style.backgroundImage = ''", 'constant'],
+  [
+    "src/runtime/field-types/image.ts::(element as HTMLElement).style.backgroundImage = ''",
+    'constant',
+  ],
   // The bootstrap's URL and integrity are baked in by the generator at build time.
-  ['src/core/session/loader.ts::script.src = __LP_RUNTIME_SRC__', 'constant'],
+  ['src/runtime/core/session/loader.ts::script.src = __LP_RUNTIME_SRC__', 'constant'],
   // Development furniture: the live region and the unbound-fields overlay,
   // styled from this package's own constants; `position` is the plugin's own
   // option, and a consumer's CSS on a consumer's page is not a wire value.
   // Written through the CSSOM, which a strict `style-src` does not refuse (PHD-03).
-  ['src/core/bindings/a11y.ts::element.style.cssText = STYLE', 'constant'],
+  ['src/runtime/core/bindings/a11y.ts::element.style.cssText = STYLE', 'constant'],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::field.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'",
+    "src/runtime/plugins/built-in/unbound-fields-overlay.ts::field.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'",
     'constant',
   ],
   [
-    'src/plugins/built-in/unbound-fields-overlay.ts::button.style.cssText = BUTTON_STYLE',
+    'src/runtime/plugins/built-in/unbound-fields-overlay.ts::button.style.cssText = BUTTON_STYLE',
     'constant',
   ],
   [
-    'src/plugins/built-in/unbound-fields-overlay.ts::panel.style.cssText = PANEL_STYLE + position',
+    'src/runtime/plugins/built-in/unbound-fields-overlay.ts::panel.style.cssText = PANEL_STYLE + position',
     'constant',
   ],
   [
-    "src/plugins/built-in/unbound-fields-overlay.ts::title.style.cssText = 'font-weight:600;margin-bottom:4px;'",
+    "src/runtime/plugins/built-in/unbound-fields-overlay.ts::title.style.cssText = 'font-weight:600;margin-bottom:4px;'",
     'constant',
   ],
 ]);

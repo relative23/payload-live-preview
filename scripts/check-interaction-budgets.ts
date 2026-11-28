@@ -103,7 +103,7 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
 });
 const win = installDom(dom);
 const { LivePreviewClient } = await import('../src/client-entry');
-const { createRouteStrategy } = await import('../src/fragment/index');
+const { createRouteStrategy } = await import('../src/runtime/fragment/index');
 
 /** Post one update the way the Admin does, with the event that follows every autosave. */
 function post(fields: Record<string, unknown>, relationshipEvent: boolean): void {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPreviewPolicy, type PreviewAuthorizationHookResult } from '@adapters/shared/policy';
 import { inlineScriptConfig, resolvePolicyOptions } from '@adapters/shared/policy-options';
 import { assertStrictConfiguration } from '@adapters/shared/strict';
-import { resetDevWarnings } from '@/types/dev-warning';
+import { resetDevWarnings } from '@/runtime/types/dev-warning';
 import {
   authorizePreviewRequest,
   PreviewConfigurationError,

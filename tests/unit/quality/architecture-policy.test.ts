@@ -18,13 +18,13 @@ describe('architecture policy', () => {
   it('tracks compiled Astro frontmatter and template expressions as executable dependencies', async () => {
     const repository = await mkdtemp(join(tmpdir(), 'plp-architecture-policy-'));
     try {
-      await mkdir(join(repository, 'src/security'), { recursive: true });
+      await mkdir(join(repository, 'src/runtime/security'), { recursive: true });
       await writeFile(
-        join(repository, 'src/security/entry.ts'),
+        join(repository, 'src/runtime/security/entry.ts'),
         "export const load = () => import('./Bridge.astro');",
       );
       await writeFile(
-        join(repository, 'src/security/Bridge.astro'),
+        join(repository, 'src/runtime/security/Bridge.astro'),
         [
           '---',
           "import type { AstroInstance } from 'astro';",
@@ -35,7 +35,7 @@ describe('architecture policy', () => {
       );
       const modules = await readArchitectureModules(repository);
       expect(modules.find((row) => row.path.endsWith('entry.ts'))?.dependencies[0]?.target).toBe(
-        'src/security/Bridge.astro',
+        'src/runtime/security/Bridge.astro',
       );
       const bridge = modules.find((row) => row.path.endsWith('Bridge.astro'));
       expect(bridge?.dependencies).toEqual([
@@ -47,14 +47,14 @@ describe('architecture policy', () => {
         'browser-node-builtin',
       ]);
       await writeFile(
-        join(repository, 'src/security/Bridge.astro'),
+        join(repository, 'src/runtime/security/Bridge.astro'),
         '---\nconst = broken\n---\n<div />',
       );
       await expect(readArchitectureModules(repository)).rejects.toThrow(
         'Cannot statically inspect Astro template',
       );
       await writeFile(
-        join(repository, 'src/security/Bridge.astro'),
+        join(repository, 'src/runtime/security/Bridge.astro'),
         '---\nconst title = "test";\n---\n<script>fetch("/")</script>',
       );
       await expect(readArchitectureModules(repository)).rejects.toThrow(
@@ -67,11 +67,19 @@ describe('architecture policy', () => {
 
   it('rejects a runtime cycle while allowing erased type-only edges', () => {
     const modules: readonly ArchitectureModule[] = [
-      { path: 'src/core/a.ts', dependencies: [dependency('src/core/b.ts')], capabilities: [] },
-      { path: 'src/core/b.ts', dependencies: [dependency('src/core/a.ts')], capabilities: [] },
       {
-        path: 'src/core/type-user.ts',
-        dependencies: [{ specifier: './a', target: 'src/core/a.ts', kind: 'type' }],
+        path: 'src/runtime/core/a.ts',
+        dependencies: [dependency('src/runtime/core/b.ts')],
+        capabilities: [],
+      },
+      {
+        path: 'src/runtime/core/b.ts',
+        dependencies: [dependency('src/runtime/core/a.ts')],
+        capabilities: [],
+      },
+      {
+        path: 'src/runtime/core/type-user.ts',
+        dependencies: [{ specifier: './a', target: 'src/runtime/core/a.ts', kind: 'type' }],
         capabilities: [],
       },
     ];
@@ -79,25 +87,55 @@ describe('architecture policy', () => {
     expect(findArchitectureViolations(modules).map(({ kind }) => kind)).toEqual(['runtime-cycle']);
   });
 
+  it('reads the server-only group off the zone, with no list of domains', () => {
+    const modules: readonly ArchitectureModule[] = [
+      {
+        path: 'src/tools/report/index.ts',
+        dependencies: [{ specifier: 'node:fs', kind: 'runtime' }],
+        capabilities: [],
+      },
+      {
+        path: 'src/server/keys/index.ts',
+        dependencies: [{ specifier: 'node:crypto', kind: 'runtime' }],
+        capabilities: [],
+      },
+      {
+        path: 'src/index.ts',
+        dependencies: [
+          dependency('src/tools/report/index.ts'),
+          dependency('src/server/keys/index.ts'),
+        ],
+        capabilities: [],
+      },
+    ];
+
+    expect(
+      findArchitectureViolations(modules).map(({ kind, dependency: to }) => `${kind} ${to}`),
+    ).toEqual([
+      'server-boundary src/server/keys/index.ts',
+      'server-boundary src/tools/report/index.ts',
+    ]);
+  });
+
   it('rejects upward layer imports, browser-to-server imports and Node builtins', () => {
     const modules: readonly ArchitectureModule[] = [
       {
-        path: 'src/core/runtime.ts',
+        path: 'src/runtime/core/runtime.ts',
         dependencies: [dependency('src/adapters/astro/index.ts')],
         capabilities: [],
       },
       {
-        path: 'src/client/index.ts',
-        dependencies: [dependency('src/codegen/index.ts')],
+        path: 'src/runtime/client/index.ts',
+        dependencies: [dependency('src/tools/codegen/index.ts')],
         capabilities: [],
       },
       {
-        path: 'src/security/csp.ts',
+        path: 'src/runtime/security/csp.ts',
         dependencies: [{ specifier: 'node:fs', kind: 'runtime' }],
         capabilities: [],
       },
       { path: 'src/adapters/astro/index.ts', dependencies: [], capabilities: [] },
-      { path: 'src/codegen/index.ts', dependencies: [], capabilities: [] },
+      { path: 'src/tools/codegen/index.ts', dependencies: [], capabilities: [] },
     ];
 
     const kinds = findArchitectureViolations(modules).map(({ kind }) => kind);
@@ -137,9 +175,9 @@ describe('architecture policy', () => {
   it('rejects static dynamic-import, require and import-equals boundary bypasses', async () => {
     const repository = await mkdtemp(join(tmpdir(), 'plp-architecture-policy-'));
     try {
-      await mkdir(join(repository, 'src/security'), { recursive: true });
+      await mkdir(join(repository, 'src/runtime/security'), { recursive: true });
       await writeFile(
-        join(repository, 'src/security/dynamic-bypass.ts'),
+        join(repository, 'src/runtime/security/dynamic-bypass.ts'),
         [
           'import crypto = require("node:crypto");',
           'const fsModule = import(`node:fs`);',
@@ -162,17 +200,26 @@ describe('architecture policy', () => {
   it('resolves Node-style JavaScript specifiers to their TypeScript source files', async () => {
     const repository = await mkdtemp(join(tmpdir(), 'plp-architecture-policy-'));
     try {
-      await mkdir(join(repository, 'src/core'), { recursive: true });
-      await mkdir(join(repository, 'src/security'), { recursive: true });
-      await writeFile(join(repository, 'src/core/runtime.ts'), 'export const runtime = true;\n');
+      await mkdir(join(repository, 'src/runtime/core'), { recursive: true });
+      await mkdir(join(repository, 'src/runtime/security'), { recursive: true });
       await writeFile(
-        join(repository, 'src/core/runtime.generated.ts'),
+        join(repository, 'src/runtime/core/runtime.ts'),
+        'export const runtime = true;\n',
+      );
+      await writeFile(
+        join(repository, 'src/runtime/core/runtime.generated.ts'),
         'export const generated = true;\n',
       );
-      await writeFile(join(repository, 'src/core/module.mts'), 'export const module = true;\n');
-      await writeFile(join(repository, 'src/core/common.cts'), 'export const common = true;\n');
       await writeFile(
-        join(repository, 'src/security/bypass.ts'),
+        join(repository, 'src/runtime/core/module.mts'),
+        'export const module = true;\n',
+      );
+      await writeFile(
+        join(repository, 'src/runtime/core/common.cts'),
+        'export const common = true;\n',
+      );
+      await writeFile(
+        join(repository, 'src/runtime/security/bypass.ts'),
         [
           "import '../core/runtime.js';",
           "import '../core/runtime.generated';",
@@ -182,13 +229,13 @@ describe('architecture policy', () => {
       );
 
       const modules = await readArchitectureModules(repository);
-      const bypass = modules.find(({ path }) => path === 'src/security/bypass.ts');
+      const bypass = modules.find(({ path }) => path === 'src/runtime/security/bypass.ts');
 
       expect(bypass?.dependencies.map(({ target }) => target)).toEqual([
-        'src/core/runtime.ts',
-        'src/core/runtime.generated.ts',
-        'src/core/module.mts',
-        'src/core/common.cts',
+        'src/runtime/core/runtime.ts',
+        'src/runtime/core/runtime.generated.ts',
+        'src/runtime/core/module.mts',
+        'src/runtime/core/common.cts',
       ]);
       expect(findArchitectureViolations(modules).map(({ kind }) => kind)).toEqual([
         'layer-boundary',
@@ -204,10 +251,10 @@ describe('architecture policy', () => {
   it('fails closed for unresolved relative source imports while allowing reviewed assets', async () => {
     const repository = await mkdtemp(join(tmpdir(), 'plp-architecture-policy-'));
     try {
-      await mkdir(join(repository, 'src/security'), { recursive: true });
+      await mkdir(join(repository, 'src/runtime/security'), { recursive: true });
       await writeFile(join(repository, 'package.json'), '{}\n');
       await writeFile(
-        join(repository, 'src/security/bypass.ts'),
+        join(repository, 'src/runtime/security/bypass.ts'),
         [
           "import './missing.js';",
           "import metadata from '../../package.json' with { type: 'json' };",
@@ -220,7 +267,7 @@ describe('architecture policy', () => {
       expect(violations).toEqual([
         expect.objectContaining({
           kind: 'unresolved-internal',
-          module: 'src/security/bypass.ts',
+          module: 'src/runtime/security/bypass.ts',
           dependency: './missing.js',
         }),
       ]);

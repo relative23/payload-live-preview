@@ -13,13 +13,13 @@
 export { VERSION } from './version';
 
 // The client
-export { LivePreviewClient, initLivePreview, type LivePreviewClientConfig } from './client';
+export { LivePreviewClient, initLivePreview, type LivePreviewClientConfig } from './runtime/client';
 export {
   createPreviewFocusReporter,
   reportPreviewFocus,
   type FocusReportTarget,
   type PreviewFocusMessage,
-} from './client/preview-focus';
+} from './runtime/client/preview-focus';
 
 // The framework-free session behind the React and Vue hooks, for a store of your own.
 export {
@@ -35,7 +35,7 @@ export {
   bindNavigationLifecycle,
   type NavigationLifecycleOptions,
   type NavigationLifecycleTarget,
-} from './core/session/navigation-lifecycle';
+} from './runtime/core/session/navigation-lifecycle';
 export type {
   InspectionBindings,
   InspectionOrigins,
@@ -47,12 +47,12 @@ export type {
   InspectionRoute,
   InspectionScheduler,
   LivePreviewInspection,
-} from './core/inspection/types';
+} from './runtime/core/inspection/types';
 export type {
   RevisionDisplay,
   RevisionDisplayState,
   RevisionShortfall,
-} from './core/update/revision-display';
+} from './runtime/core/update/revision-display';
 export type {
   FragmentContext,
   FragmentReport,
@@ -63,13 +63,13 @@ export type {
   RouteStrategy,
   StrategyHandlers,
   UpdateSource,
-} from './core/strategies/strategies';
-export { registerRouteRefresh, type RouteRefresh } from './core/strategies/route-refresh';
-export { markHydrated } from './core/hydration/hydration-manual';
-export type { PayloadDocumentEventDetail } from './types/payload-protocol';
-export { DIAGNOSTIC_CODES, type DiagnosticCode } from './core/diagnostic-codes';
-export type { ConnectionStatus } from './core/session/state';
-export type { DefaultsProfile, EventSourcePolicy } from './types/defaults-profile';
+} from './runtime/core/strategies/strategies';
+export { registerRouteRefresh, type RouteRefresh } from './runtime/core/strategies/route-refresh';
+export { markHydrated } from './runtime/core/hydration/hydration-manual';
+export type { PayloadDocumentEventDetail } from './runtime/types/payload-protocol';
+export { DIAGNOSTIC_CODES, type DiagnosticCode } from './runtime/core/diagnostic-codes';
+export type { ConnectionStatus } from './runtime/core/session/state';
+export type { DefaultsProfile, EventSourcePolicy } from './runtime/types/defaults-profile';
 
 // What a renderer needs to write safely
 export {
@@ -81,8 +81,8 @@ export {
   escapeHtml,
   type SanitizeOptions,
   type SanitizerDocument,
-} from './security';
-export type { SanitizerPolicyMode, TrustedHtmlPolicyLike } from './security';
+} from './runtime/security';
+export type { SanitizerPolicyMode, TrustedHtmlPolicyLike } from './runtime/security';
 
 // Lexical rendering
 export {
@@ -95,7 +95,7 @@ export {
   type LexicalNode,
   type LexicalRenderOptions,
   type LexicalRoot,
-} from './lexical';
+} from './runtime/lexical';
 
 // Events
 export {
@@ -103,7 +103,7 @@ export {
   type EventHandler,
   type LivePreviewEventMap,
   type Unsubscribe,
-} from './events';
+} from './runtime/events';
 
 // Plugins: the manager, the contract and the built-in ones
 export {
@@ -125,17 +125,17 @@ export {
   type FieldTransform,
   type AnalyticsSnapshot,
   type UnboundFieldsOverlayOptions,
-} from './plugins';
+} from './runtime/plugins';
 
 // Origins
-export { OriginDetector, type OriginDetectorOptions } from './detection';
+export { OriginDetector, type OriginDetectorOptions } from './runtime/detection';
 
 // Field-type registry
 export {
   registerBuiltinRenderer,
   type PayloadMedia,
   type PayloadRelationship,
-} from './field-types';
+} from './runtime/field-types';
 export type {
   CachedElement,
   CustomRendererKey,
@@ -144,29 +144,38 @@ export type {
   RenderContext,
   RendererKey,
   RichTextRenderer,
-} from './core/types';
+} from './runtime/core/types';
 
 // Protocol negotiation
-export { negotiateProtocol } from './core/protocol/protocol-version';
-export type { ProtocolCapability, ProtocolNegotiation } from './core/protocol/protocol-version';
-export { CAPABILITY_DECLARATIONS } from './core/protocol/protocol-version';
-export type { CapabilityDeclaration, CapabilitySource } from './core/protocol/protocol-version';
-export { CAPABILITY_DOCUMENTATION } from './core/protocol/protocol-capability-docs';
-export type { CapabilityDocumentation } from './core/protocol/protocol-capability-docs';
-export { detectProtocolProfile } from './core/protocol/protocol-profile';
-export type { ProtocolProfile, ProtocolProfileName } from './core/protocol/protocol-profile';
+export { negotiateProtocol } from './runtime/core/protocol/protocol-version';
+export type {
+  ProtocolCapability,
+  ProtocolNegotiation,
+} from './runtime/core/protocol/protocol-version';
+export { CAPABILITY_DECLARATIONS } from './runtime/core/protocol/protocol-version';
+export type {
+  CapabilityDeclaration,
+  CapabilitySource,
+} from './runtime/core/protocol/protocol-version';
+export { CAPABILITY_DOCUMENTATION } from './runtime/core/protocol/protocol-capability-docs';
+export type { CapabilityDocumentation } from './runtime/core/protocol/protocol-capability-docs';
+export { detectProtocolProfile } from './runtime/core/protocol/protocol-profile';
+export type {
+  ProtocolProfile,
+  ProtocolProfileName,
+} from './runtime/core/protocol/protocol-profile';
 
 // Payload protocol types
 export type {
   PayloadFieldType,
   PayloadLivePreviewData,
   PayloadLivePreviewMessage,
-} from './types/payload-protocol';
+} from './runtime/types/payload-protocol';
 
 // Islands, and the keyed morph with its boundary rules (ADR 0008)
 export {
   isMorphBoundary,
   retainIslandBoundary,
   type IslandUpdateDetail,
-} from './core/bindings/islands';
-export { morphElement, type MorphOptions } from './core/bindings/morph';
+} from './runtime/core/bindings/islands';
+export { morphElement, type MorphOptions } from './runtime/core/bindings/morph';

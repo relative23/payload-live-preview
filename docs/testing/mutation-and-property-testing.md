@@ -114,8 +114,8 @@ Update this section only with the exact report and runtime from that run; ordina
 coverage percentages are not a substitute for mutation evidence.
 
 - Status: passing hard gate
-- Scope: `src/security/csp.ts`, `src/security/url-validator.ts`,
-  `src/core/update/field-value.ts`
+- Scope: `src/runtime/security/csp.ts`, `src/runtime/security/url-validator.ts`,
+  `src/runtime/core/update/field-value.ts`
 - Current baseline (`quality/mutation-policy-pr.json`, the file that decides):
   502 total, mutation score 95.82%, zero no-coverage, error and ignored mutants,
   a timeout ceiling of 2 and a score drift band of 2 mutants. Measured on
@@ -183,7 +183,7 @@ Earlier baselines — an eight-file slice, then fourteen files — are in this
 file's Git history; their numbers describe a scope that no longer exists.
 
 The scope is the union `stryker.config.js` builds: every `criticalFiles` entry of
-`quality/coverage-policy.json`, the three PR-profile files and `src/core/bindings/a11y.ts`.
+`quality/coverage-policy.json`, the three PR-profile files and `src/runtime/core/bindings/a11y.ts`.
 How the baseline is refreshed when a file joins that set is the numbered
 procedure under "Adding a file to `criticalFiles`" in
 [docs/testing.md](../testing.md).

@@ -1,7 +1,7 @@
 import { access, readdir, readFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { generateInlineScript } from '../src/inline/generator';
+import { generateInlineScript } from '../src/runtime/inline/generator';
 import { INLINE_BUDGET, INLINE_FRAGMENT_BUDGET, INLINE_ROUTE_BUDGET } from './bundle-budgets';
 import {
   findBudgetViolations,

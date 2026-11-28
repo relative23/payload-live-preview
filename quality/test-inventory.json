@@ -22,7 +22,7 @@
   "totals": {
     "files": 534,
     "suites": 1040,
-    "tests": 4675,
+    "tests": 4676,
     "benchmarks": 12
   },
   "groups": {
@@ -65,7 +65,7 @@
     "unit": {
       "files": 437,
       "suites": 931,
-      "tests": 4268,
+      "tests": 4269,
       "benchmarks": 0
     }
   },
@@ -3000,7 +3000,7 @@
       "path": "tests/unit/quality/architecture-policy.test.ts",
       "group": "unit",
       "suites": 1,
-      "tests": 8,
+      "tests": 9,
       "benchmarks": 0
     },
     {

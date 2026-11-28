@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildLivePreviewUrl, type LivePreviewUrlArgs } from '@/payload/plugin';
+import { buildLivePreviewUrl, type LivePreviewUrlArgs } from '@/server/payload/plugin';
 
 const BASE = 'https://site.example';
 

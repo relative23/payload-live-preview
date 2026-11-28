@@ -3,9 +3,9 @@
  * extends this with its request type, so the JSDoc lives here once.
  */
 
-import type { DefaultsProfile, EventSourcePolicy } from '@/types/defaults-profile';
+import type { DefaultsProfile, EventSourcePolicy } from '@/runtime/types/defaults-profile';
 import type { PreviewAuthorization } from '@security/preview-verdict';
-import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
+import type { AuthorizedPreviewContext } from '@/runtime/types/authorized-preview';
 import type { PreviewSignal } from './preview-request';
 
 /**

@@ -24,7 +24,7 @@
  * policy and only once the engine has authorized the request.
  */
 
-import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
+import * as V2_ADAPTER_DEFAULTS from '@/runtime/types/adapter-defaults';
 
 /** The slice of `next.config` this touches; everything else is passed through. */
 export interface NextConfigLike {

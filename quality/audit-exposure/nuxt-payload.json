@@ -40,7 +40,7 @@
     "scripts/nuxt-production-fixture.mjs": "23f0901a640383662021cd08722d7ad511327ab72aff0ed88c08d401b7eed8be",
     "scripts/tls-front.mjs": "67181b1abfd508837b1f39225b641e9496268fb58c2d32e30e1675a8e282ca87",
     "src/adapters/nuxt/module-sources.ts": "d34e88fe3091ae1749f426515e2ee75ea79bde086847025c50c1d70b44b43740",
-    "src/adapters/nuxt/module.ts": "6ed06edbaf7080f196ee44cad3aa7512a6c2a82e6e448a5b5026a2f7c1761017"
+    "src/adapters/nuxt/module.ts": "db8b978e81e37e3ed917df59f1fb6da65dddbe06edd835fdc6204f3708ab43e6"
   },
   "directories": ["examples/nuxt-payload"],
   "absentFiles": [],

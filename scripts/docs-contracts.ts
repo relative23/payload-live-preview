@@ -15,8 +15,8 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { INLINE_BUDGET } from './bundle-budgets';
-import * as V2_ADAPTER_DEFAULTS from '../src/types/adapter-defaults';
-import * as V2_RUNTIME_DEFAULTS from '../src/types/runtime-defaults';
+import * as V2_ADAPTER_DEFAULTS from '../src/runtime/types/adapter-defaults';
+import * as V2_RUNTIME_DEFAULTS from '../src/runtime/types/runtime-defaults';
 import {
   deliveryClaims,
   deliveryClaimViolations,
@@ -278,7 +278,7 @@ function defaultLiteral(value: unknown): string {
 
 /**
  * The Default column of the options table, against the defaults table the code reads
- * (`src/types/defaults-profile.ts`). A row's cell begins with the value as source writes it; what
+ * (`src/runtime/types/defaults-profile.ts`). A row's cell begins with the value as source writes it; what
  * follows is prose. An option of the table that the page leaves out is a violation too.
  */
 export function optionDefaultViolations(
@@ -453,12 +453,12 @@ async function main(): Promise<void> {
   );
   // Assigned codes plus the ones the source records as deliberately reserved:
   // the docs name a reserved code, and nothing else may quietly take it.
-  const codeSource = await readFile(resolve(ROOT, 'src/core/diagnostic-codes.ts'), 'utf8');
+  const codeSource = await readFile(resolve(ROOT, 'src/runtime/core/diagnostic-codes.ts'), 'utf8');
   const codes = new Set([
     ...[...codeSource.matchAll(/'(LP0\d{3})'/gu)].map((x) => x[1]!),
     ...[...codeSource.matchAll(/\b(LP0\d{3}) is reserved/gu)].map((x) => x[1]!),
   ]);
-  const clientConfig = await readFile(resolve(ROOT, 'src/client/config.ts'), 'utf8');
+  const clientConfig = await readFile(resolve(ROOT, 'src/runtime/client/config.ts'), 'utf8');
   const clientMembers = interfaceMembers(clientConfig, 'LivePreviewClientConfig');
   const preview = await readFile(resolve(ROOT, 'src/server/preview.ts'), 'utf8');
   const shared = interfaceMembers(preview, 'PreviewReadOptions');
@@ -477,7 +477,7 @@ async function main(): Promise<void> {
 
   const violations: string[] = [];
   const budgets = await readFile(resolve(ROOT, 'tests/fixtures/delivery-budgets.ts'), 'utf8');
-  const { RUNTIME_BUILD_INFO } = await import('../src/inline/runtime.generated');
+  const { RUNTIME_BUILD_INFO } = await import('../src/runtime/inline/runtime.generated');
   const facts: DeliveryFacts = {
     runtime: RUNTIME_BUILD_INFO.size,
     nextBootstrap: deliveryOverhead(budgets, 'Next.js, delivery: asset'),

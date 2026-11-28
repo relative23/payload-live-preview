@@ -8,7 +8,10 @@ import {
   createFragmentEndpointHandler,
   type FragmentEndpointOptions,
 } from '@adapters/shared/fragment-endpoint';
-import { FRAGMENT_PROTOCOL_VERSION, FRAGMENT_VERSION_HEADER } from '@/types/fragment-protocol';
+import {
+  FRAGMENT_PROTOCOL_VERSION,
+  FRAGMENT_VERSION_HEADER,
+} from '@/runtime/types/fragment-protocol';
 
 const SITE = 'https://site.example.com';
 const ENDPOINT = `${SITE}/payload/fragment`;

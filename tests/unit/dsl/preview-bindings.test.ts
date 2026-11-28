@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createPreviewBindings } from '@dsl/preview-bindings';
 import { authorizePreviewRequest } from '@security/preview-authorization';
-import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
+import type { AuthorizedPreviewContext } from '@/runtime/types/authorized-preview';
 
 interface Homepage {
   heroTitle: string;

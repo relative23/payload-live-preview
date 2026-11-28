@@ -11,10 +11,10 @@ import {
   mergeCspHeader,
 } from '@security/csp';
 import type { PreviewAuthorizationOutcome } from '@security/preview-verdict';
-import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
-import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
-import { assertMergeDepthExplicit } from '@/types/merge-depth';
-import { refuseRemovedOptions } from '@/types/removed-options';
+import type { AuthorizedPreviewContext } from '@/runtime/types/authorized-preview';
+import * as V2_ADAPTER_DEFAULTS from '@/runtime/types/adapter-defaults';
+import { assertMergeDepthExplicit } from '@/runtime/types/merge-depth';
+import { refuseRemovedOptions } from '@/runtime/types/removed-options';
 import { wrapWithScriptTag } from '@inline/generator';
 // Delivery is decided in one place; the policy caches whatever that produced.
 import { renderScriptBody } from './response';

@@ -52,26 +52,30 @@ describe('the sink gate', () => {
       '}',
     ].join('\n');
     expect(
-      violationsOf([moduleFrom('src/field-types/x.ts', source)], {
-        'src/field-types/x.ts': source,
+      violationsOf([moduleFrom('src/runtime/field-types/x.ts', source)], {
+        'src/runtime/field-types/x.ts': source,
       }),
     ).toEqual([
-      'src/field-types/x.ts::trustedHtml(value) is an HTML sink the inventory does not list',
-      'src/field-types/x.ts::value is an HTML sink the inventory does not list',
-      'src/field-types/x.ts::value writes markup without trustedHtml(); the page would break under a Trusted Types CSP',
+      'src/runtime/field-types/x.ts::trustedHtml(value) is an HTML sink the inventory does not list',
+      'src/runtime/field-types/x.ts::value is an HTML sink the inventory does not list',
+      'src/runtime/field-types/x.ts::value writes markup without trustedHtml(); the page would break under a Trusted Types CSP',
     ]);
   });
 
   it('holds a listed sink to the evidence its justification needs', () => {
     const source = 'host.innerHTML = trustedHtml(html);';
     const inventory: SinkInventory = {
-      html: new Map([['src/core/x.ts::trustedHtml(html)', 'trusted-origin']]),
+      html: new Map([['src/runtime/core/x.ts::trustedHtml(html)', 'trusted-origin']]),
       attribute: new Map(),
     };
     expect(
-      violationsOf([moduleFrom('src/core/x.ts', source)], { 'src/core/x.ts': source }, inventory),
+      violationsOf(
+        [moduleFrom('src/runtime/core/x.ts', source)],
+        { 'src/runtime/core/x.ts': source },
+        inventory,
+      ),
     ).toEqual([
-      'src/core/x.ts::trustedHtml(html) is reviewed as trusted-origin and must parse into a <template>, not a live element',
+      'src/runtime/core/x.ts::trustedHtml(html) is reviewed as trusted-origin and must parse into a <template>, not a live element',
     ]);
   });
 
@@ -88,17 +92,17 @@ describe('the sink gate', () => {
       "element.setAttribute('data-payload-field', value);",
     ].join('\n');
     expect(
-      violationsOf([moduleFrom('src/field-types/x.ts', source)], {
-        'src/field-types/x.ts': source,
+      violationsOf([moduleFrom('src/runtime/field-types/x.ts', source)], {
+        'src/runtime/field-types/x.ts': source,
       }),
     ).toEqual([
-      'src/field-types/x.ts::el.style.color = value writes style and the inventory does not list it',
-      "src/field-types/x.ts::element.setAttribute('href', value) writes href and the inventory does not list it",
-      "src/field-types/x.ts::element.setAttribute('onclick', value) writes onclick, which nothing in this package may write",
-      "src/field-types/x.ts::element.setAttribute('srcdoc', value) writes srcdoc, which nothing in this package may write",
-      "src/field-types/x.ts::element.setAttribute('style', value) writes style and the inventory does not list it",
-      'src/field-types/x.ts::element.setAttribute(name, value) computes the attribute it writes and the inventory does not list it',
-      'src/field-types/x.ts::img.src = value writes src and the inventory does not list it',
+      'src/runtime/field-types/x.ts::el.style.color = value writes style and the inventory does not list it',
+      "src/runtime/field-types/x.ts::element.setAttribute('href', value) writes href and the inventory does not list it",
+      "src/runtime/field-types/x.ts::element.setAttribute('onclick', value) writes onclick, which nothing in this package may write",
+      "src/runtime/field-types/x.ts::element.setAttribute('srcdoc', value) writes srcdoc, which nothing in this package may write",
+      "src/runtime/field-types/x.ts::element.setAttribute('style', value) writes style and the inventory does not list it",
+      'src/runtime/field-types/x.ts::element.setAttribute(name, value) computes the attribute it writes and the inventory does not list it',
+      'src/runtime/field-types/x.ts::img.src = value writes src and the inventory does not list it',
     ]);
   });
 
@@ -107,19 +111,19 @@ describe('the sink gate', () => {
     const inventory: SinkInventory = {
       html: new Map(),
       attribute: new Map([
-        ["src/field-types/x.ts::element.setAttribute('href', value)", 'url-validated'],
-        ['src/field-types/x.ts::element.setAttribute(name, value)', 'constant'],
+        ["src/runtime/field-types/x.ts::element.setAttribute('href', value)", 'url-validated'],
+        ['src/runtime/field-types/x.ts::element.setAttribute(name, value)', 'constant'],
       ]),
     };
     expect(
       violationsOf(
-        [moduleFrom('src/field-types/x.ts', source)],
-        { 'src/field-types/x.ts': source },
+        [moduleFrom('src/runtime/field-types/x.ts', source)],
+        { 'src/runtime/field-types/x.ts': source },
         inventory,
       ),
     ).toEqual([
-      "src/field-types/x.ts::element.setAttribute('href', value) is reviewed as url-validated and must check the URL with isSafeUrl or acceptUrl in the same module",
-      'src/field-types/x.ts::element.setAttribute(name, value) is reviewed as constant, which does not cover a computed name',
+      "src/runtime/field-types/x.ts::element.setAttribute('href', value) is reviewed as url-validated and must check the URL with isSafeUrl or acceptUrl in the same module",
+      'src/runtime/field-types/x.ts::element.setAttribute(name, value) is reviewed as constant, which does not cover a computed name',
     ]);
   });
 
@@ -168,8 +172,8 @@ describe('the reviewed inventory', () => {
       ([, justification]) => justification === 'inert-parse' || justification === 'trusted-origin',
     );
     expect(raw.map(([key]) => key)).toEqual([
-      'src/security/sanitizer.ts::trustedHtml(markup)',
-      'src/core/strategies/strategy-runner.ts::trustedHtml(html)',
+      'src/runtime/security/sanitizer.ts::trustedHtml(markup)',
+      'src/runtime/core/strategies/strategy-runner.ts::trustedHtml(html)',
     ]);
   });
 });

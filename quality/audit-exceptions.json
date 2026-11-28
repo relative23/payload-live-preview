@@ -23,7 +23,7 @@
     },
     "examples/nuxt-payload": {
       "exposure": "quality/audit-exposure/nuxt-payload.json",
-      "exposureSha256": "91496c1f8f46a52f008c017c339acb486f61fbe3fcc5feacc1537ae2373887f0",
+      "exposureSha256": "5390229ce28d32ee63af7156912543474c5b4c10a20b640a9990576a075032c7",
       "exceptions": []
     },
     "examples/astro-hybrid": {

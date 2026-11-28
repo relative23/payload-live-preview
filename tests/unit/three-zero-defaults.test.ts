@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { livePreviewScriptProps } from '@adapters/nextjs/index';
-import { resetDevWarnings } from '@/types/dev-warning';
+import { resetDevWarnings } from '@/runtime/types/dev-warning';
 
 /**
  * What 2.4 announced on the server (ADR 0026, 2026-11-03) and 3.0 did:

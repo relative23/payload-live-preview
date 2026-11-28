@@ -4,12 +4,12 @@
  * 2.0 one, and the 2.0 slot still decides when the generator wrote it.
  *
  * Worth its own file at this level because the tuple is positional and
- * append-only: `src/core/session/runtime.ts` destructures by position, and the only
+ * append-only: `src/runtime/core/session/runtime.ts` destructures by position, and the only
  * proof that slot 21 is read as slot 21 is a runtime built from one.
  */
 
 import { describe, expect, it } from 'vitest';
-import { INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/types/inline-config';
+import { INLINE_CONFIG_KEYS, type InlineScriptConfig } from '@/runtime/types/inline-config';
 import type { RouteStrategy } from '@core/strategies/strategies';
 import { TRUSTED, type BakedConfigTuple } from './runtime-harness';
 

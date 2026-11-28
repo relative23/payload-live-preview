@@ -14,14 +14,14 @@ import {
   type PreviewAuthorizationStrategy,
 } from '@security/preview-authorization';
 import type { PreviewAuthorization } from '@security/preview-verdict';
-import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
+import type { AuthorizedPreviewContext } from '@/runtime/types/authorized-preview';
 import {
   isPayloadScopeCurrent,
   matchesPreviewDocument,
   matchesPreviewDocumentData,
 } from '@security/preview-scope';
 import { runAuthorizeHook } from './authorize-hook';
-import { warnOnce } from '@/types/dev-warning';
+import { warnOnce } from '@/runtime/types/dev-warning';
 import type { PreviewAdapterOptions } from './options';
 import { positiveIntegerLimit } from './fragment-limits';
 import { cancelStream, readBody } from './fragment-request-body';
@@ -33,7 +33,7 @@ import {
   parseFragmentRequestResult,
   type FragmentRequestBody,
   type FragmentResponseBody,
-} from '@/types/fragment-protocol';
+} from '@/runtime/types/fragment-protocol';
 
 /** Everything a registry entry may use to compute its props. */
 export interface FragmentRenderInput {

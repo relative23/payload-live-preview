@@ -9,7 +9,7 @@ import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { ISLAND_EVENT, type IslandUpdateDetail } from '@core/bindings/islands';
 import type { FragmentStrategy } from '@core/strategies/strategies';
 import { createFragmentStrategy } from '@fragment/index';
-import type { FragmentRequestBody } from '@/types/fragment-protocol';
+import type { FragmentRequestBody } from '@/runtime/types/fragment-protocol';
 
 const ORIGIN = 'https://admin.example.com';
 class IO implements IntersectionObserver {

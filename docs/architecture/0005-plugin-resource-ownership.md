@@ -144,7 +144,7 @@ are isolated and cannot replace that fallback or escape as unhandled rejections.
 ### Runtime sessions own what `start()` acquires
 
 2026-09-19 (2.1): the runtime gives each session a scope of the same kind.
-`start()` opens a `LifetimeScope` (`src/core/session/lifetime-scope.ts`: own, close in
+`start()` opens a `LifetimeScope` (`src/runtime/core/session/lifetime-scope.ts`: own, close in
 reverse, guard each release — the form the inline runtime carries; the plugin
 manager keeps `ResourceScope`, which adds staging, commit and per-kind counts
 the runtime never uses) and hands it the teardown in the order it must run — the last entry closes first: the deferred start, the ready-handshake
@@ -156,7 +156,7 @@ runs, as for a plugin. Two fences hold this: `tests/unit/core/session-scope.test
 counts every timer, every listener on `window` and `document` and every
 observer across fifty sessions and finds none left, and
 `scripts/check-resource-inventory.ts` holds `quality/resource-inventory.json`
-against the source — every acquisition in `src/core` (24 today) names who
+against the source — every acquisition in `src/runtime/core` (24 today) names who
 releases it: the scope, the instance on `destroy()` only (the announcer's
 timer, which a suspended runtime keeps), the disposer a call returns
 (navigation listeners, the `__livePreview` handle) or a page-wide accessor

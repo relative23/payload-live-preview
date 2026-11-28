@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { PayloadDocumentEventDetail } from '@/types/payload-protocol';
+import type { PayloadDocumentEventDetail } from '@/runtime/types/payload-protocol';
 import { EventEmitter } from '@events/emitter';
 import { fireMessage, makeRuntime } from './lifecycle-startup-harness';
 

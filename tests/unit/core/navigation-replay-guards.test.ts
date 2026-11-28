@@ -12,7 +12,7 @@ import {
   type RuntimeDeps,
   type UpdateTransaction,
 } from '@core/session/runtime-state';
-import type { PayloadLivePreviewData } from '@/types/payload-protocol';
+import type { PayloadLivePreviewData } from '@/runtime/types/payload-protocol';
 
 function transaction(fields: Record<string, unknown>): UpdateTransaction {
   return {

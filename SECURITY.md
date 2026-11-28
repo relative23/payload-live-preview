@@ -27,8 +27,8 @@ This is a solo-maintained project. Reports are handled on a best-effort basis; y
 
 This library renders CMS-controlled content into consumer pages and decides on the server which requests get a preview, so the rendering, message-handling and authorization paths are security boundaries. In scope:
 
-- Bypasses of the HTML sanitizer (`src/security/sanitizer.ts`)
-- Bypasses of URL validation (`src/security/url-validator.ts`)
+- Bypasses of the HTML sanitizer (`src/runtime/security/sanitizer.ts`)
+- Bypasses of URL validation (`src/runtime/security/url-validator.ts`)
 - Bypasses of postMessage origin detection/allow-listing
 - Anything that lets a malicious parent window or CMS payload execute script in the preview page
 - Bypasses of the authorization boundary: a forged, expired, replayed or wrongly scoped preview token or session that `authorizePreviewRequest()` accepts, draft content read without credentials, or the fragment endpoint (`createFragmentEndpoint()`) rendering for a request it should refuse

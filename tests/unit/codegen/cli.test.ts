@@ -2,7 +2,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { run } from '@/codegen/cli';
+import { run } from '@/tools/codegen/cli';
 import { Project } from 'ts-morph';
 import { dirname, relative, resolve as resolvePath } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -225,7 +225,7 @@ describe('pll-codegen CLI', () => {
  * here, because only they are resolved at load time — that is the difference
  * between a sentence and `ERR_MODULE_NOT_FOUND` with ten stack frames, which is
  * what the published 2.0.0-rc.1 answered. `pll migrate` loads the peer on first
- * use for the same reason (src/migrate/ast.ts).
+ * use for the same reason (src/tools/migrate/ast.ts).
  */
 describe('the CLI entry without the optional peer', () => {
   it('does not reach ts-morph through a static import', () => {
@@ -255,7 +255,7 @@ describe('the CLI entry without the optional peer', () => {
         if (next !== undefined) walk(next);
       }
     };
-    walk(resolvePath(process.cwd(), 'src/codegen/cli.ts'));
+    walk(resolvePath(process.cwd(), 'src/tools/codegen/cli.ts'));
 
     expect(reached).toEqual([]);
   });
@@ -279,7 +279,7 @@ describe('the parser without the optional peer', () => {
       return { createRequire, default: { createRequire } };
     });
     try {
-      const { loadTsMorph } = await import('@/codegen/parser/resolve');
+      const { loadTsMorph } = await import('@/tools/codegen/parser/resolve');
 
       expect(() => loadTsMorph()).toThrow(
         'pll-codegen needs ts-morph: npm install --save-dev ts-morph',

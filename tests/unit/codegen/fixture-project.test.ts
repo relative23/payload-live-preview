@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { Project, ts } from 'ts-morph';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { emitTypes } from '@/codegen/emit/emit-types';
-import { extractSchema } from '@/codegen/parser/extract-schema';
-import type { ExtractedSchema } from '@/codegen/parser/types';
+import { emitTypes } from '@/tools/codegen/emit/emit-types';
+import { extractSchema } from '@/tools/codegen/parser/extract-schema';
+import type { ExtractedSchema } from '@/tools/codegen/parser/types';
 
 const REPO_ROOT = resolve(import.meta.dirname, '../../..');
 
@@ -116,7 +116,7 @@ function typeCheck(root: string): readonly string[] {
       target: ts.ScriptTarget.ES2022,
       module: ts.ModuleKind.ESNext,
       moduleResolution: ts.ModuleResolutionKind.Bundler,
-      paths: { 'payload-live-preview': [join(REPO_ROOT, 'src/field-types/types.ts')] },
+      paths: { 'payload-live-preview': [join(REPO_ROOT, 'src/runtime/field-types/types.ts')] },
     },
   });
   project.addSourceFileAtPath(join(root, 'payload-types.ts'));

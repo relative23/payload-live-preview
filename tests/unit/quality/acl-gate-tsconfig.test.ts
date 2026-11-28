@@ -16,7 +16,7 @@ const rootConfig = `{
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@core/*": ["src/core/*"],
+      "@core/*": ["src/runtime/core/*"],
       "payload-live-preview/nextjs": ["src/adapters/nextjs/index.ts"],
       "payload-live-preview/server": ["src/server/index.ts"],
     },
@@ -26,7 +26,7 @@ const rootConfig = `{
 describe('ACL gate tsx configuration', () => {
   it('keeps the repository aliases and drops every entry that names the package', () => {
     const derived = deriveGateTsconfig(rootConfig, '/work/repository');
-    expect(derived.compilerOptions.paths).toEqual({ '@core/*': ['src/core/*'] });
+    expect(derived.compilerOptions.paths).toEqual({ '@core/*': ['src/runtime/core/*'] });
   });
 
   it('extends the repository configuration and anchors its aliases at the repository', () => {

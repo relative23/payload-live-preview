@@ -10,8 +10,8 @@
 
 import { ModuleResolutionKind, Project, ScriptTarget } from 'ts-morph';
 import { describe, expect, it } from 'vitest';
-import { emitTypes } from '@/codegen/emit/emit-types';
-import { extractSchema } from '@/codegen/parser/extract-schema';
+import { emitTypes } from '@/tools/codegen/emit/emit-types';
+import { extractSchema } from '@/tools/codegen/parser/extract-schema';
 
 const REALISTIC_CONFIG = `
   export default {

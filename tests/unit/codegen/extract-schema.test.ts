@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Project } from 'ts-morph';
-import { extractSchema } from '@/codegen/parser/extract-schema';
+import { extractSchema } from '@/tools/codegen/parser/extract-schema';
 
 function makeProject(files: Record<string, string>): {
   project: Project;

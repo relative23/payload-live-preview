@@ -37,15 +37,15 @@ const policy = (): TrustedCorePolicy => ({
   schemaVersion: 1,
   core: {
     modules: {
-      'src/core/merge/data-merger.ts': ['network', 'credentialed-request'],
-      'src/security/escape.ts': [],
+      'src/runtime/core/merge/data-merger.ts': ['network', 'credentialed-request'],
+      'src/runtime/security/escape.ts': [],
     },
     lines: { limit: 10, why: 'test' },
     dependencies: {},
   },
   coreOnly: ['message-ingress', 'credentialed-request', 'trusted-types-policy'],
   outsideCore: {
-    'src/fragment/handler.ts': { capabilities: ['network'], why: 'same-origin' },
+    'src/runtime/fragment/handler.ts': { capabilities: ['network'], why: 'same-origin' },
   },
 });
 
@@ -134,13 +134,16 @@ describe('holding every module to its reviewed capabilities', () => {
 
   it('fails a fetch in a renderer, and passes the reviewed same-origin one', () => {
     const modules = [
-      module('src/core/merge/data-merger.ts', [use('network'), use('credentialed-request')]),
-      module('src/security/escape.ts', []),
-      module('src/fragment/handler.ts', [use('network')]),
-      module('src/field-types/text.ts', [use('network')]),
+      module('src/runtime/core/merge/data-merger.ts', [
+        use('network'),
+        use('credentialed-request'),
+      ]),
+      module('src/runtime/security/escape.ts', []),
+      module('src/runtime/fragment/handler.ts', [use('network')]),
+      module('src/runtime/field-types/text.ts', [use('network')]),
     ];
     expect(findCapabilityViolations(modules, policy()).map(({ message }) => message)).toEqual([
-      'src/field-types/text.ts holds network and is neither in the trusted core nor reviewed for it in quality/trusted-core.json',
+      'src/runtime/field-types/text.ts holds network and is neither in the trusted core nor reviewed for it in quality/trusted-core.json',
     ]);
   });
 
@@ -148,51 +151,62 @@ describe('holding every module to its reviewed capabilities', () => {
     const reviewed: TrustedCorePolicy = {
       ...policy(),
       outsideCore: {
-        'src/plugins/x.ts': { capabilities: ['credentialed-request'], why: 'no' },
+        'src/runtime/plugins/x.ts': { capabilities: ['credentialed-request'], why: 'no' },
       },
     };
     const modules = [
-      module('src/core/merge/data-merger.ts', [use('network'), use('credentialed-request')]),
-      module('src/security/escape.ts', []),
-      module('src/plugins/x.ts', [use('credentialed-request')]),
+      module('src/runtime/core/merge/data-merger.ts', [
+        use('network'),
+        use('credentialed-request'),
+      ]),
+      module('src/runtime/security/escape.ts', []),
+      module('src/runtime/plugins/x.ts', [use('credentialed-request')]),
     ];
     expect(findCapabilityViolations(modules, reviewed).map(({ message }) => message)).toEqual([
-      'src/plugins/x.ts holds credentialed-request, which only the trusted core may hold',
+      'src/runtime/plugins/x.ts holds credentialed-request, which only the trusted core may hold',
     ]);
   });
 
   it('keeps a core module to its list in both directions', () => {
     const modules = [
-      module('src/core/merge/data-merger.ts', [use('network'), use('html-sink')]),
-      module('src/security/escape.ts', []),
-      module('src/fragment/handler.ts', [use('network')]),
+      module('src/runtime/core/merge/data-merger.ts', [use('network'), use('html-sink')]),
+      module('src/runtime/security/escape.ts', []),
+      module('src/runtime/fragment/handler.ts', [use('network')]),
     ];
     expect(findCapabilityViolations(modules, policy()).map(({ message }) => message)).toEqual([
-      'src/core/merge/data-merger.ts holds html-sink, which quality/trusted-core.json does not list for it',
-      'src/core/merge/data-merger.ts no longer holds credentialed-request; remove it from quality/trusted-core.json',
+      'src/runtime/core/merge/data-merger.ts holds html-sink, which quality/trusted-core.json does not list for it',
+      'src/runtime/core/merge/data-merger.ts no longer holds credentialed-request; remove it from quality/trusted-core.json',
     ]);
   });
 
   it('fails a stale review and a reviewed module that is gone', () => {
     const modules = [
-      module('src/core/merge/data-merger.ts', [use('network'), use('credentialed-request')]),
-      module('src/security/escape.ts', []),
-      module('src/fragment/handler.ts', []),
+      module('src/runtime/core/merge/data-merger.ts', [
+        use('network'),
+        use('credentialed-request'),
+      ]),
+      module('src/runtime/security/escape.ts', []),
+      module('src/runtime/fragment/handler.ts', []),
     ];
     expect(findCapabilityViolations(modules, policy()).map(({ message }) => message)).toEqual([
-      'src/fragment/handler.ts no longer holds network; its review in quality/trusted-core.json is stale',
+      'src/runtime/fragment/handler.ts no longer holds network; its review in quality/trusted-core.json is stale',
     ]);
     expect(
       findCapabilityViolations(modules.slice(0, 2), policy()).map(({ message }) => message),
-    ).toEqual(['quality/trusted-core.json names src/fragment/handler.ts, which does not exist']);
+    ).toEqual([
+      'quality/trusted-core.json names src/runtime/fragment/handler.ts, which does not exist',
+    ]);
   });
 
   it('leaves attribute writes outside the core to the sink inventory', () => {
     const modules = [
-      module('src/core/merge/data-merger.ts', [use('network'), use('credentialed-request')]),
-      module('src/security/escape.ts', []),
-      module('src/fragment/handler.ts', [use('network')]),
-      module('src/core/bindings/a11y.ts', [use('attribute-sink')]),
+      module('src/runtime/core/merge/data-merger.ts', [
+        use('network'),
+        use('credentialed-request'),
+      ]),
+      module('src/runtime/security/escape.ts', []),
+      module('src/runtime/fragment/handler.ts', [use('network')]),
+      module('src/runtime/core/bindings/a11y.ts', [use('attribute-sink')]),
     ];
     expect(findCapabilityViolations(modules, policy())).toEqual([]);
   });
@@ -208,16 +222,16 @@ describe('measuring the core', () => {
 
   it('fails on growth and on an import the review does not cover', () => {
     const measurement = {
-      modules: ['src/core/merge/data-merger.ts'],
-      lines: { 'src/core/merge/data-merger.ts': 11 },
+      modules: ['src/runtime/core/merge/data-merger.ts'],
+      lines: { 'src/runtime/core/merge/data-merger.ts': 11 },
       totalLines: 11,
-      declarations: { 'src/core/merge/data-merger.ts': 1 },
+      declarations: { 'src/runtime/core/merge/data-merger.ts': 1 },
       totalDeclarations: 1,
-      dependencies: ['src/core/diagnostics.ts'],
+      dependencies: ['src/runtime/core/diagnostics.ts'],
     };
     expect(findTrustedCoreViolations(measurement, policy())).toEqual([
       'the trusted core is 11 lines, above the reviewed 10',
-      'the trusted core imports src/core/diagnostics.ts, which quality/trusted-core.json does not review',
+      'the trusted core imports src/runtime/core/diagnostics.ts, which quality/trusted-core.json does not review',
     ]);
   });
 });

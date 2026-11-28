@@ -3,10 +3,10 @@ import { DataMerger, type MergeResult } from '@core/merge/data-merger';
 import { createDocumentSession } from '@adapters/shared/document-session';
 import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/session/lifecycle';
-import { LivePreviewClient } from '@/client/index';
+import { LivePreviewClient } from '@/runtime/client/index';
 import { bootstrapInlineRuntime } from '@core/session/runtime';
 import { buildBuiltinRenderers } from '@field-types/index';
-import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
+import { INLINE_CONFIG_KEYS } from '@/runtime/types/inline-config';
 import { jsonResponse } from './data-merger-harness';
 
 /**

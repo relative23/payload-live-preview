@@ -43,7 +43,7 @@ import { join, relative, resolve } from 'node:path';
 import { refuseOutsideReference } from '@adapters/shared/hook-reference';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
 import type { PreviewRequestLike } from '@adapters/shared/preview-request';
-import { warnOnce } from '@/types/dev-warning';
+import { warnOnce } from '@/runtime/types/dev-warning';
 import {
   EXTENSIONS,
   HANDLER_FILENAME,

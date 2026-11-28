@@ -58,9 +58,9 @@ Tests assert isolation explicitly (see `tests/unit/events/emitter.test.ts` → "
 `globalThis` and each for the same reason — every package entry is its own bundle
 with its own copy of the module, and the thing held is one per page by nature.
 `setSanitizerDocument()` holds the server document `payload-live-preview/lexical`
-sanitises with (`src/security/sanitizer.ts`), and the Trusted Types policy is held
+sanitises with (`src/runtime/security/sanitizer.ts`), and the Trusted Types policy is held
 once because a page's `trusted-types` directive allows the name once
-(`src/security/trusted-types.ts`). Neither carries renderer, transform, origin or
+(`src/runtime/security/trusted-types.ts`). Neither carries renderer, transform, origin or
 update state; both stay outside the per-instance rule on purpose.
 
 2026-11-26 (3.0): the sanitizer document left the realm. `setSanitizerDocument()`

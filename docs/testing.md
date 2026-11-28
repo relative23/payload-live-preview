@@ -18,7 +18,7 @@ npm run build:runtime
 `npm test` regenerates them through its `pretest` hook. The narrower scripts
 (`npm run test:unit`, `test:integration`, `typecheck`) do not — npm runs a
 `pre` hook only for the script that shares its name — so run `build:runtime`
-yourself after pulling a change to `src/core/session/runtime.ts`. Every CI job that
+yourself after pulling a change to `src/runtime/core/session/runtime.ts`. Every CI job that
 type-checks or runs tests runs it explicitly for the same reason.
 
 The common maintainer commands are:
@@ -42,7 +42,7 @@ The common maintainer commands are:
 
 `npm run test:mutation` mutates the small PR profile. The release-critical scope
 is every file with a per-file coverage baseline (`quality/coverage-policy.json`)
-plus the PR profile's three files and `src/core/bindings/a11y.ts`; `stryker.config.js`
+plus the PR profile's three files and `src/runtime/core/bindings/a11y.ts`; `stryker.config.js`
 builds that union at startup. The reviewed file list, mutant total and score are
 pinned in `quality/mutation-policy.json` — that file is the baseline, not this
 page:
@@ -205,7 +205,7 @@ a stall that grows common is looked into instead of absorbed.
   with `quality/resource-inventory.json` — the runtime session's contract (ADR
   0005, 2.1 note): after `destroy()`, `suspend()` or a failed start no timer,
   listener or observer is left, counted across fifty sessions; and every
-  acquisition in `src/core` names who releases it, held against the source in
+  acquisition in `src/runtime/core` names who releases it, held against the source in
   the architecture gate.
 - `tests/unit/security/xss-corpus.ts` with `sanitizer-corpus.test.ts` and
   `tests/unit/property/sanitizer-fuzz.property.test.ts` — the sanitizer's
@@ -269,7 +269,7 @@ a stall that grows common is looked into instead of absorbed.
   `docs/react.md` has to go.
 - `scripts/diagnostic-table.ts` · `npm run diagnostics:check` — the
   diagnostic-code table in `docs/troubleshooting.md` is rendered from
-  `src/core/diagnostic-codes.ts`; the check fails on drift, on a code without
+  `src/runtime/core/diagnostic-codes.ts`; the check fails on drift, on a code without
   a "what to do" entry and on an entry for a code that no longer exists.
   `npx tsx scripts/diagnostic-table.ts --write` re-renders it.
 - `scripts/compare-scope.ts` — how much code this package spends on the job

@@ -72,7 +72,7 @@ describe('the mutation plan of the critical gates', () => {
  * section 14).
  */
 describe('when the trusted core is mutated', () => {
-  const PATHS = ['src/security/escape.ts', 'quality/mutation-policy-core.json'];
+  const PATHS = ['src/runtime/security/escape.ts', 'quality/mutation-policy-core.json'];
   const BASE = '2d7c2b66d0a1f0c6b5d1b2d7f9c8e7a6b5c4d3e2';
   const git = (answers: Record<string, CommandResult>) => {
     const calls: string[] = [];
@@ -87,9 +87,9 @@ describe('when the trusted core is mutated', () => {
 
   it('names the modules of the core, their list, their policy and how Stryker runs', () => {
     expect(
-      corePaths({ core: { modules: { 'src/security/escape.ts': {}, 'src/a.ts': {} } } }),
+      corePaths({ core: { modules: { 'src/runtime/security/escape.ts': {}, 'src/a.ts': {} } } }),
     ).toEqual([
-      'src/security/escape.ts',
+      'src/runtime/security/escape.ts',
       'src/a.ts',
       'quality/trusted-core.json',
       'quality/mutation-policy-core.json',
@@ -104,11 +104,13 @@ describe('when the trusted core is mutated', () => {
   });
 
   it('is mutated for a push that changes one of its paths, and left out for one that changes none', () => {
-    expect(coreMutation(false, ['docs/audit.md', 'src/security/escape.ts'], PATHS)).toBe(true);
-    expect(coreMutation(false, ['quality/mutation-policy-core.json'], PATHS)).toBe(true);
-    expect(coreMutation(false, ['src/core/session/lifecycle.ts', 'docs/audit.md'], PATHS)).toBe(
-      false,
+    expect(coreMutation(false, ['docs/audit.md', 'src/runtime/security/escape.ts'], PATHS)).toBe(
+      true,
     );
+    expect(coreMutation(false, ['quality/mutation-policy-core.json'], PATHS)).toBe(true);
+    expect(
+      coreMutation(false, ['src/runtime/core/session/lifecycle.ts', 'docs/audit.md'], PATHS),
+    ).toBe(false);
     expect(coreMutation(false, [], PATHS)).toBe(false);
   });
 

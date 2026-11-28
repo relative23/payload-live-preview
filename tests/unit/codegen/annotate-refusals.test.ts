@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { annotateTemplates, type AnnotationRefusal } from '../../../src/codegen/annotate/index';
-import type { PreviewInventory } from '../../../src/codegen/inventory';
+import {
+  annotateTemplates,
+  type AnnotationRefusal,
+} from '../../../src/tools/codegen/annotate/index';
+import type { PreviewInventory } from '../../../src/tools/codegen/inventory';
 
 /**
  * The places `pll-codegen annotate` must leave alone, from the site audit of

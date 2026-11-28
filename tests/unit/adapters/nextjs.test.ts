@@ -7,8 +7,8 @@ import {
 } from '@adapters/nextjs/index';
 import { scriptElementProps } from '@adapters/nextjs/script-element';
 import { NAVIGATION_COMMIT_EVENT } from '@core/session/navigation-lifecycle';
-import { resetDevWarnings } from '@/types/dev-warning';
-import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
+import { resetDevWarnings } from '@/runtime/types/dev-warning';
+import { INLINE_CONFIG_KEYS } from '@/runtime/types/inline-config';
 import { AUTHORIZED, authorizeAll } from './authorize-all';
 
 const ADMIN = 'https://admin.example.com';

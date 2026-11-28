@@ -19,9 +19,9 @@
     }
   },
   "scope": [
-    "src/core/update/field-value.ts",
-    "src/security/csp.ts",
-    "src/security/url-validator.ts"
+    "src/runtime/core/update/field-value.ts",
+    "src/runtime/security/csp.ts",
+    "src/runtime/security/url-validator.ts"
   ],
   "baseline": {
     "total": 502,

@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { createFragmentEndpointHandler } from '@adapters/shared/fragment-endpoint';
-import { parseFragmentRequest } from '@/types/fragment-protocol';
+import { parseFragmentRequest } from '@/runtime/types/fragment-protocol';
 
 const text = { type: 'text', text: 'Punkt', format: 0, mode: 'normal' };
 const listItem = (children: readonly unknown[]) => ({ type: 'listitem', children });

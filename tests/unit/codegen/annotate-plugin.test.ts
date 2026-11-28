@@ -6,9 +6,9 @@ import {
   livePreviewAnnotate,
   splitFrontmatter,
   type AnnotatePluginOptions,
-} from '@/codegen/annotate/vite-plugin';
+} from '@/tools/codegen/annotate/vite-plugin';
 import { majorsIn } from '../../../scripts/compat-vite';
-import type { PreviewInventory } from '@/codegen/inventory';
+import type { PreviewInventory } from '@/tools/codegen/inventory';
 
 /**
  * The annotator as a build step. What it may annotate is the scanner's

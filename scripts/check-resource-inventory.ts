@@ -2,7 +2,7 @@
  * Every place the runtime's core acquires something that outlives the call —
  * a timer, a listener, an observer, an abort controller, a property on a
  * global — and who releases it. A session's resources are owned by its scope
- * (`src/core/resource-scope.ts`, opened by `start()` and closed by
+ * (`src/runtime/plugins/resource-scope.ts`, opened by `start()` and closed by
  * `destroy()`, `suspend()` and a failed start alike); the rest are named
  * here with the hand that lets them go. A new acquisition, or a moved one,
  * fails the architecture gate until it is written down.
@@ -14,7 +14,7 @@ import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const SCOPE_DIRECTORY = join(ROOT, 'src', 'core');
+const SCOPE_DIRECTORY = join(ROOT, 'src', 'runtime', 'core');
 const INVENTORY = join(ROOT, 'quality', 'resource-inventory.json');
 
 const ACQUISITIONS: readonly RegExp[] = [
@@ -109,7 +109,7 @@ function main(): void {
     .map(([release, count]) => `${String(count)} ${release}`)
     .join(', ');
   console.log(
-    `Resource inventory passed: ${String(found.length)} acquisitions in src/core, every one released by name (${summary}).`,
+    `Resource inventory passed: ${String(found.length)} acquisitions in src/runtime/core, every one released by name (${summary}).`,
   );
 }
 

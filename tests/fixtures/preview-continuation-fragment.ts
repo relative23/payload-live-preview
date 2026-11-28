@@ -7,7 +7,7 @@ import {
   createFragmentEndpointHandler,
   type FragmentRenderInput,
 } from '@adapters/shared/fragment-endpoint';
-import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
+import type { AuthorizedPreviewContext } from '@/runtime/types/authorized-preview';
 import type { ContinuationGrant, createReferenceContinuation } from './preview-continuation';
 import { escapeHtml } from '@security/escape';
 

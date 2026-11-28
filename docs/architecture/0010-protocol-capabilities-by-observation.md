@@ -41,10 +41,10 @@ merge whenever `serverURL` is set — without naming either.
    production code.
 
 2026-09-17 (2.0.2): item 1 describes one declaration; the code splits it in
-two. `CAPABILITY_DECLARATIONS` (`src/core/protocol/protocol-version.ts`) holds only the
+two. `CAPABILITY_DECLARATIONS` (`src/runtime/core/protocol/protocol-version.ts`) holds only the
 version that grants a capability (`since`) and the message feature that shows
 it (`observed`). The gated behaviour and the fallback are prose in
-`CAPABILITY_DOCUMENTATION` (`src/core/protocol/protocol-capability-docs.ts`), kept out of
+`CAPABILITY_DOCUMENTATION` (`src/runtime/core/protocol/protocol-capability-docs.ts`), kept out of
 the runtime module so the inline bundle ships the rules and not the text. The
 unit test requires an entry in both for every capability.
 

@@ -5,6 +5,6 @@
  * `lexicalToHtml(content, { document })`.
  */
 
-export * from './lexical';
-export type { SanitizerDocument } from './security/sanitizer';
-export type { NodeRenderer, RenderNodeContext } from './lexical/registry';
+export * from './runtime/lexical';
+export type { SanitizerDocument } from './runtime/security/sanitizer';
+export type { NodeRenderer, RenderNodeContext } from './runtime/lexical/registry';

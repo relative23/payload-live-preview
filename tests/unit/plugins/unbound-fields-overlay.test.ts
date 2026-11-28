@@ -6,7 +6,7 @@ import {
   guessedBindingsIn,
   unboundFieldNames,
 } from '@plugins/built-in/unbound-fields-overlay';
-import type { PayloadLivePreviewData } from '@/types/payload-protocol';
+import type { PayloadLivePreviewData } from '@/runtime/types/payload-protocol';
 
 /**
  * The overlay answers one question — which of this update's fields has the page

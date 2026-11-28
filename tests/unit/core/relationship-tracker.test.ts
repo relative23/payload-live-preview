@@ -3,7 +3,7 @@ import { RelationshipTracker } from '@core/protocol/relationship-tracker';
 import type {
   PayloadDocumentEventDetail,
   PayloadLivePreviewMessage,
-} from '@/types/payload-protocol';
+} from '@/runtime/types/payload-protocol';
 
 /**
  * LP-1: Payload fills `externallyUpdatedRelationship` from

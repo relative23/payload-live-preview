@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { createDocumentSession } from '@adapters/shared/document-session';
-import { ProtocolTracker } from '@/core/protocol/protocol-tracker';
-import { PAYLOAD_2_REFUSED } from '@/core/protocol/protocol-version';
+import { ProtocolTracker } from '@/runtime/core/protocol/protocol-tracker';
+import { PAYLOAD_2_REFUSED } from '@/runtime/core/protocol/protocol-version';
 
 /**
  * Only Payload 2 sends `fieldSchemaJSON`, and this package no longer serves Payload 2 (ADR 0007,

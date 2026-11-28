@@ -10,7 +10,7 @@ import { evaluateMutationReport, type MutationPolicy } from '../../../scripts/mu
 type Status =
   'CompileError' | 'Ignored' | 'Killed' | 'NoCoverage' | 'RuntimeError' | 'Survived' | 'Timeout';
 
-const SCOPE = ['src/core/bindings/cache.ts', 'src/security/csp.ts'] as const;
+const SCOPE = ['src/runtime/core/bindings/cache.ts', 'src/runtime/security/csp.ts'] as const;
 
 const policy = (overrides: Partial<MutationPolicy['baseline']> = {}): MutationPolicy => ({
   schemaVersion: 1,
@@ -81,10 +81,13 @@ describe('the equivalence list', () => {
     readonly replacement: string;
   }
   const placed = (mutants: readonly Placed[]): unknown => {
-    const base = report({ 'src/core/bindings/cache.ts': [], 'src/security/csp.ts': [] }) as {
+    const base = report({
+      'src/runtime/core/bindings/cache.ts': [],
+      'src/runtime/security/csp.ts': [],
+    }) as {
       files: Record<string, { source: string; mutants: unknown[] }>;
     };
-    base.files['src/core/bindings/cache.ts'] = {
+    base.files['src/runtime/core/bindings/cache.ts'] = {
       source: SOURCE,
       mutants: mutants.map((mutant, index) => ({
         id: String(index),
@@ -97,7 +100,7 @@ describe('the equivalence list', () => {
         },
       })),
     };
-    base.files['src/security/csp.ts'] = {
+    base.files['src/runtime/security/csp.ts'] = {
       source: '',
       mutants: [{ id: 'k', status: 'Killed' }],
     };
@@ -112,7 +115,7 @@ describe('the equivalence list', () => {
     replacement: 'false',
   };
   const entry = {
-    file: 'src/core/bindings/cache.ts',
+    file: 'src/runtime/core/bindings/cache.ts',
     line: 2,
     column: 7,
     mutator: 'ConditionalExpression',
@@ -143,7 +146,7 @@ describe('the equivalence list', () => {
   it('fails a survivor the list does not name, quoting where it is and what it did', () => {
     const result = evaluateMutationReport(placed([nullGuard]), listing([]));
     expect(result.violations).toEqual([
-      '[regression] src/core/bindings/cache.ts:2:7 ConditionalExpression (a === null → false) survives without an equivalence entry',
+      '[regression] src/runtime/core/bindings/cache.ts:2:7 ConditionalExpression (a === null → false) survives without an equivalence entry',
     ]);
   });
 
@@ -153,7 +156,9 @@ describe('the equivalence list', () => {
       listing([], { noCoverageMaximum: 1, mutationScoreMinimum: 50 }),
     );
     expect(result.violations).toEqual([
-      expect.stringContaining('[regression] src/core/bindings/cache.ts:2:7 ConditionalExpression'),
+      expect.stringContaining(
+        '[regression] src/runtime/core/bindings/cache.ts:2:7 ConditionalExpression',
+      ),
     ]);
   });
 
@@ -163,7 +168,7 @@ describe('the equivalence list', () => {
       listing([entry], { mutationScoreMinimum: 100 }),
     );
     expect(result.violations).toEqual([
-      '[improvement] the equivalence entry src/core/bindings/cache.ts:2:7 ConditionalExpression is killed now; drop it',
+      '[improvement] the equivalence entry src/runtime/core/bindings/cache.ts:2:7 ConditionalExpression is killed now; drop it',
     ]);
   });
 
@@ -171,7 +176,7 @@ describe('the equivalence list', () => {
     const moved = evaluateMutationReport(placed([nullGuard]), listing([{ ...entry, line: 3 }]));
     expect(moved.violations).toEqual([
       expect.stringContaining('survives without an equivalence entry'),
-      '[stale] the equivalence entry src/core/bindings/cache.ts:3:7 ConditionalExpression names no mutant in the report',
+      '[stale] the equivalence entry src/runtime/core/bindings/cache.ts:3:7 ConditionalExpression names no mutant in the report',
     ]);
 
     const misquoted = evaluateMutationReport(
@@ -179,7 +184,7 @@ describe('the equivalence list', () => {
       listing([{ ...entry, original: 'a > 1' }]),
     );
     expect(misquoted.violations).toEqual([
-      '[stale] the equivalence entry at src/core/bindings/cache.ts:2:7 ConditionalExpression (a === null → false) quotes "a > 1"; rerun the review',
+      '[stale] the equivalence entry at src/runtime/core/bindings/cache.ts:2:7 ConditionalExpression (a === null → false) quotes "a > 1"; rerun the review',
     ]);
   });
 
@@ -189,7 +194,7 @@ describe('the equivalence list', () => {
       listing([{ ...entry, why: 'equivalent' }]),
     );
     expect(result.violations).toEqual([
-      '[policy] the equivalence entry src/core/bindings/cache.ts:2:7 ConditionalExpression needs a sentence saying why the program does the same',
+      '[policy] the equivalence entry src/runtime/core/bindings/cache.ts:2:7 ConditionalExpression needs a sentence saying why the program does the same',
     ]);
   });
 

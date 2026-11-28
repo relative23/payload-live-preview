@@ -6,11 +6,11 @@ dist/
 *.tgz
 
 # Generated runtime artifacts; `npm run build:runtime` regenerates them.
-src/inline/runtime.generated.ts
-src/inline/loader.generated.ts
-src/inline/fragment.generated.ts
-src/inline/route.generated.ts
-src/inline/loader-react.generated.ts
+src/runtime/inline/runtime.generated.ts
+src/runtime/inline/loader.generated.ts
+src/runtime/inline/fragment.generated.ts
+src/runtime/inline/route.generated.ts
+src/runtime/inline/loader-react.generated.ts
 
 # IDE
 .idea/
