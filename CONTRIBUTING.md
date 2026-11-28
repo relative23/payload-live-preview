@@ -65,7 +65,7 @@ gate reads the server boundary off the last two.
 | `src/runtime/events`, `src/runtime/plugins`, `src/runtime/dsl`      | Event emitter; plugin manager and built-in plugins; the binding DSL                             |
 | `src/runtime/types`                                                 | Shared wire and context types — a leaf domain that imports nothing at runtime                   |
 | `src/server`, `src/server/payload`                                  | Privileged server helpers (`./server`); `payload.config.ts` helpers (`./payload`)               |
-| `src/tools/codegen`, `src/tools/migrate`, `src/tools/doctor`        | Schema-driven code generation, the 1.x → 2.0 codemods, the deployment probe — server-only tools |
+| `src/tools/codegen`, `src/tools/migrate`, `src/tools/doctor`        | Schema-driven code generation, the upgrade's codemods, the deployment probe — server-only tools |
 | `src/index.ts`, `src/*-entry.ts`                                    | The package entries; `etc/api/` holds one API report per entry                                  |
 | `scripts/`                                                          | Build, gate and release tooling; each gate's header comment says what it protects               |
 | `quality/`                                                          | The machine-readable baselines the gates compare against                                        |

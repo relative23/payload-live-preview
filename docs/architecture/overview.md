@@ -217,7 +217,7 @@ entries (`index.ts`, `client-entry.ts`, `lexical-entry.ts`) lie beside them.
 | `src/server/payload`      | `buildLivePreviewUrl()` for `payload.config.ts`                                    |
 | `src/tools/codegen`       | types and the inventory from a Payload config, and the annotator                   |
 | `src/tools/doctor`        | `pll doctor`: probe a deployment and analyze what it serves                        |
-| `src/tools/migrate`       | `pll migrate`: the 1.x → 2.0 codemods and their runner                             |
+| `src/tools/migrate`       | `pll migrate`: the upgrade's codemods and their runner                             |
 
 The layering is a gate, not a convention: `scripts/architecture-rules.ts`
 refuses an upward import, a runtime cycle, a Node builtin in browser-reachable
