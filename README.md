@@ -50,7 +50,7 @@ Node >=24.0.0; the unit and integration suites run on Node 24, 26.
 
 <!-- compat-matrix:end -->
 
-`payload` is an optional peer, `^3.0.0 || ^4.0.0-0`, so npm never installs it. Payload 4 pre-releases need Node 24.22.1 or later. This package needs Node 24 or newer; a site on Payload 2 or an older Node stays on the 2.x line ([Preparing for 3.0](docs/migration.md#preparing-for-30)). What runs against each version, and what differs between Payload 3 and 4: [docs/compatibility.md](docs/compatibility.md).
+`payload` is an optional peer, `^3.0.0 || ^4.0.0-0`, so npm never installs it. Payload 4 pre-releases need Node 24.22.1 or later. This package needs Node 24 or newer; a site on Payload 2 or an older Node stays on the 2.x line ([Upgrading to 3.0](docs/migration.md#upgrading-to-30)). What runs against each version, and what differs between Payload 3 and 4: [docs/compatibility.md](docs/compatibility.md).
 
 ## Install
 
