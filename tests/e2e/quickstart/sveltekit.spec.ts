@@ -6,6 +6,7 @@ import { detailFor, run } from '../../../scripts/package-smoke-support';
 import {
   ADMIN_ORIGIN,
   ask,
+  cachingProxy,
   closeServer,
   freePort,
   mockPayload,
@@ -95,4 +96,28 @@ test('without the preview parameter the editor gets the public page too', async 
   const plain = await ask(origin, true);
   expect(plain.html).toContain('Server title');
   expect(plain.html).not.toContain('__livePreview');
+});
+
+test("a shared cache in front of the server does not hand the editor's preview to a visitor", async () => {
+  const cache = await cachingProxy(origin);
+  try {
+    const editor = await ask(`${cache.origin}/?preview=true`, true);
+    expect(editor.html).toContain('__livePreview');
+    // The cache keeps what it may; the preview tells it not to.
+    expect(editor.cacheControl).toBe('private, no-store');
+    expect(editor.vary).toContain('Cookie');
+    expect(cache.stored()).toEqual([]);
+
+    const visitor = await ask(`${cache.origin}/?preview=true`, false);
+    expect(visitor.html).toContain('Server title');
+    expect(visitor.html).not.toContain('__livePreview');
+    expect(cache.hits).toEqual([]);
+    // And it does keep the public page: the next visitor is answered from the store.
+    expect(cache.stored()).toEqual(['/?preview=true']);
+    const next = await ask(`${cache.origin}/?preview=true`, false);
+    expect(cache.hits).toEqual(['/?preview=true']);
+    expect(next.html).not.toContain('__livePreview');
+  } finally {
+    await closeServer(cache.server);
+  }
 });
