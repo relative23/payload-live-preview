@@ -1,5 +1,131 @@
 # payload-live-preview
 
+## 3.0.0-rc.0
+
+### Major Changes
+
+- 49b157b: An authorized preview context is the object `authorizePreviewRequest()` made, and nothing else passes for one (ADR 0007, row 44). Its mark was a registry symbol, because every entry carried its own copy of the module: a frozen copy of a context kept the symbol and passed, and so did an object built by hand with it. With one module graph the module keeps the contexts it made.
+
+  - `isAuthorizedPreviewContext()` refuses a copy, frozen or not, a JSON round trip and a hand-built object.
+  - `AUTHORIZED_PREVIEW_BRAND_KEY` is gone from the root, `/core` and `/server`. The context has no key of that name.
+  - Two copies of the package in one process do not accept each other's contexts: install one version, and bundle the package the same way wherever a context travels.
+
+- 9a464a0: A hook session listens to the admin that spoke first (ADR 0007, row 39). `useLivePreviewDocument()` in React and Vue and `createDocumentSession()` lock onto the origin of the first update they accept for their document, and refuse an update from any other origin on `allowedOrigins` until the last subscriber leaves. The inline runtime and `LivePreviewClient` have always done this; a hook took updates from every allowed origin for as long as it listened, so with two admins on the list the second could write into a preview the first had opened.
+
+  - With one allowed origin nothing changes.
+  - An update the session leaves alone, for another document or locale, decides nothing.
+  - There is no option. A page that two admins drive in turn is opened from the one that edits.
+
+- c840fd2: A hook names the document it previews (ADR 0007, rows 26 and 31).
+
+  - `document` is required on `useLivePreviewDocument()` (`/react`, `/vue`) and `createDocumentSession()` (`/core`): `{ collection, id }` or `{ global }`, with an optional `locale`. A hook merges only the updates for that document. One without `document` does not start and says what to name.
+  - `document: 'any'` follows whichever document an allowed admin sends, which every hook did in 2.x. It is for a page that renders whatever the admin edits, a create screen for one.
+  - A hook with a `locale` leaves alone an update that names no locale, as `requireLocale: true` did since 2.4. `requireLocale: true` is still taken and `requireLocale: false` is refused; where the admin sends updates without a locale, leave `locale` out of `document`.
+  - The development notices for a hook without `document` and for a merged update without a locale are gone.
+
+- c05766e: A merge request has a deadline of 10 000 ms by default: `mergeTimeoutMs` in the adapters, `generateInlineScript()` and the client, `timeoutMs` on `useLivePreviewDocument()` and `createDocumentSession()` (ADR 0007, row 27). When it passes, the request is aborted and a later answer is not read; the runtime renders the raw values and reports the shortfall, a hook reports `unavailable` and keeps the last good document. In 2.x a merge had no deadline unless one was set, so a Payload API that stalled showed up as an update that never arrived. `0` keeps that. A CMS that answers more slowly than ten seconds needs a higher value; the default is about seven times the slowest request of the measurement in ADR 0026. The two development notices that announced the default are gone.
+- 0513c6f: `RouteRefresh`, the function given to `registerRouteRefresh()`, returns a promise that settles once the host has committed the fresh render (ADR 0007, row 23; ADR 0028). A host that renders synchronously returns `Promise.resolve()`. A function that returns no promise is no longer taken as already committed: its refresh counts as failed, the revision is written onto the markup that stands, `inspect().revisions.display` names the route as a shortfall, and `LP0810` says so once under `debug`. `<LivePreviewNavigation />` (Next.js), `livePreviewNavigation()` (SvelteKit), the Nuxt module's client plugin and `<LivePreviewRouteRefresh />` return the promise already.
+- 6796be3: The Astro peer range is `>=7.2.8 <8.0.0` (ADR 0007, row 35; it was `>=4.0.0 <8.0.0`). Astro releases only its current major, and Astro 4 to 6 carry a critical advisory that is patched only in 7.2.8 (GHSA-26w7-cxv4-gfx2), which is also why the range begins at 7.2.8 and not at 7.0.0. The adapter's code is unchanged. A project on Astro 4 to 6 updates Astro or stays on 2.x; the next Astro major enters the range in a minor.
+- 2aab8eb: `subfieldCoverage` defaults to `'declared'` (ADR 0007, row 17; ADR 0022). Inside a group the page binds only in part, each changed path needs a binding of its own, a binding above it or a `data-payload-covers` declaration. An uncovered one is an unbound change: `LP0203` and `inspect().fidelity.fields` name it, and `onUnfaithfulPatch` decides whether a server draws it. In 2.x one bound path covered the whole group, so an edit beside it changed nothing on the page and nothing said so.
+
+  - Declare what a page leaves out on purpose: `data-payload-covers="hero.description"`. The `id` of an array row or of a related document counts as a path as well, so a page that binds `author.name` hears about `author.id` when the relationship switches; `data-payload-covers="author"` on the element that shows the author accounts for it.
+  - `subfieldCoverage: 'descendant'` keeps the 2.x rule.
+  - A path a route marker names (`data-payload-depends="layout.1.note"`) now changes only when the value at that path does, not with every edit of its field.
+  - `LP0204`, the development notice that announced this, is gone.
+
+- 27789e9: `payload-live-preview/doctor` and `payload-live-preview/migrate` are no longer importable (ADR 0007, row 42). They exposed the `pll` binary's own modules as libraries (`runDoctor()`, `analyzeProbe()`, `migrateSource()`). The binary stays as it is: `pll doctor <url> --json` prints the findings for a script to read, and `pll migrate <path>` runs the codemods. `pll doctor --v3` names a call from either entry.
+- 914e775: No response changes on preview intent alone any more (ADR 0007, rows 21 and 36). `strict: false` and `defaults: 'v1'`, the two ways 2.x left open for a staged migration, are removed.
+
+  - An adapter that decides per request (`createLivePreviewMiddleware()`, `livePreviewHandle()`, `defineLivePreviewServerHandler()`, `livePreviewNitroPlugin()`, `LivePreviewScript`) needs `authorizePreview`, a non-empty `allowedOrigins` (`https:` in production) and no `'referer'` among the `previewSignals`. Without them it refuses to start, in development too.
+  - `strict: false` is refused at startup by the adapters and by the Astro integration in every mode. `strict: true` is still taken.
+  - `defaults: 'v1'` is refused at startup by the adapters, `generateInlineScript()`, `generateLoaderScript()` and `LivePreviewClient`. `defaults: 'v2'` is still taken. `npx pll migrate ./src --only expand-defaults-v1 --write` writes the rows the profile stood for into the options: the four runtime rows and the preview signals without `'referer'`. It does not write `strict: false`; a site that ran on the profile adds a hook (`docs/authorization.md`).
+  - `serverURL` needs an explicit `mergeDepth` everywhere; the profile's exemption went with it.
+  - Astro's `mode: 'middleware'` refuses to start without `authorizePreviewModule`.
+  - Types: `DefaultsProfile` is `'v2'`, `strict` is `true`.
+
+- cbd0164: Node 24 or newer is required: `engines.node` is `>=24.0.0` (ADR 0007, row 28). Node 20 reached its end of life on 2026-04-30, Node 22 follows on 2027-04-30, and Payload 4 asks for Node 24 itself. Nothing else changes with this row: move the build and the server to Node 24 or newer, which 2.x already runs on. A project that stays on Node 20 or 22 stays on 2.x.
+- 52b2d3f: Nuxt 3 is no longer tested (ADR 0007, row 45). It reached its end of life on 31 July 2026, and 2.x kept it working with an example of its own. That example is gone: the one Nuxt example runs Nuxt 4 in the `app/` layout, on its development server against the mock admin and from the real admin, and as a production build.
+
+  The module's code did not change with that. A Nuxt 3 project keeps the code it has, without a job that proves it; Nuxt's own upgrade guide moves it to 4.
+
+- e4973bd: `payload-live-preview/client` is the one browser entry (ADR 0007, row 46). `payload-live-preview/core`, `payload-live-preview/plugins` and `payload-live-preview/structural` are gone, and `/client` exports what they exported for a browser: the client, `createDocumentSession()`, `PluginManager` and the built-in plugins, the protocol and origin helpers, the sanitizer, and the keyed morph (`morphElement()`, `isMorphBoundary()`, `retainIslandBoundary()`).
+
+  - The root exports every name of `/client` and, beside it, the script generator and the server helpers. It gains the six names only the focused entries had: `createDocumentSession`, `PluginManager`, `createUnboundFieldsOverlayPlugin`, `morphElement`, `isMorphBoundary` and `retainIslandBoundary`.
+  - `npx pll migrate ./src --write` rewrites the imports (`move-core-entry`, `move-plugins-entry`, `move-structural-entry`). `/core` also exported `bind()`, `bindByPath()`, `createPreviewBindings()`, `buildFrameAncestors()`, `generateCspNonce()` and `isAuthorizedPreviewContext()`; an import of only those goes to the root, and one that mixes them with browser names is reported for you to split.
+  - Four types of `/structural` described functions that 3.0 no longer exports and are gone: `ArrayPatch`, `DependencyMap`, `StructuralApplyOptions` and `StructuralStore`.
+  - A bundler gives the same bytes for a name from the root or from `/client`. A page that loads an entry without a bundler loads it whole: `/client` is 187 kB in 38 files and the root 376 kB in 49, since the root holds the script generator with the runtime as text.
+  - Every module that defines a public name is a file of its own in the build. A bundler that takes a file whole, as webpack and Turbopack do, ships the feature a project imports and not its neighbours: a Next.js 16 app pays 2.8 kB gzip for `PluginManager` and 0.9 kB for one built-in plugin.
+
+- 34b3b76: The package is one module graph, ESM alone (ADR 0007, row 43). Until 3.0 every entry was a bundle of its own, ten of them built as ESM and as CommonJS, so each class and each registry existed once per entry. A module two entries share is built once now, as a chunk both import.
+
+  - A Lexical node or block renderer registered through one entry is the one every other entry renders with.
+  - There is no CommonJS build and no `.cjs` file. The entries that had a CommonJS build, and `/nextjs`, answer `require()` with the same ES module `import` gets, which Node 24 loads through `require` too, so a CommonJS `next.config.js` keeps working.
+  - The JavaScript in the archive goes from 2 751 547 bytes to 541 124. What a bundler keeps for one imported name is level with 2.x. An entry loaded unbundled reads more than its single file was: 3 to 5 % for the adapters, 6 % for the root, about 22 % for the hooks.
+  - Import an entry by its name. The files under `dist/` that the entries share change their names with every release.
+  - A page that loads an entry in the browser without a bundler serves the package's `dist/` folder, not one copied file: an entry imports the chunks beside it. `/client` is 19 files with 168 kB together.
+
+- 2d7c2b6: The lean runtime is removed: `LEAN_RUNTIME`, the entry `payload-live-preview/lean`, the `runtime` option of the adapters, the Astro integration and `generateInlineScript()`, the type `RuntimeArtifact` and the diagnostic `LP0104` (ADR 0007, row 37). Delete the import and the option; the build fails on the import until then, and `pll doctor --v3` names the option.
+
+  The package has one runtime. To keep it off a visitor's page, deliver it as an asset: `delivery: 'asset'` in the Next.js, SvelteKit and Nuxt adapters, and `mode: 'loader'` in Astro, which is the default. The page then carries a bootstrap of a few hundred bytes, and only a preview fetches the runtime.
+
+- aa28f77: Payload 2 is no longer supported (ADR 0007, rows 25 and 30): the `payload` peer range is `^3.0.0 || ^4.0.0-0`, and a site on Payload 2 stays on the 2.x line of this package. An admin that sends `fieldSchemaJSON`, which only Payload 2 does, is refused: from the first such message on nothing of it is applied, the runtime reports `LP0504` once in every build, and a hook reports `unavailable` with the reason. Every update that is applied is merged through the server's method-override `POST`; no schema decides a field type and no collection read is started. Removed with the schema: the types `PayloadFieldSchema`, `PayloadBlockSchema` and `PayloadFieldCondition`, `fieldSchemaJSON` on `PayloadLivePreviewMessage`, `schema` on `RenderContext` and on `PayloadLivePreviewData`, the option labels of the `select` renderer, and `fieldTyping` and `populatesRelationships` on `ProtocolProfile`. `buildLivePreviewUrl()` and the config plugin read `collectionConfig` and `globalConfig`, no longer `documentInfo`. On Payload 3 or 4 nothing changes unless a custom renderer read `context.schema`, or a sender of your own added the schema: leave the field out and set `data-payload-type` on those bindings.
+- 7a77831: The `payload` peer range begins at 3.90.0: `>=3.90.0 <4.0.0 || ^4.0.0-0` (ADR 0007, row 48). Every Payload 3 release before 3.90.0 carries critical advisories that are patched only there (GHSA-66wr-7vmr-p5jq, GHSA-f7hx-52q9-hcrf), so those releases are no longer claimed as supported, as with Astro before 7.2.8. Update Payload inside its major to 3.90.0 or newer; beside an older Payload npm answers `ERESOLVE`. A project that stays on an older Payload 3 stays on the 2.x line of this package.
+- b0f8fbf: Two defaults change (ADR 0007, rows 22 and 33).
+
+  - The Astro integration without `mode` delivers through `'loader'`: every page carries a bootstrap of a few hundred bytes, and the runtime is a content-hashed, SRI-verified asset at `/_payload-live-preview/runtime.<hash>.js` that only a preview fetches. `mode: 'inline'` keeps the 2.x delivery, the whole runtime in every page. Under a Content-Security-Policy the bootstrap's hash differs from the inline runtime's, and `script-src` has to allow the same-origin asset.
+  - `new OriginDetector()` trusts the origin of `document.referrer` only with `enableReferrerDetection: true`. The runtime, `LivePreviewClient` and the hooks already passed the option, so this reaches only a detector you build yourself.
+  - The two development notices that announced these defaults are gone.
+
+- 1e2644a: `lexicalToHtml()` and Astro's `<RichText>` throw `SanitizerEnvironmentError` where they have no document to sanitise with, instead of returning the markup unsanitised with a warning (ADR 0007, row 18; ADR 0025). Pass a `document` per call on a server (`lexicalToHtml(content, { document })`, `<RichText document={…} />`, from linkedom or jsdom). `requireDocument: false` keeps the 2.x behaviour, and `sanitize: false` still says that the caller sanitises itself. In a browser nothing changes.
+- f94234d: Three switches are named by what they turn on: `disableVisibilityGate` is `enableVisibilityGate` (default `true`), `disableReferrerDetection` is `enableReferrerDetection` (default `false`) and `disableLocalhostMatching` is `enableLocalhostMatching` (default `true`), each with the value turned round (ADR 0007, row 38). `npx pll migrate ./src --write` rewrites a literal `true` or `false` and lists any other value for a human, because a value that may be `undefined` meant the default under the old name. An adapter, `generateInlineScript()` or a client given an old name refuses to start and names the new one. Behaviour does not change: the defaults are the same ones under the new names, and `useLivePreviewDocument()` and `OriginDetector` already spelled the two origin switches this way. `pll doctor` reads a page that 2.x served as before.
+- 60b65d1: The names 2.x kept as deprecated aliases are removed (ADR 0007, rows 1, 13, 16, 19, 20, 24 and 32). `pll migrate` rewrites the ones a codemod can reach, and `pll doctor --v3` lists the places.
+
+  - `isPreviewRequest()` is gone from the root and from `payload-live-preview/astro`: call `hasPreviewIntent()`, which takes the same arguments.
+  - `hasPreviewIntent(request, { adminOrigins })` no longer reads `adminOrigins`: name the option `allowedOrigins`.
+  - `setSanitizerDocument()` is gone, and the process-wide document with it: a server call names its document, `sanitizeHtml(html, { document })`, `lexicalToHtml(content, { document })`, `<RichText document={…} />`.
+  - `onUnboundChange` is gone from the adapters, the generator and the runtime: name it `onUnfaithfulPatch`, where `'route'` is `'escalate'`. An adapter or the generator that is still given it refuses to start.
+  - A `signed-token` replay store needs `consume(id, expiresAt)`. The `isUsed`/`markUsed` shape and the type `PreviewTokenReplayChecks` are gone, and a store without `consume` is a `PreviewConfigurationError` at the first request.
+  - `LivePreviewAstroOptions` has no `authorizePreview` and no `shouldInject`; the integration refused both at startup since 2.1. `createLivePreviewMiddleware()` takes `PreviewAdapterOptions`, which has them.
+  - `livePreviewScriptProps()` builds the bootstrap of `delivery: 'asset'` only and throws without it. For an inline script a layout awaits `LivePreviewScript({ request, ...options })`, which renders nothing for a request it does not authorize.
+
+- 75a84ea: No entry exports a name marked `@internal` at run time any more (ADR 0007, row 15, announced since 2.1). The API reports of 2.5 listed 82 of them: protocol and reconciliation constants, the fragment wire parsers, the codegen's inner steps, the adapters' keys for a request's locals.
+
+  - `VERSION`, `generateCspNonce()` and `isLexicalContent()` were among them, each in two entries, and are public now under the same names.
+  - The other 76 are gone from the entries. An import of one fails, and so does the type check.
+  - An entry is smaller for it where it loaded code only those exports needed: `/structural` is 5.8 kB with its chunks where it was 26.5 kB.
+
+- 27789e9: `payload-live-preview/payload` merged into `payload-live-preview/plugin` (ADR 0007, row 41). `buildLivePreviewUrl()` and its types are exported from `/plugin` under the same names, and `/payload` is gone from the exports map: the package had `/payload`, `/plugin` and `/plugins` for three different things.
+
+  `npx pll migrate ./src --write` rewrites the specifier (`move-payload-entry`) in `import`, `export … from`, `import()` and `require()`.
+
+- 3c8108d: The Next.js, SvelteKit and Nuxt adapters hand the route to the router by default (ADR 0007, row 40). `onUnfaithfulPatch: 'escalate'` has been the default since 2.0 and did nothing on a page without a strategy. Where neither `routeStrategy` nor `fragments` is set, these adapters now carry the route strategy as `routeStrategy: 'router'`, a new value: after Payload reports a save, a change no patch can show refreshes the route through the route refresh the page lent, and through nothing else.
+
+  - Render `<LivePreviewNavigation />` from `payload-live-preview/nextjs/client` in Next.js, or call `livePreviewNavigation()` from `payload-live-preview/sveltekit/client`; the Nuxt module lends the refresh itself. A page that lent none is left as it is, and `LP0808` names what to render.
+  - `'router'` never fetches the route and morphs it in. Measured against a real admin, that morph removed Next.js's `<next-route-announcer>` from a page that lent no refresh. `true` and `'after-save'` keep it for a project that asks.
+  - `routeStrategy: false` keeps no route strategy. A fragment endpoint carries one already and keeps its timing.
+  - The bootstrap `livePreviewScriptProps()` builds goes to every visitor and stays as small as it was; the Astro integration and `generateInlineScript()` keep no default.
+  - The cost is the route prelude on a preview page an editor loads: about 8.6 kB raw, 2.6 kB gzip.
+  - `pll doctor --v3` names a page that sets neither option.
+
+- f20d9a9: On a page a framework hydrates, no route strategy fetches the route and morphs it in any more (ADR 0007, row 47). `routeStrategy: true`, `'after-save'` and the route a fragment endpoint brings refresh through the route refresh the page lent, as the default `'router'` does: `LivePreviewNavigation` in Next.js, `livePreviewNavigation()` in SvelteKit, the module in Nuxt. A page that lent none is left as it is, and LP0808 names what to render.
+
+  - It applies where the page has a hydration owner: `hydration: 'react'`, `'vue'` or `'sveltekit'`, which the three adapters set. Astro, plain HTML and `hydration: 'manual'` keep the fetch and morph.
+  - `true` and `'after-save'` still decide when the route is refreshed.
+  - Why: the morph writes into DOM the framework's reconciler owns, and it takes away every element under `<body>` the fetched HTML does not have. On Next.js 16 that removed `<next-route-announcer>`, the router's own element.
+  - `pll doctor --v3` names a script-writing call of the three adapters that sets one of the two values.
+
+- 76c71be: The `payload-session` strategy sends an `Origin` with the cookie from the first request: `origin` where the strategy names one, the origin of `serverURL` otherwise (ADR 0007, row 49). 2.x asked `/me` with the cookie alone first, added the origin in one retry and remembered per endpoint that it was needed. Only Payload 3.79.0 and older take a server's cookie alone when a `csrf` list is set, and those releases are no longer supported (row 48), so the check is one request now and nothing is remembered between requests. `context.payloadHeaders` always holds the cookie and the origin. Where Payload's `csrf` list does not hold the origin of the `serverURL` given to the strategy, for example when the site reaches Payload on an internal address, set `origin` to an origin the list holds.
+
+### Minor Changes
+
+- 1ac6ede: The package ships `llms.txt` beside the README: the setup in short. It gives the order of a setup per framework, the entries, the commands that verify a deployment (`pll doctor`) and that upgrade from 2.x (`pll doctor --v3`, `pll migrate`) with their exit codes, and what 3.0 no longer does. The documentation contract reads it as it reads the guides, so an entry, an option or a diagnostic code it names is one the source defines.
+
+### Patch Changes
+
+- ef9db2e: A binding that a framework rebinds after a navigation is written again. Under `skipUnchanged`, the default, the runtime kept the stamp of the value it had last written to the element; when hydration then wrote over that element and gave it another strategy or field, the unsaved value was held back as unchanged and the page kept showing the published text until the field was edited again. The stamp is now dropped with the binding it was written for.
+- 8e723a5: `LP0203` and the unbound-fields overlay no longer list the `id` of a row or a block's `blockType`. Under `subfieldCoverage: 'declared'`, the default since 3.0, a page that binds its rows field by field (`rows.0.label`) was told once per row that `rows.0.id` has a value and no anchor, though nobody types an `id`. The comparison of two updates is unchanged: when a row moves or a relationship switches, the changed `id` still counts, because what the page drew for the old row or document without a binding stayed behind.
+- 8afde63: The compatibility list and the guides name Payload 3.94.2, the version the real-admin tests now run against, in place of 3.92.1. Documentation only; the package code is unchanged.
+
 ## 2.5.0
 
 ### Minor Changes

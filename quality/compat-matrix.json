@@ -20,12 +20,19 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/live-preview.spec.ts", "playwright.config.ts"]
+        "sources": ["tests/e2e/specs/live-preview.spec.ts", "playwright.config.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -45,7 +52,7 @@
       "backend": "mock admin",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "astro-floor-base"
@@ -55,7 +62,14 @@
           "src/adapters/astro/index.ts",
           "tests/e2e/continuation/astro-floor-base.spec.ts",
           "tests/fixtures/astro-floor-base-deps/package-lock.json"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -76,12 +90,19 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/hybrid-fragment.spec.ts", "src/adapters/astro/fragments.ts"]
+        "sources": ["tests/e2e/specs/hybrid-fragment.spec.ts", "src/adapters/astro/fragments.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -104,7 +125,7 @@
       "backend": "mock admin and Payload 3.94.2 REST authorization fixture without an admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "astro-fragment-versions"
@@ -113,7 +134,14 @@
           "src/adapters/astro/fragments.ts",
           "tests/e2e/continuation/astro-resources.spec.ts",
           "tests/fixtures/astro-resource-deps/package-lock.json"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -136,7 +164,7 @@
       "backend": "mock admin and Payload 3.94.2 REST authorization fixture without an admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "astro-fragment-islands"
@@ -145,7 +173,14 @@
           "src/adapters/astro/island-modules.ts",
           "tests/e2e/continuation/astro-islands.spec.ts",
           "tests/fixtures/astro-react-deps/package-lock.json"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -166,12 +201,19 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-e2e"
         },
-        "sources": ["tests/real-payload/homepage-live-preview.spec.ts"]
+        "sources": ["tests/real-payload/homepage-live-preview.spec.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -192,12 +234,19 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/nextjs-live-preview.spec.ts", "playwright.config.ts"]
+        "sources": ["tests/e2e/specs/nextjs-live-preview.spec.ts", "playwright.config.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -218,12 +267,19 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/nextjs-fragment.spec.ts"]
+        "sources": ["tests/e2e/specs/nextjs-fragment.spec.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -304,7 +360,7 @@
       "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -315,7 +371,14 @@
           "playwright.next-continuation.config.ts",
           "tests/e2e/helpers/next-continuation.ts",
           "tests/fixtures/next-continuation/next.config.mjs.fixture"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -336,7 +399,7 @@
       "backend": "Payload 3.94.2 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -347,7 +410,14 @@
           "scripts/next-production-fixture.mjs",
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -368,12 +438,19 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"]
+        "sources": ["tests/e2e/specs/sveltekit-live-preview.spec.ts", "playwright.config.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -394,12 +471,19 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"]
+        "sources": ["tests/e2e/specs/sveltekit-fragment.spec.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -420,7 +504,7 @@
       "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -430,7 +514,14 @@
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.sveltekit-continuation.config.ts",
           "tests/fixtures/sveltekit-continuation/vite.config.ts.fixture"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -451,7 +542,7 @@
       "backend": "Payload 3.94.2 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -462,7 +553,14 @@
           "scripts/sveltekit-production-fixture.mjs",
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -483,12 +581,19 @@
       "backend": "mock admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"]
+        "sources": ["tests/e2e/specs/nuxt-live-preview.spec.ts", "playwright.config.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -509,12 +614,19 @@
       "backend": "mock admin and signed fragment endpoint",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
         },
-        "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"]
+        "sources": ["tests/e2e/specs/nuxt-fragment.spec.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -535,7 +647,7 @@
       "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -545,7 +657,14 @@
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.nuxt-continuation.config.ts",
           "tests/fixtures/nuxt-continuation/nuxt.config.ts.fixture"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -566,7 +685,7 @@
       "backend": "Payload 3.94.2 admin (next dev) behind an HTTPS front; the preview server checks the session through it",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -577,7 +696,14 @@
           "scripts/nuxt-production-fixture.mjs",
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -586,7 +712,7 @@
       "feature": "prebuilt inline runtime",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -605,9 +731,9 @@
         "sources": ["examples/pure-html/package.json", "tests/e2e/specs/subfield-coverage.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
@@ -618,7 +744,7 @@
       "feature": "bundled client entry",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -637,9 +763,9 @@
         "sources": ["examples/vanilla-client/package.json", "tests/e2e/specs/reveal.spec.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
@@ -650,7 +776,7 @@
       "feature": "immutable-tarball build, nonce and hash CSP, and the origin rules",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -673,9 +799,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
@@ -686,7 +812,7 @@
       "feature": "authorized renderer service path",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -697,7 +823,7 @@
       "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads behind an authorized Node host; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -707,7 +833,14 @@
           "tests/e2e/continuation/next-host.spec.ts",
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.html-continuation.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -738,9 +871,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
@@ -763,7 +896,7 @@
       "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -774,7 +907,14 @@
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.react-continuation.config.ts",
           "tests/fixtures/react-continuation/src/Preview.tsx.fixture"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -802,9 +942,9 @@
         "sources": ["tests/unit/adapters/vue-composable.test.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
@@ -827,7 +967,7 @@
       "backend": "Payload 3.94.2 (SQLite) login, access control and REST reads; the test sends the editor messages, not Payload admin UI",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "production-lifecycle"
@@ -838,7 +978,14 @@
           "tests/e2e/helpers/native-continuation.ts",
           "playwright.vue-continuation.config.ts",
           "tests/fixtures/vue-continuation/src/Preview.vue.fixture"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -872,9 +1019,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
@@ -897,7 +1044,7 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-e2e"
@@ -905,7 +1052,14 @@
         "sources": [
           "examples/payload-backend/payload.config.ts",
           "tests/real-payload/homepage-live-preview.spec.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -926,7 +1080,7 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -935,7 +1089,14 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -956,7 +1117,7 @@
       "backend": "Payload 3.94.2 admin with the CSRF list",
       "browsers": ["chromium"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-csrf"
@@ -966,7 +1127,14 @@
           "tests/real-payload/surface-hook.spec.ts",
           "examples/payload-backend/payload.config.ts",
           "playwright.real-payload.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -987,7 +1155,7 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -995,7 +1163,14 @@
         "sources": [
           "tests/real-payload/surface-autologin.spec.ts",
           "playwright.real-payload.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1016,7 +1191,7 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1025,7 +1200,14 @@
           "tests/real-payload/surface-create.spec.ts",
           "playwright.real-payload.config.ts",
           "examples/payload-backend/payload.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1046,7 +1228,7 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1055,7 +1237,14 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1076,7 +1265,7 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1085,7 +1274,14 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1106,7 +1302,7 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1115,7 +1311,14 @@
           "tests/real-payload/surface-smoke.spec.ts",
           "tests/real-payload/surface-session.spec.ts",
           "playwright.real-payload.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1124,7 +1327,7 @@
       "feature": "live preview against the real Payload admin, runtime baked in, origin rule as the gate",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1135,12 +1338,22 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
         },
-        "sources": ["tests/real-payload/surface-smoke.spec.ts", "playwright.real-payload.config.ts"]
+        "sources": [
+          "tests/real-payload/surface-smoke.spec.ts",
+          "playwright.real-payload.config.ts"
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1149,7 +1362,7 @@
       "feature": "the field findings from Payload's own messages: a moved row, an option's value, a changed block no renderer draws, closed details, a picture's sources, an internal link, the coverage warning, a route that waits for the save",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1160,7 +1373,7 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
@@ -1169,7 +1382,14 @@
           "playwright.real-payload.config.ts",
           "examples/pure-html/build.mjs",
           "tests/real-payload/surface-findings.spec.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1190,12 +1410,19 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
         },
-        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"]
+        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1216,12 +1443,19 @@
       "backend": "Payload 3.94.2 admin",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "real-payload-surfaces"
         },
-        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"]
+        "sources": ["tests/real-payload/surface-hook.spec.ts", "playwright.real-payload.config.ts"],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1230,7 +1464,7 @@
       "feature": "every export-map entry in isolated package consumers",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1274,9 +1508,9 @@
         "sources": ["scripts/check-package.ts", "scripts/package-smoke-imports.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
@@ -1287,7 +1521,7 @@
       "feature": "code generation, annotation, doctor, migration and executable entrypoints",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1308,9 +1542,9 @@
         "sources": ["scripts/check-package.ts", "scripts/package-smoke-imports.ts"],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
@@ -1333,7 +1567,7 @@
       "backend": "mock admin and optimized Astro preview",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
@@ -1342,7 +1576,14 @@
           "src/adapters/astro/page-facts.ts",
           "tests/e2e/specs/astro-soft-navigation.spec.ts",
           "playwright.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1363,7 +1604,7 @@
       "backend": "mock admin and native App Router",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
@@ -1373,7 +1614,14 @@
           "src/adapters/nextjs/client.ts",
           "tests/e2e/specs/nextjs-live-preview.spec.ts",
           "playwright.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1394,7 +1642,7 @@
       "backend": "mock admin and hydrated SvelteKit route",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
@@ -1404,7 +1652,14 @@
           "src/adapters/sveltekit/client.ts",
           "tests/e2e/specs/sveltekit-live-preview.spec.ts",
           "playwright.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1425,7 +1680,7 @@
       "backend": "mock admin and hydrated Nuxt route",
       "browsers": ["chromium", "firefox", "webkit"],
       "evidence": {
-        "status": "configured",
+        "status": "passed",
         "workflow": {
           "file": "ci.yml",
           "job": "e2e"
@@ -1435,7 +1690,14 @@
           "src/adapters/nuxt/client.ts",
           "tests/e2e/specs/nuxt-live-preview.spec.ts",
           "playwright.config.ts"
-        ]
+        ],
+        "result": {
+          "path": "quality/compat-results.json",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
+          "conclusion": "success"
+        }
       }
     },
     {
@@ -1444,7 +1706,7 @@
       "feature": "manual navigation commit and accepted-document replay",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1467,9 +1729,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
@@ -1480,7 +1742,7 @@
       "feature": "client navigation method and inline soft-navigation configuration",
       "version": {
         "kind": "exact",
-        "value": "2.5.0",
+        "value": "3.0.0-rc.0",
         "package": "payload-live-preview",
         "source": {
           "kind": "root-package"
@@ -1503,9 +1765,9 @@
         ],
         "result": {
           "path": "quality/compat-results.json",
-          "sha256": "1339a92afe56e608ad5b78bd2acdf57b7fdb737f3c91036f1f5ffb692b914cb1",
-          "commit": "63678095e1832ed1a89ff913a3040406c3834a4c",
-          "executedAt": "2026-11-24T16:41:55Z",
+          "sha256": "b9614a5729efc6107928c886d23a1b9fddff2d1973d83ccc8d85672a9d04d060",
+          "commit": "6dac65461fa21d8ae0c17593f0c6d4c0ff2a97e5",
+          "executedAt": "2026-11-28T14:01:52Z",
           "conclusion": "success"
         }
       }
