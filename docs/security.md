@@ -36,9 +36,11 @@ Every adapter that decides per request accepts that verification as
 nonce exposure — regardless of `autoInject` and `shouldInject`. The same
 context is what `createPreviewBindings({ authorization })` and the draft
 helpers' `authorization` option consume, so one authorization gates draft
-selection, attribute emission, and delivery. The threat model, the token
-format and the leakage channels it is designed against are in
-[ADR 0006 — Authorized preview context](architecture/0006-authorized-preview-context.md).
+selection, attribute emission, and delivery. The token format and the leakage
+channels it is designed against are in
+[ADR 0006 — Authorized preview context](architecture/0006-authorized-preview-context.md);
+[threat-model.md](threat-model.md) has every asset, adversary and control on
+one page.
 
 The controls keep deliberately narrow responsibilities:
 
