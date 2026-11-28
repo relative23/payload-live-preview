@@ -109,6 +109,12 @@ A4 and A6 against asset 6. The reasoning is in [security.md](security.md).
 - **Where a token-bearing URL is written down.** A referrer policy on preview
   responses, and access logs and error reporters that leave the token parameter
   out, are the deployment's to set.
+- **A cache in front of the site.** A preview answer says
+  `Cache-Control: private, no-store` and `Vary: Cookie`, and a cache has to
+  honour both. It also has to keep the query in its key or to bypass the intent
+  parameters: the answer to a refused request keeps the application's headers,
+  and a cache that stored it would hand the admin the public page
+  ([deployment.md](deployment.md#preview-responses-and-caches)).
 - **Rate limits, wire-size and decompression limits, and a hard limit on
   execution** at the fragment endpoint. Its timers cannot interrupt synchronous
   component code.
