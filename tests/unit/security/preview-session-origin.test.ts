@@ -57,14 +57,14 @@ function strategy(
 }
 
 describe('the payload-session strategy sends an origin with the cookie', () => {
-  it('keeps a working Payload 2 session when only the site origin is listed', async () => {
+  it('keeps a working session of Payload 3.79.0 and older when only the site origin is listed', async () => {
     const seen: Record<string, string>[] = [];
     const result = await authorizePreviewRequest(
       request(),
       strategy(seen, {
         fetch: (_input, init) => {
           seen.push(init.headers);
-          // Payload 2 accepts an absent origin even with a configured CSRF list.
+          // Payload 3 up to 3.79.0 accepts an absent origin even with a configured CSRF list.
           const sentOrigin = new Headers(init.headers).get('origin');
           const accepted = sentOrigin === null || sentOrigin === SITE;
           return Promise.resolve({
