@@ -70,6 +70,12 @@ runtime, and `core` may not reach `fragment`, which orchestrates above it.
 Cycles are rejected in the same pass. A violation fails
 `npm run test:architecture`, so a boundary cannot erode between reviews.
 
+2026-11-28 (3.0): what crosses a zone is said once. `FORBIDDEN_ZONES` refuses an
+import from `src/runtime` into `src/adapters`, `src/server` or `src/tools`, and
+from `src/adapters` into `src/tools`. The list of a domain under `src/runtime`
+names runtime domains only, and a new domain there is held to the zone before
+it has a list.
+
 ### 3. Delivery profiles are sized, not described
 
 The runtime reaches a page as a build-time-inlined IIFE (ADR 0001), as the
