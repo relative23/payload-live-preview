@@ -3,6 +3,7 @@
  * the packed archive, with the framework as the example's lockfile names it. The files come from the page itself (`quickstartFiles`), so
  * what a spec builds is what a reader would write.
  */
+import { spawn } from 'node:child_process';
 import { createServer, type Server } from 'node:http';
 import { copyFile, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -165,4 +166,94 @@ export async function serveSite(directory: string): Promise<{ server: Server; or
 
 export async function closeServer(server: Server | undefined): Promise<void> {
   await new Promise<void>((done) => (server === undefined ? done() : server.close(() => done())));
+}
+
+/** The cookie the mocked Payload takes for an editor's session. */
+export const EDITOR_COOKIE = 'payload-token=quickstart-editor';
+/** An admin origin for a server that is only asked over HTTP: a production build refuses an `http:` one. */
+export const ADMIN_ORIGIN = 'https://cms.example.test';
+
+/**
+ * What the `payload-session` strategy asks Payload: `GET /api/users/me`. The
+ * mock knows one editor by cookie and nobody else, and counts what it is asked.
+ */
+export async function mockPayload(): Promise<{ server: Server; origin: string; asked: string[] }> {
+  const asked: string[] = [];
+  const server = createServer((request, response) => {
+    asked.push(`${request.method ?? ''} ${request.url ?? ''}`);
+    const editor = (request.headers.cookie ?? '').split(/;\s*/u).includes(EDITOR_COOKIE);
+    response
+      .writeHead(200, { 'content-type': TYPES['.json'] })
+      .end(
+        JSON.stringify(
+          editor
+            ? { user: { id: 'editor-1', collection: 'users' }, collection: 'users' }
+            : { user: null },
+        ),
+      );
+  });
+  await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+  const address = server.address();
+  if (address === null || typeof address === 'string') throw new Error('the mock has no port');
+  return { server, origin: `http://127.0.0.1:${String(address.port)}`, asked };
+}
+
+/** A port nothing listens on right now. */
+export async function freePort(): Promise<number> {
+  const probe = createServer();
+  await new Promise<void>((done) => probe.listen(0, '127.0.0.1', done));
+  const address = probe.address();
+  await closeServer(probe);
+  if (address === null || typeof address === 'string') throw new Error('no free port');
+  return address.port;
+}
+
+/** Start the project's own server and wait until it answers; `stop()` ends it. */
+export async function startProjectServer(
+  project: string,
+  command: string,
+  args: readonly string[],
+  environment: NodeJS.ProcessEnv,
+  origin: string,
+): Promise<{ stop: () => Promise<void>; output: () => string }> {
+  const child = spawn(command, args, { cwd: project, env: environment, stdio: 'pipe' });
+  let output = '';
+  child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
+  child.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()));
+  const stop = async (): Promise<void> => {
+    if (child.exitCode !== null) return;
+    const ended = new Promise<void>((done) => child.once('exit', () => done()));
+    child.kill('SIGTERM');
+    await ended;
+  };
+  const deadline = Date.now() + 60_000;
+  for (;;) {
+    if (child.exitCode !== null) throw new Error(`the server ended before it answered:\n${output}`);
+    try {
+      await fetch(origin, { redirect: 'manual' });
+      return { stop, output: () => output };
+    } catch {
+      if (Date.now() > deadline) {
+        await stop();
+        throw new Error(`the server did not answer on ${origin}:\n${output}`);
+      }
+      await new Promise((done) => setTimeout(done, 250));
+    }
+  }
+}
+
+/** One request to the project, as a visitor or with the editor's cookie. */
+export async function ask(
+  url: string,
+  editor: boolean,
+): Promise<{ status: number; html: string; csp: string }> {
+  const response = await fetch(url, {
+    redirect: 'manual',
+    headers: editor ? { cookie: EDITOR_COOKIE } : {},
+  });
+  return {
+    status: response.status,
+    html: await response.text(),
+    csp: response.headers.get('content-security-policy') ?? '',
+  };
 }
