@@ -281,7 +281,10 @@ export function parseMovedFiles(nameStatus: string): ReadonlyMap<string, string 
   return moved;
 }
 
-/** A baseline follows its file: it leaves with a deleted one and is held under a renamed one's new path. */
+/**
+ * A baseline follows its file: it leaves with a deleted one and is held under a renamed one's new path.
+ * An exclusion of one file follows it the same way.
+ */
 export function findCoveragePolicyRegressions(
   current: CoveragePolicy,
   previous: CoveragePolicy,
@@ -297,7 +300,15 @@ export function findCoveragePolicyRegressions(
   if (current.diff.criticalLines < previous.diff.criticalLines) {
     regressions.push('diff.criticalLines was lowered');
   }
+  // An exclusion that names one file follows it through a rename, as a baseline does below.
+  // A glob (`*`, `?`) names no file and is held to what the base covered.
+  const followed = new Set(
+    previous.diff.ignored
+      .filter((pattern) => !/[*?]/u.test(pattern))
+      .map((pattern) => moved.get(pattern)),
+  );
   for (const pattern of current.diff.ignored) {
+    if (followed.has(pattern)) continue;
     if (!previous.diff.ignored.some((broad) => globCovers(broad, pattern))) {
       regressions.push(`diff ignored pattern was added: ${pattern}`);
     }

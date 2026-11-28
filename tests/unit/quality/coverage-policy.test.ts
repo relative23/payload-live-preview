@@ -247,6 +247,34 @@ end_of_record
     expect(findCoveragePolicyRegressions(tightened, previous)).toEqual([]);
   });
 
+  it('lets an exclusion that names one file follow that file through a rename', () => {
+    const previous = clonePolicy() as { diff: { ignored: string[] } } & CoveragePolicy;
+    previous.diff.ignored = ['src/**/index.ts', 'src/client/config.ts'];
+    const current = clonePolicy() as { diff: { ignored: string[] } } & CoveragePolicy;
+    current.diff.ignored = ['src/**/index.ts', 'src/runtime/client/config.ts'];
+    const renamed = new Map([['src/client/config.ts', 'src/runtime/client/config.ts']]);
+
+    expect(findCoveragePolicyRegressions(current, previous, renamed)).toEqual([]);
+    // Without the rename it is a new exclusion, and so is another file's path.
+    expect(findCoveragePolicyRegressions(current, previous)).toEqual([
+      'diff ignored pattern was added: src/runtime/client/config.ts',
+    ]);
+    current.diff.ignored = ['src/**/index.ts', 'src/runtime/client/other.ts'];
+    expect(findCoveragePolicyRegressions(current, previous, renamed)).toEqual([
+      'diff ignored pattern was added: src/runtime/client/other.ts',
+    ]);
+    // A glob is no file: a rename of the path it happens to spell moves nothing.
+    previous.diff.ignored = ['src/**/index.ts', 'src/client/*.ts'];
+    current.diff.ignored = ['src/**/index.ts', 'src/runtime/client/*.ts'];
+    expect(
+      findCoveragePolicyRegressions(
+        current,
+        previous,
+        new Map([['src/client/*.ts', 'src/runtime/client/*.ts']]),
+      ),
+    ).toEqual(['diff ignored pattern was added: src/runtime/client/*.ts']);
+  });
+
   it('accepts narrowing an exclusion to files it already covered', () => {
     const previous = clonePolicy() as { diff: { ignored: string[] } } & CoveragePolicy;
     previous.diff.ignored = ['src/**/index.ts', 'src/tools/codegen/**'];
