@@ -4,5 +4,35 @@
   "initialVersions": {
     "payload-live-preview": "2.5.0"
   },
-  "changesets": []
+  "changesets": [
+    "a-context-is-the-object-the-package-made",
+    "a-hook-listens-to-one-admin",
+    "a-hook-names-its-document",
+    "a-merge-has-a-deadline",
+    "a-rebound-binding-is-written-again",
+    "a-route-refresh-returns-a-promise",
+    "a-row-id-is-not-a-field",
+    "astro-7-only",
+    "coverage-is-declared",
+    "doctor-and-migrate-are-the-binary",
+    "no-response-on-intent-alone",
+    "node-24-or-newer",
+    "nuxt-3-leaves",
+    "one-browser-entry",
+    "one-module-graph",
+    "one-runtime",
+    "payload-2-leaves",
+    "payload-3-90-or-newer",
+    "payload-3-94-2-compat",
+    "referrer-off-astro-loader",
+    "rich-text-fails-closed",
+    "switches-say-what-they-turn-on",
+    "the-2x-aliases-leave",
+    "the-internal-names-leave-the-entries",
+    "the-payload-entry-merges-into-plugin",
+    "the-route-belongs-to-the-router",
+    "the-route-of-a-hydrated-page",
+    "the-session-check-sends-its-origin",
+    "the-setup-in-short"
+  ]
 }
