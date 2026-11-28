@@ -10,7 +10,7 @@
 6. [hybrid.md](hybrid.md) — the patch, fragment and route strategies, the fragment endpoint, islands on the same page.
 7. [deployment.md](deployment.md) — CSP and nonces, caches and proxies, what a production deployment must and must not do.
 8. [troubleshooting.md](troubleshooting.md) — `inspect()`, `pll doctor`, every diagnostic code and what to do about it.
-9. [security.md](security.md) — the layered defenses and how to disclose a vulnerability.
+9. [security.md](security.md) — the layered defenses and how to disclose a vulnerability; [threat-model.md](threat-model.md) has the assets, the adversaries and every control on one page.
 10. [migration.md](migration.md) — from every earlier version, and `pll migrate`.
 11. [payload.md](payload.md) — the Payload side: the config plugin, its merge rules and URL conflicts.
 
