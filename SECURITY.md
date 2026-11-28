@@ -4,11 +4,14 @@
 
 | Version            | Supported                             |
 | ------------------ | ------------------------------------- |
-| 2.x                | Yes                                   |
+| 3.x                | Yes                                   |
+| 2.x                | Fixes until 3.1.0 is published        |
 | 1.x                | Security fixes only, until 2026-12-13 |
 | < 1.0 (alpha/beta) | No                                    |
 
-1.x receives security fixes for 90 days after 2.0.0, which was published on 2026-09-14.
+2.x is the line for Payload 2 and for Node 20 and 22, and receives fixes until 3.1.0 is
+published. 1.x receives security fixes for 90 days after 2.0.0, which was published on
+2026-09-14.
 
 ## Reporting a vulnerability
 
@@ -40,24 +43,24 @@ Out of scope: vulnerabilities in Payload CMS itself, in consumer application cod
 The primary adversaries are an unauthenticated HTTP requester and a malicious parent
 window. Preview-intent signals are not authorization; applications must verify a
 server session or short-lived scoped signature before privileged draft reads, cache
-bypass, CSP changes, or runtime injection. Under the strict default, the adapters that
+bypass, CSP changes, or runtime injection. The adapters that
 decide per request (`createLivePreviewMiddleware()`, `livePreviewHandle()`,
 `livePreviewNitroPlugin()`, `defineLivePreviewServerHandler()`) refuse to start
 without `authorizePreview`; Astro's `inline` and `loader` modes inject at build time
 and check nothing. Browser defenses are layered:
 
 - **postMessage origin policy** — inbound messages must come from an explicit
-  `allowedOrigins` entry. `document.referrer` is ignored by default
-  (`disableReferrerDetection: true`), and localhost origins are accepted only in
+  `allowedOrigins` entry. `document.referrer` counts only with
+  `enableReferrerDetection: true` and no explicit origin, and localhost origins are accepted only in
   development, which the inline runtime reads from the page's own hostname
   (`localhost` or `127.0.0.1`). Under the default
   `eventSourcePolicy: 'parent-or-opener'`, a message must also come from the window
   that framed or opened the page. The inline runtime and `LivePreviewClient` then
-  lock to the first origin that sent an accepted update. `defaults: 'v1'` restores
-  the 1.x referrer fallback and accepts any window on a trusted origin. Production
+  lock to the first origin that sent an accepted update. Production
   deployments should configure explicit origins and an appropriate `frame-ancestors`
   CSP.
 - **Escape-by-default rendering** — field values are escaped unless a field is explicitly typed as HTML, in which case it is sanitized. Rich text is written as sanitized HTML too: a Lexical value is detected automatically, and a project's `renderRichText` output passes the same sanitizer.
 - **CSP helpers** — utilities for generating Content-Security-Policy headers compatible with the inline runtime.
 
-The full security model is documented in [docs/security.md](docs/security.md).
+The full security model is documented in [docs/security.md](docs/security.md), and
+[docs/threat-model.md](docs/threat-model.md) has every asset, adversary and control on one page.
