@@ -469,6 +469,36 @@ it. A change there can lose such a kill without touching a path above. It is
 found by the next night's run, or by the release commit at the latest, no
 longer within two hours of its push.
 
+### 15. A publish from main reads the security suite by name (2026-11-28)
+
+§13 and §14 said the gate needs no new rule: a commit whose version is not on
+npm gets no successful push run without the mutation jobs. That holds while
+the plan is right. A run ends `success` with a job skipped, and the gate read
+the run's conclusion alone, so a plan that answered `false` for a version that
+is not published, or a condition added to a job, would have let a publish
+through without the proof. The push run of `1ac6ede` on `main` shows the shape:
+it ended `success` with five jobs skipped, the trusted core and the mutation
+baseline among them, rightly, since its version is on npm.
+
+For a publish from `main` the gate now lists the jobs of the certified run and
+refuses unless every job `scripts/security-suite.ts` names is there and ended
+`success`. The suite is: the unit tests, which hold the negative cases for
+tokens, sessions, messages, the sanitizer corpus and fragment scope; the
+coverage job with the floors of the critical files; the audit of what the
+examples install; the production hosts on the packed archive; the quickstarts
+of the README rebuilt in fresh projects; the session strategy against a real
+admin with a CSRF list; and the two mutation jobs of
+§13 and §14. Skipped, cancelled and missing are the same to it, and a failure
+to list the jobs refuses the publish.
+
+The list is held to the workflows by a test: each entry's names have to be
+the ones a run gives the job, every matrix value written out, and no entry may
+name a job of `ci.yml` that carries a condition. A renamed job or a new matrix
+value fails a pull request, not a publish.
+
+A maintenance branch is not asked: its workflow has other jobs, and it keeps
+the rule of the run's conclusion.
+
 ## Consequences
 
 - What is on npm is what CI tested, provably: manifest and registry archive are
