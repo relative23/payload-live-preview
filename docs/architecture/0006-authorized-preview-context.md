@@ -420,3 +420,19 @@ whether the object is in it (row 44).
   bundler that inlines the package into one bundle and leaves it external in
   another. The registry symbol crossed that; the list does not, and the context
   is then refused, which is the closed side to fail on.
+
+## Addendum (2026-11-28): the cookie-only request serves Payload 3 up to 3.79.0
+
+The addendum of 2026-10-02 names Payload 2.32.3 as the release whose extractor
+takes a cookie without an origin even with a CSRF list. 3.0 does not support
+Payload 2, and the request stays, because the rule is not Payload 2's alone.
+Read off the released `dist/auth/extractJWT.js`: Payload 3.0.0, 3.40.0, 3.70.0,
+3.75.0, 3.77.0, 3.78.0 and 3.79.0 take the cookie when the request has no
+origin, whatever the list holds, and refuse an origin the list does not hold;
+3.79.1, 3.80.0, 3.85.0, 3.88.0, 3.89.0, 3.94.2 and 4.0.0-beta.12 carry the
+fetch-metadata rule that addendum measured on 3.89. The releases between those
+were not read. The `payload` peer range starts at 3.0.0, so
+sending the origin of `serverURL` from the first request would refuse a valid
+session of such a Payload whose list holds only the frontend's origin. The
+cookie-only request can go once the range starts at 3.79.1 or later. This is a
+reading of the published files, not a run against those releases.

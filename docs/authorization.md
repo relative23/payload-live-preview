@@ -65,8 +65,8 @@ Payload's `autoLogin` authenticates requests on the server and sets no
 `'missing-credential'` and serves the public page. Sign in through the login
 form, which is what the real-admin suites do.
 
-The strategy first sends the existing cookie-only request. Payload 3.89 refuses
-that cookie when its `csrf` list is not empty and the request has neither an
+The strategy first sends the cookie alone. Payload 3.79.1 and newer refuse that
+cookie when the `csrf` list is not empty and the request has neither an
 `Origin` nor safe browser fetch metadata. If `/me` answers with `user: null`,
 the strategy retries once with the origin of `serverURL`, within the same
 timeout. Payload adds its configured `serverURL` to the CSRF list. Once a user
@@ -76,8 +76,9 @@ tries the cookie alone again and returns to it when that finds the user. Set
 `origin` to a listed origin to send it from the first request and disable the
 retry.
 `payloadHeaders` retains the headers of the accepted request for draft reads.
-Payload 2.32.3 accepts the cookie-only request even with a CSRF list; preserving
-it also preserves sessions whose list holds only the frontend's origin.
+Payload 3 up to 3.79.0 accepts the cookie alone even with a CSRF list and
+refuses an origin the list does not hold; sending the cookie alone first keeps
+its sessions when the list holds only the frontend's origin.
 The real-admin suites end a session by signing out through Payload's logout
 route; a session that ends because its token expired is not exercised.
 

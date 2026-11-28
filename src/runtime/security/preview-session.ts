@@ -1,8 +1,8 @@
 /**
  * The `payload-session` strategy: forward exactly one named cookie to
  * `GET <serverURL>/api/<usersSlug>/me` and authorize when a user comes back.
- * A cookie-only request preserves working Payload 2 sessions. When `/me`
- * reports no user, one retry adds an `Origin` for Payload 3's CSRF check, and
+ * A cookie-only request preserves sessions of Payload 3 up to 3.79.0. When `/me`
+ * reports no user, one retry adds an `Origin` for the newer CSRF check, and
  * an endpoint that needed it gets it on the first request from then on.
  */
 
@@ -191,8 +191,8 @@ export async function authorizeSession(
       }
       if (sentOrigin !== undefined || user !== null) break;
       if (payloadHeaders['origin'] === undefined) {
-        // Payload 2 accepts an absent Origin; adding one unconditionally can
-        // reject its valid session when only the frontend is in the CSRF list.
+        // Payload 3 up to 3.79.0 accepts an absent Origin; adding one unconditionally
+        // can reject its valid session when only the frontend is in the CSRF list.
         payloadHeaders = { cookie: forwarded, origin };
         continue;
       }
