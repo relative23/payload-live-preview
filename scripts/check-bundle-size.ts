@@ -10,7 +10,7 @@ import {
   type BundleMeasurement,
 } from './bundle-measure';
 import { ALL_JAVASCRIPT_BUDGET, ENTRY_BUDGETS } from './entry-budgets';
-import { closureBytes, entryClosure, reexportsOnly } from './entry-closure';
+import { closureBytes, entryClosure, loadedUnused, reexportsOnly } from './entry-closure';
 import { improvementNotice } from './size-budget-notice';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -303,6 +303,11 @@ async function main(): Promise<void> {
       measureBundle(await closureBytes(file)),
       ENTRY_BUDGETS[entry]!,
     );
+    for (const unused of await loadedUnused(file)) {
+      const name = relative(DIST, unused).split(sep).join('/');
+      console.error(`FAIL ${entry} loads ${name} and uses no binding of it`);
+      failures += 1;
+    }
   }
   for (const file of actualFiles) {
     if (reached.has(file)) continue;

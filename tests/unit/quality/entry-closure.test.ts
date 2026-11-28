@@ -3,10 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  boundImports,
   closureBytes,
   entryClosure,
   exportClosureBytes,
   exportSource,
+  loadedUnused,
   reexportsOnly,
   staticImports,
 } from '../../../scripts/entry-closure';
@@ -72,6 +74,47 @@ describe('what a built entry loads', () => {
     expect((await closureBytes(join(dist, 'entry.js'))).toString()).toBe(
       'import"./chunk-A.js";export const a=1;',
     );
+  });
+});
+
+describe('a file an entry loads and takes nothing from', () => {
+  it('reads the imports that name a binding and the re-exports, and no bare import', () => {
+    expect(
+      boundImports(
+        'import{a as b}from"./chunk-AAAA.js";export{c}from"../../chunk-BBBB.js";import"./chunk-CCCC.js";' +
+          'export*from"./chunk-DDDD.js";import*as n from"./chunk-EEEE.js";import{useRef}from"react";',
+      ),
+    ).toEqual(['./chunk-AAAA.js', '../../chunk-BBBB.js', './chunk-DDDD.js', './chunk-EEEE.js']);
+  });
+
+  it('is a chunk reached through bare imports alone, with what only that chunk imports', async () => {
+    const dist = await build({
+      'entry.js':
+        'import{a}from"./chunk-A.js";import"./chunk-SERVER.js";import"./chunk-SHARED.js";export{a};',
+      'chunk-A.js': 'import{s}from"./chunk-SHARED.js";export const a=s;',
+      // Nothing of the closure takes a binding from these two.
+      'chunk-SERVER.js': 'import{d}from"./chunk-DEEP.js";export const authorize=d;',
+      'chunk-DEEP.js': 'export const d=1;',
+      // Hoisted as a bare import into the entry, and used by chunk-A.
+      'chunk-SHARED.js': 'export const s=2;',
+    });
+
+    const unused = await loadedUnused(join(dist, 'entry.js'));
+
+    expect(unused.map((file) => file.slice(dist.length + 1))).toEqual([
+      'chunk-SERVER.js',
+      'chunk-DEEP.js',
+    ]);
+  });
+
+  it('is nothing for an entry whose every chunk hands it a binding', async () => {
+    const dist = await build({
+      'entry.js': 'export{a}from"./chunk-A.js";import"./chunk-B.js";',
+      'chunk-A.js': 'import{b}from"./chunk-B.js";export const a=b;',
+      'chunk-B.js': 'export const b=1;',
+    });
+
+    expect(await loadedUnused(join(dist, 'entry.js'))).toEqual([]);
   });
 });
 

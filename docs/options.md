@@ -401,8 +401,8 @@ the root, `/client`, `/server`, `/plugin`, `/lexical`, `/fragment` and
 Import an entry by its name: the files under `dist/` that the entries share
 have names that change with every release. A page that loads an entry in the
 browser without a bundler has to serve those files with it, so it serves the
-package's `dist/` folder and not one copied file; `/client` is 43 files with
-204 kB together, the root 50 files with 380 kB. The files are many because
+package's `dist/` folder and not one copied file; `/client` is 38 files with
+187 kB together, the root 49 files with 376 kB. The files are many because
 every module that defines a public name is a file of its own: a bundler that
 takes a file whole, as a Next.js project's does, then ships the feature a
 project imports and not its neighbours.

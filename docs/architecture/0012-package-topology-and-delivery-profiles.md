@@ -210,3 +210,13 @@ boundary costs the import and export lists on both sides, and a page that
 loads `./client` without a bundler fetches 43 files with 203 745 bytes; Vite
 gives a project about half a percent more for the client and less for the
 plugin manager.
+
+2026-11-28 (3.0): no entry loads a file it takes nothing from. `/client` took
+ten names through the security and Lexical barrels, and the build kept a bare
+import of every chunk those barrels name: five files with 16 356 bytes that a
+page without a bundler fetched and ran nothing of, the server's authorization
+strategies and CSP helpers among them. The entry takes the names from the
+modules that define them, and `/client` is 38 files with 186 685 bytes, the
+root 49 with 375 855. The size gate fails for a file of an entry's closure that
+is reached through bare imports alone (`loadedUnused()` in
+`scripts/entry-closure.ts`).

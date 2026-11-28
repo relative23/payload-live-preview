@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 543,
-    "suites": 1046,
-    "tests": 4707,
+    "suites": 1047,
+    "tests": 4710,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 440,
-      "suites": 936,
-      "tests": 4280,
+      "suites": 937,
+      "tests": 4283,
       "benchmarks": 0
     }
   },
@@ -3286,8 +3286,8 @@
     {
       "path": "tests/unit/quality/entry-closure.test.ts",
       "group": "unit",
-      "suites": 3,
-      "tests": 8,
+      "suites": 4,
+      "tests": 11,
       "benchmarks": 0
     },
     {

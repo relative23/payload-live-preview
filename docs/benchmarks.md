@@ -175,7 +175,7 @@ size.
 | `initLivePreview` from `payload-live-preview/client`             | 53,379 B     |
 | `lexicalToHtml` from `payload-live-preview/lexical`              | 5,997 B      |
 | `morphElement` from `payload-live-preview/client`                | 1,527 B      |
-| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 59,511 B     |
+| `createLivePreviewMiddleware` from `payload-live-preview/nextjs` | 59,630 B     |
 | `useLivePreviewDocument` from `payload-live-preview/react`       | 6,383 B      |
 | `useLivePreviewDocument` from `payload-live-preview/vue`         | 6,270 B      |
 | `PluginManager` from `payload-live-preview/client`               | 3,299 B      |

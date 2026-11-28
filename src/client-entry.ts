@@ -71,31 +71,36 @@ export { DIAGNOSTIC_CODES, type DiagnosticCode } from './runtime/core/diagnostic
 export type { ConnectionStatus } from './runtime/core/session/state';
 export type { DefaultsProfile, EventSourcePolicy } from './runtime/types/defaults-profile';
 
-// What a renderer needs to write safely
+// What a renderer needs to write safely. Each from its own module, and the Lexical names below
+// too: through a barrel this entry would load every chunk the barrel names, the server's
+// authorization and CSP helpers among them.
+export { isSafeUrl, isExternalHttpUrl } from './runtime/security/url-validator';
 export {
-  isSafeUrl,
-  isExternalHttpUrl,
   sanitizeHtml,
   setSanitizerPolicy,
-  setTrustedTypesPolicy,
-  escapeHtml,
   type SanitizeOptions,
   type SanitizerDocument,
-} from './runtime/security';
-export type { SanitizerPolicyMode, TrustedHtmlPolicyLike } from './runtime/security';
+  type SanitizerPolicyMode,
+} from './runtime/security/sanitizer';
+export {
+  setTrustedTypesPolicy,
+  type TrustedHtmlPolicyLike,
+} from './runtime/security/trusted-types';
+export { escapeHtml } from './runtime/security/escape';
 
 // Lexical rendering
 export {
   isLexicalContent,
   lexicalToHtml,
   lexicalToPlainText,
+  type LexicalRenderOptions,
+} from './runtime/lexical/render';
+export {
   registerBlockRenderer,
   type BlockRenderer,
   type BlockRenderContext,
-  type LexicalNode,
-  type LexicalRenderOptions,
-  type LexicalRoot,
-} from './runtime/lexical';
+} from './runtime/lexical/blocks/registry';
+export type { LexicalNode, LexicalRoot } from './runtime/lexical/types';
 
 // Events
 export {
