@@ -218,7 +218,7 @@ Open:
 
 - No backport has been made, and the fix that looked like the first candidate
   is not one: the replay race from #64 does not exist on 1.x. `v1.8.1` carries
-  no `src/security/preview-token.ts` and no `PreviewTokenReplayChecks` — the
+  no `src/runtime/security/preview-token.ts` and no `PreviewTokenReplayChecks` — the
   token layer arrived with 2.0 (`14e967d`, #57) — so a backport would open the
   gap rather than close it. The way stays unused until a 1.x security fix is
   found.
@@ -257,7 +257,7 @@ The official [Main CI report](https://github.com/relative23/payload-live-preview
 and [Deep Quality report](https://github.com/relative23/payload-live-preview/actions/runs/37108394350)
 for `9f66fbf` both contain 64 mutated files; the policy named 63. Both reports'
 embedded sources match that commit byte for byte. The missing policy entry is
-`src/core/session/lifetime-scope.ts`, which the actual nightly configuration already
+`src/runtime/core/session/lifetime-scope.ts`, which the actual nightly configuration already
 includes.
 
 The policy now names that file and lowers the no-coverage maximum from 75 to

@@ -130,14 +130,14 @@ describe('the local build takes its timestamp from the commit, as CI does', () =
   function generated(): Readonly<Record<string, string>> {
     const digests: Record<string, string> = {};
     for (const name of GENERATED) {
-      const bytes = readFileSync(join(workspace, 'src/inline', name));
+      const bytes = readFileSync(join(workspace, 'src/runtime/inline', name));
       digests[name] = createHash('sha256').update(bytes).digest('hex');
     }
     return digests;
   }
 
   function runtimeSource(): string {
-    return readFileSync(join(workspace, 'src/inline/runtime.generated.ts'), 'utf8');
+    return readFileSync(join(workspace, 'src/runtime/inline/runtime.generated.ts'), 'utf8');
   }
 
   it(

@@ -15,7 +15,7 @@ export {
   generateInlineScript,
   wrapWithScriptTag,
   type InlineScriptConfig,
-} from './inline/generator';
+} from './runtime/inline/generator';
 
 // CSP helpers for the response that carries the script
 export {
@@ -24,14 +24,14 @@ export {
   mergeCspHeader,
   type CspDirectiveMerge,
   type FrameAncestorsOptions,
-} from './security';
+} from './runtime/security';
 
 // Authorized preview context (ADR 0006)
 export {
   authorizePreviewRequest,
   isAuthorizedPreviewContext,
   issuePreviewToken,
-} from './security/preview-authorization';
+} from './runtime/security/preview-authorization';
 export type {
   AuthorizedPreviewContext,
   AuthorizedPreviewScope,
@@ -52,7 +52,7 @@ export type {
   SignedTokenStrategy,
   SubtleCryptoLike,
   VerifierStrategy,
-} from './security/preview-authorization';
+} from './runtime/security/preview-authorization';
 
 // Server-side preview-request detection — for hand-rolled middleware
 export {
@@ -63,7 +63,7 @@ export {
 } from './adapters/shared/preview-request';
 
 // Typed binding DSL — pair with codegen-emitted schema interfaces
-export { bind, bindByPath, createPreviewBindings } from './dsl';
+export { bind, bindByPath, createPreviewBindings } from './runtime/dsl';
 export { previewBindingsFromLocals } from './adapters/shared/locals';
 export type {
   BindOptions,
@@ -77,4 +77,4 @@ export type {
   PreviewBindingsOptions,
   SuppressedBinding,
   ValueAt,
-} from './dsl';
+} from './runtime/dsl';

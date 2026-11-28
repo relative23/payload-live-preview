@@ -7,7 +7,7 @@ import { summarizeMutationReport } from '../../../scripts/mutation-report';
 type Status =
   'CompileError' | 'Ignored' | 'Killed' | 'NoCoverage' | 'RuntimeError' | 'Survived' | 'Timeout';
 
-const SCOPE = ['src/core/bindings/cache.ts', 'src/security/csp.ts'] as const;
+const SCOPE = ['src/runtime/core/bindings/cache.ts', 'src/runtime/security/csp.ts'] as const;
 
 const policy = (overrides: Partial<MutationPolicy['baseline']> = {}): MutationPolicy => ({
   schemaVersion: 1,
@@ -46,8 +46,8 @@ const prPolicy = (overrides: Partial<MutationPolicy['baseline']> = {}): Mutation
 
 const report = (
   statuses: Readonly<Record<(typeof SCOPE)[number], readonly Status[]>> = {
-    'src/core/bindings/cache.ts': ['Killed', 'Killed', 'Survived', 'NoCoverage'],
-    'src/security/csp.ts': ['Killed', 'Killed', 'Timeout', 'RuntimeError'],
+    'src/runtime/core/bindings/cache.ts': ['Killed', 'Killed', 'Survived', 'NoCoverage'],
+    'src/runtime/security/csp.ts': ['Killed', 'Killed', 'Timeout', 'RuntimeError'],
   },
 ): unknown => ({
   schemaVersion: '1.0',
@@ -125,9 +125,9 @@ describe('nightly mutation policy', () => {
         thresholds: { high: 95, low: 90, break: 90 },
       },
       scope: [
-        'src/core/update/field-value.ts',
-        'src/security/csp.ts',
-        'src/security/url-validator.ts',
+        'src/runtime/core/update/field-value.ts',
+        'src/runtime/security/csp.ts',
+        'src/runtime/security/url-validator.ts',
       ],
       baseline: {
         total: 502,
@@ -183,15 +183,15 @@ describe('nightly mutation policy', () => {
 
   it('rejects a superseded partial scope even when its numeric quality passes', () => {
     const partial = report({
-      'src/core/bindings/cache.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
-      'src/security/csp.ts': [],
+      'src/runtime/core/bindings/cache.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
+      'src/runtime/security/csp.ts': [],
     });
     const object = partial as {
       config: { mutate: string[] };
       files: Record<string, unknown>;
     };
-    object.config.mutate = ['src/core/bindings/cache.ts'];
-    delete object.files['src/security/csp.ts'];
+    object.config.mutate = ['src/runtime/core/bindings/cache.ts'];
+    delete object.files['src/runtime/security/csp.ts'];
 
     expect(evaluateMutationReport(partial, policy()).violations).toEqual([
       expect.stringContaining('[profile] configured mutation scope differs'),
@@ -296,7 +296,7 @@ describe('nightly mutation policy', () => {
     const incomplete = report() as {
       files: Record<string, { mutants: { status: string }[] }>;
     };
-    incomplete.files['src/core/bindings/cache.ts']!.mutants[0]!.status = 'Pending';
+    incomplete.files['src/runtime/core/bindings/cache.ts']!.mutants[0]!.status = 'Pending';
 
     expect(() => summarizeMutationReport(incomplete)).toThrow(/unsupported mutant status Pending/u);
   });
@@ -321,8 +321,8 @@ describe('nightly mutation policy', () => {
 
   it('reports quality improvements as a stale policy that must be ratcheted', () => {
     const improved = report({
-      'src/core/bindings/cache.ts': ['Killed', 'Killed', 'Killed', 'Survived'],
-      'src/security/csp.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
+      'src/runtime/core/bindings/cache.ts': ['Killed', 'Killed', 'Killed', 'Survived'],
+      'src/runtime/security/csp.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
     });
 
     const result = evaluateMutationReport(improved, policy());
@@ -348,8 +348,8 @@ describe('nightly mutation policy', () => {
     // exactly there). The count is a property of the machine, so fewer errors must not stop a release,
     // and more than the reviewed ceiling still does.
     const without = report({
-      'src/core/bindings/cache.ts': ['Killed', 'Survived', 'NoCoverage', 'Timeout'],
-      'src/security/csp.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
+      'src/runtime/core/bindings/cache.ts': ['Killed', 'Survived', 'NoCoverage', 'Timeout'],
+      'src/runtime/security/csp.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
     });
     expect(
       evaluateMutationReport(without, policy({ errorMaximum: 1 })).violations.filter((v) =>
@@ -368,8 +368,8 @@ describe('nightly mutation policy', () => {
     // times out more still is, and the score is unaffected either way because
     // Stryker counts a timeout as detected.
     const quiet = report({
-      'src/core/bindings/cache.ts': ['Killed', 'Survived', 'NoCoverage', 'RuntimeError'],
-      'src/security/csp.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
+      'src/runtime/core/bindings/cache.ts': ['Killed', 'Survived', 'NoCoverage', 'RuntimeError'],
+      'src/runtime/security/csp.ts': ['Killed', 'Killed', 'Killed', 'Killed'],
     });
     expect(
       evaluateMutationReport(quiet, policy({ timeoutMaximum: 3 })).violations.filter((v) =>
@@ -429,8 +429,8 @@ describe('nightly mutation policy', () => {
 
   it('reports a lower total as an explicit production-code reduction to ratchet', () => {
     const reduced = report({
-      'src/core/bindings/cache.ts': ['Killed', 'Killed'],
-      'src/security/csp.ts': ['Killed', 'Killed', 'Killed'],
+      'src/runtime/core/bindings/cache.ts': ['Killed', 'Killed'],
+      'src/runtime/security/csp.ts': ['Killed', 'Killed', 'Killed'],
     });
 
     expect(
@@ -451,8 +451,8 @@ describe('nightly mutation policy', () => {
 describe('stale mutation reports', () => {
   const sources = (): Map<string, string> =>
     new Map([
-      ['src/core/bindings/cache.ts', ''],
-      ['src/security/csp.ts', ''],
+      ['src/runtime/core/bindings/cache.ts', ''],
+      ['src/runtime/security/csp.ts', ''],
     ]);
 
   it('accepts a report whose mutated sources match the working tree', () => {
@@ -461,25 +461,25 @@ describe('stale mutation reports', () => {
 
   it('refuses a report mutated from a different source than the working tree', () => {
     const tree = sources();
-    tree.set('src/core/bindings/cache.ts', 'export const changedSinceTheRun = true;\n');
+    tree.set('src/runtime/core/bindings/cache.ts', 'export const changedSinceTheRun = true;\n');
     expect(evaluateMutationReport(report(), policy(), tree).violations).toEqual([
-      '[stale] src/core/bindings/cache.ts differs from the source the report mutated; rerun the mutation suite',
+      '[stale] src/runtime/core/bindings/cache.ts differs from the source the report mutated; rerun the mutation suite',
     ]);
   });
 
   it('refuses a report for a file the working tree no longer has', () => {
     const tree = sources();
-    tree.delete('src/security/csp.ts');
+    tree.delete('src/runtime/security/csp.ts');
     expect(evaluateMutationReport(report(), policy(), tree).violations).toEqual([
-      '[stale] src/security/csp.ts is not readable in this working tree',
+      '[stale] src/runtime/security/csp.ts is not readable in this working tree',
     ]);
   });
 
   it('compares sources independently of line endings', () => {
     const fabricated = report() as { files: Record<string, { source: string }> };
-    fabricated.files['src/core/bindings/cache.ts']!.source = 'a\r\nb\n';
+    fabricated.files['src/runtime/core/bindings/cache.ts']!.source = 'a\r\nb\n';
     const tree = sources();
-    tree.set('src/core/bindings/cache.ts', 'a\nb\n');
+    tree.set('src/runtime/core/bindings/cache.ts', 'a\nb\n');
     expect(evaluateMutationReport(fabricated, policy(), tree).violations).toEqual([]);
   });
 });

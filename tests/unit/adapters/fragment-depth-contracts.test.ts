@@ -8,7 +8,7 @@ import { createFragmentEndpoint as next } from '@adapters/nextjs/fragments';
 import { createFragmentEndpoint as nuxt } from '@adapters/nuxt/fragments';
 import { createFragmentEndpoint as sveltekit } from '@adapters/sveltekit/fragments';
 import type { FragmentRenderInput } from '@adapters/shared/fragment-endpoint';
-import { isLexicalContent, lexicalToHtml } from '@/lexical/render';
+import { isLexicalContent, lexicalToHtml } from '@/runtime/lexical/render';
 import table from '../../fixtures/fragment/lexical-table-request.json' with { type: 'json' };
 
 const SITE = 'https://site.example.com';

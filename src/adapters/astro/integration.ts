@@ -9,7 +9,7 @@ import { generateInlineScript, generateLoaderScript } from '@inline/generator';
 import { loaderAsset } from './loader-asset';
 import { hookImportLines, refuseOutsideReference } from '@adapters/shared/hook-reference';
 import { inlineScriptConfig } from '@adapters/shared/policy-options';
-import { refuseRemovedOptions } from '@/types/removed-options';
+import { refuseRemovedOptions } from '@/runtime/types/removed-options';
 import type { LivePreviewAstroOptions } from './types';
 import { ASTRO_PAGE } from './page-facts';
 import { islandModuleTable, writeIslandTable } from './island-table';

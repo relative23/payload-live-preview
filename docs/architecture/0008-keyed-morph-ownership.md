@@ -155,10 +155,10 @@ WebKit, on the Astro fixture's `/structural` page.
   missing keys on structural containers.
 
 2026-09-17 (2.0.2): `pll doctor` does not report missing keys. Its findings are
-`LP0701`–`LP0710` (`src/core/diagnostic-codes.ts`), and nothing in `src/doctor`
+`LP0701`–`LP0710` (`src/runtime/core/diagnostic-codes.ts`), and nothing in `src/tools/doctor`
 reads `data-payload-key`. A missing, duplicate or unstable key is reported by
 the runtime when an update reaches the list, once per container, as `LP0404`,
-`LP0405` or `LP0406` (`src/field-types/structural-array.ts`).
+`LP0405` or `LP0406` (`src/runtime/field-types/structural-array.ts`).
 
 ### 8. The contract, pinned (2026-09-19)
 
@@ -229,13 +229,13 @@ and says why.
 The 2.1 plan asked for the line between the morph and the rules it obeys to
 be drawn, not for a second engine. It runs here:
 
-- **The engine** (`src/core/bindings/morph.ts`) pairs children by key or by position
+- **The engine** (`src/runtime/core/bindings/morph.ts`) pairs children by key or by position
   and kind (§2), synchronises attributes with the state exception (§3) and
   keeps focus across a move (§1). It does not know what an island, a custom
   element or a `contenteditable` region is: the subtrees it never enters come
   in as `MorphOptions.boundary`, a predicate.
 - **The coordinators** own the rules. `isMorphBoundary` (§4) lives in
-  `src/core/bindings/islands.ts` beside the island attribute it reads and is the
+  `src/runtime/core/bindings/islands.ts` beside the island attribute it reads and is the
   default the engine falls back to; it is exported as Experimental from
   `/structural` so another coordinator can compose the package rule with its
   own. A supplied `boundary` replaces the default. The structural applier, the

@@ -3,7 +3,7 @@
  * build. It separates props from ambient context, assets and request isolation.
  */
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { issuePreviewToken } from '../../../src/security/preview-token';
+import { issuePreviewToken } from '../../../src/runtime/security/preview-token';
 
 const SITE = 'http://localhost:4177';
 const SECRET = 'astro-hybrid-fixture-secret-that-is-long-enough-000';

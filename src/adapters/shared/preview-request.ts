@@ -4,7 +4,7 @@
  * Verify with `authorizePreviewRequest()` before anything privileged.
  */
 
-import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
+import * as V2_ADAPTER_DEFAULTS from '@/runtime/types/adapter-defaults';
 
 /** `query`: `?preview=true`; `fetch-dest`: `Sec-Fetch-Dest: iframe`; `referer`: an admin-origin Referer. */
 export type PreviewSignal = 'query' | 'fetch-dest' | 'referer';

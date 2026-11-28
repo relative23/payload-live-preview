@@ -53,15 +53,27 @@ function reexportsOnly(text: string): boolean {
   return text.replace(COMMENT, '').replace(REEXPORT, '').trim() === '';
 }
 
-/** The source file a specifier names: relative, or one of the `@name/…` aliases of `tsconfig.json`. */
+/** The `@name/*` aliases of `tsconfig.json`, as the folder each one stands for. */
+const ALIASES: readonly (readonly [string, string])[] = Object.entries(
+  (
+    JSON.parse(
+      readFileSync(resolve(ROOT, 'tsconfig.json'), 'utf8').replace(/^\s*\/\/.*$/gmu, ''),
+    ) as { compilerOptions: { paths: Record<string, readonly string[]> } }
+  ).compilerOptions.paths,
+)
+  .filter(([alias]) => alias.endsWith('/*'))
+  .map(([alias, targets]) => [alias.slice(0, -1), (targets[0] ?? '').slice(0, -1)] as const)
+  // The longest first: `@/` stands for all of `src/` and is the prefix of none of the others.
+  .sort(([a], [b]) => b.length - a.length);
+
+/** The source file a specifier names: relative, or under one of those aliases. */
 function locate(from: string, specifier: string): string | undefined {
+  const alias = ALIASES.find(([prefix]) => specifier.startsWith(prefix));
   const base = specifier.startsWith('.')
     ? resolve(dirname(from), specifier)
-    : specifier.startsWith('@/')
-      ? resolve(ROOT, 'src', specifier.slice(2))
-      : specifier.startsWith('@')
-        ? resolve(ROOT, 'src', specifier.slice(1))
-        : undefined;
+    : alias === undefined
+      ? undefined
+      : resolve(ROOT, alias[1], specifier.slice(alias[0].length));
   if (base === undefined) return undefined;
   return [`${base}.ts`, `${base}.tsx`, resolve(base, 'index.ts')].find((file) => existsSync(file));
 }

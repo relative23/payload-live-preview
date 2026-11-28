@@ -20,8 +20,8 @@ import { MessageBus } from '@core/protocol/message-bus';
 import { observeCapabilities, PAYLOAD_2_REFUSED } from '@core/protocol/protocol-version';
 import { isDevMode } from '@detection/environment';
 import { OriginDetector } from '@detection/origin';
-import * as V2_RUNTIME_DEFAULTS from '@/types/runtime-defaults';
-import type { PayloadLivePreviewMessage } from '@/types/payload-protocol';
+import * as V2_RUNTIME_DEFAULTS from '@/runtime/types/runtime-defaults';
+import type { PayloadLivePreviewMessage } from '@/runtime/types/payload-protocol';
 
 /**
  * `idle` — connected, nothing received yet. `live` — the newest update was

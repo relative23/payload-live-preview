@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import { markHydrated } from '@core/hydration/hydration-manual';
 import { bootstrapInlineRuntime } from '@core/session/runtime';
 import { registerRouteRefresh } from '@core/strategies/route-refresh';
-import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
+import { INLINE_CONFIG_KEYS } from '@/runtime/types/inline-config';
 import { IO } from './lifecycle-startup-harness';
 
 const ADMIN = 'https://admin.example.com';

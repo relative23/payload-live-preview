@@ -126,7 +126,7 @@ that option; a consumer who builds a detector opts in now by passing it.
 
 Ledger row 25 said nothing at run time, because no option or name in a project
 marks it as being on Payload 2. The message does: `fieldSchemaJSON` is the Payload
-2 signature `src/core/protocol/protocol-profile.ts` already reads. The first such update
+2 signature `src/runtime/core/protocol/protocol-profile.ts` already reads. The first such update
 warns once per runtime and once per hook session.
 
 This warning does not use `warnOnce`. It runs in the browser, where an inline

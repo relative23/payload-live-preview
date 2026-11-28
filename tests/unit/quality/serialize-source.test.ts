@@ -64,7 +64,7 @@ describe('serializing a generated source', () => {
   });
 
   it.each(GENERATED)('%s carries no token a bundler would rewrite', (file) => {
-    const source = readFileSync(resolve(ROOT, 'src/inline', file), 'utf8');
+    const source = readFileSync(resolve(ROOT, 'src/runtime/inline', file), 'utf8');
 
     for (const target of TARGETS) {
       expect(source, `${file} contains ${target}`).not.toContain(target);

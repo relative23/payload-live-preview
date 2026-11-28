@@ -3,7 +3,10 @@
  * Invalid caps must be refused before traversing untrusted fields.
  */
 import { describe, expect, it } from 'vitest';
-import { parseFragmentRequest, parseFragmentRequestResult } from '@/types/fragment-protocol';
+import {
+  parseFragmentRequest,
+  parseFragmentRequestResult,
+} from '@/runtime/types/fragment-protocol';
 
 const body = { fragment: 'hero', route: '/', search: '?preview=true', revision: 1 };
 function fieldsAt(depth: number, shape: 'object' | 'array' | 'mixed'): Record<string, unknown> {

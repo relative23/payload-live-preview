@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { runAnnotate, collectTemplates } from '../../../src/codegen/annotate/cli';
+import { runAnnotate, collectTemplates } from '../../../src/tools/codegen/annotate/cli';
 
 /**
  * `pll-codegen annotate` end to end: a real Payload config, real template files

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
+import type { AuthorizedPreviewContext } from '@/runtime/types/authorized-preview';
 import { authorizePreviewRequest } from '@security/preview-authorization';
 import { authorizeAll } from './authorize-all';
 

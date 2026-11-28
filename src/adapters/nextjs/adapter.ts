@@ -18,7 +18,7 @@ import {
   withCspHeader,
 } from '@adapters/shared/response';
 import type { PreviewAdapterOptions } from '@adapters/shared/options';
-import { warnOnce } from '@/types/dev-warning';
+import { warnOnce } from '@/runtime/types/dev-warning';
 import { REACT_PAGE, scriptElementProps, type LivePreviewScriptProps } from './script-element';
 
 export type { PreviewAdapterOptions } from '@adapters/shared/options';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildPreviewInventory, type PreviewInventory } from '@/codegen/inventory';
-import type { ExtractedSchema } from '@/codegen/parser/types';
+import { buildPreviewInventory, type PreviewInventory } from '@/tools/codegen/inventory';
+import type { ExtractedSchema } from '@/tools/codegen/parser/types';
 
 const schema: ExtractedSchema = {
   diagnostics: [],

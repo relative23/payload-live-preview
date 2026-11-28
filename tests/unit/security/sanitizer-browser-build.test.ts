@@ -16,7 +16,7 @@ import { build } from 'esbuild';
 import { minify } from 'terser';
 const result = await build({
   stdin: {
-    contents: "import { sanitizeHtml } from './src/security/sanitizer';\\nglobalThis.s = sanitizeHtml;\\n",
+    contents: "import { sanitizeHtml } from './src/runtime/security/sanitizer';\\nglobalThis.s = sanitizeHtml;\\n",
     resolveDir: process.cwd(),
     loader: 'ts',
   },

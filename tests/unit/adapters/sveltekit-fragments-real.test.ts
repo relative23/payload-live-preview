@@ -5,7 +5,7 @@ import { compile } from 'svelte/compiler';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createFragmentEndpoint } from '@adapters/sveltekit/fragments';
 import { issuePreviewToken } from '@security/preview-authorization';
-import { resetDevWarnings } from '@/types/dev-warning';
+import { resetDevWarnings } from '@/runtime/types/dev-warning';
 
 /**
  * The SvelteKit fragment endpoint through the real `svelte/server`, with a

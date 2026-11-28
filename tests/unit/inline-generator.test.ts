@@ -7,7 +7,7 @@ import {
   runtimeBuildInfo,
   type InlineScriptConfig,
 } from '@inline/generator';
-import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
+import { INLINE_CONFIG_KEYS } from '@/runtime/types/inline-config';
 import { ROUTE_SOURCE } from '@inline/route.generated';
 
 class InlineIntersectionObserver implements IntersectionObserver {

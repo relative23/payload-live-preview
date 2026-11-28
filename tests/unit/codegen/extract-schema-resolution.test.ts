@@ -1,7 +1,7 @@
 import { Project } from 'ts-morph';
 import { describe, expect, it } from 'vitest';
-import { extractSchema } from '@/codegen/parser/extract-schema';
-import type { ExtractedSchema } from '@/codegen/parser/types';
+import { extractSchema } from '@/tools/codegen/parser/extract-schema';
+import type { ExtractedSchema } from '@/tools/codegen/parser/types';
 
 function extract(files: Record<string, string>): ExtractedSchema {
   const project = new Project({ useInMemoryFileSystem: true, skipAddingFilesFromTsConfig: true });

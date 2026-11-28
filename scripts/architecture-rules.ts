@@ -30,7 +30,12 @@ export interface ArchitectureViolation {
   readonly message: string;
 }
 
-const SERVER_ONLY_DOMAINS = new Set(['codegen', 'payload', 'server', 'migrate', 'doctor']);
+/**
+ * The zones under `src/` whose code runs on a server, in a build or from the
+ * command line, never in a page. The folder is the rule: a module placed in
+ * one of them is server-only without an entry in a list.
+ */
+const SERVER_ONLY_ZONES = new Set(['server', 'tools']);
 
 /**
  * Modules that run at build time inside a framework's own toolchain, though
@@ -215,11 +220,24 @@ const FORBIDDEN_RUNTIME_DOMAINS: Readonly<Record<string, ReadonlySet<string>>> =
   ]),
 };
 
-function domainFor(path: string): string {
+/** The zone of a module: its folder under `src/`, or `<entry>` for a file beside the zones. */
+function zoneFor(path: string): string {
   const parts = path.split('/');
   if (parts[0] !== 'src') return parts[0] ?? path;
-  if (parts.length === 2) return '<entry>';
-  return parts[1] ?? '<entry>';
+  return parts.length === 2 ? '<entry>' : (parts[1] ?? '<entry>');
+}
+
+/**
+ * The domain of a module, which the deny-lists above are written in.
+ * `adapters` is one domain; in the other zones a domain is a folder, and a
+ * file beside the folders belongs to the zone (`src/server/index.ts` is
+ * `server`, `src/server/payload/` is `payload`).
+ */
+function domainFor(path: string): string {
+  const zone = zoneFor(path);
+  const parts = path.split('/');
+  if (parts[0] !== 'src' || zone === 'adapters' || parts.length <= 3) return zone;
+  return parts[2] ?? zone;
 }
 
 function isNodeBuiltin(specifier: string): boolean {
@@ -228,7 +246,7 @@ function isNodeBuiltin(specifier: string): boolean {
 
 /** True for code that only ever runs on a server or in a build, never in a page. */
 function isServerOnly(path: string): boolean {
-  return SERVER_ONLY_DOMAINS.has(domainFor(path)) || SERVER_ONLY_MODULES.has(path);
+  return SERVER_ONLY_ZONES.has(zoneFor(path)) || SERVER_ONLY_MODULES.has(path);
 }
 
 function findRuntimeCycles(

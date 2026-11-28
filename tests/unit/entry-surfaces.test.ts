@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as clientEntry from '../../src/client-entry';
 import * as lexicalEntry from '../../src/lexical-entry';
-import * as fragmentEntry from '../../src/fragment/index';
+import * as fragmentEntry from '../../src/runtime/fragment/index';
 
 /**
  * The focused entries (roadmap 1.4.0) carry the symbols the packed-package

@@ -13,7 +13,7 @@ git clone https://github.com/relative23/payload-live-preview.git
 cd payload-live-preview
 npm install --global "$(node -p "require('./package.json').packageManager")"
 npm ci
-npm run build:runtime   # required before typecheck (generates the src/inline/*.generated.ts files)
+npm run build:runtime   # required before typecheck (generates the src/runtime/inline/*.generated.ts files)
 npm run check           # typecheck, lint, formatting, test/architecture policy, compat and diagnostic tables, Vitest
 ```
 
@@ -46,22 +46,26 @@ table, ports and delivery modes are in [examples/README.md](examples/README.md).
 
 ## Project layout
 
+`src/` has four zones: `runtime/` is what may reach a browser, `adapters/` has
+one folder per framework, and `server/` and `tools/` need Node. The architecture
+gate reads the server boundary off the last two.
+
 | Path                                                                | Purpose                                                                                         |
 | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `src/core`                                                          | Framework-agnostic runtime: message bus, scheduler, DOM patching, keyed morph, strategies seam  |
-| `src/client`                                                        | `LivePreviewClient` — the runtime with its own emitter, plugin manager and renderer registry    |
-| `src/inline`                                                        | `generateInlineScript()` and the generated runtime, loader and fragment files it embeds         |
-| `src/fragment`                                                      | The fragment and route strategies (`payload-live-preview/fragment`, ADR 0011)                   |
+| `src/runtime/core`                                                  | Framework-agnostic runtime: message bus, scheduler, DOM patching, keyed morph, strategies seam  |
+| `src/runtime/client`                                                | `LivePreviewClient` — the runtime with its own emitter, plugin manager and renderer registry    |
+| `src/runtime/inline`                                                | `generateInlineScript()` and the generated runtime, loader and fragment files it embeds         |
+| `src/runtime/fragment`                                              | The fragment and route strategies (`payload-live-preview/fragment`, ADR 0011)                   |
 | `src/adapters/{astro,nextjs,sveltekit,nuxt}`, `src/adapters/shared` | Framework adapters and the request policy they share                                            |
-| `src/security`                                                      | Sanitizer, escaping, URL validation, CSP helpers                                                |
-| `src/lexical`                                                       | Lexical rich-text rendering                                                                     |
-| `src/field-types`                                                   | Built-in field renderers                                                                        |
-| `src/schema`                                                        | Payload field-schema parsing, lookup index and array diff                                       |
-| `src/detection`                                                     | Preview-context, origin and locale detection                                                    |
-| `src/events`, `src/plugins`, `src/dsl`                              | Event emitter; plugin manager and built-in plugins; the binding DSL                             |
-| `src/types`                                                         | Shared wire and context types — a leaf domain that imports nothing at runtime                   |
-| `src/server`, `src/payload`                                         | Privileged server helpers (`./server`); `payload.config.ts` helpers (`./payload`)               |
-| `src/codegen`, `src/migrate`, `src/doctor`                          | Schema-driven code generation, the 1.x → 2.0 codemods, the deployment probe — server-only tools |
+| `src/runtime/security`                                              | Sanitizer, escaping, URL validation, CSP helpers                                                |
+| `src/runtime/lexical`                                               | Lexical rich-text rendering                                                                     |
+| `src/runtime/field-types`                                           | Built-in field renderers                                                                        |
+| `src/runtime/schema`                                                | Payload field-schema parsing, lookup index and array diff                                       |
+| `src/runtime/detection`                                             | Preview-context, origin and locale detection                                                    |
+| `src/runtime/events`, `src/runtime/plugins`, `src/runtime/dsl`      | Event emitter; plugin manager and built-in plugins; the binding DSL                             |
+| `src/runtime/types`                                                 | Shared wire and context types — a leaf domain that imports nothing at runtime                   |
+| `src/server`, `src/server/payload`                                  | Privileged server helpers (`./server`); `payload.config.ts` helpers (`./payload`)               |
+| `src/tools/codegen`, `src/tools/migrate`, `src/tools/doctor`        | Schema-driven code generation, the 1.x → 2.0 codemods, the deployment probe — server-only tools |
 | `src/index.ts`, `src/*-entry.ts`                                    | The package entries; `etc/api/` holds one API report per entry                                  |
 | `scripts/`                                                          | Build, gate and release tooling; each gate's header comment says what it protects               |
 | `quality/`                                                          | The machine-readable baselines the gates compare against                                        |
@@ -78,13 +82,13 @@ matching changeset; it is not a formatter.
 
 ## The single-source runtime
 
-The browser runtime lives in `src/core/session/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into five files under `src/inline/` that adapters inline into pages:
+The browser runtime lives in `src/runtime/core/session/runtime.ts`. `scripts/build-runtime.ts` bundles it and bakes the result into five files under `src/runtime/inline/` that adapters inline into pages:
 
 - `runtime.generated.ts` — the runtime
 - `loader.generated.ts` and `loader-react.generated.ts` — the bootstrap loader, and its variant that waits for React hydration
 - `fragment.generated.ts` and `route.generated.ts` — the fragment and route preludes
 
-If you touch `src/core/session/runtime.ts` or anything it imports, regenerate them:
+If you touch `src/runtime/core/session/runtime.ts` or anything it imports, regenerate them:
 
 ```sh
 npm run build:runtime
@@ -115,7 +119,7 @@ the number it reports.
 | `check-bundle-size.ts` · `npm run test:bundle` (inside `npm run build`)                    | Raw, gzip and Brotli budgets per entry and for the inline script                                                                                                                                                   | `scripts/bundle-budgets.ts`, `ENTRY_BUDGETS` in `scripts/entry-budgets.ts` | Raise a budget in the commit that spends it, with the reason in the ledger comment; a drop above 2 % prints a notice to tighten it                                                                    |
 | `check-tree-shaking.ts` · `npm run test:treeshake` (inside `npm run build`)                | Gzip budgets for one-symbol consumers bundled with Vite through `node_modules`, so `exports` and `sideEffects` decide what ships                                                                                   | `TREE_SHAKING_FIXTURES` in the script                                      | Raise a budget in the commit that spends it, with the reason in the comment above the table; a drop above 2 % prints a notice to tighten it                                                           |
 | `docs-contracts.ts` · `npm run test:docs`                                                  | Entries, diagnostic codes, `lp-` classes and `data-payload-` attributes named in README and `docs/` exist in `src/`                                                                                                | The source itself                                                          | Fix the prose or the source; there is no exception list                                                                                                                                               |
-| `diagnostic-table.ts` · `npm run diagnostics:check`                                        | The code table in `docs/troubleshooting.md` matches `src/core/diagnostic-codes.ts`, and every code has a "what to do" entry                                                                                        | `REMEDIES` in the script                                                   | Add the remedy with the code, then `npx tsx scripts/diagnostic-table.ts --write`                                                                                                                      |
+| `diagnostic-table.ts` · `npm run diagnostics:check`                                        | The code table in `docs/troubleshooting.md` matches `src/runtime/core/diagnostic-codes.ts`, and every code has a "what to do" entry                                                                                | `REMEDIES` in the script                                                   | Add the remedy with the code, then `npx tsx scripts/diagnostic-table.ts --write`                                                                                                                      |
 | `compat-table.ts` · `npm run compat:check`                                                 | The README compatibility table matches the fixture lockfiles and the CI matrices, and every locked package accepts the Node of each job that installs its fixture                                                  | `quality/compat-matrix.json`                                               | Edit the matrix with the lockfile or workflow change, then `npm run compat:write`                                                                                                                     |
 | `release-gate.ts` · Release workflow                                                       | Only a completed, successful CI push run on `main`, `release/1.x` or `release/2.x` of this repository is published; only `main` gets a Version PR                                                                  | None; the verdict is computed from Git, npm and GitHub state               | `workflow_dispatch` with the CI `run_id` re-enters a certified run; a tag on another commit is an error, not repaired                                                                                 |
 | `api-contracts.ts` · `npm run test:package`                                                | One API Extractor report per entry and the exact `ae-forgotten-export` count                                                                                                                                       | `etc/api/*.api.md`, `FORGOTTEN_EXPORT_BASELINE` in the script              | `npm run api:update`, review the diff, change the constant with a comment on what moved; include a changeset                                                                                          |
@@ -246,7 +250,7 @@ pipeline as a whole is ADR [0013](docs/architecture/0013-release-pipeline.md).
 
 - Keep PRs focused; one logical change per PR.
 - Behavior changes require tests (unit tests at minimum; e2e if the change affects iframe/postMessage behavior).
-- Security-sensitive changes (anything under `src/security`, origin detection, or message validation) must include tests in `tests/unit/security`.
+- Security-sensitive changes (anything under `src/runtime/security`, origin detection, or message validation) must include tests in `tests/unit/security`.
 - Update docs under `docs/` and the README when public API or behavior changes.
 - A new public export or option needs an ADR under `docs/architecture/` (or a dated addendum to the record it extends) and a stability class in the package-entries table of `docs/options.md`; an experimental one carries `@beta` on its declaration, which the API reports show. Removals and default changes are 3.0 work and go into the ADR 0007 ledger.
 - Include a changeset when behavior changes (see above).

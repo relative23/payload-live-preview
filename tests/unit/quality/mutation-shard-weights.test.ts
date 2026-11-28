@@ -45,7 +45,9 @@ describe('mutation shard weight identity', () => {
           },
         },
         files: {
-          'src/detection/origin.ts': { mutants: [{ coveredBy: ['normalises', 'rejects'] }] },
+          'src/runtime/detection/origin.ts': {
+            mutants: [{ coveredBy: ['normalises', 'rejects'] }],
+          },
         },
       };
       const timings = {
@@ -61,7 +63,7 @@ describe('mutation shard weight identity', () => {
         ],
       };
       expect(shardWeightsFrom(input, testDurationsFrom(timings, ROOT)).weights).toEqual({
-        'src/detection/origin.ts': 10,
+        'src/runtime/detection/origin.ts': 10,
       });
     });
 

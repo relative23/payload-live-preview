@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
-import { livePreviewCodegen, type AstroCodegenOptions } from '@/codegen/astro-plugin';
+import { livePreviewCodegen, type AstroCodegenOptions } from '@/tools/codegen/astro-plugin';
 
 type Integration = ReturnType<typeof livePreviewCodegen>;
 type SetupParams = Parameters<NonNullable<Integration['hooks']['astro:config:setup']>>[0];

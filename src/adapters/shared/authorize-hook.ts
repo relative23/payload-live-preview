@@ -11,7 +11,7 @@ import {
 } from '@security/preview-verdict';
 // From the leaf `types` domain on purpose: the security module would pull the
 // HMAC and session code into every adapter bundle for a ten-line brand check.
-import { isAuthorizedPreviewContext } from '@/types/authorized-preview';
+import { isAuthorizedPreviewContext } from '@/runtime/types/authorized-preview';
 import type { PreviewAuthorizationHookResult } from './options';
 
 /** A bound hook: the adapter option with the request already applied. */

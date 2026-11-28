@@ -43,9 +43,9 @@ describe('the drift issue', () => {
     // hand-mirrored format lives.
     const body = issueBody(REPORT);
 
-    expect(body).toContain('src/core/protocol/message-bus.ts');
-    expect(body).toContain('src/core/merge/data-merger.ts');
-    expect(body).toContain('src/types/payload-protocol.ts');
+    expect(body).toContain('src/runtime/core/protocol/message-bus.ts');
+    expect(body).toContain('src/runtime/core/merge/data-merger.ts');
+    expect(body).toContain('src/runtime/types/payload-protocol.ts');
   });
 
   it('keeps a pipe in an assertion from breaking the table', () => {

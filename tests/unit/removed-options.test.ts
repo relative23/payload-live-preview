@@ -3,7 +3,7 @@ import { createPreviewPolicy } from '@adapters/shared/policy';
 import { resolvePolicyOptions, type PreviewPolicyOptions } from '@adapters/shared/policy-options';
 import { refuseRemovedClientOptions, type LivePreviewClientConfig } from '@client/config';
 import { generateInlineScript, generateLoaderScript } from '@inline/generator';
-import type { InlineScriptConfig } from '@/types/inline-config';
+import type { InlineScriptConfig } from '@/runtime/types/inline-config';
 
 /**
  * An option 3.0 removed has no place in the types, but a JavaScript config can still pass it.

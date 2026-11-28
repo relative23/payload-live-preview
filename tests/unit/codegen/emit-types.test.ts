@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Project } from 'ts-morph';
-import { emitTypes } from '@/codegen/emit/emit-types';
-import { extractSchema } from '@/codegen/parser/extract-schema';
+import { emitTypes } from '@/tools/codegen/emit/emit-types';
+import { extractSchema } from '@/tools/codegen/parser/extract-schema';
 
 function generate(source: string): string {
   const project = new Project({

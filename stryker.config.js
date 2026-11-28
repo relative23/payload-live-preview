@@ -84,15 +84,15 @@ function shardOf(files, shard) {
 const shard = parseShard(process.env['STRYKER_SHARD']);
 
 const prMutate = [
-  'src/security/csp.ts',
-  'src/security/url-validator.ts',
-  'src/core/update/field-value.ts',
+  'src/runtime/security/csp.ts',
+  'src/runtime/security/url-validator.ts',
+  'src/runtime/core/update/field-value.ts',
 ];
 
 const coveragePolicy = JSON.parse(readFileSync(join(root, 'quality/coverage-policy.json'), 'utf8'));
 const criticalFiles = Object.keys(coveragePolicy.criticalFiles ?? {});
 const nightlyMutate = [
-  ...new Set([...criticalFiles, ...prMutate, 'src/core/bindings/a11y.ts']),
+  ...new Set([...criticalFiles, ...prMutate, 'src/runtime/core/bindings/a11y.ts']),
 ].sort();
 /**
  * The trusted core (`quality/trusted-core.json`): the nine modules a reader

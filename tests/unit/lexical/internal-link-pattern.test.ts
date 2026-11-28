@@ -10,8 +10,8 @@ import { lexicalToHtml } from '@lexical/render';
 import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { EventEmitter } from '@events/emitter';
 import { bootstrapInlineRuntime } from '@core/session/runtime';
-import { INLINE_CONFIG_KEYS } from '@/types/inline-config';
-import { LivePreviewClient } from '@/client/index';
+import { INLINE_CONFIG_KEYS } from '@/runtime/types/inline-config';
+import { LivePreviewClient } from '@/runtime/client/index';
 import { IO, TRUSTED, fireMessage } from '../core/lifecycle-startup-harness';
 
 function linkTo(doc: unknown): Parameters<typeof lexicalToHtml>[0] {

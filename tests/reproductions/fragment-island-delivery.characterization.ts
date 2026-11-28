@@ -8,7 +8,7 @@ import { EventEmitter } from '@events/emitter';
 import { LivePreviewRuntime } from '@core/session/lifecycle';
 import { ISLAND_EVENT, type IslandUpdateDetail } from '@core/bindings/islands';
 import { createFragmentStrategy } from '@fragment/index';
-import type { FragmentRequestBody } from '@/types/fragment-protocol';
+import type { FragmentRequestBody } from '@/runtime/types/fragment-protocol';
 
 const origin = 'https://admin.example.com';
 let runtime: LivePreviewRuntime | undefined;

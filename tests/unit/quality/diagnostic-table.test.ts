@@ -109,7 +109,7 @@ describe('what the check refuses', () => {
     });
     expect(problems).toEqual([
       'LP0605 (StartupFailed) has no "what to do" entry; add one to REMEDIES in scripts/diagnostic-table.ts',
-      'REMEDIES names LP0999, which src/core/diagnostic-codes.ts does not define; remove it',
+      'REMEDIES names LP0999, which src/runtime/core/diagnostic-codes.ts does not define; remove it',
     ]);
   });
 

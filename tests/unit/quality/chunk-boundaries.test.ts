@@ -14,13 +14,13 @@ describe('the modules that define what an entry exports', () => {
   it('follows a barrel to the module behind each name it takes', () => {
     expect(browser).toEqual(
       expect.arrayContaining([
-        'src/client/live-preview-client.ts',
-        'src/plugins/manager.ts',
-        'src/plugins/built-in/highlight.ts',
-        'src/plugins/built-in/unbound-fields-overlay.ts',
-        'src/core/bindings/morph.ts',
+        'src/runtime/client/live-preview-client.ts',
+        'src/runtime/plugins/manager.ts',
+        'src/runtime/plugins/built-in/highlight.ts',
+        'src/runtime/plugins/built-in/unbound-fields-overlay.ts',
+        'src/runtime/core/bindings/morph.ts',
         'src/adapters/shared/document-session.ts',
-        'src/security/escape.ts',
+        'src/runtime/security/escape.ts',
       ]),
     );
   });
@@ -28,9 +28,9 @@ describe('the modules that define what an entry exports', () => {
   it('names no barrel, no module of types alone and no module whose names the entry leaves', () => {
     // The plugin barrel, the types `export type` takes, and what the detection barrel
     // exports beside `OriginDetector`.
-    expect(browser).not.toContain('src/plugins/index.ts');
-    expect(browser).not.toContain('src/core/types.ts');
-    expect(browser).not.toContain('src/detection/environment.ts');
+    expect(browser).not.toContain('src/runtime/plugins/index.ts');
+    expect(browser).not.toContain('src/runtime/core/types.ts');
+    expect(browser).not.toContain('src/runtime/detection/environment.ts');
   });
 
   it('reads the root as the browser entry and what a server needs beside it', () => {
@@ -40,11 +40,11 @@ describe('the modules that define what an entry exports', () => {
     expect(root.filter((module) => !browser.includes(module))).toEqual([
       'src/adapters/shared/locals.ts',
       'src/adapters/shared/preview-request.ts',
-      'src/dsl/bind.ts',
-      'src/dsl/preview-bindings.ts',
-      'src/inline/generator.ts',
-      'src/security/csp.ts',
-      'src/security/preview-authorization.ts',
+      'src/runtime/dsl/bind.ts',
+      'src/runtime/dsl/preview-bindings.ts',
+      'src/runtime/inline/generator.ts',
+      'src/runtime/security/csp.ts',
+      'src/runtime/security/preview-authorization.ts',
     ]);
   });
 });
@@ -53,7 +53,7 @@ describe('the boundary entries of the build', () => {
   it('are named by their module under one folder, which no real entry uses', () => {
     const boundaries = chunkBoundaries();
 
-    expect(boundaries['boundary/plugins/manager']).toBe('src/plugins/manager.ts');
+    expect(boundaries['boundary/runtime/plugins/manager']).toBe('src/runtime/plugins/manager.ts');
     expect(Object.keys(boundaries).every((name) => name.startsWith('boundary/'))).toBe(true);
     expect(
       Object.keys({ ...LIBRARY_ENTRIES, ...CLI_ENTRIES, ...DIRECTIVE_ENTRIES }).filter((name) =>

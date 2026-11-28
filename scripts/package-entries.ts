@@ -12,12 +12,12 @@ export const LIBRARY_ENTRIES = {
   index: 'src/index.ts',
   client: 'src/client-entry.ts',
   server: 'src/server/index.ts',
-  plugin: 'src/payload/plugin.ts',
+  plugin: 'src/server/payload/plugin.ts',
   lexical: 'src/lexical-entry.ts',
-  fragment: 'src/fragment/index.ts',
-  codegen: 'src/codegen/index.ts',
-  'codegen-astro': 'src/codegen/astro-plugin.ts',
-  annotate: 'src/codegen/annotate/entry.ts',
+  fragment: 'src/runtime/fragment/index.ts',
+  codegen: 'src/tools/codegen/index.ts',
+  'codegen-astro': 'src/tools/codegen/astro-plugin.ts',
+  annotate: 'src/tools/codegen/annotate/entry.ts',
   'adapters/astro/index': 'src/adapters/astro/index.ts',
   'adapters/astro/middleware-entry': 'src/adapters/astro/middleware-entry.ts',
   'adapters/nextjs/index': 'src/adapters/nextjs/index.ts',
@@ -33,8 +33,8 @@ export const LIBRARY_ENTRIES = {
 
 /** The two binaries. No exports subpath names them. */
 export const CLI_ENTRIES = {
-  'codegen-cli': 'src/codegen/cli.ts',
-  'doctor-cli': 'src/doctor/cli.ts',
+  'codegen-cli': 'src/tools/codegen/cli.ts',
+  'doctor-cli': 'src/tools/doctor/cli.ts',
 } as const;
 
 /**

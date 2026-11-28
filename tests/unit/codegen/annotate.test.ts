@@ -6,9 +6,9 @@ import {
   annotatablePaths,
   annotateTemplates,
   formatAnnotateReport,
-} from '../../../src/codegen/annotate/index';
-import { scanTemplate } from '../../../src/codegen/annotate/scan';
-import type { PreviewInventory } from '../../../src/codegen/inventory';
+} from '../../../src/tools/codegen/annotate/index';
+import { scanTemplate } from '../../../src/tools/codegen/annotate/scan';
+import type { PreviewInventory } from '../../../src/tools/codegen/inventory';
 
 /**
  * The annotator's contract is what it *refuses*. Adding `data-payload-field`

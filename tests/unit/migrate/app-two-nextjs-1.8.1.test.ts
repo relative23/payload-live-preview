@@ -20,7 +20,7 @@ import { join, resolve } from 'node:path';
 import type { Node as MorphNode } from 'ts-morph';
 import { describe, expect, it } from 'vitest';
 import * as rootEntry from '@/index';
-import { generateInlineScript, type InlineScriptConfig } from '@/inline/generator';
+import { generateInlineScript, type InlineScriptConfig } from '@/runtime/inline/generator';
 import { scriptElementProps } from '@adapters/nextjs/script-element';
 import { loadTsMorph, packageBindings, parseScript } from '@migrate/ast';
 import { runMigrate } from '@migrate/runner';

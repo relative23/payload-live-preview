@@ -7,7 +7,7 @@
 import {
   isAuthorizedPreviewContext,
   type AuthorizedPreviewContext,
-} from '@/types/authorized-preview';
+} from '@/runtime/types/authorized-preview';
 import {
   isPayloadScopeCurrent,
   isPreviewDocumentID,

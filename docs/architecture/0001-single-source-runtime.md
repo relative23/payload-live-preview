@@ -13,7 +13,7 @@ They diverged silently: `isSafeUrl('')` returned `true` in the class but `false`
 
 ## Decision
 
-Both code paths are now produced from `src/core/session/runtime.ts`:
+Both code paths are now produced from `src/runtime/core/session/runtime.ts`:
 
 - `scripts/build-runtime.ts` bundles and lowers that file to ES2020 with **esbuild**, then
   applies a conservative three-pass **Terser** compression to the IIFE. Keeping syntax
@@ -23,7 +23,7 @@ Both code paths are now produced from `src/core/session/runtime.ts`:
   derives its flag from a typed runtime expression. An artifact-level test executes the
   generated IIFE to verify that this public message carries the boolean `true` required
   by `PayloadLivePreviewMessage`.
-- The IIFE source is written to `src/inline/runtime.generated.ts` as a `string` literal.
+- The IIFE source is written to `src/runtime/inline/runtime.generated.ts` as a `string` literal.
 - `generateInlineScript(config)` wraps the literal with a compact
   `__LIVE_PREVIEW_CONFIG__` tuple prologue. The 1.0.x identifier remains stable:
   although it is not a public data API and carries no secret, existing

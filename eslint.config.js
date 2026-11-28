@@ -16,9 +16,9 @@ export default tseslint.config(
       'playwright-report/**',
       'test-results/**',
       '*.config.js',
-      'src/inline/runtime.generated.ts',
-      'src/inline/loader.generated.ts',
-      'src/inline/fragment.generated.ts',
+      'src/runtime/inline/runtime.generated.ts',
+      'src/runtime/inline/loader.generated.ts',
+      'src/runtime/inline/fragment.generated.ts',
       // Local-only working files (`.git/info/exclude`): they are not part of
       // the project's tsconfig, so the type-aware rules cannot see them and
       // would fail the whole run on a file that never ships.
@@ -87,9 +87,9 @@ export default tseslint.config(
   {
     files: [
       'scripts/**/*.ts',
-      'src/codegen/**/*.ts',
-      'src/doctor/**/*.ts',
-      'src/migrate/**/*.ts',
+      'src/tools/codegen/**/*.ts',
+      'src/tools/doctor/**/*.ts',
+      'src/tools/migrate/**/*.ts',
       'tests/unit/migrate/**/*.ts',
     ],
     // 2026-11-25: off where the code works on ts-morph nodes. typescript-eslint 8.74 added the

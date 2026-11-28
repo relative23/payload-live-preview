@@ -14,7 +14,7 @@
  */
 
 import { RUNTIME_CONTENT_HASH, RUNTIME_INTEGRITY, RUNTIME_SOURCE } from '@inline/runtime.generated';
-import * as V2_ADAPTER_DEFAULTS from '@/types/adapter-defaults';
+import * as V2_ADAPTER_DEFAULTS from '@/runtime/types/adapter-defaults';
 
 export interface RuntimeAssetOptions {
   /**

@@ -94,10 +94,10 @@ case. See [ADR 0011](0011-fragment-protocol-and-abuse-model.md) and
 
 ### The runtime — one source, several deliveries
 
-One source (`src/core/session/runtime.ts`) becomes the runtime at build time, twice:
+One source (`src/runtime/core/session/runtime.ts`) becomes the runtime at build time, twice:
 the full artifact and a lean one with optional features left out. The
-bootstrap (`src/core/session/loader.ts`) and the fragment and route preludes
-(`src/fragment/inline.ts`, `src/fragment/route-inline.ts`) are entries of their
+bootstrap (`src/runtime/core/session/loader.ts`) and the fragment and route preludes
+(`src/runtime/fragment/inline.ts`, `src/runtime/fragment/route-inline.ts`) are entries of their
 own, built beside it by `scripts/build-runtime.ts`. What differs is delivery:
 inlined into the response, or fetched as a content-hashed asset the browser may
 keep for a year.
@@ -192,28 +192,34 @@ went wrong without it.
 
 ## Where the code is
 
-| Directory         | What lives there                                                                   |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| `src/core`        | the runtime: bindings, updates, morph, strategies, the lifecycle                   |
-| `src/adapters`    | one per framework, plus `shared/` — the decision and the response glue             |
-| `src/dsl`         | `bind()`, `createPreviewBindings()`: attributes as values, typed by path           |
-| `src/security`    | CSP, sanitizing, Trusted Types, tokens, the authorization strategies               |
-| `src/types`       | the leaf: protocol shapes, defaults profiles, the authorized context and its brand |
-| `src/inline`      | generated: the runtime and preludes as strings the adapters embed                  |
-| `src/codegen`     | types and the inventory from a Payload config, and the annotator                   |
-| `src/fragment`    | the browser half of the fragment and route strategies                              |
-| `src/plugins`     | the plugin manager and the built-in plugins                                        |
-| `src/client`      | `LivePreviewClient`, and the admin-side focus reporter                             |
-| `src/server`      | `definePreview()` and the privileged `./server` barrel                             |
-| `src/field-types` | the built-in field renderers and their registry                                    |
-| `src/lexical`     | the Lexical renderer, with the node and block registries                           |
-| `src/schema`      | the array and blocks diff                                                          |
-| `src/detection`   | frame and popup detection, trusted admin origins, the initial locale               |
-| `src/events`      | the per-instance event emitter and the event map                                   |
-| `src/payload`     | `buildLivePreviewUrl()` for `payload.config.ts`                                    |
-| `src/doctor`      | `pll doctor`: probe a deployment and analyze what it serves                        |
-| `src/migrate`     | `pll migrate`: the 1.x → 2.0 codemods and their runner                             |
+`src/` has four zones. `runtime/` is what may reach a browser, `adapters/` has
+one folder per framework, `server/` needs Node and runs on the site's or
+Payload's server, and `tools/` runs in a build or from the command line. The
+entries (`index.ts`, `client-entry.ts`, `lexical-entry.ts`) lie beside them.
+
+| Directory                 | What lives there                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| `src/runtime/core`        | the runtime: bindings, updates, morph, strategies, the lifecycle                   |
+| `src/runtime/dsl`         | `bind()`, `createPreviewBindings()`: attributes as values, typed by path           |
+| `src/runtime/security`    | CSP, sanitizing, Trusted Types, tokens, the authorization strategies               |
+| `src/runtime/types`       | the leaf: protocol shapes, defaults profiles, the authorized context and its brand |
+| `src/runtime/inline`      | generated: the runtime and preludes as strings the adapters embed                  |
+| `src/runtime/fragment`    | the browser half of the fragment and route strategies                              |
+| `src/runtime/plugins`     | the plugin manager and the built-in plugins                                        |
+| `src/runtime/client`      | `LivePreviewClient`, and the admin-side focus reporter                             |
+| `src/runtime/field-types` | the built-in field renderers and their registry                                    |
+| `src/runtime/lexical`     | the Lexical renderer, with the node and block registries                           |
+| `src/runtime/schema`      | the array and blocks diff                                                          |
+| `src/runtime/detection`   | frame and popup detection, trusted admin origins, the initial locale               |
+| `src/runtime/events`      | the per-instance event emitter and the event map                                   |
+| `src/adapters`            | one per framework, plus `shared/` — the decision and the response glue             |
+| `src/server`              | `definePreview()` and the privileged `./server` barrel                             |
+| `src/server/payload`      | `buildLivePreviewUrl()` for `payload.config.ts`                                    |
+| `src/tools/codegen`       | types and the inventory from a Payload config, and the annotator                   |
+| `src/tools/doctor`        | `pll doctor`: probe a deployment and analyze what it serves                        |
+| `src/tools/migrate`       | `pll migrate`: the 1.x → 2.0 codemods and their runner                             |
 
 The layering is a gate, not a convention: `scripts/architecture-rules.ts`
 refuses an upward import, a runtime cycle, a Node builtin in browser-reachable
-code, and a browser module importing anything server-only.
+code, and a browser module importing anything server-only, which is everything
+under `src/server` and `src/tools`.

@@ -132,7 +132,7 @@ none; `true` would promise a generality the runtime does not have.
 The runtime arms the instrumentation hook before React can evaluate: in inline
 delivery it is itself the first script in `<head>`; in asset delivery the
 runtime arrives as a fetched asset that may land after `react-dom`, so the
-generator emits a second build of the bootstrap (`src/core/session/loader.ts` with
+generator emits a second build of the bootstrap (`src/runtime/core/session/loader.ts` with
 `__REACT_BOOTSTRAP__` defined) that arms before it fetches — one script in place of the plain one, not a
 prelude ahead of it, so the bootstrap stays the fraction of the runtime the
 delivery budgets hold it to.
@@ -322,7 +322,7 @@ plugin, `renderLivePreviewScript()`, and so the module — under §1's rule: a
 second framework is a second value in the same slot (23), never a boolean.
 
 Under it the runtime waits, as in §3, until **Vue has mounted an app around a
-binding**: `src/core/hydration/hydration-vue.ts` puts an accessor for `__vue_app__` on
+binding**: `src/runtime/core/hydration/hydration-vue.ts` puts an accessor for `__vue_app__` on
 `Element.prototype` before Vue can mount, files the app on the element as the
 assignment would have, and settles on the first container that holds a
 binding — a widget mounted beside the page is not ours (F3, in its Vue form).

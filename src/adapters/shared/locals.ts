@@ -2,7 +2,7 @@
 
 import { createPreviewBindings, type PreviewBindings } from '@dsl/preview-bindings';
 import type { PreviewAuthorizationOutcome } from '@security/preview-verdict';
-import type { AuthorizedPreviewContext } from '@/types/authorized-preview';
+import type { AuthorizedPreviewContext } from '@/runtime/types/authorized-preview';
 import type { PreviewDecision } from './policy';
 
 /**

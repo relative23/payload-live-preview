@@ -4,7 +4,7 @@
  * switch it off; 3.0 has no other mode (ADR 0007, row 36).
  */
 
-import { isDevelopmentProcess, warnOnce } from '@/types/dev-warning';
+import { isDevelopmentProcess, warnOnce } from '@/runtime/types/dev-warning';
 import { resolvePolicyOptions, type PreviewPolicyOptions } from './policy-options';
 
 /** The configuration errors raised at startup rather than on a public response. */

@@ -11,7 +11,7 @@ ADR 0007 ledger.
 ## Context
 
 The diff that decides what a revision changed names top-level fields
-(`src/core/update/field-changes.ts`). A binding usually names a path inside one:
+(`src/runtime/core/update/field-changes.ts`). A binding usually names a path inside one:
 `hero.eyebrow` for the group `hero`. So that groups do not all look unbound,
 `hasBindingBelow()` makes `hero` addressable as soon as any path below it is
 bound. The rule is shared by the unbound-change escalation

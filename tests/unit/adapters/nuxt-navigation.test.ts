@@ -12,7 +12,7 @@ import livePreviewModule, {
   type NuxtTemplateLike,
 } from '@adapters/nuxt/module';
 import { PLUGIN_FILENAME } from '@adapters/nuxt/module-sources';
-import { resetDevWarnings } from '@/types/dev-warning';
+import { resetDevWarnings } from '@/runtime/types/dev-warning';
 
 /**
  * Since 2.4 the Nuxt module registers the client plugin docs/nuxt.md had a

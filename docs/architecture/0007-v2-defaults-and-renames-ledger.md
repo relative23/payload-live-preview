@@ -187,7 +187,7 @@ given one. `0` keeps the wait of 2.x. The two notices that announced the
 default are gone, and with them the browser's notice registry, which had no
 other user. `pll doctor --v3` still lists the calls that set no deadline.
 
-2026-11-27 (3.0): the defaults are written once. `src/types/defaults-profile.ts`
+2026-11-27 (3.0): the defaults are written once. `src/runtime/types/defaults-profile.ts`
 held the six readiness rows; every other default stood as a literal where it was
 applied, and some stood twice or three times: the visibility threshold in the
 scheduler and in `pll doctor`, the intent parameters in the request predicate,

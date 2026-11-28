@@ -40,10 +40,17 @@ reach these, and the check is mechanical: `SERVER_ONLY_DOMAINS` in
 2026-09-14 (2.0.1): five entries came after this list. `./lean` (`src/lean.ts`)
 is the lean inline runtime as a value and imports only the generated artifact
 and a type. `./react` and `./vue` live under `src/adapters/` and follow the
-adapter rules. `./annotate` (`src/codegen/annotate/`) is server-only through its
+adapter rules. `./annotate` (`src/tools/codegen/annotate/`) is server-only through its
 domain, and `./nuxt-module` (`src/adapters/nuxt/module.ts`) through
 `SERVER_ONLY_MODULES` in the same script, because Nuxt runs it in its build
 process.
+
+2026-11-28 (3.0): the three groups are folders. `src/runtime` is the first,
+`src/adapters` the second, and `src/server` with `src/tools` the third. The
+script reads the third group off a module's path (`SERVER_ONLY_ZONES`, in place
+of the list of domains), so a module placed in one of the two folders is
+server-only without an entry anywhere. `SERVER_ONLY_MODULES` stays for the Nuxt
+module, an adapter file that runs in a build.
 
 Type-only edges are exempt, because they are erased and cannot create runtime
 coupling. That exemption is the reason the rule can stay strict without pushing
