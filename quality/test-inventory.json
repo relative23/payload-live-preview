@@ -20,9 +20,9 @@
     "vitest.stryker.config.ts"
   ],
   "totals": {
-    "files": 540,
-    "suites": 1042,
-    "tests": 4700,
+    "files": 541,
+    "suites": 1043,
+    "tests": 4703,
     "benchmarks": 12
   },
   "groups": {
@@ -45,9 +45,9 @@
       "benchmarks": 0
     },
     "integration": {
-      "files": 24,
-      "suites": 28,
-      "tests": 108,
+      "files": 25,
+      "suites": 29,
+      "tests": 111,
       "benchmarks": 0
     },
     "real-payload": {
@@ -635,6 +635,13 @@
       "group": "integration",
       "suites": 1,
       "tests": 1,
+      "benchmarks": 0
+    },
+    {
+      "path": "tests/integration/replay-store-sqlite.test.ts",
+      "group": "integration",
+      "suites": 1,
+      "tests": 3,
       "benchmarks": 0
     },
     {
