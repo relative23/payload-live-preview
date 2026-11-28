@@ -65,24 +65,22 @@ Payload's `autoLogin` authenticates requests on the server and sets no
 `'missing-credential'` and serves the public page. Sign in through the login
 form, which is what the real-admin suites do.
 
-The strategy first sends the cookie alone. Payload 3.79.1 and newer refuse that
-cookie when the `csrf` list is not empty and the request has neither an
-`Origin` nor safe browser fetch metadata. If `/me` answers with `user: null`,
-the strategy retries once with the origin of `serverURL`, within the same
-timeout. Payload adds its configured `serverURL` to the CSRF list. Once a user
-was found that way, the strategy sends the origin from the first request to
-that `/me`, so a token it refuses costs one request, not two; once a minute it
-tries the cookie alone again and returns to it when that finds the user. Set
-`origin` to a listed origin to send it from the first request and disable the
-retry.
-`payloadHeaders` retains the headers of the accepted request for draft reads.
-Payload 3 up to 3.79.0 accepts the cookie alone even with a CSRF list and
-refuses an origin the list does not hold; sending the cookie alone first keeps
-its sessions when the list holds only the frontend's origin.
+The strategy sends the cookie with an `Origin`: the origin of `serverURL`, or
+the one named as `origin`. Payload refuses a server's cookie when its `csrf`
+list is not empty and the request has neither a listed `Origin` nor safe
+browser fetch metadata, and it adds its own configured `serverURL` to that
+list. Where the list does not hold the origin of the `serverURL` given here,
+for example when the site reaches Payload on an internal address, set `origin`
+to an origin the list holds. The check is one request: a `/me` answer with
+`user: null` is `'invalid'` and is not asked again.
+`payloadHeaders` retains the headers of that request for draft reads.
+2.x asked with the cookie alone first, which Payload 3.79.0 and older accept
+whatever the list holds; 3.0 supports Payload from 3.90.0 on
+([ADR 0007 ledger, entries 48 and 49](architecture/0007-v2-defaults-and-renames-ledger.md#ledger)).
 The real-admin suites end a session by signing out through Payload's logout
 route; a session that ends because its token expired is not exercised.
 
-Options: `serverURL` (required), `origin` (optional explicit origin),
+Options: `serverURL` (required), `origin` (the origin of `serverURL`),
 `usersSlug` (`users`), `cookieName` (`payload-token`), `timeoutMs` (`3000`,
 floor `250`), `maxCookieLength` (`4096`). A missing, repeated or malformed cookie
 is `'missing-credential'`; a `401`, or a `/me` answer with no user or with one

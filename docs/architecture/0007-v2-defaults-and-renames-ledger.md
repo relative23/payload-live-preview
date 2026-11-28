@@ -98,6 +98,7 @@ codemod action. Entries are appended, never edited, so the ledger is a history.
 | 46  | 3.0 (decided 2026-11-27)           | move    | the entries `/core`, `/plugins` and `/structural` beside `/client`: four entries for what runs in a browser, each with part of it, and the root with another part                                                                                                            | `/client` exports everything that runs in a browser: the client, the document session, the plugin manager and plugins, the protocol and origin helpers, the sanitizer, the keyed morph. The root exports every name of `/client`, the script generator and the server helpers. The three entries are gone                 | —                                                         | `move-core-entry`, `move-plugins-entry` and `move-structural-entry` rewrite the specifier to `/client`; `/core`'s binding, CSP and authorization names go to the root, and an import that mixes both kinds is reported and left                                                                                                               |
 | 47  | 3.0 (decided 2026-11-27)           | default | on a page a framework hydrates, `routeStrategy: true`, `'after-save'` and the route a fragment endpoint brings fetch the route and morph it in where the page lent no route refresh                                                                                          | every route strategy on such a page (`hydration: 'react'`, `'vue'`, `'sveltekit'`) refreshes through the lent refresh alone, as `'router'` does; a page that lent none is left as it is and LP0808 names what to render. `true` and `'after-save'` still decide when. Astro, plain HTML and `'manual'` keep the morph     | `pll doctor --v3` names the call                          | none: render `LivePreviewNavigation` (Next.js) or call `livePreviewNavigation()` (SvelteKit); the Nuxt module lends its refresh itself. A value only the project has decides whether it wants the component                                                                                                                                   |
 | 48  | 3.0 (decided 2026-11-28)           | range   | `payload` peer `^3.0.0 \|\| ^4.0.0-0` (row 30)                                                                                                                                                                                                                               | `>=3.90.0 <4.0.0 \|\| ^4.0.0-0`. Every Payload 3 release before 3.90.0 carries critical advisories that are patched only there (GHSA-66wr-7vmr-p5jq, GHSA-f7hx-52q9-hcrf), which is why the range begins there, as row 35 does for Astro. The package gate checks the plugin's types against 3.90.0                       | —                                                         | none: update Payload inside its major to 3.90.0 or newer; a project that stays on an older Payload 3 stays on 2.x                                                                                                                                                                                                                             |
+| 49  | 3.0 (decided 2026-11-28)           | default | the `payload-session` strategy asks `/me` with the cookie alone, adds the origin of `serverURL` in one retry when `/me` reports no user, and remembers per endpoint that the origin was needed                                                                               | the cookie goes with an `Origin` from the first request: `origin` where the strategy names one, the origin of `serverURL` otherwise. One request per check and nothing remembered. Only Payload 3.79.0 and older take the cookie alone with a CSRF list, and row 48 ends their support                                    | —                                                         | none: set `origin` to an origin Payload's `csrf` list holds where that list does not hold the origin of `serverURL`                                                                                                                                                                                                                           |
 
 2026-09-16 (2.0.1): row 5's "outside local dev" names an exception the runtime
 does not have. `disableReferrerDetection` is `true` everywhere under `'v2'`;
@@ -121,6 +122,20 @@ of 3.x, and Payload 4.0.0-beta.12 asks for `^24.22.3 || >=26.13.1` itself.
 official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
+
+2026-11-28 (3.0): row 49 is new and carried out. The request with the cookie
+alone was kept for Payload 2 and named for it. Read off the released
+`dist/auth/extractJWT.js`, Payload 3.0.0 to 3.79.0 take such a cookie whatever
+the CSRF list holds, and 3.79.1 and newer take it from a server only without
+a list
+([ADR 0006](0006-authorized-preview-context.md), addenda of 2026-11-28). With
+row 48 the first group is not supported, so for every supported Payload the
+first request was either accepted with an origin as well, or refused and
+repeated with one. The strategy now sends the origin at once. What went with
+the retry is gone too: the per-endpoint memory that the origin was needed, the
+request with the cookie alone once a minute, and 42 of the module's 247 lines.
+A site whose CMS lists only the frontend's origin sets `origin`, as it had to
+on Payload 3.79.1 and newer before.
 
 2026-11-28 (3.0): row 48 is new and carried out. Row 30 took the `payload`
 peer to `^3.0.0 || ^4.0.0-0` when Payload 2 left. Read against GitHub's

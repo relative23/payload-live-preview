@@ -87,10 +87,10 @@ describe('payload-session strategy', () => {
     expect(result.context.strategy).toBe('payload-session');
     expect(result.context.subject).toBe('7');
     expect(result.context.expiresAt).toBe(NOW + 600_000);
-    expect(result.context.payloadHeaders).toEqual({ cookie: 'payload-token=tok.en' });
+    expect(result.context.payloadHeaders).toEqual({ cookie: 'payload-token=tok.en', origin: CMS });
     expect(seen[0]?.input).toBe(`${CMS}/api/users/me?depth=0`);
     expect(seen[0]?.headers['cookie']).toBe('payload-token=tok.en');
-    expect(seen[0]?.headers['origin']).toBeUndefined();
+    expect(seen[0]?.headers['origin']).toBe(CMS);
     expect(Object.isFrozen(result.context)).toBe(true);
   });
 

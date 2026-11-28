@@ -1,10 +1,10 @@
 /**
- * Payload 3.89 refuses a server-side cookie without an `Origin` when its CSRF
- * list is set; Payload 2.32.3 can accept that request and refuse a new origin.
- * Preserve a working cookie-only session and test the bounded origin retry,
- * explicit configuration and headers passed to an actual draft read.
+ * Payload refuses a server-side cookie without an `Origin` when its CSRF list is
+ * set, so the strategy sends one with the cookie: the origin of `serverURL`, or
+ * the one the project names. One request per check, and the same headers on an
+ * actual draft read.
  */
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   authorizePreviewRequest,
   PreviewConfigurationError,
@@ -57,31 +57,7 @@ function strategy(
 }
 
 describe('the payload-session strategy sends an origin with the cookie', () => {
-  it('keeps a working session of Payload 3.79.0 and older when only the site origin is listed', async () => {
-    const seen: Record<string, string>[] = [];
-    const result = await authorizePreviewRequest(
-      request(),
-      strategy(seen, {
-        fetch: (_input, init) => {
-          seen.push(init.headers);
-          // Payload 3 up to 3.79.0 accepts an absent origin even with a configured CSRF list.
-          const sentOrigin = new Headers(init.headers).get('origin');
-          const accepted = sentOrigin === null || sentOrigin === SITE;
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ user: accepted ? { id: 7 } : null, collection: 'users' }),
-          });
-        },
-      }),
-    );
-    expect(result.authorized).toBe(true);
-    expect(seen).toStrictEqual([{ accept: 'application/json', cookie: 'payload-token=tok.en' }]);
-    if (!result.authorized) throw new Error('expected the existing cookie-only session');
-    expect(result.context.payloadHeaders).toStrictEqual({ cookie: 'payload-token=tok.en' });
-  });
-
-  it('defaults to the Payload origin and forwards only the named session cookie', async () => {
+  it('asks /me once, with the Payload origin and only the named session cookie', async () => {
     const seen: Record<string, string>[] = [];
     const result = await authorizePreviewRequest(
       request({
@@ -94,10 +70,6 @@ describe('the payload-session strategy sends an origin with the cookie', () => {
     );
     expect(result.authorized).toBe(true);
     expect(seen).toStrictEqual([
-      {
-        accept: 'application/json',
-        cookie: 'payload-token=tok.en',
-      },
       {
         accept: 'application/json',
         cookie: 'payload-token=tok.en',
@@ -193,26 +165,7 @@ describe('the payload-session strategy sends an origin with the cookie', () => {
     expect(seen).toEqual([]);
   });
 
-  it('stops after one origin retry when Payload still reports no user', async () => {
-    const seen: Record<string, string>[] = [];
-    const result = await authorizePreviewRequest(
-      request(),
-      strategy(seen, {
-        fetch: (_input, init) => {
-          seen.push(init.headers);
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ user: null }),
-          });
-        },
-      }),
-    );
-    expect(result.outcome).toBe('invalid');
-    expect(seen).toHaveLength(2);
-  });
-
-  it('does not retry an explicit origin that Payload refuses', async () => {
+  it('does not ask again when Payload refuses the origin the project names', async () => {
     const seen: Record<string, string>[] = [];
     const result = await authorizePreviewRequest(
       request(),
@@ -234,78 +187,15 @@ describe('the payload-session strategy sends an origin with the cookie', () => {
     ]);
   });
 
-  it('keeps the original timeout budget across the origin retry', async () => {
-    vi.useFakeTimers();
-    try {
-      const seen: Record<string, string>[] = [];
-      let settled = false;
-      const pending = authorizePreviewRequest(
-        request(),
-        strategy(seen, {
-          timeoutMs: 250,
-          fetch: (_input, init) => {
-            seen.push(init.headers);
-            return new Promise((resolve, reject) => {
-              const timer = setTimeout(() => {
-                resolve({
-                  ok: true,
-                  status: 200,
-                  json: () => Promise.resolve({ user: seen.length === 1 ? null : { id: 7 } }),
-                });
-              }, 200);
-              init.signal.addEventListener(
-                'abort',
-                () => {
-                  clearTimeout(timer);
-                  reject(new Error('aborted'));
-                },
-                { once: true },
-              );
-            });
-          },
-        }),
-      ).then((result) => {
-        settled = true;
-        return result;
-      });
-      await vi.advanceTimersByTimeAsync(250);
-      expect(seen).toHaveLength(2);
-      expect(settled).toBe(true);
-      expect((await pending).outcome).toBe('unavailable');
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('refuses a user returned after the caller aborts the origin retry', async () => {
-    const controller = new AbortController();
-    const seen: Record<string, string>[] = [];
-    const result = await authorizePreviewRequest(
-      { ...request(), signal: controller.signal },
-      strategy(seen, {
-        fetch: (_input, init) => {
-          seen.push(init.headers);
-          if (seen.length === 2) controller.abort();
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ user: seen.length === 1 ? null : { id: 7 } }),
-          });
-        },
-      }),
-    );
-    expect(result.outcome).toBe('unavailable');
-    expect(seen).toHaveLength(2);
-  });
-
   it.each([
+    [200, { user: null }, 'invalid'],
     [401, { user: null }, 'invalid'],
     [503, { user: null }, 'unavailable'],
     [200, { user: { id: 7 }, collection: 'other-users' }, 'invalid'],
     [200, {}, 'invalid'],
     [200, null, 'invalid'],
     [200, undefined, 'invalid'],
-  ])('does not retry a %s response with body %j', async (status, body, outcome) => {
+  ])('asks once for a %s response with body %j', async (status, body, outcome) => {
     const seen: Record<string, string>[] = [];
     const result = await authorizePreviewRequest(
       request(),
@@ -318,140 +208,5 @@ describe('the payload-session strategy sends an origin with the cookie', () => {
     );
     expect(result.outcome).toBe(outcome);
     expect(seen).toHaveLength(1);
-  });
-});
-
-describe('the payload-session strategy remembers that /me needs the origin', () => {
-  interface Cms {
-    accepts: 'with-origin' | 'without-origin';
-  }
-  /** One `/me`: `good.token` is a session, counted only in the form the CMS accepts. */
-  function cms(seen: Record<string, string>[], state: Cms): FetchLike {
-    return (_input, init) => {
-      seen.push(init.headers);
-      const withOrigin = init.headers['origin'] === CMS;
-      const accepted =
-        init.headers['cookie'] === 'payload-token=good.token' &&
-        withOrigin === (state.accepts === 'with-origin');
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ user: accepted ? { id: 7 } : null, collection: 'users' }),
-      });
-    };
-  }
-  const withToken = (token: string): PreviewAuthorizationRequest =>
-    request({ cookie: `payload-token=${token}` });
-  const origins = (seen: Record<string, string>[]): string[] =>
-    seen.map((headers) => headers['origin'] ?? 'none');
-
-  it('asks once for a token /me refuses, once a session needed the origin', async () => {
-    const seen: Record<string, string>[] = [];
-    const fetch = cms(seen, { accepts: 'with-origin' });
-    // A new strategy object per request, as the framework recipes build it.
-    const each = (): PayloadSessionStrategy => strategy(seen, { fetch });
-    expect((await authorizePreviewRequest(withToken('good.token'), each())).authorized).toBe(true);
-    expect(origins(seen)).toStrictEqual(['none', CMS]);
-    seen.length = 0;
-    const forged = await authorizePreviewRequest(withToken('forged.token'), each());
-    const good = await authorizePreviewRequest(withToken('good.token'), each());
-    expect(forged.outcome).toBe('invalid');
-    expect(good.authorized).toBe(true);
-    expect(origins(seen)).toStrictEqual([CMS, CMS]);
-    if (!good.authorized) throw new Error('expected the session');
-    expect(good.context.payloadHeaders).toStrictEqual({
-      cookie: 'payload-token=good.token',
-      origin: CMS,
-    });
-  });
-
-  it('tries the cookie alone again at most once a minute, and forgets the origin when that works', async () => {
-    let clock = NOW;
-    const state: Cms = { accepts: 'with-origin' };
-    const seen: Record<string, string>[] = [];
-    const each = (): PayloadSessionStrategy => strategy(seen, { fetch: shared, now: () => clock });
-    const shared = cms(seen, state);
-    await authorizePreviewRequest(withToken('good.token'), each());
-    seen.length = 0;
-    await authorizePreviewRequest(withToken('forged.token'), each());
-    clock = NOW + 59_999;
-    await authorizePreviewRequest(withToken('forged.token'), each());
-    clock = NOW + 60_000;
-    await authorizePreviewRequest(withToken('forged.token'), each());
-    await authorizePreviewRequest(withToken('forged.token'), each());
-    expect(origins(seen)).toStrictEqual([CMS, CMS, CMS, 'none', CMS]);
-
-    // The CMS went back to accepting the cookie alone, e.g. a rollback to Payload 2.
-    state.accepts = 'without-origin';
-    clock = NOW + 120_000;
-    seen.length = 0;
-    const back = await authorizePreviewRequest(withToken('good.token'), each());
-    expect(back.authorized).toBe(true);
-    if (!back.authorized) throw new Error('expected the session');
-    expect(back.context.payloadHeaders).toStrictEqual({ cookie: 'payload-token=good.token' });
-    await authorizePreviewRequest(withToken('good.token'), each());
-    expect(origins(seen)).toStrictEqual([CMS, 'none', 'none']);
-  });
-
-  it('learns from a signed-in user of another auth collection, which it still refuses', async () => {
-    const seen: Record<string, string>[] = [];
-    const fetch: FetchLike = (_input, init) => {
-      seen.push(init.headers);
-      const user = init.headers['origin'] === CMS ? { id: 3 } : null;
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ user, collection: 'customers' }),
-      });
-    };
-    const first = await authorizePreviewRequest(
-      withToken('customer.token'),
-      strategy(seen, { fetch }),
-    );
-    const next = await authorizePreviewRequest(
-      withToken('customer.token'),
-      strategy(seen, { fetch }),
-    );
-    expect([first.outcome, next.outcome]).toStrictEqual(['invalid', 'invalid']);
-    expect(origins(seen)).toStrictEqual(['none', CMS, CMS]);
-  });
-
-  it('keeps what it learned per fetch and per endpoint', async () => {
-    const seen: Record<string, string>[] = [];
-    const fetch = cms(seen, { accepts: 'with-origin' });
-    await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch }));
-    seen.length = 0;
-    await authorizePreviewRequest(
-      withToken('good.token'),
-      strategy(seen, { fetch: cms(seen, { accepts: 'with-origin' }) }),
-    );
-    await authorizePreviewRequest(
-      withToken('good.token'),
-      strategy(seen, { fetch, usersSlug: 'admins' }),
-    );
-    expect(origins(seen)).toStrictEqual(['none', CMS, 'none', CMS]);
-  });
-
-  it.each([{}, { user: 'tok.en' }, { user: [] }, null])(
-    'learns nothing from an origin answer without a user: %j',
-    async (answer) => {
-      const seen: Record<string, string>[] = [];
-      const fetch: FetchLike = (_input, init) => {
-        seen.push(init.headers);
-        const body = init.headers['origin'] === undefined ? { user: null } : answer;
-        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) });
-      };
-      await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch }));
-      await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch }));
-      expect(origins(seen)).toStrictEqual(['none', CMS, 'none', CMS]);
-    },
-  );
-
-  it('learns nothing from an explicit origin, which is one request already', async () => {
-    const seen: Record<string, string>[] = [];
-    const fetch = cms(seen, { accepts: 'with-origin' });
-    await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch, origin: CMS }));
-    await authorizePreviewRequest(withToken('good.token'), strategy(seen, { fetch }));
-    expect(origins(seen)).toStrictEqual([CMS, 'none', CMS]);
   });
 });
