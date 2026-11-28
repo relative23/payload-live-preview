@@ -85,7 +85,9 @@ export function parseChangedLines(diff: string): ReadonlyMap<string, ReadonlySet
     }
     if (line.startsWith('+++ ')) {
       const target = line.slice(4);
-      path = target === '/dev/null' ? undefined : target.replace(/^b\//u, '');
+      // One letter and a slash is git's prefix: b/, or w/, i/, c/ and o/ under
+      // `diff.mnemonicPrefix`. Left in place it hid every changed line from the gate.
+      path = target === '/dev/null' ? undefined : target.replace(/^[a-z]\//u, '');
       continue;
     }
     const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/u.exec(line);

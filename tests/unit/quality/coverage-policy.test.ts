@@ -61,6 +61,24 @@ describe('coverage policy', () => {
     ]);
   });
 
+  it('reads the path whatever prefix the diff gives it', () => {
+    // `diff.mnemonicPrefix` writes c/, i/, w/ or o/ for a/ and b/; `diff.noprefix` writes none.
+    const hunk = ['@@ -0,0 +1,2 @@', '+const a = 1;', '+const b = 2;'];
+    const added = (from: string, to: string): string =>
+      [`diff --git ${from} ${to}`, `--- ${from}`, `+++ ${to}`, ...hunk].join('\n');
+
+    for (const [from, to] of [
+      ['a/src/runtime/core/a.ts', 'b/src/runtime/core/a.ts'],
+      ['c/src/runtime/core/a.ts', 'w/src/runtime/core/a.ts'],
+      ['c/src/runtime/core/a.ts', 'i/src/runtime/core/a.ts'],
+      ['src/runtime/core/a.ts', 'src/runtime/core/a.ts'],
+    ] as const) {
+      expect([...parseChangedLines(added(from, to))]).toEqual([
+        ['src/runtime/core/a.ts', new Set([1, 2])],
+      ]);
+    }
+  });
+
   it('attributes renamed additions to the new path and ignores deleted files', () => {
     const diff = [
       'diff --git a/src/runtime/core/old.ts b/src/runtime/core/new.ts',
