@@ -6,8 +6,14 @@ runs against each version.
 
 ## Payload
 
-**Payload 3.x** is supported. Every adapter's example runs against a real
-Payload 3 admin on every push, in Chromium, Firefox and WebKit.
+**Payload 3.90.0 and newer** is supported. Every adapter's example runs against
+a real Payload 3 admin on every push, in Chromium, Firefox and WebKit. The range
+begins at 3.90.0 because every Payload 3 release before it carries critical
+advisories that are patched only there (GHSA-66wr-7vmr-p5jq,
+GHSA-f7hx-52q9-hcrf;
+[ADR 0007 ledger, entry 48](architecture/0007-v2-defaults-and-renames-ledger.md#ledger)).
+A project on an older Payload 3 updates Payload inside its major first, or stays
+on the 2.x line of this package.
 
 **Payload 4** is where this package is headed. Its pre-releases are followed as
 they appear, and support becomes official with the stable 4.0 release; until
@@ -23,7 +29,7 @@ which only Payload 2 does, and reports `LP0504` when it refuses
 [Upgrading to 3.0](migration.md#upgrading-to-30)).
 
 The manifest declares `payload` as an optional peer,
-`^3.0.0 || ^4.0.0-0`: npm never installs it, and a project that has
+`>=3.90.0 <4.0.0 || ^4.0.0-0`: npm never installs it, and a project that has
 Payload outside that range gets npm's `ERESOLVE` error.
 
 ### What differs between Payload 3 and 4

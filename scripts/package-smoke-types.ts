@@ -181,5 +181,5 @@ export async function checkPackedPayloadPluginTypeContracts(consumers: {
   const result = typecheck(consumers.payload3, project);
   return result.status === 0
     ? []
-    : [`Payload 3.89.0 packed plugin type compatibility failed:\n${detailFor(result)}`];
+    : [`Payload 3.90.0 packed plugin type compatibility failed:\n${detailFor(result)}`];
 }
