@@ -218,27 +218,35 @@ Awaited in the layout, the server component returns nothing for a request that i
 ### SvelteKit
 
 ```ts
+// src/env.ts
+import { defineEnvVars } from '@sveltejs/kit/env';
+
+export const variables = defineEnvVars({
+  // A missing variable arrives as the empty string.
+  PUBLIC_PAYLOAD_ADMIN_ORIGIN: { schema: (input) => input ?? '' },
+  PAYLOAD_URL: { schema: (input) => input ?? '' },
+});
+```
+
+```ts
 // src/hooks.server.ts
-import { env } from '$env/dynamic/private';
-import { env as publicEnv } from '$env/dynamic/public';
+import { PAYLOAD_URL, PUBLIC_PAYLOAD_ADMIN_ORIGIN } from '$app/env/private';
 import { livePreviewHandle } from 'payload-live-preview/sveltekit';
 import { authorizePreviewRequest } from 'payload-live-preview/server';
 
-const adminOrigin = publicEnv.PUBLIC_PAYLOAD_ADMIN_ORIGIN ?? '';
-
 export const handle = livePreviewHandle({
-  allowedOrigins: [adminOrigin],
+  allowedOrigins: [PUBLIC_PAYLOAD_ADMIN_ORIGIN],
   // Payload 3.x: re-fetch the populated document; mergeDepth is required with serverURL.
-  serverURL: adminOrigin,
+  serverURL: PUBLIC_PAYLOAD_ADMIN_ORIGIN,
   mergeDepth: 1,
   // Required: without the hook the handle refuses to
   // start, and every route fails, not only the preview.
   authorizePreview: (request) =>
-    authorizePreviewRequest(request, { type: 'payload-session', serverURL: env.PAYLOAD_URL ?? '' }),
+    authorizePreviewRequest(request, { type: 'payload-session', serverURL: PAYLOAD_URL }),
 });
 ```
 
-The handle authorizes the request, injects the runtime into the `<head>` of an authorized preview response and merges the CSP: [docs/sveltekit.md](docs/sveltekit.md).
+SvelteKit 3 hands server code the variables `src/env.ts` declares. The handle authorizes the request, injects the runtime into the `<head>` of an authorized preview response and merges the CSP: [docs/sveltekit.md](docs/sveltekit.md).
 
 ### Nuxt
 

@@ -14,7 +14,7 @@ describe('the quickstarts of the README', () => {
   it('name the files a project writes, per framework', () => {
     expect(paths('Astro')).toEqual(['astro.config.mjs']);
     expect(paths('Next.js (App Router)')).toEqual(['app/layout.tsx']);
-    expect(paths('SvelteKit')).toEqual(['src/hooks.server.ts']);
+    expect(paths('SvelteKit')).toEqual(['src/env.ts', 'src/hooks.server.ts']);
     expect(paths('Nuxt')).toEqual(['nuxt.config.ts', 'server/utils/live-preview-auth.ts']);
     expect(paths('Plain HTML')).toEqual(['build.ts']);
   });
