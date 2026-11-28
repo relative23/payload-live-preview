@@ -34,8 +34,8 @@ export interface QuickstartProject {
  * example's manifest and lockfile with the archive in place of the package, and
  * `npm ci` installs exactly what the lockfile names: the framework a reader
  * would install, at the version CI tests. Without it the archive is all there is.
- * `PLP_QUICKSTART_TARBALL` names an archive that is already packed, as the CI
- * job has one; without it the working tree is packed.
+ * `PLP_CONTINUATION_TARBALL` names an archive that is already packed, as the CI
+ * jobs on the archive have one; without it the working tree is packed.
  */
 export async function quickstartProject(
   name: string,
@@ -43,7 +43,7 @@ export async function quickstartProject(
 ): Promise<QuickstartProject> {
   const root = await mkdtemp(resolve(tmpdir(), `payload-live-preview-quickstart-${name}-`));
   const environment = sanitizeNpmScriptEnvironment(process.env);
-  let tarball = process.env['PLP_QUICKSTART_TARBALL'];
+  let tarball = process.env['PLP_CONTINUATION_TARBALL'];
   if (tarball === undefined) {
     const pack = run(
       'npm',
