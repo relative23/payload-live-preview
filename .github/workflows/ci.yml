@@ -732,8 +732,8 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # Payload's CSRF list on: a cookie that arrives without an Origin header is refused, which is how a
-  # preview site's server forwards the editor's session. The package repeats the admin's origin
+  # Payload's CSRF list on: a cookie a server forwards is taken only with an Origin header the list
+  # holds. The package sends the admin's origin with the editor's session
   # (docs/authorization.md); the target that verifies the session and the one that merges as the
   # editor run once more with the list to show that it does.
   real-payload-csrf:

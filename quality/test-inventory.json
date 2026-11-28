@@ -21,8 +21,8 @@
   ],
   "totals": {
     "files": 543,
-    "suites": 1047,
-    "tests": 4717,
+    "suites": 1046,
+    "tests": 4707,
     "benchmarks": 12
   },
   "groups": {
@@ -64,8 +64,8 @@
     },
     "unit": {
       "files": 440,
-      "suites": 937,
-      "tests": 4290,
+      "suites": 936,
+      "tests": 4280,
       "benchmarks": 0
     }
   },
@@ -3706,8 +3706,8 @@
     {
       "path": "tests/unit/security/preview-session-origin.test.ts",
       "group": "unit",
-      "suites": 2,
-      "tests": 19,
+      "suites": 1,
+      "tests": 9,
       "benchmarks": 0
     },
     {

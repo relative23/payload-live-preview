@@ -436,3 +436,17 @@ sending the origin of `serverURL` from the first request would refuse a valid
 session of such a Payload whose list holds only the frontend's origin. The
 cookie-only request can go once the range starts at 3.79.1 or later. This is a
 reading of the published files, not a run against those releases.
+
+## Addendum (2026-11-28): one request, with the origin
+
+The `payload` peer range begins at 3.90.0 since the same day
+([ADR 0007](0007-v2-defaults-and-renames-ledger.md), row 48), which is later
+than 3.79.1. The cookie-only request is removed (row 49). The strategy sends
+the cookie with an `Origin` in its one request: `origin` where the project
+names one, the origin of `serverURL` otherwise. For a supported Payload that is
+the request that was accepted before, without the one in front of it: with no
+CSRF list every origin is taken, and with a list only a listed one, among them
+the `serverURL` Payload is configured with. The addendum of 2026-10-30 no
+longer applies: nothing is remembered between requests, and no request with
+the cookie alone is sent once a minute. `payloadHeaders` always holds the
+cookie and the origin.

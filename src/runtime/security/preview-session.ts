@@ -1,9 +1,9 @@
 /**
  * The `payload-session` strategy: forward exactly one named cookie to
  * `GET <serverURL>/api/<usersSlug>/me` and authorize when a user comes back.
- * A cookie-only request preserves sessions of Payload 3 up to 3.79.0. When `/me`
- * reports no user, one retry adds an `Origin` for the newer CSRF check, and
- * an endpoint that needed it gets it on the first request from then on.
+ * The request carries an `Origin`, the one the project names or the origin of
+ * `serverURL`: Payload takes a server's cookie only with an origin its CSRF
+ * list holds, or with no list at all.
  */
 
 import { createAuthorizedPreviewContext } from '@/runtime/types/authorized-preview';
@@ -34,10 +34,9 @@ export interface PayloadSessionStrategy {
   /** Cookie name; Payload's default is `payload-token`. */
   readonly cookieName?: string;
   /**
-   * Send this listed origin with the cookie from the first request. Without
-   * it, try the existing cookie-only request, then the origin of `serverURL`
-   * once when `/me` reports a null user; an endpoint that needed the origin
-   * gets it first from then on. Draft reads keep the accepted headers.
+   * The origin sent with the cookie; the origin of `serverURL` without it.
+   * Name one Payload's `csrf` list holds where that list does not hold
+   * `serverURL`'s. Draft reads send the same headers.
    */
   readonly origin?: string;
   /** Upper bound for the `/me` round trip. Below 250 ms is raised to 250 ms; default 3000. */
@@ -58,15 +57,6 @@ const COOKIE_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 const COOKIE_VALUE_PATTERN = /^[A-Za-z0-9._~-]+$/;
 /** Below this an `exp` is Unix seconds; a millisecond timestamp passed it in 1973. */
 const SECONDS_CEILING = 1e11;
-/** How often a `/me` known to need the origin is asked once more with the cookie alone. */
-const COOKIE_ONLY_RETRY_MS = 60_000;
-
-/**
- * The `/me` endpoints that answered a user only with the origin, per fetch, with when the
- * cookie alone was last tried. Keyed by endpoint, not by strategy object: the recipes build
- * one per request. Without it, every token `/me` refuses costs two round trips.
- */
-const originNeeded = new WeakMap<FetchLike, Map<string, number>>();
 
 /**
  * Exactly one value for `name`, or `null` when absent, empty, over `maxLength`
@@ -126,9 +116,8 @@ export async function authorizeSession(
   strategy: PayloadSessionStrategy,
 ): Promise<PreviewAuthorization> {
   const cookieName = cookieNameFor(strategy.cookieName);
-  const origin = httpOriginFor(strategy.serverURL, 'serverURL');
-  const sentOrigin =
-    strategy.origin === undefined ? undefined : httpOriginFor(strategy.origin, 'origin');
+  const server = httpOriginFor(strategy.serverURL, 'serverURL');
+  const origin = strategy.origin === undefined ? server : httpOriginFor(strategy.origin, 'origin');
   const value = extractCookie(
     request.headers.get('cookie'),
     cookieName,
@@ -142,13 +131,8 @@ export async function authorizeSession(
   const fetchImpl: FetchLike = strategy.fetch ?? globalThis.fetch;
   const usersSlug = encodeURIComponent(strategy.usersSlug ?? DEFAULT_USERS_SLUG);
   // `depth=0`: the verdict needs the user's id, not its populated relations.
-  const endpoint = `${origin}/api/${usersSlug}/me?depth=0`;
-  // Registered on the first lesson; two first requests racing may drop one, learned again.
-  const learned = originNeeded.get(fetchImpl) ?? new Map<string, number>();
-  const forwarded = `${cookieName}=${value}`;
-  let payloadHeaders: Record<string, string> = { cookie: forwarded };
-  if (sentOrigin !== undefined) payloadHeaders['origin'] = sentOrigin;
-  else if (learned.has(endpoint)) payloadHeaders['origin'] = origin;
+  const endpoint = `${server}/api/${usersSlug}/me?depth=0`;
+  const payloadHeaders: Record<string, string> = { cookie: `${cookieName}=${value}`, origin };
   const controller = new AbortController();
   const abort = (): void => {
     controller.abort(request.signal?.reason);
@@ -163,44 +147,18 @@ export async function authorizeSession(
     timer = setTimeout(() => {
       controller.abort(new DOMException('The operation timed out', 'TimeoutError'));
     }, timeoutMs);
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const response = await fetchImpl(endpoint, {
-        headers: { ...payloadHeaders, accept: 'application/json' },
-        signal: controller.signal,
-        // The verdict comes from this endpoint: a followed redirect drops the cookie but
-        // reads the user wherever it points. 'manual' rather than the draft read's 'error',
-        // which workerd rejects outright; the 3xx is refused just below.
-        redirect: 'manual',
-      });
-      if (isAborted()) return refused('unavailable');
-      if (!response.ok) return refused(response.status === 401 ? 'invalid' : 'unavailable');
-      body = await response.json();
-      if (isAborted()) return refused('unavailable');
-      const user =
-        typeof body === 'object' && body !== null ? (body as { user?: unknown }).user : undefined;
-      if (attempt !== 0) {
-        // The other form found a user: it is the one this endpoint takes.
-        if (typeof user !== 'object' || user === null || Array.isArray(user)) break;
-        if (payloadHeaders['origin'] === undefined) {
-          learned.delete(endpoint);
-        } else {
-          originNeeded.set(fetchImpl, learned);
-          learned.set(endpoint, now());
-        }
-        break;
-      }
-      if (sentOrigin !== undefined || user !== null) break;
-      if (payloadHeaders['origin'] === undefined) {
-        // Payload 3 up to 3.79.0 accepts an absent Origin; adding one unconditionally
-        // can reject its valid session when only the frontend is in the CSRF list.
-        payloadHeaders = { cookie: forwarded, origin };
-        continue;
-      }
-      // Known to need the origin: a CMS that stopped needing it is noticed within a minute.
-      if (now() - (learned.get(endpoint) ?? 0) < COOKIE_ONLY_RETRY_MS) break;
-      learned.set(endpoint, now());
-      payloadHeaders = { cookie: forwarded };
-    }
+    const response = await fetchImpl(endpoint, {
+      headers: { ...payloadHeaders, accept: 'application/json' },
+      signal: controller.signal,
+      // The verdict comes from this endpoint: a followed redirect drops the cookie but
+      // reads the user wherever it points. 'manual' rather than the draft read's 'error',
+      // which workerd rejects outright; the 3xx is refused just below.
+      redirect: 'manual',
+    });
+    if (isAborted()) return refused('unavailable');
+    if (!response.ok) return refused(response.status === 401 ? 'invalid' : 'unavailable');
+    body = await response.json();
+    if (isAborted()) return refused('unavailable');
   } catch {
     return refused('unavailable');
   } finally {

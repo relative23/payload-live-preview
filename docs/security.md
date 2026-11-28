@@ -26,7 +26,7 @@ the first preview request instead of serving public pages quietly:
 
 | Strategy          | What it verifies                                                                                                                                       | What it forwards to Payload                                                                   |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `payload-session` | Exactly one named cookie (default `payload-token`) against `GET /api/<users>/me?depth=0`, bounded timeout, no redirect followed, auth-collection check | That one cookie, and the `origin` header when the check sent one, as `context.payloadHeaders` |
+| `payload-session` | Exactly one named cookie (default `payload-token`) against `GET /api/<users>/me?depth=0`, bounded timeout, no redirect followed, auth-collection check | That one cookie and the `origin` header the check sent beside it, as `context.payloadHeaders` |
 | `signed-token`    | An HMAC-SHA256 token from `issuePreviewToken()` bound to audience, path, locale, purpose, expiry; optional replay store                                | Nothing                                                                                       |
 | `verifier`        | Your own async function (SSO, custom cookie, edge auth) returning claims or `null`                                                                     | Whatever the verifier chose                                                                   |
 

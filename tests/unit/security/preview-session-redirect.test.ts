@@ -57,16 +57,12 @@ async function userServer(): Promise<{ readonly origin: string; readonly hits: (
 }
 
 describe('payload-session and redirects', () => {
-  it('asks fetch to hand a redirect back instead of following it, on both attempts', async () => {
-    // A null user first, so the strategy also makes its retry with the origin.
-    const fetch = vi
-      .fn<FetchLike>()
-      .mockResolvedValueOnce({ ok: true, status: 200, json: () => Promise.resolve({ user: null }) })
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ user: { id: 'editor' }, collection: 'users' }),
-      });
+  it('asks fetch to hand a redirect back instead of following it', async () => {
+    const fetch = vi.fn<FetchLike>().mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ user: { id: 'editor' }, collection: 'users' }),
+    });
 
     const result = await authorizePreviewRequest(request(), {
       type: 'payload-session',
@@ -75,8 +71,8 @@ describe('payload-session and redirects', () => {
     });
 
     expect(result.outcome).toBe('authorized');
-    expect(fetch).toHaveBeenCalledTimes(2);
-    for (const [, init] of fetch.mock.calls) expect(init.redirect).toBe('manual');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls[0]?.[1].redirect).toBe('manual');
   });
 
   it('refuses a /me that redirects to another origin, and never asks that origin', async () => {
