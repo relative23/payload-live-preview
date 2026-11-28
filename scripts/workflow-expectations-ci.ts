@@ -176,6 +176,8 @@ export const CI: WorkflowSpec = {
     // cannot reach.
     'next-pnpm-workspace': archiveJob('playwright.next-pnpm-workspace.config.ts', 30),
     'astro-floor-base': archiveJob('playwright.astro-floor-base.config.ts', 25),
+    // The README's quickstarts for Astro, Next.js, SvelteKit and Nuxt, rebuilt in fresh projects.
+    'quickstart-replay': archiveJob('playwright.quickstart.config.ts', 25),
     // React islands inside native fragments, then native fragment rendering and page-owned resources,
     // each on the exact Astro version the record names.
     'astro-fragment-islands': archiveJob(

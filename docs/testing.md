@@ -503,6 +503,32 @@ The Node row runs the official 20.19.0 binary with no framework or optional peer
 
 The two Astro rows had CI jobs of their own, which ran their specs on every push in Chromium until 3.0 left Astro 4 to 6 ([Astro peer floor](#astro-peer-floor)); the counts above are all three engines, with loader and inline delivery at five cases each and two control builds per engine for Astro 4.0.0.
 
+## The quickstarts of the README
+
+A snippet a reader copies is tested where it is read. `scripts/quickstart-blocks.ts` takes the
+files of a quickstart off the README by heading, since every block there opens with a comment that
+names its file, and a replay writes them word for word into a fresh project outside the
+repository. The project gets the example's manifest and lockfile with the stored archive in place
+of the package, and `npm ci` installs exactly that.
+
+- Plain HTML runs with the default suite
+  ([spec](../tests/e2e/specs/quickstart-html.spec.ts)): the `build.ts` of the page builds a page, a
+  visitor gets no runtime, and in the admin's frame the runtime starts and takes an update.
+- Astro, Next.js, SvelteKit and Nuxt are the job `quickstart-replay`, on every push, in Chromium
+  ([specs](../tests/e2e/quickstart)). The Astro site is built, served as static files and framed by
+  an admin. The other three are built and started as servers, and Payload is a mock of
+  `GET /api/users/me` that knows one editor: a visitor who asks for a preview gets the public page,
+  and an editor gets the runtime, with `frame-ancestors` for the admin where the quickstart sets
+  it.
+
+```sh
+npm run build
+npx playwright test --config playwright.quickstart.config.ts --project=chromium
+```
+
+With `PLP_CONTINUATION_TARBALL` the replays install that archive; without it they pack the working
+tree.
+
 ## Astro peer floor
 
 The Astro example's lock pins the newest Astro the repository has reviewed, so the E2E jobs cannot
