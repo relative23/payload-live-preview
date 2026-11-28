@@ -22,7 +22,7 @@
   "totals": {
     "files": 540,
     "suites": 1042,
-    "tests": 4697,
+    "tests": 4700,
     "benchmarks": 12
   },
   "groups": {
@@ -41,7 +41,7 @@
     "e2e": {
       "files": 64,
       "suites": 62,
-      "tests": 270,
+      "tests": 273,
       "benchmarks": 0
     },
     "integration": {
@@ -228,21 +228,21 @@
       "path": "tests/e2e/quickstart/next.spec.ts",
       "group": "e2e",
       "suites": 0,
-      "tests": 2,
+      "tests": 3,
       "benchmarks": 0
     },
     {
       "path": "tests/e2e/quickstart/nuxt.spec.ts",
       "group": "e2e",
       "suites": 0,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {
       "path": "tests/e2e/quickstart/sveltekit.spec.ts",
       "group": "e2e",
       "suites": 0,
-      "tests": 3,
+      "tests": 4,
       "benchmarks": 0
     },
     {

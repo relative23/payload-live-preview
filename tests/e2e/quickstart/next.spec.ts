@@ -6,6 +6,7 @@ import { detailFor, run } from '../../../scripts/package-smoke-support';
 import {
   ADMIN_ORIGIN,
   ask,
+  cachingProxy,
   closeServer,
   freePort,
   mockPayload,
@@ -81,4 +82,21 @@ test('an editor gets the runtime in the head, and Payload was asked', async () =
   expect(editor.html).toContain('Server title');
   expect(editor.html).toContain('__livePreview');
   expect(payload?.asked.some((line) => line.startsWith('GET /api/users/me'))).toBe(true);
+});
+
+test("a shared cache in front of the server does not hand the editor's preview to a visitor", async () => {
+  const cache = await cachingProxy(origin);
+  try {
+    const editor = await ask(`${cache.origin}/?preview=true`, true);
+    expect(editor.html).toContain('__livePreview');
+    // Next.js answers a page that reads the request's headers with `no-store` itself.
+    expect(editor.cacheControl).toContain('no-store');
+    expect(cache.stored()).toEqual([]);
+    const visitor = await ask(`${cache.origin}/?preview=true`, false);
+    expect(visitor.html).toContain('Server title');
+    expect(visitor.html).not.toContain('__livePreview');
+    expect(cache.hits).toEqual([]);
+  } finally {
+    await closeServer(cache.server);
+  }
 });

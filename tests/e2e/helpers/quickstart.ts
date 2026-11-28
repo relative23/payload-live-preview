@@ -246,7 +246,7 @@ export async function startProjectServer(
 export async function ask(
   url: string,
   editor: boolean,
-): Promise<{ status: number; html: string; csp: string }> {
+): Promise<{ status: number; html: string; csp: string; cacheControl: string; vary: string }> {
   const response = await fetch(url, {
     redirect: 'manual',
     headers: editor ? { cookie: EDITOR_COOKIE } : {},
@@ -255,5 +255,90 @@ export async function ask(
     status: response.status,
     html: await response.text(),
     csp: response.headers.get('content-security-policy') ?? '',
+    cacheControl: response.headers.get('cache-control') ?? '',
+    vary: response.headers.get('vary') ?? '',
+  };
+}
+
+/**
+ * A shared cache in front of the project, set to keep everything it is not
+ * told to leave alone: it stores a `200` by address unless the answer says
+ * `no-store` or `private`, honours `Vary`, and answers from the store when it
+ * can. A page that must not be shared has to say so in its own headers.
+ */
+export async function cachingProxy(
+  upstream: string,
+): Promise<{ server: Server; origin: string; hits: string[]; stored: () => readonly string[] }> {
+  interface Entry {
+    readonly status: number;
+    readonly headers: Record<string, string>;
+    readonly body: string;
+    readonly varied: Readonly<Record<string, string>>;
+  }
+  const store = new Map<string, Entry>();
+  const hits: string[] = [];
+  const server = createServer((request, response) => {
+    const address = request.url ?? '/';
+    const sent = (name: string): string => {
+      const value = request.headers[name];
+      return Array.isArray(value) ? value.join(', ') : (value ?? '');
+    };
+    const kept = store.get(address);
+    if (
+      request.method === 'GET' &&
+      kept !== undefined &&
+      Object.entries(kept.varied).every(([name, value]) => sent(name) === value)
+    ) {
+      hits.push(address);
+      response.writeHead(kept.status, { ...kept.headers, 'x-cache': 'hit' }).end(kept.body);
+      return;
+    }
+    const forwarded: Record<string, string> = {};
+    for (const name of ['cookie', 'accept', 'sec-fetch-dest', 'referer']) {
+      if (sent(name) !== '') forwarded[name] = sent(name);
+    }
+    fetch(`${upstream}${address}`, {
+      method: request.method ?? 'GET',
+      headers: forwarded,
+      redirect: 'manual',
+    }).then(
+      async (answer) => {
+        const body = await answer.text();
+        const headers: Record<string, string> = {};
+        for (const name of ['content-type', 'cache-control', 'vary', 'content-security-policy']) {
+          const value = answer.headers.get(name);
+          if (value !== null) headers[name] = value;
+        }
+        const control = (headers['cache-control'] ?? '').toLowerCase();
+        const vary = (headers['vary'] ?? '')
+          .split(',')
+          .map((name) => name.trim().toLowerCase())
+          .filter((name) => name !== '');
+        if (
+          request.method === 'GET' &&
+          answer.status === 200 &&
+          !/\b(?:no-store|private)\b/u.test(control) &&
+          !vary.includes('*')
+        ) {
+          store.set(address, {
+            status: answer.status,
+            headers,
+            body,
+            varied: Object.fromEntries(vary.map((name) => [name, sent(name)])),
+          });
+        }
+        response.writeHead(answer.status, { ...headers, 'x-cache': 'miss' }).end(body);
+      },
+      () => response.writeHead(502).end('bad gateway'),
+    );
+  });
+  await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+  const address = server.address();
+  if (address === null || typeof address === 'string') throw new Error('the cache has no port');
+  return {
+    server,
+    origin: `http://127.0.0.1:${String(address.port)}`,
+    hits,
+    stored: () => [...store.keys()],
   };
 }
