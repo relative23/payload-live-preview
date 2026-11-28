@@ -123,6 +123,13 @@ official 24.0.0 binary (run by hand on 2026-11-25) and run in CI on the newest
 Node 24 and 26; every other CI job runs Node 24.22.3. A project on Node 20 or
 22 stays on 2.x.
 
+2026-11-28 (3.0): the numbers of row 46 moved. Loaded whole, `/client` is 38
+files with 186 685 bytes and the root 49 files with 375 855: the browser entry
+takes its names from the modules that define them, where it took ten through
+two barrels and loaded five chunks it used nothing of
+([ADR 0012](0012-package-topology-and-delivery-profiles.md), note of the same
+day). No name of an entry changes.
+
 2026-11-28 (3.0): row 49 is new and carried out. The request with the cookie
 alone was kept for Payload 2 and named for it. Read off the released
 `dist/auth/extractJWT.js`, Payload 3.0.0 to 3.79.0 take such a cookie whatever
